@@ -1,0 +1,3 @@
+[submodule "HaluMem"]
+	path = HaluMem
+	url = https://github.com/MemTensor/HaluMem.git
