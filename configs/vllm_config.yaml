@@ -4,5 +4,5 @@ quantization: bitsandbytes
 seed: 42
 sampling_params:
   n: 1
-  max_tokens: 128
+  max_tokens: 52
   seed: 42
