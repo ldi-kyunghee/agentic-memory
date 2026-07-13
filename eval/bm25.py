@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
     if args.use_llm:
         model_kwargs, sampling_params = load_config(args.llm_config)
-        llm: LLM = load_vllm(model_kwargs)
+        llm: LLM = load_vllm(**model_kwargs)
         llm_results = []
         for per_persona_result in results:
             per_persona_llm_results = generate_answers(per_persona_result, **sampling_params)
