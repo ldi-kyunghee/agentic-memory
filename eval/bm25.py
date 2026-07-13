@@ -1,7 +1,7 @@
 from vllm import LLM, SamplingParams
 
 import bm25s
-from bm25s.tokenization import Tokenizer
+from dotenv import load_dotenv
 from bm25s.hf import BM25HF
 import Stemmer
 import argparse
@@ -10,6 +10,8 @@ import json
 import os
 
 from utils import load_config, PROMPT
+
+load_dotenv()
 
 def init_parser():
     parser = argparse.ArgumentParser()
