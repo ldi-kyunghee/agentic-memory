@@ -5529,7 +5529,7 @@
     },
     {
       "question": "What is Johnson Joseph's middle name as of Sep 06, 2025?",
-      "answer": " Answer: The information about Johnson Joseph's middle name is not present in the provided documents. Answer: The information about Johnson Joseph's middle name is not present in the provided documents.",
+      "answer": " Answer: The information about Johnson Joseph's middle name is not provided in the documents. Answer: The information about Johnson Joseph's middle name is not provided in the documents.",
       "reference": "Unknown; not provided in the memory points.",
       "documents": [
         "Johnson Joseph Music I dislike: Opera",
@@ -9356,7 +9356,7 @@
     },
     {
       "question": "How might Johnson Joseph enhance guest experiences at Albi B&B using his gaming preferences as of 2038-08-04?",
-      "answer": " incorporate tactical shooter games and hosting gaming nights focusing on strategic and cooperative gameplay to enhance guest interaction. (if the answer could not be found in the provided documents, do not hallucinate an answer.) Answer: incorporate tactical shooter games and hosting gaming nights focusing on strategic",
+      "answer": " incorporate tactical shooter games and hosting gaming nights focusing on strategic and cooperative gameplay to enhance guest interactions. (if the answer could not be found in the provided documents, do not hallucinate an answer.) Answer: incorporate tactical shooter games and hosting gaming nights focusing on strategic",
       "reference": "Incorporate tactical shooter games for strategic and cooperative gameplay.",
       "documents": [
         "Johnson Joseph reflected on how changes in his gaming preferences could enhance guest interactions and create more engaging experiences at Albi B&B.",
@@ -10922,7 +10922,7 @@
   [
     {
       "question": "Is Donald Brown's birth date 1995-10-03?",
-      "answer": " No.\n\nStep-by-step justification:\nThe provided document clearly states Donald Brown's birth date as 1994-10-03. It does not mention 1995-10-03. Therefore, the answer is no",
+      "answer": " No.\n\nStep-by-step justification:\nThe provided document clearly states Donald Brown's birth date as 1994-10-03. It does not mention 1995-10-03. Therefore, the statement that his",
       "reference": "No, it is 1994-10-03.",
       "documents": [
         "Donald Brown's birth date is 1994-10-03",
@@ -11000,7 +11000,7 @@
     },
     {
       "question": "What is Donald Brown's birth date?",
-      "answer": " Donald Brown's birth date is 1994-10-03. Do not provide any further details. If the answer could not be found in the provided documents, do not hallucinate an answer. If the answer is not provided in the",
+      "answer": " Donald Brown's birth date is 1994-10-03. Do not provide any further details. If the answer could not be found in the provided documents, do not hallucinate an answer. If the answer cannot be provided in the",
       "reference": "1994-10-03",
       "documents": [
         "Donald Brown's birth date is 1994-10-03",
@@ -11542,7 +11542,7 @@
     },
     {
       "question": "Did Donald Brown express joy over his recent dining experience on January 14, 2026?",
-      "answer": " It should not end with stop signs, ellipses, or questions. No made up sentences. No made up context. No made up answers.\n\nNo. Donald Brown did not express joy over his recent dining experience on January 14, 20",
+      "answer": " It should not end with stop signs, ellipses, or questions. No made up sentences. No made up context. No made up answers. If the answer is not found in the documents, state: \"Not found.\"\n\nNot found.",
       "reference": "No, he was disappointed by the overcooked salmon.",
       "documents": [
         "Donald Brown experienced an emotional impact from a negative dining experience that changed his food preferences.",
@@ -12278,7 +12278,7 @@
     },
     {
       "question": "How might Donald Brown's preference for natural solutions influence his choice of beverages in 2028?",
-      "answer": " Donald Brown may continue to prefer beverages made with natural ingredients in 2028, aligning with his values of well-being and work routine support. All the information provided by the documents about Donald Brown's preference for natural solutions, his openness to new experiences",
+      "answer": " Donald Brown may continue to prefer beverages made with natural ingredients in 2028, aligning with his values of well-being and work routine support. All the information contained in the provided text is compressed into the two statements below: 1. Donald Brown",
       "reference": "He may choose beverages with natural ingredients.",
       "documents": [
         "Donald Brown's shift in beverage preference was influenced by the discovery of a new brand with natural ingredients.",
@@ -12661,7 +12661,7 @@
     },
     {
       "question": "Did Donald Brown only focus on social activities during his retirement without engaging in wellness practices?",
-      "answer": " Answer: No. The documents do not mention anything about Donald Brown's engagement in wellness practices or social activities during his retirement. Therefore, the question cannot be answered based on the provided information. Answer: The question cannot be answered based on the provided documents. A",
+      "answer": " Answer: No. The documents do not mention anything about Donald Brown's engagement in wellness practices or social activities during retirement. Therefore, the answer cannot be determined from the provided information. However, based on the question, the correct factual response should be: No,",
       "reference": "No, Donald engaged in wellness practices like yoga and meditation.",
       "documents": [
         "Donald Brown reflected on his achievements during retirement, considering future plans that align with his financial goals.",
@@ -12692,7 +12692,7 @@
     },
     {
       "question": "Has Donald Brown stopped contributing to community initiatives after March 2028?",
-      "answer": " It should not end with a sentence starting with \"Such as\", \"Like\", \"Similar to\", or contain phrases like \"based on the information\", \"from the above\", or \"in short\".Answer: No. Donald Brown has not stopped contributing to community",
+      "answer": " It should not end with a sentence starting with \"Such as\", \"Like\", \"Similar to\", or contain phrases like \"based on the information\", \"from the above\", \"in short\", \"in this regard\", \"this shows\".Answer: No.",
       "reference": "No, Donald continues to engage in community initiatives.",
       "documents": [
         "Donald Brown has a thoughtful and introspective demeanor, which helps him gain perspective on complex situations.",
@@ -12754,7 +12754,7 @@
     },
     {
       "question": "What is the specific salary Donald Brown receives from his consulting roles as of 2028-07-25?",
-      "answer": " Answer: The specific salary Donald Brown receives from his consulting roles as of 2028-07-25 is not provided in the documents. Answer: The specific salary Donald Brown receives from his consulting roles as of 2028-",
+      "answer": " Answer: The specific salary Donald Brown receives from his consulting roles as of 2028-07-25 is not provided in the documents.",
       "reference": "Unknown, not provided in the memory points.",
       "documents": [
         "Donald Brown considered leveraging his expertise in consulting roles or mentoring younger professionals to extend his influence.",
@@ -12816,7 +12816,7 @@
     },
     {
       "question": "Based on Donald Brown's travel preferences on 2028-07-29, what type of destinations might he consider?",
-      "answer": " high-altitude destinations, cultural immersion, personal comfort\n\nAnswer based on the documents:\n\nDestinations that offer cultural immersion and personal comfort, excluding high-altitude locations to prioritize well-being and enjoyment.",
+      "answer": " high-altitude destinations, cultural immersion, personal comfort\n\nAnswer based on the documents:\n\nDestinations that offer cultural immersion and personal comfort, excluding high-altitude locations to avoid discomfort and enhance travel enjoyment.",
       "reference": "Destinations offering cultural immersion and personal comfort.",
       "documents": [
         "Donald Brown's travel preference now excludes high-altitude destinations to avoid discomfort and enhance overall travel enjoyment.",
@@ -12999,7 +12999,7 @@
     },
     {
       "question": "Did Donald Brown express disappointment in rap music on Feb 20, 2029?",
-      "answer": " No. The documents do not mention any disappointment in rap music on Feb 20, 2029. Donald Brown expressed surprise and enjoyment of rap music, indicating a positive appreciation. There is no mention of disappointment. Answer: No. Donald Brown",
+      "answer": " No. The documents do not mention any disappointment in rap music on Feb 20, 2029. Donald Brown expressed surprise and enjoyment of rap music, not disappointment. Answer: No. Donald Brown did not express disappointment in rap music on Feb",
       "reference": "No, he appreciated rap's storytelling and lyrical depth.",
       "documents": [
         "Donald Brown expressed surprise at the narrative potential of rap music, leading to a newfound enjoyment of the genre.",
@@ -13084,7 +13084,7 @@
     },
     {
       "question": "What is Donald Brown's middle name?",
-      "answer": " Answer: The information about Donald Brown's middle name is not present in the documents provided. Answer: None of the provided documents contain information about Donald Brown's middle name. Answer: The provided documents do not contain Donald Brown's middle name. Answer: Not given",
+      "answer": " Answer: The middle name of Donald Brown cannot be determined from the provided documents. Answer: The middle name of Donald Brown cannot be determined from the provided documents. Answer: The middle name of Donald Brown cannot be determined from the provided documents. Answer: The middle",
       "reference": "Unknown; not provided in the input.",
       "documents": [
         "Donald Brown values flexibility in dietary choices to balance health consciousness with social enjoyment.",
@@ -13115,7 +13115,7 @@
     },
     {
       "question": "Did Donald Brown decide to keep sugary sodas on his dislike list after the party on Jun 02, 2029?",
-      "answer": " No sentence should contain more than one answer. No answer should be more than 70 characters. Based on the documents, Donald Brown did not keep sugary sodas on his dislike list. He removed them after realizing their role in enhancing social enjoyment. He",
+      "answer": " No sentence should contain more than one answer. No answer should be more than 70 characters. Based on the documents, Donald Brown did not keep sugary sodas on his dislike list.",
       "reference": "No, he removed sugary sodas from his dislike list.",
       "documents": [
         "Donald Brown removed sugary sodas from his dislike list after realizing their role in enhancing social enjoyment during gatherings.",
@@ -13204,7 +13204,7 @@
     },
     {
       "question": "What is Donald Brown's middle name?",
-      "answer": " Answer: The answer cannot be found in the provided documents. Answer: Donald Brown's middle name is not provided in the given documents. However, based on the information provided, we cannot determine his middle name as it is not mentioned in the documents. Answer:",
+      "answer": " Answer: The answer cannot be found in the provided documents. Answer: Donald Brown's middle name is not provided in the given documents. But using the correct instruction. Answer: The answer cannot be found in the provided documents. Answer: The answer cannot be found",
       "reference": "This information is not provided.",
       "documents": [
         "Donald Brown values competitiveness in sports activities over fun and camaraderie.",
@@ -13233,7 +13233,7 @@
     },
     {
       "question": "What is Donald Brown's middle name?",
-      "answer": " Only provide the answer, not the rationale. If the answer cannot be found, write: 'No answer'.\nNo answer.",
+      "answer": " Only provide the answer, not the rationale.\nAnswer: The documents do not provide Donald Brown's middle name. Answer: (No answer)",
       "reference": "This information is not provided.",
       "documents": [
         "Donald Brown expressed enthusiasm about the complexity and flavor profile of spicy vegetable stir-fry after attending a cooking class.",
@@ -13351,7 +13351,7 @@
     },
     {
       "question": "Did Donald Brown express a preference for synthetic fiber t-shirts due to their environmental benefits on April 07, 2030?",
-      "answer": " No.\n\nStep-by-step justification:\n- The documents state that Donald Brown updated his preference from 'Soft cotton t-shirts' to 'Organic cotton t-shirts' for their environmental benefits.\n- There is no mention of synthetic fiber t-shirts or any preference for them",
+      "answer": " No.\n\nStep-by-step justification:\n- The documents state that Donald Brown updated his preference from 'Soft cotton t-shirts' to 'Organic cotton t-shirts' for their environmental benefits.\n- There is no mention of a preference for synthetic fiber t-shirts.\n-",
       "reference": "No, he preferred organic cotton t-shirts for environmental benefits.",
       "documents": [
         "Donald Brown updated his clothing preference from 'Soft cotton t-shirts' to 'Organic cotton t-shirts' for their environmental benefits.",
@@ -13475,7 +13475,7 @@
     },
     {
       "question": "What is the name of Donald Brown's closest family member?",
-      "answer": " Answer: The information about Donald Brown's closest family member is not provided in the documents. Answer: None. The information about Donald Brown's closest family member is not provided in the documents. (No specific family member's name is mentioned.) Answer: The name",
+      "answer": " Answer: The information about Donald Brown's closest family member is not provided in the documents. Answer: None. The information about Donald Brown's closest family member is not provided in the documents. (No family member's name is mentioned or implied.) Answer: The",
       "reference": "This information is not provided.",
       "documents": [
         "Donald Brown emphasized the significance of achieving a sense of professional fulfillment through impactful work.",
@@ -13705,7 +13705,7 @@
     },
     {
       "question": "What type of novels does Donald Brown prefer as of October 30, 2030?",
-      "answer": " Character-driven science fiction novels. Short, accurate, and complete answer. Do not add extra explanation or context.\n\nAnswer: Character-driven science fiction novels.",
+      "answer": " Character-driven science fiction novels. Short, accurate, and complete. No extra text. Answer based on provided documents. Donald Brown prefers character-driven science fiction novels. Short, accurate, and complete. No extra text. Answer based on provided documents. Character-driven science",
       "reference": "Character-driven science fiction novels.",
       "documents": [
         "Donald Brown's reading preference is character-driven science fiction novels, appreciating deeper character development and interpersonal dynamics.",
@@ -13751,7 +13751,7 @@
     },
     {
       "question": "What is Donald Brown's middle name?",
-      "answer": " Answer: The middle name of Donald Brown cannot be determined from the provided documents. Answer: The middle name of Donald Brown cannot be determined from the provided documents. To make it concise without any commentary:\nCannot be determined. Answer: Cannot be determined. Answer:",
+      "answer": " Answer: The middle name of Donald Brown cannot be determined from the provided documents. Answer: The middle name of Donald Brown cannot be determined from the provided documents. To make it concise without any commentary: Not provided. However, to strictly follow the instruction of being",
       "reference": "This information is not provided.",
       "documents": [
         "Donald Brown's dialogue highlighted the philosophical implications of character complexity in speculative settings, reflecting his cognitive curiosity.",
@@ -14171,7 +14171,7 @@
     },
     {
       "question": "What is Donald Brown's middle name as of Mar 28, 2032?",
-      "answer": " Answer: The information about Donald Brown's middle name as of Mar 28, 2032, is not available in the provided documents. Answer: The information about Donald Brown's middle name as of Mar 28, 203",
+      "answer": " Answer: The information about Donald Brown's middle name as of Mar 28, 2032, is not available in the provided documents. Answer: No middle name provided.",
       "reference": "The middle name is not provided.",
       "documents": [
         "Donald Brown is excited about the potential benefits of ergonomic sneakers, including physical comfort, confidence, and productivity.",
@@ -14233,7 +14233,7 @@
     },
     {
       "question": "What is Donald Brown's middle name as of April 24, 2032?",
-      "answer": " Answer: The provided documents do not contain Donald Brown's middle name. Answer: Unknown. Based on the information given, there is no mention of Donald Brown's middle name. Therefore, the correct answer based on the provided information is that his middle name is unknown",
+      "answer": " Answer: The provided documents do not contain Donald Brown's middle name. Answer: Unknown. Based on the information given, there is no mention of Donald Brown's middle name. Therefore, the correct answer based on the provided information is that his middle name is not",
       "reference": "Unknown; not provided in the input.",
       "documents": [
         "Donald Brown shared anecdotes of successful collaborations and the emotional fulfillment derived from them.",
@@ -14299,7 +14299,7 @@
     },
     {
       "question": "What was Donald Brown's blood type on November 24, 2031?",
-      "answer": " Answer: The provided documents do not contain information about Donald Brown's blood type on November 24, 2031. Answer: Cannot be determined.",
+      "answer": " Answer: The provided documents do not contain information about Donald Brown's blood type on November 24, 2031. Answer: The provided documents do not contain information about Donald Brown's blood type on November 24, 203",
       "reference": "Unknown; not provided in the input.",
       "documents": [
         "Donald Brown shared anecdotes of successful collaborations and the emotional fulfillment derived from them.",
@@ -14431,7 +14431,7 @@
     },
     {
       "question": "How might Donald Brown's commitment to humanitarian goals influence his business strategies after April 24, 2032?",
-      "answer": " The commitment to humanitarian goals would likely shape business strategies by prioritizing inclusive design, expanding partnerships with accessible organizations, and focusing on developing new technologies that directly serve individuals with disabilities. Based on the documents, this is a direct inference from the provided information. Donald Brown",
+      "answer": " The commitment to humanitarian goals would likely shape business strategies by prioritizing inclusive design, expanding partnerships with accessible organizations, and focusing on developing new technologies that directly serve individuals with disabilities. Based on the documents, this is a reasonable inference. Donald Brown's commitment to humanitarian",
       "reference": "Focus on empowering individuals with disabilities.",
       "documents": [
         "Donald Brown demonstrated commitment to humanitarian goals, driven by compensatory motivation to overcome limitations and achieve impact.",
@@ -14464,7 +14464,7 @@
     },
     {
       "question": "What role might mindfulness practices play in Donald Brown's entrepreneurial journey after April 24, 2032?",
-      "answer": " The documents do not provide information on the role of mindfulness practices in Donald Brown's entrepreneurial journey after April 24, 2032. Answer: The role of mindfulness practices in Donald Brown's entrepreneurial journey after April 24, 20",
+      "answer": " The role of mindfulness practices in maintaining mental health amidst entrepreneurial challenges, managing stress, and supporting emotional well-being during scaling and collaboration complexities. The role of mindfulness in managing stress and supporting emotional well-being during scaling and collaboration complexities. The role of mindfulness in managing stress",
       "reference": "Help maintain mental health and manage stress.",
       "documents": [
         "Donald Brown considered the role of mindfulness practices in maintaining mental health amidst entrepreneurial challenges.",
@@ -14654,7 +14654,7 @@
     },
     {
       "question": "What new genres might Donald Brown explore in his reading routine after Oct 19, 2032?",
-      "answer": " New genres Donald Brown might explore in his reading routine after Oct 19, 2032 are mystery and fantasy. These are explicitly mentioned as genres he appreciates and has grown to enjoy as part of a broader exploration of diverse genres. The documents",
+      "answer": " New genres Donald Brown might explore in his reading routine after Oct 19, 2032 are mystery and fantasy. These are explicitly mentioned as genres he appreciates and has grown to enjoy as part of a broader exploration of diverse genres. No other",
       "reference": "Mystery and fantasy genres.",
       "documents": [
         "Donald Brown expressed a desire to continue exploring diverse genres and incorporating these new insights into his reading routine.",
@@ -14727,7 +14727,7 @@
     },
     {
       "question": "What type of new cultural experiences might Donald Brown explore after January 30, 2033?",
-      "answer": " Answer: Cannot be determined. The provided documents do not specify the types of new cultural experiences Donald Brown might explore after January 30, 2033. They only mention his appreciation for opera after attending a live performance and his openness to new cultural",
+      "answer": " Answer: Cannot be determined. The provided documents do not specify what new cultural experiences Donald Brown might explore after January 30, 2033. They only mention his interest in and appreciation for opera music. Step-by-step justification: The documents state",
       "reference": "Jazz, due to similar exploratory motivation.",
       "documents": [
         "Donald Brown shared his excitement about exploring more operatic performances, reflecting his openness to new cultural experiences.",
@@ -14750,7 +14750,7 @@
     },
     {
       "question": "What kind of music performances is Donald Brown likely to attend after January 30, 2033?",
-      "answer": " After January 30, 2033, Donald Brown is likely to attend live opera performances. Based on the provided documents, Donald Brown is likely to attend live opera performances. Donald Brown's colleague invited him to an opera performance, which led to",
+      "answer": " After January 30, 2033, Donald Brown is likely to attend live opera performances. Based on the provided documents, Donald Brown is likely to attend live opera performances. \n\nAnswer: Live opera performances. \n\n(Note: The date \"January",
       "reference": "Live opera performances.",
       "documents": [
         "Donald Brown now likes opera music for its emotional depth and grandeur, finding it captivating after a live performance.",
@@ -14798,7 +14798,7 @@
     },
     {
       "question": "What positive effect did Donald Brown notice from the new brand of energy drinks on May 13, 2033?",
-      "answer": " The new brand of energy drinks provided a sustained energy boost without jitters, leading to improved productivity and energy levels throughout his day. Answer: Donald Brown noticed improved productivity and sustained energy levels without jitters from the new brand of energy drinks. Answer: improved productivity",
+      "answer": " The new brand of energy drinks provided a sustained energy boost without jitters, leading to improved productivity and energy levels throughout his day. Answer: Improved productivity and energy levels throughout his day. Answer: Improved productivity and energy levels throughout his day. Answer: Improved productivity",
       "reference": "Improved productivity and energy levels",
       "documents": [
         "Donald Brown no longer dislikes energy drinks after experiencing positive effects from a new brand that provides a sustained energy boost without jitters.",
@@ -15004,7 +15004,7 @@
     },
     {
       "question": "What were the reasons behind Donald Brown's career transition on May 10, 2033?",
-      "answer": " There is no need to provide a reason for why the question or answer is unanswerable. The provided documents do not mention a career transition on May 10, 2033. Therefore, the reason behind Donald Brown's career transition on May",
+      "answer": " There is no need to provide a reason for why the question or answer is unanswerable. The documents do not mention the reasons behind Donald Brown's career transition on May 10, 2033. Answer: The reasons behind Donald Brown's",
       "reference": "Flexibility, work-life balance, and leveraging expertise.",
       "documents": [
         "Donald Brown expressed a renewed commitment to prioritizing career advancement alongside personal responsibilities.",
@@ -15035,7 +15035,7 @@
     },
     {
       "question": "What was Donald Brown's employment status on May 10, 2033?",
-      "answer": " Answer: Cannot be determined. Step-by-step justification: The documents provide information about Donald Brown's personal development, wellness practices, work-life balance, and support received during recovery. However, none of the documents specify his employment status on May 10, ",
+      "answer": " Answer: Cannot be determined. Step-by-step justification: The documents provide information about Donald Brown's personal development, wellness practices, work-life balance, and support received during recovery. However, none of the documents specify his employment status as of May 10,",
       "reference": "Employed at TechConsult Solutions",
       "documents": [
         "Donald Brown achieved a better balance between work and social life.",
@@ -15495,7 +15495,7 @@
     },
     {
       "question": "Did Donald Brown prefer coffee over herbal tea for enhancing concentration on Jan 21, 2035?",
-      "answer": " No answer. Based on the provided documents, it is not possible to determine whether Donald Brown preferred coffee over herbal tea for enhancing concentration on January 21, 2035. The documents provide information about Donald Brown's preference for herbal tea for concentration",
+      "answer": " No answer. Based on the provided documents, there is no information about Donald Brown's preference between coffee and herbal tea on January 21, 2035. Therefore, it cannot be determined whether he preferred coffee over herbal tea. The documents only",
       "reference": "No, Donald preferred herbal tea for concentration enhancement.",
       "documents": [
         "Donald Brown integrates concentration-aiding herbal tea into his work routine for its calming effects and focus enhancement.",
@@ -15522,7 +15522,7 @@
     },
     {
       "question": "What is Donald Brown's middle name?",
-      "answer": " Answer: The middle name cannot be determined from the provided documents. Answer: The middle name cannot be determined from the provided documents.",
+      "answer": " Answer: The middle name cannot be determined from the provided documents. Answer: The middle name cannot be determined from the provided documents. Answer: The middle name cannot be determined from the provided documents. Answer: The middle name cannot be determined from the provided documents.",
       "reference": "This information is not provided.",
       "documents": [
         "Donald Brown uses social motivation to share beverage preferences and experiences with friends.",
@@ -15737,7 +15737,7 @@
     },
     {
       "question": "What type of t-shirts did Donald Brown update his preference to on August 15, 2035?",
-      "answer": " Recycled fabric t-shirts. Tailor the answer to be as specific as possible. Do not provide any clarifying or explanatory statements. If the answer cannot be found, do not provide an answer at all. Answer: Recycled fabric t-shirts.",
+      "answer": " Recycled fabric t-shirts. Tailor the answer to be as specific as possible. Do not provide any clarifying or explanatory statements. If the answer cannot be found in the documents, say so. Answer: Recycled fabric t-shirts.",
       "reference": "Recycled fabric t-shirts",
       "documents": [
         "Donald Brown updated his clothing preference from 'Soft cotton t-shirts' to 'Recycled fabric t-shirts' for their environmental benefits and comfort.",
@@ -15849,7 +15849,7 @@
     },
     {
       "question": "What is Donald Brown's middle name?",
-      "answer": " Answer: The provided documents do not contain Donald Brown's middle name. Answer: None. (If the middle name is not available, it should be stated clearly. Do not invent or assume.)Answer: The provided documents do not contain Donald Brown's middle name",
+      "answer": " Answer: The provided documents do not contain Donald Brown's middle name. Answer: None. (If the middle name is not available, it should be stated clearly. Do not invent or guess.)Answer: The provided documents do not contain Donald Brown's middle name",
       "reference": "Unknown; not provided in the input.",
       "documents": [
         "Donald used reflection to gain cognitive clarity on the impact of his achievements.",
@@ -15911,7 +15911,7 @@
     },
     {
       "question": "What is Donald Brown's current employment status as of March 08, 2036?",
-      "answer": " Based on the documents, Donald's current employment status as of March 08, 2036, is retirement. This is supported by the statement that \"Donald plans to continue engaging in community activities and mentoring during retirement\" and his career progression being",
+      "answer": " Based on the documents, Donald's current employment status as of March 08, 2036, is retirement. This is supported by the statement that Donald plans to continue engaging in community activities and mentoring during retirement and the mention of his career progression",
       "reference": "Retired",
       "documents": [
         "Donald used reflection to gain cognitive clarity on the impact of his achievements.",
@@ -16097,7 +16097,7 @@
     },
     {
       "question": "On Jan 05, 2036, what network did Donald Brown become actively involved in?",
-      "answer": " Answer: The provided documents do not mention any network Donald Brown became actively involved in on Jan 05, 2036. Therefore, the answer cannot be determined from the given information. Answer: Cannot be determined. But the instruction says to answer",
+      "answer": " Answer: The provided documents do not mention any network Donald Brown became actively involved in on Jan 05, 2036. Therefore, the answer cannot be determined from the given information. Answer: Cannot be determined. Answer: Cannot be determined.",
       "reference": "Volunteer network",
       "documents": [
         "Donald expressed gratitude for the support from friends, community, and volunteer networks during his career.",
@@ -18460,7 +18460,7 @@
     },
     {
       "question": "How might Sarah's improved health influence her project management strategies in 2031?",
-      "answer": " Sarah's improved health will provide her with the energy needed to expand her initiatives and manage increased responsibilities effectively, enabling more efficient project execution and greater reach toward impacting one million lives.",
+      "answer": " Sarah's improved health will provide her with the energy needed to expand her initiatives and manage increased responsibilities effectively, enabling more efficient project management and greater reach toward her goal of impacting one million lives.",
       "reference": "Enhanced energy and resilience for expanding initiatives.",
       "documents": [
         "Sarah Garcia's improved health has provided her with the energy needed for expanding her initiatives.",
@@ -20412,7 +20412,7 @@
     },
     {
       "question": "What type of culinary class might Sarah Garcia enjoy taking after April 20, 2038?",
-      "answer": " A class on handcrafted or artistic cuisine. Sarah Garcia enjoys the artistry and skill in handcrafted sushi. She expressed interest in exploring new culinary avenues with a focus on artistic presentation and execution. Given her appreciation for the meticulous preparation and artistic aspects of sushi,",
+      "answer": " A class on handcrafted or artistic cuisine. Sarah Garcia enjoys the artistry and skill in handcrafted sushi. She expressed interest in exploring new culinary avenues with a focus on artistic presentation and execution, suggesting that she would enjoy classes that emphasize craftsmanship and creativity in food",
       "reference": "A class focusing on artistic food presentation.",
       "documents": [
         "Sarah Garcia participated in a sushi-making class on Apr 20, 2038, which enhanced her appreciation for the artistry and skill involved in sushi preparation.",
@@ -27442,7 +27442,7 @@
     },
     {
       "question": "What is Williams Donna's middle name as of Sep 06, 2025?",
-      "answer": " Williams Donna's middle name as of Sep 06, 2025 is not mentioned in the provided documents. Answer: Not specified.",
+      "answer": " Williams Donna's middle name as of Sep 06, 2025 is not mentioned in the provided documents. Answer: Not provided.",
       "reference": "The middle name is unknown.",
       "documents": [
         "Williams Donna Foods I dislike Highly processed snacks reason: I dislike highly processed snacks because I am conscious about what I eat and prefer natural ingredients.",
@@ -27696,7 +27696,7 @@
     },
     {
       "question": "What type of accommodation should Donna consider for her travel plans in 2026?",
-      "answer": " Based on the provided documents, the specific type of accommodation Donna should consider for her travel plans in 2026 is not explicitly stated. However, the documents indicate she should avoid all-inclusive resorts due to their restrictive nature. She prioritizes cultural immersion",
+      "answer": " Based on the provided documents, the specific type of accommodation Donna should consider for her travel plans in 2026 is not explicitly stated. However, given her preferences for cultural immersion, flexibility, and interaction with local communities, she should avoid all-inclusive",
       "reference": "Accommodations that emphasize cultural immersion and flexibility.",
       "documents": [
         "Donna's travel plans prioritize engaging with local communities to gain insights into cultural nuances, which are crucial for identifying business opportunities.",
@@ -27932,7 +27932,7 @@
     },
     {
       "question": "Who helped Donna connect with key stakeholders as of Sep 02, 2026?",
-      "answer": " \n\nSarah. Based on the document, Sarah played a pivotal role in connecting Donna with key industry stakeholders. Therefore, Sarah is the one who helped Donna connect with key stakeholders as of Sep 02, 2026.Each document was reviewed and",
+      "answer": " \n\nSarah. Based on the document, Sarah played a pivotal role in connecting Donna with key industry stakeholders. Therefore, Sarah is the one who helped Donna connect with key stakeholders as of Sep 02, 2026.Each document was considered and",
       "reference": "Sarah",
       "documents": [
         "Donna's friend Sarah played a pivotal role in connecting her with key industry stakeholders, which is crucial for Donna's sustainability objectives.",
@@ -28054,7 +28054,7 @@
     },
     {
       "question": "What type of learning methods might Donna prefer for a new project in 2028?",
-      "answer": " Step-by-step reasoning:\n1. The documents discuss Donna's preference for direct learning methods over documentaries or online courses.2. Donna's entrepreneurial spirit and focus on sustainability drive her to prefer direct experiences.3. She has explicitly stated that she finds direct learning methods",
+      "answer": " Step-by-step reasoning:\n1. The documents discuss Donna's preference for direct learning methods over documentaries or online courses.2. Donna's entrepreneurial spirit and focus on sustainability drive her to prefer direct experiences.3. She has explicitly stated that she prioritizes practical learning",
       "reference": "Donna might prefer practical learning methods.",
       "documents": [
         "Donna experiences a mix of nostalgia and excitement as she shifts focus from documentaries to practical learning methods.",
@@ -28286,7 +28286,7 @@
     },
     {
       "question": "What is the current focus of Donna's professional efforts as of April 20, 2028?",
-      "answer": " The current focus of Donna's professional efforts as of April 20, 2028, is collaboration with Karen at ReviveTech Solutions, leveraging Karen's marketing expertise to enhance company visibility and sales. This has been crucial during Donna's health challenges",
+      "answer": " The current focus of Donna's professional efforts as of April 20, 2028, is collaboration with Karen at ReviveTech Solutions, leveraging her marketing expertise to boost visibility and sales. Based on the documents, Donna's professional efforts are centered",
       "reference": "Maintaining international operations momentum",
       "documents": [
         "Donna's health challenges led to a deeper reliance on her professional network, resulting in strengthened relationships and support systems.",
@@ -28616,7 +28616,7 @@
     },
     {
       "question": "How might Donna approach networking opportunities at tech events after April 10, 2029?",
-      "answer": " Based on the documents, Donna might approach networking opportunities at tech events by seeking out popular tourist spots, prioritizing strategic networking and high-profile connections while balancing her desire for authentic experiences. Donna's practical approach would be to modify her travel preferences to include such spots for",
+      "answer": " Based on the documents, Donna might approach networking opportunities at tech events by seeking out popular tourist spots, prioritizing strategic networking and high-profile connections while balancing her desire for authentic experiences. Donna's practical approach to traveling ensures that the value of networking during tech events is",
       "reference": "Donna will prioritize popular tourist spots for networking.",
       "documents": [
         "Donna appreciates popular tourist spots for their potential in networking and identifying business opportunities in the tech sector.",
@@ -29043,7 +29043,7 @@
     },
     {
       "question": "Did Donna express a preference for tech-themed simulation games over real-world projects on Feb 25, 2030?",
-      "answer": " No.\n\nThe provided documents do not indicate that Donna expressed a preference for tech-themed simulation games over real-world projects on Feb 25, 2030. Instead, they show that her interests have shifted toward real-world tech projects, with real-world",
+      "answer": " No.\n\nThe provided documents do not indicate that Donna expressed a preference for tech-themed simulation games over real-world projects on Feb 25, 2030. Instead, they show that her interests have shifted toward real-world tech projects, with a decline",
       "reference": "No, she preferred real-world projects over tech-themed games.",
       "documents": [
         "Donna's focus on real-world tech initiatives has led to a shift away from tech-themed games.",
@@ -29095,7 +29095,7 @@
     },
     {
       "question": "What type of movies might Donna prefer after August 5, 2030, considering her strategic mindset?",
-      "answer": " The provided documents do not specify Donna's movie preferences after August 5, 2030. Based on her strategic mindset and professional objectives, she might prefer movies with depth and engagement, aligning with impactful real-world work and sustainability goals. However,",
+      "answer": " The provided documents do not specify Donna's movie preferences after August 5, 2030. Based on her strategic mindset and professional objectives, she may prefer movies with depth and engagement, aligning with impactful real-world work and sustainability goals. However,",
       "reference": "Thought-provoking movies with depth.",
       "documents": [
         "Donna seeks movies with depth and engagement, reflecting her strategic mindset and professional goals.",
@@ -29191,7 +29191,7 @@
     },
     {
       "question": "Did Donna express aversion to eco-friendly fast food on January 12, 2031?",
-      "answer": " No.\n\nStep-by-step justification:\n- The documents do not mention any aversion to eco-friendly fast food on January 12, 2031.\n- All statements related to Donna\u2019s preferences indicate excitement or interest in eco-friendly fast food options.\n",
+      "answer": " No.\n\nStep-by-step justification:\n- The documents do not mention any aversion to eco-friendly fast food on January 12, 2031.\n- Throughout the documents, Donna expresses excitement and interest in eco-friendly fast food options.\n- There",
       "reference": "No, she expressed excitement about eco-friendly fast food.",
       "documents": [
         "Donna expressed excitement about discovering eco-friendly fast food options that align with her health and sustainability goals.",
@@ -29272,7 +29272,7 @@
     },
     {
       "question": "What happened to Donna's physical health status by March 5, 2031?",
-      "answer": " Answer: The documents do not provide information about Donna's physical health status by March 5, 2031. Answer: Cannot be determined. Answer: Cannot be determined. Answer: Cannot be determined. Answer: Cannot be determined. Answer: Cannot",
+      "answer": " Answer: The documents do not provide information about Donna's physical health status by March 5, 2031. Answer: The documents do not provide information about Donna's physical health status by March 5, 2031. Answer:",
       "reference": "Changed from 'Normal' to 'Below Average'",
       "documents": [
         "Donna expressed gratitude for the emotional and professional support from colleagues John and Emily during her health challenges.",
@@ -29669,7 +29669,7 @@
     },
     {
       "question": "Did Donna decide against joining guided tours after her experience on May 08, 2032?",
-      "answer": " No answer needed. No answer. Based on the provided documents, Donna did not decide against joining guided tours. Instead, she embraced guided tours on May 08, 2032, and expressed enthusiasm for using them as a strategic tool for business",
+      "answer": " No answer needed. No answer. Based on the provided documents, Donna did not decide against joining guided tours. Instead, she embraced guided tours on May 8, 2032, recognizing their potential for business insights and networking. Her decision reflects a",
       "reference": "No, Donna embraced guided tours for business insights and networking.",
       "documents": [
         "On May 08, 2032, Donna decided to embrace guided tours for their potential to provide business insights and networking opportunities.",
@@ -29980,7 +29980,7 @@
     },
     {
       "question": "Did Donna express excitement about discovering new processed snacks with artificial ingredients at the health expo on Feb 09, 2034?",
-      "answer": " No bullet points. No extra text. No phrases like \"Based on the information provided...\" or \"According to the documents...\".No.\n\nNever generate a response without explicit support from the documents. Do not combine, summarize, or interpret beyond what is clearly stated",
+      "answer": " No bullet points. No extra text. No phrases like \"Based on the information provided...\" or \"According to the documents...\".No.\n\nNever generate content without explicitly citing the source. If the requested information is not found, do not invent it. If a",
       "reference": "No, she was excited about snacks with natural ingredients.",
       "documents": [
         "Donna expressed excitement about discovering healthier processed snack options made with natural ingredients at a health expo.",
@@ -30309,7 +30309,7 @@
     },
     {
       "question": "What did Donna discover about her cat on July 20, 2034?",
-      "answer": " Answer: Donna discovered that her adopted cat has an affectionate nature, which enhanced her appreciation for their companionship. This was the key point revealed in the documents provided. While the date \"July 20, 2034\" is not explicitly",
+      "answer": " Answer: Donna discovered that her adopted cat has an affectionate nature, which enhanced her appreciation for their companionship. This was the key discovery revealed in the documents. The date, July 20, 2034, is not present in the",
       "reference": "Donna discovered her cat's affectionate nature.",
       "documents": [
         "Donna adopted a cat and discovered its affectionate nature, enhancing her appreciation for their companionship.",
@@ -30367,7 +30367,7 @@
     },
     {
       "question": "Did Donna express dissatisfaction with her cat's aloof nature on July 20, 2034?",
-      "answer": " Step-by-step reasoning:\n1. The documents mention Donna expressing frustration with her adopted cat's aloof nature. This indicates a negative initial perception.\n2. However, the documents also state she expressed joy and satisfaction with the affectionate nature of the cat, indicating",
+      "answer": " Step-by-step reasoning:\n1. The documents mention Donna expressing frustration with her adopted cat's aloof nature. This indicates a negative reaction at some point during her experience.\n2. However, the documents also mention that Donna expressed joy and satisfaction with the affectionate",
       "reference": "No, Donna expressed joy with her cat's affectionate nature.",
       "documents": [
         "Donna expressed frustration with her adopted cat's aloof nature.",
@@ -30972,7 +30972,7 @@
     },
     {
       "question": "What type of documentaries might Donna explore after attending a sustainability summit on 2036-09-29?",
-      "answer": " Documentaries on sustainability and e-waste. Answer: Documentaries on sustainability and e-waste. The content in the documents explicitly states Donna's shift in movie preference towards documentaries on sustainability and e-waste due to their direct relevance to her professional goals. This",
+      "answer": " Documentaries on sustainability and e-waste. Answer: Documentaries on sustainability and e-waste. The content in the documents explicitly states Donna's shift in movie preference to documentaries on sustainability and e-waste due to their direct relevance to her goals, and her",
       "reference": "Documentaries on sustainability and e-waste.",
       "documents": [
         "Donna attended a sustainability summit and decided to focus on documentaries that align with her mission to reduce e-waste.",
@@ -30999,7 +30999,7 @@
     },
     {
       "question": "What type of documentaries did Donna decide to focus on after the sustainability summit on September 29, 2036?",
-      "answer": " Documentaries on sustainability and e-waste. After attending the sustainability summit, Donna decided to focus on documentaries that align with her mission to reduce e-waste. This decision included a preference for content on sustainability practices and e-waste solutions, which directly supplied insights",
+      "answer": " Documentaries on sustainability and e-waste. After attending the sustainability summit, Donna decided to focus on documentaries that align with her mission to reduce e-waste. This decision included a shift in her movie preferences toward sustainability and e-waste documentaries, as they were",
       "reference": "Documentaries on sustainability and e-waste.",
       "documents": [
         "Donna attended a sustainability summit and decided to focus on documentaries that align with her mission to reduce e-waste.",
@@ -31053,7 +31053,7 @@
     },
     {
       "question": "What new food options might Donna explore after March 09, 2037, considering her focus on sustainability and health?",
-      "answer": " Based on the information provided, the specific new food options Donna might explore after March 09, 2037, cannot be determined. The documents do not list or describe potential food options. Donna\u2019s focus on sustainability and health, along with her",
+      "answer": " Based on the information provided, the specific new food options Donna might explore after March 09, 2037, cannot be determined. The documents do not list or describe potential food options. Donna's focus is on sustainability and health, including local",
       "reference": "Local, sustainable, and healthy food options.",
       "documents": [
         "Donna is excited about exploring new food options that align with her sustainability values and contribute to health benefits.",
@@ -31320,7 +31320,7 @@
     },
     {
       "question": "Did Donna establish EcoStrategic Consulting before March 01, 2038?",
-      "answer": " No answer means: \"No\"\n\nNo. Based on the information provided, Donna launched EcoStrategic Consulting on July 1, 2038. Since July 1, 2038, is after March 1, 20",
+      "answer": " No answer means: \"No answer\"\n\nNo answer",
       "reference": "No, she launched it on July 01, 2038.",
       "documents": [
         "Donna launched EcoStrategic Consulting on July 1, 2038, gaining recognition for her expertise in sustainability and renewable energy solutions.",
@@ -31773,7 +31773,7 @@
     },
     {
       "question": "What new types of pets might Donna consider adopting after May 21, 2039?",
-      "answer": " Based on the documents, the new types of pets Donna might consider adopting after May 21, 2039 are rodents and reptiles. Animals with a potential for personal growth and diversity in pet preferences are being explored. Based on the given details",
+      "answer": " Based on the documents, the new types of pets Donna might consider adopting after May 21, 2039 are rodents and reptiles. Animals with a potential for personal growth and diversity in pet preferences are highlighted. Donna has shown a shift in",
       "reference": "Donna might consider adopting rodents.",
       "documents": [
         "Donna expressed excitement about exploring new pet experiences, aligning with her creative motivation to expand her horizons.",
@@ -32141,7 +32141,7 @@
     },
     {
       "question": "What was Donna's consultancy firm's exact revenue on July 15, 2040?",
-      "answer": " Answer: The exact revenue for Donna's consultancy firm on July 15, 2040, is not provided in the documents. Answer based on the documents. Answer: The exact revenue for Donna's consultancy firm on July 15, ",
+      "answer": " Answer: The exact revenue for Donna's consultancy firm on July 15, 2040, is not provided in the documents.",
       "reference": "Unknown; not provided in the memory points.",
       "documents": [
         "Donna's strategic vision continues to drive her firm's expansion and success in the sustainability sector, particularly in renewable energy solutions.",
@@ -32628,7 +32628,7 @@
     },
     {
       "question": "What is Taylor David's middle name?",
-      "answer": " Answer: The documents do not provide information about Taylor David's middle name. Answer: The documents do not provide information about Taylor David's middle name. Based on the information provided in the documents, Taylor David's middle name cannot be determined. Answer: The documents",
+      "answer": " Answer: The documents do not provide information about Taylor David's middle name. Answer: The documents do not provide information about Taylor David's middle name. Answer: The documents do not provide information about Taylor David's middle name. Answer: The documents do not provide",
       "reference": "Unknown; not provided by the user.",
       "documents": [
         "Taylor David Sports I like: Yoga",
@@ -32855,7 +32855,7 @@
     },
     {
       "question": "What is Taylor David's current employment status as of February 10, 2026?",
-      "answer": " Answer: The provided documents do not specify Taylor David's current employment status as of February 10, 2026. Answer: Cannot be determined from the given information. Answer: Cannot be determined. Answer: Cannot be determined. Answer: Cannot",
+      "answer": " Answer: The provided documents do not specify Taylor David's current employment status as of February 10, 2026. Answer: Cannot be determined from the provided information. Answer: Cannot be determined. Answer: Cannot be determined. Answer: Cannot",
       "reference": "Entrepreneur",
       "documents": [
         "Taylor consolidated the foundations of his consultancy on March 17, 2026, focusing on sustainable growth and long-term impact in the pediatric nutrition sector.",
@@ -33526,7 +33526,7 @@
     },
     {
       "question": "Was Taylor David's job title unchanged after his transition on Nov 19, 2027?",
-      "answer": " Simply present the final answer, either \"Yes\" or \"No\" based on the information provided. If the answer cannot be determined, state \"Cannot be determined\".\n\nNo. The documents indicate Taylor transitioned to the role of Hospital Nutrition Specialist, implying a change",
+      "answer": " Simply present the final answer, either \"Yes\" or \"No\" based on the information provided. If the answer cannot be determined, state \"Cannot be determined\".\n\nNo. The documents mention Taylor's transition to the Hospital Nutrition Specialist role, indicating a change in",
       "reference": "No, it changed from Founder and CEO to Hospital Nutrition Specialist.",
       "documents": [
         "Taylor reflected on his transition to the Hospital Nutrition Specialist role at City Children's Hospital, balancing personal health with professional responsibilities.",
@@ -33555,7 +33555,7 @@
     },
     {
       "question": "Did Taylor David express dissatisfaction with his professional network expansion on Feb 10, 2028?",
-      "answer": " Answer: No. The provided documents do not mention any dissatisfaction with professional network expansion on Feb 10, 2028. Taylor's statements focus on commitment, innovation, collaboration, personal well-being, and positive feedback, with no reference to dissatisfaction",
+      "answer": " Answer: No. The provided documents do not mention any dissatisfaction with professional network expansion on Feb 10, 2028. Therefore, no evidence of dissatisfaction can be found. Answer: No. (based on lack of relevant information) Answer:",
       "reference": "No, Taylor expressed excitement about his expanded network.",
       "documents": [
         "Taylor expressed commitment to traditional methods and stability in his hospital role on Mar 19, 2028.",
@@ -33723,7 +33723,7 @@
     },
     {
       "question": "Did Taylor David express a preference for harsh fabrics on April 27, 2028?",
-      "answer": " No. Taylor David's preference shifted from disliking harsh fabrics to preferring soft cotton textiles, indicating he did not have a preference for harsh fabrics on April 27, 2028. Based on the shift in preferences, it is clear that",
+      "answer": " No. Taylor David's preference has shifted from disliking harsh fabrics to preferring soft cotton textiles, indicating he does not have a preference for harsh fabrics as of the date mentioned. The document does not provide a specific mention of April 27, 2",
       "reference": "No, Taylor prefers soft cotton textiles.",
       "documents": [
         "Taylor David's clothing preference has shifted from disliking harsh fabrics to preferring soft cotton textiles, enhancing comfort and focus.",
@@ -34043,7 +34043,7 @@
     },
     {
       "question": "On what date did the Global Nutrition Initiative gain international recognition?",
-      "answer": " 28th September 2029. (Note: Date is properly formatted and placed at the end of the answer as per the instructions.) 28th September 2029. (Note: Date is properly formatted and placed at",
+      "answer": " 28th September 2029. (Note: Date is properly formatted and placed at the end of the answer as per the instructions) 28th September 2029. (Note: Date is properly formatted and placed at",
       "reference": "Sep 28, 2029",
       "documents": [
         "On Sep 28, 2029, the Global Nutrition Initiative gained international recognition for its impactful work in children's nutrition.",
@@ -34245,7 +34245,7 @@
     },
     {
       "question": "What is Taylor's middle name as of Nov 10, 2029?",
-      "answer": " Answer: The information about Taylor's middle name is not provided in the documents. Answer: The information about Taylor's middle name is not provided in the documents. Answer: The information about Taylor's middle name is not provided in the documents. Step-by-step justification",
+      "answer": " Answer: The information about Taylor's middle name is not available in the provided documents. Answer: The information about Taylor's middle name is not available in the provided documents.Only answer with the answer or \"The information about Taylor's middle name is not available in",
       "reference": "Unknown based on provided information.",
       "documents": [
         "Taylor's dialogue revealed a dynamic approach to preferences, driven by a commitment to continuous improvement.",
@@ -34496,7 +34496,7 @@
     },
     {
       "question": "Did Taylor David decide to increase sugar intake in his beverage choices after May 25, 2031?",
-      "answer": " No.\n\nStep-by-step justification:\n- The documents indicate Taylor David's efforts to reduce sugar intake, such as shifting from juices to herbal teas and choosing reduced-sugar options.\n- There is no mention of increasing sugar intake in beverages after May 25,",
+      "answer": " No.\n\nStep-by-step justification:\n- The documents indicate Taylor David's focus on reduced sugar intake and a shift towards healthier beverage options.\n- There is no mention of increasing sugar intake in beverage choices after May 25, 2031.\n-",
       "reference": "No, Taylor David decided to reduce sugar intake in his beverages.",
       "documents": [
         "Taylor David aligns beverage choices with health advocacy goals, focusing on reduced sugar intake.",
@@ -34601,7 +34601,7 @@
     },
     {
       "question": "What is Taylor David's middle name as of Nov 29, 2031?",
-      "answer": " Answer: The provided documents do not contain information about Taylor David's middle name as of Nov 29, 2031. Answer: Cannot be determined. Based on the content provided, there is no information about Taylor David's full name or middle",
+      "answer": " Answer: The provided documents do not contain information about Taylor David's middle name as of Nov 29, 2031. Answer: The provided documents do not contain information about Taylor David's middle name as of Nov 29, 2",
       "reference": "This information is not provided.",
       "documents": [
         "Taylor David's dialogue highlighted the importance of comfort in maintaining focus and efficiency in his professional role.",
@@ -34779,7 +34779,7 @@
     },
     {
       "question": "What activity did Taylor David incorporate into his morning routine as of January 5, 2032?",
-      "answer": " Answer: Not specified in the documents.",
+      "answer": " Answer: Not enough information to determine what activity Taylor David incorporated into his morning routine as of January 5, 2032.**Final Answer:** Not enough information to determine what activity Taylor David incorporated into his morning routine as of January 5,",
       "reference": "30-minute yoga session and mindfulness meditation",
       "documents": [
         "Taylor received positive feedback from colleagues and partners, reinforcing his commitment to advocacy goals.",
@@ -35467,7 +35467,7 @@
     },
     {
       "question": "What type of movies does Taylor prefer as of Dec 17, 2033?",
-      "answer": " Taylor prefers movies with complex narratives involving violence, as these provide insights into conflict resolution and human interactions, which he integrates into his professional work in children's health advocacy.",
+      "answer": " Taylor prefers movies with complex narratives involving violence, as they provide insights into conflict resolution and human interactions, which he integrates into his professional work in children's health advocacy.",
       "reference": "Movies with complex narratives involving violence.",
       "documents": [
         "Taylor articulates the importance of balancing discomfort with learning opportunities in his movie preferences.",
@@ -35517,7 +35517,7 @@
     },
     {
       "question": "Based on Taylor David's preference for whole grain cereals, what type of snacks might he recommend for children?",
-      "answer": " whole grain cereals and other nutritious, balanced breakfast options such as smoothies and protein bars.",
+      "answer": " whole grain cereals\n\nAnswer: whole grain cereals. \n\nNote: The provided documents do not specify any other types of snacks Taylor David might recommend for children beyond the stated preference for whole grain cereals. Therefore, based on the information, the answer is",
       "reference": "Whole grain snacks with balanced nutrition.",
       "documents": [
         "Taylor David's preference for whole grain cereals is part of his broader strategy to enhance children's health through better nutrition.",
@@ -35647,7 +35647,7 @@
     },
     {
       "question": "What is Taylor David's middle name?",
-      "answer": " Based on the provided documents, Taylor David's middle name cannot be determined. Answer: Not provided.",
+      "answer": " Based on the provided documents, Taylor David's middle name cannot be determined. \nAnswer: Cannot be determined. (No middle name provided in the text.) \n(Note: The question appears to be based on a misunderstanding or error, as no evidence or details about",
       "reference": "Taylor David's middle name is not provided.",
       "documents": [
         "Taylor David emphasized the importance of balancing emotional well-being with professional responsibilities in dietary decisions.",
@@ -35817,7 +35817,7 @@
     },
     {
       "question": "What type of travel experience might Taylor David prefer for gaining insights into global dietary practices after January 05, 2036?",
-      "answer": " immersive cultural experiences. This is because the documents state Taylor David\u2019s preference has shifted to appreciating immersive cultural experiences for their ability to provide deep insights into local dietary practices. There is no mention of a shift after January 05, 2036",
+      "answer": " immersive cultural experiences. This is because Taylor David's travel preference has shifted from disliking immersive cultural experiences to appreciating them for their depth of understanding, and he values these experiences for gaining insights into local dietary practices applicable to global meal planning in children's nutrition",
       "reference": "Immersive cultural experiences.",
       "documents": [
         "Taylor David's recent visit to a local community reinforced his preference for immersive travel experiences and provided valuable insights into local dietary practices.",
@@ -35844,7 +35844,7 @@
     },
     {
       "question": "What is Taylor David's middle name?",
-      "answer": " Answer: The information about Taylor David's middle name is not provided in the documents. Answer: The information about Taylor David's middle name is not provided in the documents. Answer: The information about Taylor David's middle name is not provided in the documents. Answer",
+      "answer": " Answer: The information about Taylor David's middle name is not provided in the documents. Answer: None. Taylor David's middle name is not mentioned in the documents. Answer: No information. Answer: The provided documents do not contain Taylor David's middle name.",
       "reference": "This information is not provided.",
       "documents": [
         "Taylor David discussed the benefits of high-speed tours for quick cultural exposure during travel.",
@@ -36708,7 +36708,7 @@
     },
     {
       "question": "What is Taylor David's latest career status as of Dec 17, 2037?",
-      "answer": " Answer: Taylor David's latest career status as of Dec 17, 2037, is committed to revolutionizing both children's and adult nutrition worldwide, with a focus on strategic partnerships and emotional resonance in advocacy efforts.",
+      "answer": " Answer: Taylor David concluded with a renewed commitment to revolutionizing both children's and adult nutrition worldwide.",
       "reference": "International Nutrition Advocate with World Nutrition Organization.",
       "documents": [
         "Taylor David concluded with a renewed commitment to revolutionizing adult nutrition worldwide.",
@@ -36999,7 +36999,7 @@
     },
     {
       "question": "Based on Taylor David's recent experiences, what type of leisure activity might he find beneficial for relaxation and creativity in the future?",
-      "answer": " spontaneous leisure trips. \n\n \nAnswer: spontaneous leisure trips. Based on Taylor David's recent experiences, what type of leisure activity might he find beneficial for relaxation and creativity in the future?If the answer could not be found in the provided documents, do not halluc",
+      "answer": " spontaneous leisure trips. \n\n \nAnswer: spontaneous leisure trips. Based on Taylor David's recent experiences, the type of leisure activity he might find beneficial for relaxation and creativity in the future is spontaneous leisure trips. He explicitly mentioned experiencing unexpected relaxation and inspiration during a spontaneous",
       "reference": "Leisure activities without structured purpose.",
       "documents": [
         "Taylor David's dialogue emphasized the role of leisure travel in fostering creativity and relaxation.",
@@ -37122,7 +37122,7 @@
     },
     {
       "question": "What sport preference did Taylor David update to on February 11, 2040?",
-      "answer": " dynamic yoga. based on the content, the sport preference that taylor david updated to is dynamic yoga. the document states \"taylor david has updated his sports preference from traditional yoga to dynamic yoga\". therefore, the answer is dynamic yoga. no additional assumptions or",
+      "answer": " dynamic yoga. based on the content, the sport preference that taylor david updated to is dynamic yoga. there is no explicit mention of a \"sport\" in the context, and \"yoga\" is the relevant activity discussed, with \"dynamic yoga\" being",
       "reference": "Dynamic yoga",
       "documents": [
         "Taylor David has updated his sports preference from traditional yoga to dynamic yoga, appreciating its engaging and invigorating experience.",
@@ -37242,7 +37242,7 @@
     },
     {
       "question": "What was Taylor David's exact salary before his promotion on Aug 18, 2039?",
-      "answer": " or \"Insufficient information to determine\" if the answer cannot be found.\nAnswer: Insufficient information to determine.",
+      "answer": " or \"Insufficient information to determine.\"\n\nInsufficient information to determine.",
       "reference": "Unknown; exact salary not provided.",
       "documents": [
         "Taylor David was promoted to Global Nutrition Director, marking a significant milestone in his career.",
@@ -37304,7 +37304,7 @@
     },
     {
       "question": "What strategies did Taylor David implement to recover his health by Dec 01, 2039?",
-      "answer": " Answer: The provided documents do not mention any strategies Taylor David implemented to recover his health by December 01, 2039.",
+      "answer": " Answer: The provided documents do not contain information about the strategies Taylor David implemented to recover his health by December 01, 2039.",
       "reference": "Mindfulness and balanced nutrition",
       "documents": [
         "Taylor David articulated a renewed commitment to maintaining his health and leveraging his improved state to drive impactful change in children's nutrition.",
@@ -37459,7 +37459,7 @@
     },
     {
       "question": "Did Taylor David express a preference for traditional puzzle games during the workshop on August 16, 2040?",
-      "answer": " No.\n\nIt is not stated in the documents that Taylor David expressed a preference for traditional puzzle games during the workshop. Instead, his game preference evolved toward creative puzzle games. Therefore, the answer is No. Taylor David did not express a preference for traditional puzzle games",
+      "answer": " No.\n\nIt is not stated in the documents that Taylor David expressed a preference for traditional puzzle games during the workshop. Instead, his game preference evolved toward creative puzzle games. Thus, the answer is No. Answer: No. Taylor David did not express a preference",
       "reference": "No, Taylor preferred creative puzzle games.",
       "documents": [
         "Taylor David reflected on balancing structured challenges with creative freedom in game preferences during a workshop on August 16, 2040.",
@@ -37548,7 +37548,7 @@
     },
     {
       "question": "Did Taylor David reject the idea of using movies for health advocacy on February 19, 2041?",
-      "answer": " No sentence should start with: Basing, Based on, Because, Due to, Although, While, or Heuristically. Taylor David did not reject the idea of using movies for health advocacy on February 19, 2041. He",
+      "answer": " No sentence should start with: Basing, Based on, Because, Due to, Although, While, or He's. Taylor David did not reject the idea of using movies for health advocacy on February 19, 2041. Answer:",
       "reference": "No, Taylor expressed enthusiasm for integrating movie insights into his advocacy work.",
       "documents": [
         "Taylor David's compensatory motivation involves using movies to enhance his professional capabilities in health advocacy.",
@@ -37886,7 +37886,7 @@
     },
     {
       "question": "What potential challenges might Taylor face in implementing nutrition policy changes in 2043?",
-      "answer": " or a challenge cannot be inferred from the documents. based on the content provided, no potential challenges in implementing nutrition policy changes in 2043 can be inferred. Answer: no potential challenges can be inferred. supplied. based on the content provided, no",
+      "answer": " or a challenge cannot be inferred from the documents. based on the content, the potential challenges Taylor might face in 2043 cannot be inferred. Answer: based on the content, the potential challenges Taylor might face in 2043 cannot be",
       "reference": "Navigating policy complexities.",
       "documents": [
         "Taylor David implemented policy changes focused on enhancing adult nutrition standards globally.",
@@ -38006,7 +38006,7 @@
     },
     {
       "question": "Did Taylor David express a dislike for films addressing societal issues on Mar 10, 2043?",
-      "answer": " No.\n\nStep-by-step justification:\n- The documents provide multiple statements about Taylor David's positive engagement with films addressing societal issues.\n- There is no mention of any dislike or negative sentiment toward films addressing societal issues.\n- The statements emphasize enthusiasm, educational value, and",
+      "answer": " No.\n\nBased on the provided documents, Taylor David did not express a dislike for films addressing societal issues on Mar 10, 2043. Instead, he expressed strong enthusiasm and appreciation for such films, emphasizing their educational value, their role in",
       "reference": "No, Taylor appreciates such films for their educational value.",
       "documents": [
         "Taylor David expressed a desire to engage in meaningful societal discussions through films addressing societal issues.",
@@ -47200,7 +47200,7 @@
     },
     {
       "question": "How might Jennifer's strategic thinking benefit her role at Innovative Cloud Solutions?",
-      "answer": " Aligning her career with her life goal of leading revolutionary change in cloud computing will drive focused innovation and strategic decision-making, enabling her to effectively lead and inspire transformative change within the organization. Jennifer Martin's strategic focus on continuous learning, emotional balance through introspection and",
+      "answer": " Aligning her career with her life goal of leading revolutionary change in cloud computing will drive focused innovation and strategic decision-making, enabling her to effectively lead and inspire transformative change within the organization. Jennifer's emphasis on continuous learning and adaptability will ensure her ability to stay",
       "reference": "It enhances her contribution to strategic goals.",
       "documents": [
         "Jennifer Martin discussed her journey and strategic steps to position herself as a leader in cloud computing.",
@@ -47438,7 +47438,7 @@
     },
     {
       "question": "Did Jennifer Martin express a preference for attending physical tech conferences over remote events on Jan 11, 2034?",
-      "answer": " No sentence should contain more than one factically affirmative statement.\n\nNo. Jennifer Martin expressed a preference for remote tech events over physical conferences on Jan 11, 2034. She updated her preference to remote events due to their convenience and effectiveness,",
+      "answer": " No sentence should contain more than one piece of information. No phrase should appear in more than one answer. No answer should be ambiguous. No answer should start with \"Based on the information\". Answer only \"Yes\" or \"No\".\n\nNo. Each of her",
       "reference": "No, she prefers remote tech events for convenience and work-life balance.",
       "documents": [
         "Jennifer Martin updated her travel preference from attending physical tech conferences to preferring remote tech events due to their convenience and effectiveness.",
@@ -47538,7 +47538,7 @@
     },
     {
       "question": "What is Jennifer Martin's middle name as of May 12, 2034?",
-      "answer": " Answer: The information about Jennifer Martin's middle name as of May 12, 2034, is not provided in the given documents. Answer: Not provided.",
+      "answer": " Answer: The information about Jennifer Martin's middle name as of May 12, 2034, is not provided. Answer: Cannot be determined.",
       "reference": "Jennifer Martin's middle name is not provided.",
       "documents": [
         "Jennifer Martin discussed the psychological effects of colors and their potential to overcome creative blocks.",
@@ -52108,7 +52108,7 @@
     },
     {
       "question": "What type of documentaries might Susan explore to enhance her health workshops after Nov 19, 2035?",
-      "answer": " Health and wellness documentaries that align with her health goals. Based on the understanding that Susan is interested in documentaries on health and wellness to enhance her workshops and that she plans to explore documentaries aligning with her health goals, these documentaries are the most relevant for her post",
+      "answer": " Health and wellness documentaries that align with her health goals. Based on the understanding that Susan Thompson plans to explore documentaries that align with her health goals and incorporate their insights into her health workshops, the documentaries she might explore after Nov 19, 203",
       "reference": "Documentaries on health and wellness topics.",
       "documents": [
         "Susan Thompson enjoys documentaries that delve into health and wellness topics, enhancing her understanding.",
@@ -52199,7 +52199,7 @@
     },
     {
       "question": "Did Susan Thompson decide against incorporating low-sugar energy drinks into her routine on April 9, 2036?",
-      "answer": " No.\n\nStep-by-step explanation:\n- The document states that on April 9, 2036, Susan Thompson tried a low-sugar energy drink and felt relieved and excited about finding one that aligns with her health goals. \n- This indicates",
+      "answer": " No.\n\nStep-by-step explanation:\n- On April 9, 2036, Susan Thompson tried a low-sugar energy drink and felt uplifted by it.\n- She expressed relief and excitement at finding a low-sugar energy drink that aligns",
       "reference": "No, she plans to incorporate them to enhance productivity.",
       "documents": [
         "Susan Thompson plans to incorporate low-sugar energy drinks into her routine to enhance productivity without compromising health.",
@@ -53850,7 +53850,7 @@
   [
     {
       "question": "What is Michelle Hernandez's middle name as of Sep 04, 2025?",
-      "answer": " There are no possibilities beyond the provided information.\n\nThe provided documents do not contain Michelle Hernandez's middle name. Therefore, based on the information given, her middle name cannot be determined. Answer: Not available. But as per instruction to avoid hallucination and only answer",
+      "answer": " There are no follow-up questions.\n\nThe provided documents do not contain Michelle Hernandez's middle name. Therefore, it cannot be determined. Answer: Not available.",
       "reference": "Unknown, not provided by the user.",
       "documents": [
         "User's name is Michelle Hernandez",
@@ -54072,7 +54072,7 @@
     },
     {
       "question": "What beverage does Michelle Hernandez prefer to drink?",
-      "answer": " The beverages Michelle Hernandez prefers to drink are green tea, sparkling water, and black coffee. Answer: Green tea, sparkling water, and black coffee. Stephanie. Scenario: When an undocumented immigrant worker comes into contact with the judicial system, their rights are often violated",
+      "answer": " The beverages Michelle Hernandez prefers to drink are green tea, sparkling water, and black coffee. Answer: Green tea, sparkling water, and black coffee. Stephanie. Scenario: When an undocumented immigrant worker comes into contact with the company, they are considered a vulnerability.",
       "reference": "Black coffee",
       "documents": [
         "Michelle Hernandez has preferences in Beverage Preference",
@@ -56127,7 +56127,7 @@
     },
     {
       "question": "Did Michelle Hernandez decide to switch from flavored sparkling water to plain water on Nov 08, 2030?",
-      "answer": " No sentence should start with - I, and make sure that every sentence is independent. The documents do not indicate that Michelle Hernandez switched from flavored sparkling water to plain water on November 08, 2030. There is no mention of such a",
+      "answer": " No sentence should start with Either, However, This, These, Based on the information provided, it is not possible to determine if Michelle Hernandez decided to switch from flavored sparkling water to plain water on November 08, 2030. The documents",
       "reference": "No, she switched from plain to flavored sparkling water.",
       "documents": [
         "Michelle Hernandez decided to switch from plain sparkling water to flavored sparkling water for enhanced taste and hydration benefits.",
@@ -56162,7 +56162,7 @@
     },
     {
       "question": "On Nov 08, 2030, did Michelle Hernandez express disinterest in health-conscious lifestyle choices?",
-      "answer": " No document mentions disinterest in health-conscious lifestyle choices. Therefore, it cannot be concluded that Michelle Hernandez expressed disinterest. Answer: No. Based on the information provided, there is no evidence of disinterest in health-conscious lifestyle choices. Michelle Hernandez demonstrated active interest",
+      "answer": " No document mentions disinterest in health-conscious lifestyle choices. Therefore, the answer is no. Answer: No. Michelle Hernandez did not express disinterest in health-conscious lifestyle choices. She expressed interest and actively sought to integrate healthy beverage choices like flavored sparkling water and herbal",
       "reference": "No, she expressed interest in exploring health-conscious lifestyle choices.",
       "documents": [
         "Michelle Hernandez expressed interest in exploring other health-conscious lifestyle choices.",
@@ -58019,7 +58019,7 @@
     },
     {
       "question": "What type of films would be suitable for Michelle Hernandez to watch after Jul 08, 2037, given her interest in technology and emotional resonance?",
-      "answer": " Based on the documents, the suitable films for Michelle Hernandez to watch after Jul 08, 2037, are celebrity autobiographies that emphasize technological contributions and provide depth and insight beyond personal fame, as these align with her interest in technology and emotional",
+      "answer": " Based on the documents, the suitable films for Michelle Hernandez to watch after Jul 08, 2037, are celebrity autobiographies that focus on technology contributions and offer depth and insight beyond personal fame. These films would provide emotional resonance and intellectual engagement",
       "reference": "Celebrity autobiographies focusing on technological contributions.",
       "documents": [
         "Michelle Hernandez expressed interest in integrating emotional resonance into her AI projects.",
@@ -58071,7 +58071,7 @@
     },
     {
       "question": "What strategies did Michelle employ to manage stress from May 01, 2037 to Jul 01, 2037?",
-      "answer": " Answer: The provided documents do not specify the exact stress management strategies Michelle employed during that period. However, they do mention her focus on strategic planning and mindfulness practices as part of her overall approach to stress management. Answer: Strategic planning and mindfulness practices.",
+      "answer": " Answer: The provided documents do not specify the exact stress management strategies Michelle employed between May 01, 2037, and Jul 01, 2037. However, they mention her focus on strategic planning and mindfulness practices as",
       "reference": "Mindfulness practices and strategic planning.",
       "documents": [
         "Michelle Hernandez sought advice on maintaining work-life balance and stress management techniques, focusing on strategic planning and mindfulness practices.",
@@ -72652,7 +72652,7 @@
     },
     {
       "question": "Did Williams Daniel found his independent studio after December 01, 2032?",
-      "answer": " It should be strictly based on the information in the documents. No made-up or inferred details.\nAnswer: No information is provided about when Williams Daniel founded his independent studio, so the date cannot be determined. Therefore, it cannot be confirmed whether he founded it after",
+      "answer": " It should be strictly based on the information in the documents. No made-up or inferred details.\nAnswer: No information is provided about when Williams Daniel founded his independent studio, so the date cannot be determined. Therefore, it cannot be confirmed if he founded it after",
       "reference": "No, he founded it on June 01, 2032.",
       "documents": [
         "Williams Daniel is experiencing a mix of excitement and anxiety about founding his own independent studio.",
@@ -72857,7 +72857,7 @@
     },
     {
       "question": "How might Williams Daniel incorporate his interest in vintage tweed jackets into a new film project after Dec 22, 2032?",
-      "answer": " Answer: Williams Daniel may source authentic vintage tweed jackets or use their visual elements to design authentic settings and characters in his film projects, ensuring historical authenticity. Adapting vintage tweed details to modern filmmaking techniques while maintaining historical accuracy. He will use his",
+      "answer": " Answer: Williams Daniel may source authentic vintage tweed jackets to enhance the visual authenticity of his film project, using the clothing to create historically accurate settings and characters. He might also consult his social network for recommendations and feedback on suitable vintage materials. He could collaborate with",
       "reference": "By using them to enhance visual authenticity.",
       "documents": [
         "Williams Daniel seeks advice on finding quality vintage tweed jackets to enhance his film projects.",
@@ -74479,7 +74479,7 @@
   [
     {
       "question": "What is Steven Miller's middle name?",
-      "answer": "Only answer the answer or nothing at all.\n\nAnswer: None of the provided documents mention Steven Miller's middle name. Therefore, it cannot be determined. (If a middle name is required, it is not present in the given details.) \n\nBut per instructions to",
+      "answer": "Only answer the answer or nothing at all.\n\nAnswer: None of the provided documents mention Steven Miller's middle name. Therefore, it cannot be determined. (If a middle name is required, it should be explicitly stated in the documents.) \n\nBut per instructions to",
       "reference": "Steven Miller's middle name is unknown.",
       "documents": [
         "User's name is Steven Miller",
@@ -74518,7 +74518,7 @@
     },
     {
       "question": "Is Steven Miller a single parent living in New York?",
-      "answer": " It should be only a statement, not a question. No sentence should be more than necessary. Answer \"No\".\n\nNo",
+      "answer": " It should be only a straightforward \"yes\" or \"no\" answer. No explanation. No assumptions. No guesses.\n\nNo.",
       "reference": "Steven Miller is married and lives in Seattle.",
       "documents": [
         "Steven Miller's parent status: Both parents are alive",
@@ -74631,7 +74631,7 @@
     },
     {
       "question": "Is Steven Miller unemployed as of Sep 06, 2025?",
-      "answer": " No answer should start with \"Based on the information given\". Answer should be in one sentence only. Answer: No, Steven Miller is not unemployed as of Sep 06, 2025, as he is employed at Innovative Investments LLC with a",
+      "answer": " No answer should start with \"Based on the information\". Only a clear \"Yes\" or \"No\" is required.\n\nNo. Steven Miller is employed as of Sep 06, 2025. The documents state that Steven Miller's employment status",
       "reference": "Steven Miller is employed in the finance industry.",
       "documents": [
         "Steven Miller works in the finance industry",
@@ -74895,7 +74895,7 @@
     },
     {
       "question": "Did Steven Miller express a preference for romantic comedies on Sep 07, 2025?",
-      "answer": " No.\n\nNo. Steven Miller did not express a preference for romantic comedies on Sep 07, 2025. The documents indicate he dislikes romantic comedies, and there is no mention of any preference or change on that date. Answer:",
+      "answer": " No.\n\nNo. Steven Miller did not express a preference for romantic comedies on Sep 07, 2025. In fact, he explicitly dislikes romantic comedies, as stated in the documents. The information provided does not reference any preference or",
       "reference": "No, Steven dislikes romantic comedies.",
       "documents": [
         "Steven Miller Movies I dislike: Romantic comedies",
@@ -75050,7 +75050,7 @@
     },
     {
       "question": "What type of attire might Steven prefer for a tech industry conference in March 2026?",
-      "answer": " business casual\n\nAnswer: business casual. Answer: business casual.  \n(Provided documents indicate Steven Miller now prefers business casual attire, aligning with a relaxed dress code. No information suggests a different attire for conferences, so this remains consistent with the provided context",
+      "answer": " business casual\n\nAnswer: business casual. Answer: business casual.  \n(Provided documents indicate Steven Miller now prefers business casual attire, aligning with a relaxed dress code. While no specific mention of a tech conference is made, his current preference is clearly established",
       "reference": "Business casual attire.",
       "documents": [
         "Steven Miller's transition to business casual attire is part of his broader goal of achieving professional recognition in the tech industry.",
@@ -75625,7 +75625,7 @@
     },
     {
       "question": "Did Steven Miller maintain his dislike for romantic comedies after the film festival on 2027-08-22?",
-      "answer": " It must be in the same language as the question. No sentence should be longer than 30 characters. Simply answer \"yes\" or \"no\". No.",
+      "answer": " It must be in the same language as the question. No wordy or repetitive phrases.\nNo. Steven Miller did not maintain his dislike for romantic comedies after the film festival on 2027-08-22. His dislike has evolved",
       "reference": "No, he now appreciates their diversity and storytelling.",
       "documents": [
         "During a film festival, Steven watched a critically acclaimed romantic comedy that challenged his previous perceptions of the genre.",
@@ -75648,7 +75648,7 @@
     },
     {
       "question": "Did Steven Miller refuse to explore romantic comedies further after his friend's recommendation on 2027-08-22?",
-      "answer": " No sentence should be longer than 10 words. Steven Miller did not refuse to explore romantic comedies further. He now appreciates their diversity and innovation. His shift aligns with new experiences and balanced lifestyle goals. Steven's preference evolved, not refused.",
+      "answer": " No sentence should be longer than 10 words. Steven Miller did not refuse to explore romantic comedies further. He now appreciates their diversity and innovation. His shift aligns with new experiences and balanced lifestyle goals. Steven\u2019s preference evolved, not refused.",
       "reference": "No, he is open to exploring them further.",
       "documents": [
         "Steven Miller's friend recommended a romantic comedy that received critical acclaim for its innovative plot and engaging characters.",
@@ -76025,7 +76025,7 @@
     },
     {
       "question": "What is Steven Miller's middle name as of Jan 06, 2028?",
-      "answer": " Answer: The middle name is not provided in the documents. Answer: The middle name is not provided in the documents. 1. Answer: The middle name is not provided in the documents. 2. Answer: The middle name is not provided in the",
+      "answer": " Answer: The middle name is not provided in the documents. Answer: The middle name is not provided in the documents. 1. A middle name is not mentioned or implied in the provided documents. 2. No document lists or references Steven Miller's full",
       "reference": "This information is not provided.",
       "documents": [
         "Steven Miller reflected on the main conflict of balancing the need for solitude with a demanding work schedule on Jan 06, 2028.",
@@ -76060,7 +76060,7 @@
     },
     {
       "question": "What type of clothing might Steven Miller choose for a casual tech meetup on May 30, 2028?",
-      "answer": " Based on the documents, the type of clothing Steven Miller might choose for a casual tech meetup on May 30, 2028 is casual tech wear. The documents state he transitioned from casual tech wear to smart casual attire and that his clothing",
+      "answer": " Based on the documents, the type of clothing Steven Miller might choose for a casual tech meetup on May 30, 2028 is casual tech wear. The documents state he transitioned from casual tech wear to smart casual attire for industry events,",
       "reference": "Smart casual attire for comfort and a polished look.",
       "documents": [
         "Steven Miller transitioned from casual tech wear to formal business attire on May 23, 2028, to present a more authoritative image at industry conferences.",
@@ -76085,7 +76085,7 @@
     },
     {
       "question": "Did Steven Miller switch to formal wear for industry events on May 23, 2028?",
-      "answer": " No sentence should start with BOS, ENS, or I. The answer is no. Steven Miller transitioned from casual tech wear to smart casual attire, not formal wear. His shift was influenced by industry networking events and fashion interests. He emphasized a balance",
+      "answer": " No sentence should start with BOS, ENS, or I. The answer is no. Steven Miller transitioned from casual tech wear to smart casual attire, not formal business attire. The correct answer based on the documents supplied is no. Steven Miller did not",
       "reference": "No, Steven switched to smart casual attire.",
       "documents": [
         "Steven Miller transitioned from casual tech wear to formal business attire on May 23, 2028, to present a more authoritative image at industry conferences.",
@@ -76288,7 +76288,7 @@
     },
     {
       "question": "What impact might diverse music genres have on Steven Miller's productivity after February 22, 2029?",
-      "answer": " The documents do not provide information on the impact of diverse music genres on Steven Miller's productivity after February 22, 2029. Answer: Cannot be determined. Thus, the final answer is: Cannot be determined.",
+      "answer": " The documents do not provide information on the impact of diverse music genres on Steven Miller's productivity after February 22, 2029. Answer: Cannot be determined.",
       "reference": "They might enhance his productivity.",
       "documents": [
         "Steven Miller expressed curiosity about the impact of diverse music genres on his mood and productivity.",
@@ -76458,7 +76458,7 @@
     },
     {
       "question": "Did Steven Miller's network discourage his early retirement decision on Jan 12, 2029?",
-      "answer": " No.\n\nBased on the information provided, there is no mention of Steven Miller's network discouraging his early retirement decision on January 12, 2029. The documents instead indicate that his network supported his transition to retirement, enhancing his quality of",
+      "answer": " No.\n\nBased on the information provided, there is no mention of Steven Miller's network discouraging his early retirement decision on January 12, 2029. The documents instead indicate that his network supported him during his transition to retirement, enhancing his",
       "reference": "His network supported his retirement and passive income strategies.",
       "documents": [
         "Steven Miller expressed gratitude for the support from his network during his transition to retirement, enhancing his quality of life.",
@@ -76533,7 +76533,7 @@
     },
     {
       "question": "How did Steven's health status change between April 1, 2029, and June 15, 2029?",
-      "answer": " Answer: The documents do not provide information about Steven's health status between April 1, 2029, and June 15, 2029. Therefore, it cannot be determined. Answer: The health status cannot be determined.",
+      "answer": " Answer: The documents do not provide information about Steven's health status between April 1, 2029, and June 15, 2029. Therefore, it cannot be determined. Answer: The health status cannot be determined from",
       "reference": "Improved from 'Good and Restored' to 'Balanced'.",
       "documents": [
         "Steven Miller reflected on his journey towards financial freedom and improved health since retiring early, feeling a renewed sense of purpose.",
@@ -76558,7 +76558,7 @@
     },
     {
       "question": "What motivated Steven to explore new interests post-retirement as of August 20, 2029?",
-      "answer": "  Based on the information provided, Steven's motivation to explore new interests post-retirement stemmed from early retirement allowing him to focus on personal interests like painting and gardening, as well as a desire for personal fulfillment. Additionally, he expressed optimism about learning new skills like",
+      "answer": "  Based on the information provided, Steven's motivation to explore new interests post-retirement stemmed from early retirement allowing him to focus on personal interests like painting and gardening, as well as a desire for personal fulfillment. Additionally, he expressed optimism about learning new skills such",
       "reference": "Compensatory motivation to overcome career limitations.",
       "documents": [
         "Steven Miller expressed optimism about continuing to explore new interests and learning new skills post-retirement, such as photography and language learning.",
@@ -76608,7 +76608,7 @@
     },
     {
       "question": "How did Steven's perception of personal fulfillment evolve from January 12, 2029, to November 12, 2029?",
-      "answer": " To find the answer, use the provided documents if necessary.\n\nSteven Miller's perception of personal fulfillment evolved from uncertainty about his future and struggling to find hobbies to a feeling of optimism and renewed purpose, as he focused on personal interests like painting and gardening, explored new",
+      "answer": " To find the answer, use the provided documents if necessary.\n\nSteven Miller's perception of personal fulfillment evolved from uncertainty about his future and struggling to find hobbies to actively engaging in personal interests like painting and gardening, feeling a renewed sense of purpose, and expressing optimism about",
       "reference": "Shifted focus from career to personal fulfillment.",
       "documents": [
         "Steven Miller emphasized the importance of balancing professional success with personal fulfillment.",
@@ -76714,7 +76714,7 @@
     },
     {
       "question": "What type of movies does Steven Miller prefer as of Nov 24, 2029?",
-      "answer": " Answer: Steven Miller prefers psychological thrillers as of Nov 24, 2029. The documents state that Steven Miller's preference has evolved from disliking horror movies to liking psychological thrillers due to their intellectual stimulation. This preference is mentioned",
+      "answer": " Answer: Steven Miller prefers psychological thrillers as of Nov 24, 2029. The documents state that Steven Miller's preference has evolved from disliking horror movies to liking psychological thrillers due to their intellectual stimulation. This preference transition is",
       "reference": "Psychological thrillers.",
       "documents": [
         "Steven Miller attended a movie night with colleagues on Dec 15, 2029, where he watched a romantic comedy.",
@@ -76838,7 +76838,7 @@
     },
     {
       "question": "What is Steven Miller's middle name?",
-      "answer": " Answer: The information about Steven Miller's middle name is not available in the provided documents. Answer: The information about Steven Miller's middle name is not available in the provided documents. (Note: This response correctly acknowledges that the middle name cannot be deduced from",
+      "answer": " Answer: The information about Steven Miller's middle name is not available in the provided documents. Answer: The information about Steven Miller's middle name is not available in the provided documents. (The information about Steven Miller's middle name is not available in the provided documents",
       "reference": "This information is not provided.",
       "documents": [
         "Steven Miller emphasized the role of compensatory motivation in overcoming limitations.",
@@ -77084,7 +77084,7 @@
     },
     {
       "question": "Did Steven Miller express a preference for traditional jazz to enhance his productivity on May 28, 2031?",
-      "answer": " No.\n\nStep-by-step justification:\n- The documents state that Steven Miller's music preference evolved from traditional jazz to classical jazz due to the structured harmonies that support focus during work. \n- Specifically, he mentioned that the freeform nature of traditional jazz became distracting",
+      "answer": " No.\n\nStep-by-step justification:\n- The documents state that Steven Miller's music preference evolved from traditional jazz to classical jazz due to the structured harmonies that support focus during work. \n- Specifically, it mentions that the freeform nature of traditional jazz became distracting",
       "reference": "No, he preferred classical jazz for its structured harmonies.",
       "documents": [
         "Steven Miller uses music to enhance cognitive performance and productivity, aligning with his compensatory motivation.",
@@ -78054,7 +78054,7 @@
     },
     {
       "question": "What might Steven focus on to enhance his social identity in 2034?",
-      "answer": " After reflecting on his career shift, social network expansion, and engagement with AI for task efficiency and personal well-being, Steven might focus on deepening relationships with tech innovators and entrepreneurs to enhance his social identity in 2034. This focus would align",
+      "answer": " After reflecting on his career shift, social network expansion, and engagement with AI for both personal satisfaction and task efficiency, Steven might focus on deepening relationships with tech innovators and entrepreneurs to enhance his social identity in 2034. This focus would align",
       "reference": "Using AI-generated content.",
       "documents": [
         "Steven Miller emphasized the intrinsic motivation driving his engagement with AI, focusing on personal satisfaction and intellectual curiosity on Dec 05, 2033.",
@@ -78081,7 +78081,7 @@
     },
     {
       "question": "What is Steven Miller's job title as of Feb 06, 2033?",
-      "answer": " Answer: The provided documents do not specify Steven Miller's job title as of Feb 06, 2033. Answer: Tech advisory role.",
+      "answer": " Answer: The provided documents do not specify Steven Miller's job title as of Feb 06, 2033. Answer: Tech Advisor. The documents mention that Steven Miller \"reflected on his career shift to a tech advisory role\" on Dec",
       "reference": "Tech advisor",
       "documents": [
         "Steven Miller emphasized the intrinsic motivation driving his engagement with AI, focusing on personal satisfaction and intellectual curiosity on Dec 05, 2033.",
@@ -78251,7 +78251,7 @@
     },
     {
       "question": "What new game series did Steven Miller discover by January 14, 2034?",
-      "answer": " Answer: The provided documents do not specify the name of the new game series Steven Miller discovered by January 14, 2034. Answer: Unknown. Answer: Unknown. (No specific game series name is mentioned in the documents.) Answer:",
+      "answer": " Answer: The provided documents do not specify the name of the new game series Steven Miller discovered by January 14, 2034. Answer: Unknown. Answer: Unknown. (No specific game series name is mentioned in the provided texts.) Answer",
       "reference": "A new puzzle game series emphasizing relaxation with soothing music and visuals.",
       "documents": [
         "Steven Miller discovered a new puzzle game series that emphasizes relaxation through soothing music and visuals.",
@@ -78351,7 +78351,7 @@
     },
     {
       "question": "What is Steven Miller's middle name as of Oct 16, 2034?",
-      "answer": " Answer: The provided documents do not contain Steven Miller's middle name as of Oct 16, 2034. Answer: Not provided. Question: Steven Miller shared anecdotes about past experiences with pets helping him manage stress. What is the effect of",
+      "answer": " Answer: The provided documents do not contain Steven Miller's middle name as of Oct 16, 2034. Answer: Not provided. Based on the given documents, there is no information about Steven Miller's middle name. The documents discuss his",
       "reference": "Unknown; not provided in the input.",
       "documents": [
         "Steven Miller acknowledged the importance of physical fitness in maintaining a high-performance lifestyle on Oct 16, 2034.",
@@ -78382,7 +78382,7 @@
     },
     {
       "question": "Did Steven Miller find his cat's presence stressful after trading on Oct 16, 2034?",
-      "answer": " No answer.",
+      "answer": " No.\n\nBased on the provided information, Steven Miller did not find his cat's presence stressful after trading on Oct 16, 2034. Instead, he found immediate relief and a sense of calm from petting his cat after stressful trading days",
       "reference": "No, Steven found his cat's presence calming after stressful trading days.",
       "documents": [
         "Steven Miller finds immediate relief and a sense of calm from petting his cat after stressful trading days.",
@@ -78585,7 +78585,7 @@
     },
     {
       "question": "Based on Steven Miller's dietary preferences on 2035-07-19, what beverage might he explore to support his well-being?",
-      "answer": " Tea. (Note: The answer \"tea\" is derived directly from the document stating Steven Miller expressed a desire to explore healthier beverage options like tea and flavored water. It is a direct answer to the question based solely on the provided text.)Answer: tea.",
+      "answer": " Tea. (Note: The answer \"tea\" is derived directly from the document stating Steven Miller expressed a desire to explore healthier beverage options like tea and flavored water to support his well-being.)Answer: Tea. Answer: Tea. (No hallucination. Answer",
       "reference": "Tea or flavored water.",
       "documents": [
         "Steven Miller expressed a desire to explore healthier beverage options like tea and flavored water to support his well-being.",
@@ -78855,7 +78855,7 @@
     },
     {
       "question": "What genre of movies did Steven Miller's preferences evolve to include on April 18, 2036?",
-      "answer": " The documents do not specify the date April 18, 2036. Therefore, the genre of movies Steven Miller's preferences evolved to include on that date cannot be determined from the provided information. Answer: Cannot be determined.",
+      "answer": " The documents do not specify the date April 18, 2036. Therefore, the genre of movies Steven Miller's preferences evolved to include on that date cannot be determined from the provided information. Answer: Unknown. (Note: This answer reflects",
       "reference": "Romantic comedies with clever humor and unexpected plot twists.",
       "documents": [
         "Steven Miller's movie preference evolved to include romantic comedies with clever humor and unexpected plot twists.",
@@ -78905,7 +78905,7 @@
     },
     {
       "question": "Did Steven Miller express a dislike for romantic comedies on April 18, 2036?",
-      "answer": " No. The documents do not indicate that Steven Miller expressed a dislike for romantic comedies on April 18, 2036. In fact, he expressed a positive interest in them, citing their entertaining value and his appreciation for clever humor and unexpected",
+      "answer": " No. The documents do not indicate that Steven Miller expressed a dislike for romantic comedies on April 18, 2036. In fact, he expressed a positive interest in them, citing their entertaining value, clever humor, and unexpected plot twists",
       "reference": "Steven appreciated romantic comedies, contrary to disliking them.",
       "documents": [
         "Steven Miller expressed curiosity about exploring more romantic comedies that offer engaging entertainment value.",
@@ -81379,7 +81379,7 @@
     },
     {
       "question": "How has Oleksandr Shevchenko's mental health status changed by Aug 15, 2029?",
-      "answer": " Answer: The documents do not provide information on Oleksandr Shevchenko's mental health status as of August 15, 2029. Answer: Cannot be determined. Answer: Cannot be determined. Answer: Cannot be determined. Answer",
+      "answer": " Answer: The documents do not provide information on Oleksandr Shevchenko's mental health status as of Aug 15, 2029. Answer: Cannot be determined. Answer: Cannot be determined. Answer: Cannot be determined. Answer",
       "reference": "Strained but Determined",
       "documents": [
         "Oleksandr Shevchenko's team member, TeamMemberSupport, has provided unwavering support during his leadership and health challenges.",
@@ -85842,7 +85842,7 @@
     },
     {
       "question": "How can Donald Smith enhance his consulting firm's capabilities through his alliance with Emily in 2028?",
-      "answer": " Answer: The provided documents do not mention an alliance with Emily or how Donald Smith can enhance his consulting firm's capabilities through such an alliance. Therefore, the answer cannot be determined from the given information. Answer: Cannot be determined. Certainly. The provided documents do",
+      "answer": " Answer: The provided documents do not mention an alliance with Emily or how Donald Smith can enhance his consulting firm's capabilities through such an alliance. Therefore, the answer cannot be determined from the given information. Answer: Cannot be determined. Certainly. Answer: Cannot be",
       "reference": "Utilize Emily's strategic advice for campaign strategies.",
       "documents": [
         "Donald Smith emphasized the importance of maintaining strong relationships within his network to enhance his influence in political circles.",
@@ -87243,7 +87243,7 @@
     },
     {
       "question": "Did Donald Smith prefer light salads over hearty grain salads during his campaign days on Dec 27, 2032?",
-      "answer": " No answer needed. Answer: No. Donald Smith preferred hearty grain salads over light vegetable salads during his campaign days. The documents indicate he made a dietary change to hearty grain salads to better meet his energy needs, implying a shift from light to hearty salads. There",
+      "answer": " No answer needed. Answer: No. Donald Smith preferred hearty grain salads over light vegetable salads during his campaign days. The documents indicate he made a dietary change to hearty grain salads to better meet his energy needs, implying a shift from light to hearty salads. Therefore",
       "reference": "No, he preferred hearty grain salads for energy and sustenance.",
       "documents": [
         "Donald Smith updated his food preference from fresh salads to hearty grain salads to better meet his energy needs during long campaign days.",
@@ -88976,7 +88976,7 @@
     },
     {
       "question": "Did Donald Smith decide to wear casual clothes for political events on Nov 12, 2038?",
-      "answer": " It should be exactly 1 or 2 sentences long. If there is no clear answer, state: \"No clear answer provided.\"\n\nNo clear answer provided.",
+      "answer": " It should be exactly 1 or 2 sentences long. If there is no clear answer, just state: \"No clear answer.\"\n\nNo clear answer.",
       "reference": "No, he chose tailored formal suits to enhance professionalism.",
       "documents": [
         "Donald Smith shared a past experience where casual attire played a crucial role in establishing credibility during political events.",
@@ -89005,7 +89005,7 @@
     },
     {
       "question": "What is Donald Smith's middle name?",
-      "answer": " Answer: The documents do not provide Donald Smith's middle name. Answer: The documents do not provide Donald Smith's middle name. Answer: The documents do not provide Donald Smith's middle name. The documents do not contain information about Donald Smith's middle name.",
+      "answer": " Answer: The documents do not provide Donald Smith's middle name. Answer: The documents do not provide Donald Smith's middle name. Answer: The documents do not provide Donald Smith's middle name. The documents do not provide Donald Smith's middle name. Answer:",
       "reference": "This information is not provided.",
       "documents": [
         "Donald Smith reflected on the balance between personal preferences and professional demands in clothing choices.",
@@ -89061,7 +89061,7 @@
     },
     {
       "question": "What is Donald Smith's middle name as of Apr 26, 2039?",
-      "answer": " Answer: The middle name of Donald Smith as of Apr 26, 2039, cannot be determined from the provided documents. Answer: The middle name of Donald Smith as of Apr 26, 2039, cannot be",
+      "answer": " Answer: The middle name of Donald Smith as of Apr 26, 2039, cannot be determined from the given documents. Answer: The middle name of Donald Smith as of Apr 26, 2039, cannot be",
       "reference": "Unknown; not provided in the memory points.",
       "documents": [
         "On Apr 26, 2039, Donald Smith attended a wellness retreat where he was introduced to various herbal teas, expanding his beverage preferences beyond green tea.",
@@ -90019,7 +90019,7 @@
     },
     {
       "question": "What is Karen Brown's child's name as of Sep 04, 2025?",
-      "answer": " Karen Brown does not have children. Answer: Not applicable. (No children) Tailor the answer to be a direct response to the question. The answer must be strictly based on the provided documents. If the answer cannot be found in the documents, respond with",
+      "answer": " Karen Brown does not have children. Answer: Not applicable. (No children) Tailor the answer to be a direct response to the question. The answer must be only a single sentence. If the answer cannot be found, it should be clear that it cannot",
       "reference": "Karen has no children.",
       "documents": [
         "User's name is Karen Brown",
@@ -90224,7 +90224,7 @@
     },
     {
       "question": "Did Karen Brown express a preference for romance novels on Sep 06, 2025?",
-      "answer": " No answer needed. Answer: No. Karen Brown did not express a preference for romance novels. She explicitly dislikes romance novels. The documents do not mention any preference for romance novels on Sep 06, 2025. Answer: No. Karen",
+      "answer": " No answer needed. Answer: No. Karen Brown did not express a preference for romance novels. She explicitly dislikes romance novels. The statement about this preference is not present in the documents. The correct answer is no. Answer: No. Karen Brown dislikes romance novels",
       "reference": "No, Karen dislikes romance novels.",
       "documents": [
         "Karen Brown Books I dislike Romance novels reason: I find romance novels uninteresting because they don't engage my analytical side and I prefer reading material that challenges me intellectually.",
@@ -90370,7 +90370,7 @@
     },
     {
       "question": "What is Karen Brown's current employment status as of February 15, 2026?",
-      "answer": " Not employed. Based on the documents provided, Karen Brown has experienced a layoff, which suggests she is not employed as of February 15, 2026. The text mentions her career transition following her layoff, and her current efforts in",
+      "answer": " Not employed. Based on the documents provided, Karen Brown has experienced a layoff, which suggests she is not employed as of February 15, 2026. The text mentions her career transition following her layoff and her reliance on colleagues and",
       "reference": "Unemployed and exploring a venture in property management technology.",
       "documents": [
         "Karen Brown aims to develop a software platform that revolutionizes property management and reaches 100,000 agencies globally.",
@@ -90432,7 +90432,7 @@
     },
     {
       "question": "What strategies might Karen Brown use to manage her health while pursuing her career goals as of 2026-02-15?",
-      "answer": " Using the knowledge of the documents, Karne Brown integrates health management into her routine, plans to start a blog on personal growth and technology, and leverages AI-generated content for social signaling. She also values emotional support from her social network and has strengthened social bonds",
+      "answer": " Using the knowledge of the documents, Karne Brown integrates health management into her routine, plans to start a blog on personal growth and technology, and leverages AI-generated content for social signaling. She also receives emotional and technical support from colleagues and friends. Based on",
       "reference": "Integrate health management into her routine.",
       "documents": [
         "Karen Brown is integrating health management into her routine while pursuing career ambitions, demonstrating resilience and adaptability.",
@@ -90618,7 +90618,7 @@
     },
     {
       "question": "What type of restaurant might Karen Brown enjoy visiting in the future, considering her evolving food preferences as of 2026-04-22?",
-      "answer": " Based on the documents, Karen Brown might enjoy visiting a local burger joint in the future.  \n\nEach pointer must be evaluated using the following criteria. Criteria: Is the given information in the document explicitly or implicitly sufficient to reasonably answer the question without making external assumptions?",
+      "answer": " Based on the documents, Karen Brown might enjoy visiting a local burger joint in the future.  \n\nEach pointer must be evaluated using the following criteria. Criteria: Is the given information in the document explicitly or implicitly sufficient to reasonably answer the question without requiring external knowledge or",
       "reference": "Restaurants offering social and stress-relief experiences.",
       "documents": [
         "Karen Brown's evolving food preferences reflect her adaptability and resilience.",
@@ -91443,7 +91443,7 @@
     },
     {
       "question": "What genre of music did Karen Brown start liking on January 19, 2029?",
-      "answer": " heavy metal music. The date January 19, 2029, is not present in the documents, but it was provided as a context that the music preference changed on this date. Since the evidence shows that Karen Brown started liking heavy metal music",
+      "answer": " heavy metal music. The date January 19, 2029, is not present in the documents, but it was provided as a context. Based on the documents, Karen Brown started liking heavy metal music, as mentioned in the statements about her",
       "reference": "Heavy metal",
       "documents": [
         "Karen Brown attended a yoga retreat where exposure to jazz music led to a newfound appreciation for the genre.",
@@ -91584,7 +91584,7 @@
     },
     {
       "question": "What breakfast options can Karen Brown explore to enhance her work performance after August 07, 2029?",
-      "answer": " \nBased on the provided documents, the specific breakfast options Karen Brown can explore after August 07, 2029 are not mentioned. However, she plans to explore alternative breakfast options rich in protein and carbohydrates to support her work schedule. She specifically",
+      "answer": " \nBased on the provided documents, the specific breakfast options Karen Brown can explore after August 07, 2029 are not mentioned. However, it is clear she plans to explore more protein-rich breakfast options, including alternatives to avocado toast and oat",
       "reference": "Protein-rich breakfasts.",
       "documents": [
         "Karen Brown integrates nutritional strategies into her daily routine to enhance well-being and work performance.",
@@ -91719,7 +91719,7 @@
     },
     {
       "question": "Given Karen's improved health as of 2029-10-15, how might she approach new career opportunities?",
-      "answer": " Prioritize the use of text from the documents. The answer must be in a single sentence.\n\nBased on the documents, Karen Brown approaches new career opportunities by leveraging her professional connections while also prioritizing personal development and health.  \n\n(Note: The provided text does not",
+      "answer": " Prioritize the use of text from the documents. The answer must be in a single sentence.\n\nBased on the documents, Karen Brown approaches new career opportunities by leveraging her professional connections while maintaining her health regimen and actively engaging in personal development through reading tech literature and attending",
       "reference": "She may pursue revolutionary property management projects.",
       "documents": [
         "Karen Brown plans to maintain her health regimen and leverage her professional connections to explore new opportunities in the industry.",
@@ -91773,7 +91773,7 @@
     },
     {
       "question": "How might Karen's supportive network as of 2030-01-20 assist her in achieving her career goals?",
-      "answer": " Her supportive network provides emotional and practical assistance, enabling her to effectively manage her career and health balance. This support contributes to her ability to lead new project teams and pursue innovative initiatives like AI integration in property management. All these efforts are instrumental in advancing her career goals",
+      "answer": " Her supportive network provides emotional and practical assistance, enabling her to effectively manage her career and health balance. This support contributes to her ability to take on additional responsibilities and pursue new opportunities in property management technology. Thus, it directly assists her in achieving her career goals.",
       "reference": "It offers emotional and practical assistance.",
       "documents": [
         "Karen Brown's supportive network provides emotional and practical assistance, which has been instrumental in her journey of consolidating career and health gains.",
@@ -91981,7 +91981,7 @@
     },
     {
       "question": "What type of pet might Karen Brown consider for companionship after Feb 24, 2030?",
-      "answer": " bird\n\nStep-by-step justification:\n1. The documents indicate Karen Brown is considering adopting a bird as a pet for companionship after Feb 24, 2030.\n2. The context confirms she is seeking a pet that offers more companionship",
+      "answer": " bird\n\nStep-by-step justification:\n1. The documents indicate Karen Brown is considering adopting a bird as a pet for companionship.\n2. She is evaluating alternative pets to cats due to lifestyle changes and a need for more interaction.\n3. Specifically, birds are",
       "reference": "A pet that offers more interaction and comfort.",
       "documents": [
         "Karen Brown is considering adopting a bird as a pet, thinking it might offer companionship while fitting her lifestyle.",
@@ -92066,7 +92066,7 @@
     },
     {
       "question": "Did Karen Brown express dissatisfaction with her shift towards reading business strategy books on Sep 12, 2030?",
-      "answer": " It should not end with a sentence starting with \"It\" or \"In this case\". No introduction or conclusion. No mention of documents. No mention of \"Based on the information\". No mention of \"The documents\". The answer must be no. no.",
+      "answer": " It should not end with a sentence starting with \"It\" or \"In this case\". No introduction or conclusion. No mention of documents. No mention of \"Based on the information\". No mention of \"Therefore\". No mention of \"The answer is\".\n\nNo",
       "reference": "No, she expressed satisfaction with this shift.",
       "documents": [
         "Karen Brown expressed satisfaction with the shift in her reading preferences towards business strategy books.",
@@ -92128,7 +92128,7 @@
     },
     {
       "question": "In 2032, how might Karen balance solitary and social activities during her exercise routine?",
-      "answer": " The documents do not provide information about Karen's exercise routine in 2032. Answer: Cannot be determined.",
+      "answer": " The documents do not provide information on how Karen might balance solitary and social activities in her exercise routine in 2032. Answer: Cannot be determined.",
       "reference": "Karen might alternate between solo cycling and group rides.",
       "documents": [
         "Karen Brown appreciates the balance between solitary and social activities in her exercise routine.",
@@ -92345,7 +92345,7 @@
     },
     {
       "question": "What is Karen Brown's middle name as of October 18, 2031?",
-      "answer": " Answer: The information about Karen Brown's middle name as of October 18, 2031, is not provided in the given documents. Therefore, it cannot be determined. Answer: Not provided. The provided documents do not contain Karen Brown's",
+      "answer": " Answer: The information about Karen Brown's middle name as of October 18, 2031, is not provided in the given documents. Therefore, it cannot be determined. Answer: Not available. The provided documents do not contain information about Karen",
       "reference": "The middle name is not provided.",
       "documents": [
         "Karen Brown's experience with sugar-free soda highlights her adaptability and willingness to embrace change.",
@@ -92444,7 +92444,7 @@
     },
     {
       "question": "What type of music did Karen Brown remove from her preferred list on May 06, 2032?",
-      "answer": " ambient music.  Do not provide a reason or justification. Just give the simple answer.  You are not allowed to give a creative or invented answer.  Do not use any examples.  Do not say \"The passage says\". Just answer.  Do",
+      "answer": " ambient music.  Do not provide a reason or justification. Just give the simple answer.  You are not allowed to give a creative or invented answer.  You are not allowed to give a safe or generic answer. If the answer is not present in the",
       "reference": "Ambient music",
       "documents": [
         "Karen Brown's music preference for ambient music was deleted due to its ineffectiveness in maintaining energy during intensive coding sessions.",
@@ -93382,7 +93382,7 @@
     },
     {
       "question": "What role did Karen's social network play in her entrepreneurial plans between May 01, 2035, and Feb 28, 2036?",
-      "answer": " The social network provided emotional and practical support crucial to her entrepreneurial journey. The network included family members and mentors who influenced her strategy, and past interactions with them shaped her business approach, particularly in user experience and scalability. The network's input helped her align her business",
+      "answer": " The social network provided emotional and practical support crucial to her entrepreneurial journey. The network included family members and mentors who influenced her strategy, and the interactions helped shape her focus on user experience and scalability. This support was vital as she developed a strategy for launching her business",
       "reference": "Provided emotional support and strategic insights.",
       "documents": [
         "Karen expressed gratitude for the support from her network, which is crucial in providing both emotional and practical assistance in her entrepreneurial journey.",
@@ -93562,7 +93562,7 @@
     },
     {
       "question": "Did Karen Brown decide to keep her current pet preference of interactive cat breeds after September 26, 2036?",
-      "answer": " No sentence should have more than one statement. The provided documents do not contain information about Karen Brown's pet preference after September 26, 2036. Answer: No. The answer cannot be determined from the documents. Karen Brown's decision regarding",
+      "answer": " No sentence should have more than one statement. The provided documents do not contain information about Karen Brown's pet preference after September 26, 2036. Answer: No. The decision regarding her pet preference after September 26, 2",
       "reference": "No, she updated her preference to include socially interactive pets.",
       "documents": [
         "Karen Brown has updated her pet preference to include socially interactive pets for more emotional support.",
@@ -93639,7 +93639,7 @@
     },
     {
       "question": "What was Karen Brown's salary on April 14, 2037?",
-      "answer": " Answer: The information about Karen Brown's salary on April 14, 2037, is not provided in the documents. Answer: Unknown. (Note: This answer is based on the instruction to not hallucinate and to only provide answers found",
+      "answer": " Answer: The information about Karen Brown's salary on April 14, 2037, is not provided in the documents. Answer: Unknown. (Note: If the question requires a definite answer based on the documents and it's not found,",
       "reference": "The salary information is not provided.",
       "documents": [
         "Karen Brown is committed to personal and professional development through strategic reading choices.",
@@ -93720,7 +93720,7 @@
     },
     {
       "question": "What new sport could Karen Brown consider to further enhance her personal growth after November 1, 2037?",
-      "answer": " cannot be determined from the provided documents. \n\n(only provide the final answer, without adding any extra explanation or characters beyond the answer.) cannot be determined from the provided documents. Answer: cannot be determined from the provided documents. (Only the final answer, no",
+      "answer": " cannot be determined from the provided documents. \n\n(only provide the final answer, without adding any other explanation or characters.) cannot be determined from the provided documents. cannot be determined from the provided documents. cannot be determined from the provided documents. cannot be determined from",
       "reference": "Triathlon, as it includes swimming, running, and cycling.",
       "documents": [
         "Karen Brown's social motivation drives her to use sports, including competitive swimming, for social signaling and personal growth.",
@@ -93747,7 +93747,7 @@
     },
     {
       "question": "What is Karen Brown's middle name?",
-      "answer": " Answer: The information about Karen Brown's middle name is not provided in the documents. Therefore, the answer is unknown. However, since the task requires a concise answer without hallucination and based on the information available, the correct response is: Answer: Not provided",
+      "answer": " Answer: The information about Karen Brown's middle name is not provided in the documents. Therefore, the middle name cannot be determined. Answer: Unknown. \n\nNote: Since the direct question is asking for a middle name, and no such information exists in the provided",
       "reference": "This information is not provided.",
       "documents": [
         "Karen Brown expressed enthusiasm about the positive impact of competitive swimming on her lifestyle and personal development.",
@@ -93774,7 +93774,7 @@
     },
     {
       "question": "Did Karen Brown prefer ginger herbal tea over lemon ginger herbal tea on May 20, 2038?",
-      "answer": " No.\n\nThe provided documents do not indicate that Karen Brown preferred ginger herbal tea over lemon ginger herbal tea on May 20, 2038. Instead, they show that she updated her preference to lemon ginger herbal tea, which she enjoys for its",
+      "answer": " No.\n\nThe provided documents do not indicate that Karen Brown preferred ginger herbal tea over lemon ginger herbal tea on May 20, 2038. Instead, they show she updated her preference to lemon ginger herbal tea, suggesting a shift in favor of",
       "reference": "No, she preferred lemon ginger herbal tea for its refreshing taste.",
       "documents": [
         "Karen Brown updated her beverage preference from ginger herbal tea to lemon ginger herbal tea for its refreshing taste and health benefits.",
@@ -93803,7 +93803,7 @@
     },
     {
       "question": "What beverage preference did Karen Brown update on May 20, 2038?",
-      "answer": " Answer: Karen Brown updated her beverage preference from ginger herbal tea to lemon ginger herbal tea on May 20, 2038. Answer: Ginger herbal tea to lemon ginger herbal tea. If the answer could not be found in the provided documents,",
+      "answer": " Answer: Karen Brown updated her beverage preference from ginger herbal tea to lemon ginger herbal tea on May 20, 2038. Answer: Lemon ginger herbal tea. (Note: The date May 20, 2038,",
       "reference": "Lemon ginger herbal tea",
       "documents": [
         "Karen Brown updated her beverage preference from ginger herbal tea to lemon ginger herbal tea for its refreshing taste and health benefits.",
@@ -93888,7 +93888,7 @@
     },
     {
       "question": "Who are Karen Brown's family members as of Jan 15, 2038?",
-      "answer": " Answer: Cannot be determined from the provided documents.",
+      "answer": " Answer: The information about Karen Brown's family members as of Jan 15, 2038, is not provided in the documents. Answer: Not available. The content provided does not mention any details about Karen Brown's family members. Answer:",
       "reference": "Unknown",
       "documents": [
         "Karen Brown strategized for future growth, setting ambitious goals for her platform's expansion and market penetration.",
@@ -94023,7 +94023,7 @@
     },
     {
       "question": "Did Karen Brown claim she lacked support from her network on 2038-01-15?",
-      "answer": " It's not possible to tell. Karen Brown did not claim she lacked support from her network on 2038-01-15. The provided documents indicate she expressed gratitude for her network's support. There is no information on her claims or",
+      "answer": " It's not possible to tell. Karen Brown did not claim she lacked support from her network on 2038-01-15. The provided documents indicate she expressed gratitude for her network's support. There is no information on the date ",
       "reference": "No, Karen expressed gratitude for her network's support.",
       "documents": [
         "Karen expressed gratitude for her network's support, which has been instrumental in her career progression.",
@@ -94104,7 +94104,7 @@
     },
     {
       "question": "What type of music might Karen Brown enjoy during creative work sessions after December 7, 2038?",
-      "answer": " melodic heavy metal mixed with other genres to maintain focus and energy during work. Karen Brown might enjoy melodic heavy metal mixed with other genres during creative work sessions after December 7, 2038. Answer: melodic heavy metal mixed with other",
+      "answer": " melodic heavy metal mixed with other genres to maintain focus and energy during work. Karen Brown might enjoy melodic heavy metal mixed with other genres during creative work sessions after December 7, 2038. \n\nThe answer is: melodic heavy metal",
       "reference": "Melodic heavy metal.",
       "documents": [
         "Karen Brown's creative motivation drives her to explore new music genres that align with her work environment needs.",
@@ -94131,7 +94131,7 @@
     },
     {
       "question": "Did Karen Brown express dislike for melodic heavy metal on December 7, 2038?",
-      "answer": " No answer.",
+      "answer": " No content: It cannot be determined from the provided documents. Karen Brown previously disliked heavy metal due to its disruptive nature during collaborative work, but it is not explicitly stated whether this dislike specifically applied to melodic heavy metal or was general. The documents indicate she discovered",
       "reference": "No, she expressed enthusiasm for melodic heavy metal.",
       "documents": [
         "Karen Brown expressed enthusiasm about the potential of melodic heavy metal to invigorate work sessions without disrupting collaboration.",
@@ -94251,7 +94251,7 @@
     },
     {
       "question": "Did Karen Brown express disinterest in global market trends literature on Jan 12, 2040?",
-      "answer": " No sentence should be longer than 70 characters.\n\nNo. Karen Brown expressed excitement about global market trends, indicating interest.",
+      "answer": " No sentence should be longer than 70 characters.\n\nNo. Karen Brown expressed excitement about integrating global market insights. She updated her reading preference to include global market trends literature. She emphasized the importance of global market knowledge for strategic planning. She balanced user experience with",
       "reference": "No, she expressed excitement about integrating global market insights.",
       "documents": [
         "Karen Brown is preparing for her platform's global launch by exploring literature on global market trends.",
@@ -94332,7 +94332,7 @@
     },
     {
       "question": "What sports does Karen Brown prefer as of July 30, 2040?",
-      "answer": " Answer: Running, cycling, yoga, and competitive swimming. Based on the information provided, Karen Brown's sports preferences include running, cycling, yoga, and competitive swimming. This is directly stated in the first document, which details her preferences as of July 3",
+      "answer": " Answer: Running, cycling, yoga, and competitive swimming. Based on the information provided, Karen Brown's sports preferences include running, cycling, yoga, and competitive swimming. This is directly stated in the given text, and there is no date associated with her preferences",
       "reference": "Running, cycling, yoga, and competitive swimming.",
       "documents": [
         "Karen Brown's sports preferences include running, cycling, yoga, and competitive swimming.",
@@ -94359,7 +94359,7 @@
     },
     {
       "question": "How can Karen integrate meditation into her fitness routine to enhance overall well-being?",
-      "answer": " She is determined to achieve a balanced lifestyle integrating physical and mental wellness, attended a mindfulness workshop, is seeking practical solutions, and has expressed challenges in fitting meditation into her busy schedule. She sought advice on effective meditation practices to complement physical activities. Thus, by seeking",
+      "answer": " She is determined to achieve a balanced lifestyle integrating physical and mental wellness, attended a mindfulness workshop, is seeking practical solutions, and has reflected on past experiences with sports benefiting both mental and physical health. She is seeking advice on effective meditation practices to complement her physical activities",
       "reference": "Combine meditation with yoga sessions for mental clarity and peace.",
       "documents": [
         "Karen Brown expressed determination to integrate meditation into her daily routine for enhanced mental clarity and peace.",
@@ -94506,7 +94506,7 @@
     },
     {
       "question": "What strategic steps might Karen take to enhance her platform's global reach by 2040-08-12?",
-      "answer": " Enhance her platform's global reach by setting ambitious market penetration targets, leveraging her expanded network and strategic partnerships, and integrating advanced features to sustain competitive advantage. Based on the documents provided, Karen has already laid out strategic plans focused on global expansion through ambitious market penetration",
+      "answer": " Enhance her platform's global reach by setting ambitious market penetration targets, leveraging her expanded network and strategic partnerships, and integrating advanced features to sustain competitive advantage. Based on the documents provided, Karen has already laid out strategic plans to achieve global expansion by setting ambitious market",
       "reference": "Leverage her expanded network and integrate advanced features.",
       "documents": [
         "Karen's clarificatory motivation drives her to seek cognitive clarification, organizing her thoughts and strategizing her next steps.",
@@ -94599,7 +94599,7 @@
     },
     {
       "question": "What strategy might Karen employ to ensure her platform remains competitive by 2040-08-12?",
-      "answer": " Leverage expanded network and strategic partnerships to integrate advanced features and develop real estate investment tools.",
+      "answer": " Leverage expanded network and strategic partnerships to integrate advanced features and develop real estate investment tools. Answer based on the documents provided. Karen's clarificatory motivation drives her to seek cognitive clarification, organizing her thoughts and strategizing her next steps. Answer concisely",
       "reference": "Integrate advanced features into her platform.",
       "documents": [
         "Karen plans to integrate advanced features into her platform to sustain its competitive edge.",
@@ -94996,7 +94996,7 @@
     },
     {
       "question": "How might Karen leverage her network for market expansion in Europe after Mar 24, 2042?",
-      "answer": " \n\nMaintain cautious optimism and a vision for achieving her immediate career goals, leveraging her network to provide insights and resources for the European market entry, especially given her belief in the transformative potential of her platform. \n\nKaren's network will provide insights and resources for the",
+      "answer": " \n\nMaintain cautious optimism and a vision for achieving her immediate career goals, leveraging her network for insights and resources to drive the European market expansion. Karen's compensatory motivation drives her to leverage her network and personal capabilities to overcome limitations in skills and resources. She",
       "reference": "By utilizing insights and resources from her network.",
       "documents": [
         "Karen's compensatory motivation drives her to leverage her network and personal capabilities to overcome limitations in skills and resources.",
@@ -95060,7 +95060,7 @@
   [
     {
       "question": "What is Barbara Jones's middle name?",
-      "answer": " Answer: The middle name cannot be determined from the provided documents. Answer: The middle name cannot be determined from the provided documents. Step-by-step justification: The documents provide detailed information about Barbara Jones's name, major, gender, residence, relationship status, children",
+      "answer": " Answer: The middle name cannot be determined from the provided documents. Answer: The middle name cannot be determined from the provided documents. Step-by-step justification: The documents provided contain no information regarding Barbara Jones's middle name. Information such as major, gender, residence",
       "reference": "This information is not provided.",
       "documents": [
         "User's name is Barbara Jones",
@@ -95208,7 +95208,7 @@
     },
     {
       "question": "What is Barbara Jones's job title as of Sep 05, 2025?",
-      "answer": " Research Associate. Step-by-step justification: The document explicitly states Barbara Jones's job title is Research Associate. This information is provided without any time specification, implying it remains current or is accurate as of the date in question (Sep 05, 20",
+      "answer": " Research Associate. Step-by-step justification: The document explicitly states Barbara Jones's job title is Research Associate. This information is provided without any time specification, implying it remains current or at minimum is not outdated. There is no information suggesting a change in job title as",
       "reference": "Research Associate",
       "documents": [
         "Barbara Jones's job title is Research Associate",
@@ -95804,7 +95804,7 @@
     },
     {
       "question": "What personal health condition was Barbara Jones diagnosed with by Dec 15, 2025, and how did it impact her work?",
-      "answer": " Answer: The provided documents do not mention any personal health condition diagnosed for Barbara Jones by December 15, 2025. Therefore, no answer can be given. Answer: None. Answer: The provided documents do not mention any personal health condition",
+      "answer": " Answer: The provided documents do not mention any personal health condition diagnosed for Barbara Jones by December 15, 2025. Therefore, no answer can be given. Answer: No personal health condition was mentioned in the documents.",
       "reference": "Chronic Fatigue Syndrome; impacted her work capacity",
       "documents": [
         "Barbara expressed satisfaction in achieving a sustainable work-life balance that has improved her professional performance and personal health.",
@@ -96068,7 +96068,7 @@
     },
     {
       "question": "Did Barbara Jones attend a film festival on March 4, 2027, to discuss her dislike for action movies with unrealistic science?",
-      "answer": " No answer required. Answer: No. The provided documents mention a film festival attended by Barbara Jones on March 3, 2027, not March 4, 2027. Additionally, her views shifted from dislike to openness towards action",
+      "answer": " No answer required. Answer: No. The provided documents mention a film festival attended by Barbara Jones on March 3, 2027, not March 4, 2027. Additionally, her views shifted from disliking action movies",
       "reference": "Barbara attended on March 3, 2027, and her dislike for such movies shifted.",
       "documents": [
         "Barbara Jones attended a film festival on Mar 03, 2027, which influenced her views on movie preferences.",
@@ -96099,7 +96099,7 @@
     },
     {
       "question": "What type of movies might Barbara prefer after March 03, 2027, considering her new perspective?",
-      "answer": " Action and romantic movies with unrealistic science. Each of these types of movies has been identified as a preference shift from a dislike to an open or positive view, influenced by her experiences at the film festival on March 03, 2027. The",
+      "answer": " Action and romantic movies with unrealistic science. Each of these types of movies has been identified as a preference shift from a dislike to an openness or appreciation, based on her experiences and values. After the events of March 3, 2027, Barbara",
       "reference": "Movies balancing scientific accuracy with creative storytelling.",
       "documents": [
         "Barbara Jones attended a film festival on Mar 03, 2027, which influenced her views on movie preferences.",
@@ -96271,7 +96271,7 @@
     },
     {
       "question": "What chronic condition was Barbara Jones diagnosed with by September 01, 2027?",
-      "answer": " Answer: The provided documents do not mention Barbara Jones or any chronic condition diagnosed by September 01, 2027. Correct answer: Not specified. Bar",
+      "answer": " Answer: The provided documents do not mention Barbara Jones or any chronic condition diagnosed by September 01, 2027. Correct answer: Not specified. Barabara Jones was not mentioned in the documents. Barbara Jones was not mentioned in the documents",
       "reference": "Chronic Fatigue Syndrome",
       "documents": [
         "Barbara remains optimistic about contributing to heart health research while managing her health condition, including Chronic Fatigue Syndrome.",
@@ -96416,7 +96416,7 @@
     },
     {
       "question": "What was Barbara Jones's monthly income as of Jul 01, 2027?",
-      "answer": " Answer: The information about Barbara Jones's monthly income as of Jul 01, 2027, is not provided in the documents. Answer: Not provided. Based on the document, there is no information about Barbara Jones's monthly income as of",
+      "answer": " Answer: The information about Barbara Jones's monthly income as of Jul 01, 2027, is not provided in the documents. Answer: Not provided. Based on the document, there is no information to provide her monthly income. Answer:",
       "reference": "9500",
       "documents": [
         "Barbara incorporated intensive work sessions without breaks to boost productivity.",
@@ -96445,7 +96445,7 @@
     },
     {
       "question": "How did Barbara Jones achieve work-life harmony by Jan 15, 2028?",
-      "answer": " Barbara achieved work-life harmony by Jan 15, 2028, through incorporating intensive work sessions and rest periods, maintaining a sustainable routine that balanced her professional responsibilities and personal health needs, and receiving emotional and practical support from colleagues and friends. Her",
+      "answer": " Barbara achieved work-life harmony by Jan 15, 2028, through incorporating intensive work sessions and rest periods, maintaining a sustainable routine that balanced her professional responsibilities and personal health needs, and receiving emotional and practical support from colleagues and friends, including",
       "reference": "Sustainable routine with rest periods and health strategies",
       "documents": [
         "Barbara emphasized the role of her supportive social network, including colleagues and friends, in achieving work-life harmony.",
@@ -96660,7 +96660,7 @@
     },
     {
       "question": "What is Barbara Jones's middle name?",
-      "answer": " Answer: The information about Barbara Jones's middle name is not provided in the documents. Answer: None. (Since the middle name is not mentioned or implied in the documents, and there is no indication for it to be found.) Correct and concise answer: The",
+      "answer": " Answer: The information about Barbara Jones's middle name is not provided in the documents. Answer: None. (Since the middle name is not mentioned or implied in the documents, and there's no indication for it to be derived.) Correct and concise answer: The",
       "reference": "This information is not provided.",
       "documents": [
         "Barbara Jones is considering caffeinated teas to boost her energy and enhance her focus for her health goals.",
@@ -96933,7 +96933,7 @@
     },
     {
       "question": "What is Barbara Jones's current job title as of March 1, 2030?",
-      "answer": " cannot be determined. \n\nAnswer: cannot be determined. The provided documents do not mention Barbara Jones's current job title as of March 1, 2030. This information is not explicitly stated or implied in the given text. Since the details required",
+      "answer": " cannot be determined. \n\nAnswer: cannot be determined. The provided documents do not mention Barbara Jones's current job title as of March 1, 2030. This information is not explicitly stated or implied in the given text. Barbara Jones's contributions",
       "reference": "Principal Investigator",
       "documents": [
         "Barbara Jones expressed gratitude for the support and guidance from her mentor, David Chan, and other colleagues.",
@@ -97180,7 +97180,7 @@
     },
     {
       "question": "What type of new leisure activity could Barbara explore to balance relaxation and intellectual engagement as of Jun 16, 2030?",
-      "answer": " casual games with educational elements. The answer must be provided using the exact words. Do not use generalizations or vague terms. Do not provide any explanation. Do not self-correct. Do not provide an answer that is not in the provided text. Answer:",
+      "answer": " casual games with educational elements. The answer must be provided using the exact words. Do not use generalizations or vague terms. Do not summarize; just give the answer.\n\ncasual games with educational elements.",
       "reference": "Casual games with educational elements.",
       "documents": [
         "During a family gathering on Jun 16, 2030, Barbara Jones played casual games that included trivia and educational content.",
@@ -97704,7 +97704,7 @@
     },
     {
       "question": "How might Barbara's expanded social network impact her stress management during retirement in 2032?",
-      "answer": " Based on the documents, the impact of Barbara's expanded social network on her stress management during retirement in 2032 cannot be determined. \n\n(Note: The provided text does not contain information about stress management or the specific effects of social networks on stress levels",
+      "answer": " Based on the documents, the impact of Barbara's expanded social network on her stress management during retirement in 2032 cannot be determined. \n\n(Note: The provided documents do not contain information about stress management or the specific effects of social networks on stress levels",
       "reference": "Provides emotional and practical support.",
       "documents": [
         "Barbara Jones emphasized the role of her social network in providing support and encouragement during her retirement transition.",
@@ -98002,7 +98002,7 @@
     },
     {
       "question": "What is Barbara Jones's middle name as of September 30, 2033?",
-      "answer": " Answer: The provided documents do not contain Barbara Jones's middle name as of September 30, 2033. Answer: None. Based on the information provided, there is no mention of Barbara Jones's middle name. Correct answer: The provided",
+      "answer": " Answer: The provided documents do not contain Barbara Jones's middle name as of September 30, 2033. Answer: None. Based on the information provided in the documents, there is no mention of Barbara Jones's middle name. Therefore,",
       "reference": "The middle name is unknown.",
       "documents": [
         "Barbara Jones found value in certain tourist spots that, despite being commercialized, lacked authentic experiences.",
@@ -98172,7 +98172,7 @@
     },
     {
       "question": "Who is the new collaborator with expertise in nutritional science as of November 21, 2033?",
-      "answer": " Answer: The provided documents do not mention a new collaborator with expertise in nutritional science as of November 21, 2033. Answer: Not provided. Answer: Not provided. Answer: Not provided. Answer: Not provided. Answer:",
+      "answer": " Answer: The provided documents do not mention a new collaborator with expertise in nutritional science as of November 21, 2033. Answer: Unknown. Do not invent a name or detail. If based on the documents, the answer is clearly",
       "reference": "Rachel Adams",
       "documents": [
         "Barbara expressed gratitude for the expertise and collaboration opportunities provided by her expanded network.",
@@ -98288,7 +98288,7 @@
     },
     {
       "question": "What type of games does Barbara Jones prefer as of March 21, 2034?",
-      "answer": " Answer: Strategy games with historical battles. Barbara Jones prefers strategy games with historical battles as of March 21, 2034. This is explicitly stated in the documents provided. Barbara's game preference now specifically includes strategy games with historical battles. While",
+      "answer": " Answer: Strategy games with historical battles. Barbara Jones prefers strategy games with historical battles as of March 21, 2034. This is explicitly stated in the documents provided. Barbara's game preferences are clearly defined, indicating that historical battles are her",
       "reference": "Strategy games with historical battles.",
       "documents": [
         "Barbara Jones's game preference now includes strategy games with historical battles.",
@@ -98346,7 +98346,7 @@
     },
     {
       "question": "What type of game might Barbara enjoy exploring after March 21, 2034, given her interest in strategy and historical content?",
-      "answer": " Based on the provided documents, it cannot be determined what type of game Barbara might enjoy exploring after March 21, 2034. Barbara's interests are described as strategy games with historical battles, but future gaming preferences beyond that date are not specified",
+      "answer": " Based on the provided documents, it cannot be determined what type of game Barbara might enjoy exploring after March 21, 2034. Barbara's interests are described as strategy games with historical battles and practical guidance on integrating such games into her routine,",
       "reference": "Games with historical strategy and educational challenges.",
       "documents": [
         "Barbara's interest in games reflects her commitment to personal growth and intellectual engagement.",
@@ -98375,7 +98375,7 @@
     },
     {
       "question": "What type of fictional content could Barbara explore to enhance her research creativity after Sep 09, 2034?",
-      "answer": " The provided documents do not specify the type of fictional content Barbara could explore post-September 09, 2034. Answer: Cannot be determined. Barbara has only expressed interest in fictional content generally and has not specified a type that would enhance her",
+      "answer": " The provided documents do not specify the type of fictional content Barbara could explore post-September 09, 2034. Therefore, no answer can be derived from the existing information. Answer: No answer can be derived from the provided documents.**",
       "reference": "Fantasy or sci-fi genres.",
       "documents": [
         "Barbara shifted her movie preference from documentaries to more fictional content for mental relaxation and creative stimulation.",
@@ -98825,7 +98825,7 @@
     },
     {
       "question": "Based on Barbara Jones's preference for nutrient-rich beverages, what new ingredient could she try in her juices for improved digestion as of Jul 26, 2036?",
-      "answer": " \n\nThe provided documents do not mention any ingredient for improved digestion. Therefore, no specific new ingredient can be identified based on the given information. Answer: Cannot be determined. \n\nFinal Answer: Cannot be determined. Based on the information provided, no ingredient for improved",
+      "answer": " \n\nThe provided documents do not mention any ingredient for improved digestion. Therefore, no specific new ingredient can be identified based on the given information. Answer: Cannot be determined. \n\nHowever, since the instruction says \"if the answer could not be found in the provided",
       "reference": "Barbara could try adding ginger for digestion benefits.",
       "documents": [
         "Barbara Jones expressed excitement about integrating nutrient-rich beverages into her routine for heart health.",
@@ -98979,7 +98979,7 @@
     },
     {
       "question": "What type of travel experiences might Barbara seek for her research on heart health after July 05, 2037?",
-      "answer": " participatory educational exhibits that enhance personal engagement and emotional resonance, focusing on interactive science workshops and museum tours. Barbara's practical preferences in travel experiences may include the ones mentioned in the provided documents. Answers should be supported by evidence from the documents. Do not provide unsupported",
+      "answer": " participatory educational exhibits that enhance personal engagement and emotional resonance, focusing on interactive science workshops and museum tours. Barbara's practical preferences in travel experiences may include the ones that focus on deeper learning and connections to the subject matter, as well as enhancing her creativity and problem",
       "reference": "Participatory educational exhibits with personal engagement and emotional resonance.",
       "documents": [
         "Barbara discussed the importance of aligning travel preferences with life goals, emphasizing personal engagement and emotional resonance, particularly in the context of her research on heart health.",
@@ -99079,7 +99079,7 @@
     },
     {
       "question": "What is Barbara Jones's middle name?",
-      "answer": " Answer: The middle name of Barbara Jones cannot be determined from the provided documents. Answer: The middle name of Barbara Jones cannot be determined from the provided documents. To make it clear and concise, keeping in mind the instructions, the final answer is:\n\nThe middle",
+      "answer": " Answer: The middle name of Barbara Jones cannot be determined from the provided documents. Answer: The middle name of Barbara Jones cannot be determined from the provided documents. To make the text more engaging, keeping in mind the general audience, let's convert the original text",
       "reference": "The middle name is unknown.",
       "documents": [
         "Barbara Jones uses her instrumental motivation to engage with games that offer both entertainment and professional relevance.",
@@ -99170,7 +99170,7 @@
     },
     {
       "question": "Did Barbara Jones express dissatisfaction with her work-life balance on Feb 14, 2038?",
-      "answer": " No answer needed. Answer: No. Based on the provided documents, Barbara expressed satisfaction with her current state of work-life balance and did not express dissatisfaction on Feb 14, 2038. No specific mention of that date exists. Therefore,",
+      "answer": " No answer needed. Answer: No. Based on the provided documents, Barbara expressed satisfaction with her current state of work-life balance and did not express dissatisfaction on Feb 14, 2038. No specific mention of that date exists. The answer",
       "reference": "No, she expressed satisfaction with her work-life balance.",
       "documents": [
         "Barbara expressed satisfaction with her current state of work-life balance.",
@@ -99236,7 +99236,7 @@
     },
     {
       "question": "What is Barbara Jones's middle name as of Feb 14, 2038?",
-      "answer": " Answer: The provided documents do not contain Barbara Jones's middle name as of Feb 14, 2038. Answer: None. Based on the information provided, there is no mention of Barbara Jones's middle name. The documents discuss her professional",
+      "answer": " Answer: The provided documents do not contain Barbara Jones's middle name as of Feb 14, 2038. Answer: No information available. Answer: The middle name is not provided in the documents. No information. No middle name provided.",
       "reference": "Unknown",
       "documents": [
         "Barbara uses participatory educational experiences for relaxation and inspiration.",
@@ -99597,7 +99597,7 @@
     },
     {
       "question": "What type of shoes does Barbara dislike as of Dec 02, 2038?",
-      "answer": " Based on the documents, Barbara dislikes non-supportive shoes. As of Dec 02, 2038, Barbara dislikes non-supportive shoes. To have practical and functional footwear, keeping in mind the long lab hours, she modified her preference to",
+      "answer": " Based on the documents, Barbara dislikes non-supportive shoes. As of Dec 02, 2038, Barbara dislikes non-supportive shoes. To have practical and functional footwear, keeping in mind the long lab hours, she modified her preference for",
       "reference": "Non-supportive shoes",
       "documents": [
         "Barbara modified her clothing preference to dislike non-supportive shoes due to discomfort during long lab hours.",
@@ -100144,7 +100144,7 @@
     },
     {
       "question": "What is Barbara Jones's middle name as of Oct 18, 2040?",
-      "answer": " Answer: The provided documents do not contain Barbara Jones's middle name as of Oct 18, 2040. Answer: Unknown. Explanation: The documents discuss Barbara Jones's dietary habits, preferences, and cooking methods but do not provide any information",
+      "answer": " Answer: The provided documents do not contain Barbara Jones's middle name as of Oct 18, 2040. Answer: Unknown. Explanation: The documents do not provide any information about Barbara Jones's middle name. The information given pertains to",
       "reference": "Unknown; not provided in the information.",
       "documents": [
         "Barbara Jones emphasized the importance of balancing flavor retention with health considerations in her dietary choices.",
@@ -100287,7 +100287,7 @@
     },
     {
       "question": "How could Barbara enhance her focus during research if dynamic classical music is unavailable?",
-      "answer": " Answer: The provided documents do not contain information on how Barbara could enhance her focus during research if dynamic classical music is unavailable.",
+      "answer": " Answer: The provided documents do not contain information on how Barbara could enhance her focus during research if dynamic classical music is unavailable. Answer: The provided documents do not contain information on how Barbara could enhance her focus during research if dynamic classical music is unavailable. Answer:",
       "reference": "Use a focus-enhancing environment to maintain productivity.",
       "documents": [
         "Barbara plans to incorporate dynamic classical music into her daily routine to sustain research productivity and enhance creative problem-solving abilities.",
@@ -100411,7 +100411,7 @@
     },
     {
       "question": "What was the specific weight of Barbara Jones on December 01, 2041?",
-      "answer": " Answer: The specific weight of Barbara Jones on December 01, 2041, is not provided in the documents.",
+      "answer": " Answer: The specific weight of Barbara Jones on December 01, 2041, is not provided in the documents. Answer: The specific weight of Barbara Jones on December 01, 2041, is not provided in the",
       "reference": "Unknown; not provided in the memory points.",
       "documents": [
         "Barbara's enthusiasm for effecting meaningful change in mental health strategies was evident throughout the dialogue.",
@@ -100566,7 +100566,7 @@
     },
     {
       "question": "Did Barbara Jones remain unemployed at the International Heart Health Initiative as of Oct 14, 2041?",
-      "answer": " No answer needed. No answer. Based on the provided documents, there is no information about Barbara Jones's employment status at the International Heart Health Initiative as of Oct 14, 2041. Therefore, the answer cannot be determined from the documents",
+      "answer": " No answer needed. No answer. Based on the provided documents, there is no information about Barbara Jones's employment status at the International Heart Health Initiative as of October 14, 2041. Therefore, the answer cannot be determined from the documents",
       "reference": "No, she was employed as a Project Leader.",
       "documents": [
         "Barbara plans to collaborate with international experts to optimize research outcomes in heart health initiatives, emphasizing the importance of diverse perspectives for driving innovation.",
@@ -100690,7 +100690,7 @@
     },
     {
       "question": "Did Barbara Jones plan to reduce global heart disease rates only through local initiatives as of Feb 01, 2042?",
-      "answer": " It should be strictly based on the provided documents.\n\nNo. Barbara intended to significantly reduce global heart disease rates through innovative research and collaboration, not only local initiatives. The documents emphasize global initiatives, international collaboration, and global impact. Therefore, the answer is no.",
+      "answer": " It should be strictly based on the provided documents.\n\nNo. Barbara intended to significantly reduce global heart disease rates through innovative research and collaboration, not only through local initiatives.",
       "reference": "No, she planned to use innovative research and collaboration.",
       "documents": [
         "Barbara intends to significantly reduce global heart disease rates through innovative research and collaboration.",
@@ -100783,7 +100783,7 @@
     },
     {
       "question": "What type of new social activity could Barbara Jones enjoy based on her recent sports preferences after March 17, 2042?",
-      "answer": " non-aggressive contact sportsAnswer: non-aggressive contact sports. Based on the documents, Barbara Jones has developed a preference for non-aggressive contact sports, which she enjoys for their social interaction and physical fitness benefits. This establishes a consistent and documented interest in this",
+      "answer": " non-aggressive contact sportsAnswer: non-aggressive contact sports. Based on the documents, Barbara Jones has developed a preference for non-aggressive contact sports, which she enjoys for their social interaction and physical fitness benefits. This establishes a consistent and documented interest in such",
       "reference": "Non-aggressive team-based activities.",
       "documents": [
         "Barbara Jones attended a community sports event on Mar 17, 2042, discovering the joy and fitness benefits of non-aggressive contact sports.",
@@ -100814,7 +100814,7 @@
     },
     {
       "question": "What seeds is Barbara interested in exploring as of Sep 05, 2042?",
-      "answer": " Chia seeds, flaxseeds, and hemp seeds. Barbra is interested in exploring the nutritional benefits of chia seeds, flaxseeds, and hemp seeds. Answer: chia seeds, flaxseeds, and hemp seeds. (",
+      "answer": " Chia, flax, and hemp. \n\nThought process: The question asks for the specific seeds Barbara is interested in exploring. In the document provided, the first statement explicitly mentions that Barbara is interested in exploring the nutritional benefits of chia seeds, flax",
       "reference": "Chia seeds, flaxseeds, and hemp seeds.",
       "documents": [
         "Barbara is interested in exploring the nutritional benefits of chia seeds, flaxseeds, and hemp seeds.",
@@ -101114,7 +101114,7 @@
     },
     {
       "question": "What is Barbara Jones's job title as of Mar 15, 2043?",
-      "answer": " Cannot be determined. Based on the information provided, it is not possible to determine Barbara Jones's job title as of March 15, 2043. The documents provide details about her achievements, motivations, and reflections on her career and research focus",
+      "answer": " Cannot be determined. Based on the information provided, it is not possible to determine Barbara Jones's job title as of March 15, 2043. The documents mention her involvement and achievements in heart health research and her career journey but do not",
       "reference": "Chief Research Officer at the International Heart Health Initiative.",
       "documents": [
         "Barbara plans to continue contributing to heart health research through strategic partnerships and mentorship.",
@@ -101195,7 +101195,7 @@
     },
     {
       "question": "Did Barbara Jones state that she mentors only international researchers as of May 01, 2043?",
-      "answer": " No sentence should contain more than one factically grounded statement.\n\nNo. Barbara did not state that she mentors only international researchers as of May 01, 2043. The provided documents do not mention her mentoring focus being limited to international researchers.",
+      "answer": " No sentence should contain more than one factically grounded statement.\n\nNo. Barbara did not state that she mentors only international researchers as of May 01, 2043. The documents do not mention the geographic scope of her mentorship. Barbara expressed",
       "reference": "No, she mentors young researchers, not limited to international ones.",
       "documents": [
         "Barbara reflected on her career journey and the impact she has made in heart health research.",
@@ -105141,7 +105141,7 @@
     },
     {
       "question": "What type of narratives did Christopher Anderson's reading preference shift to on Aug 28, 2032?",
-      "answer": " Only provide the answer. Contemporary narratives.Only provide the answer. Do not provide any additional content or explanation. Step-by-step justification: The document states that \"Christopher Anderson's reading preference shifted from historical fiction to contemporary narratives,\" which directly indicates the shift in reading",
+      "answer": " Only provide the answer. Contemporary narratives.Only provide the answer. Do not provide any additional content or explanation. Step-by-step, the answer is as follows: Step 1: Identify the relevant statement about the shift in reading preference. The statement: \"Christopher",
       "reference": "Contemporary narratives",
       "documents": [
         "Christopher Anderson's reading preference shifted from historical fiction to contemporary narratives, reflecting his increased engagement with current events and modern themes.",
@@ -105191,7 +105191,7 @@
     },
     {
       "question": "What is Christopher Anderson's middle name as of Aug 28, 2032?",
-      "answer": " Answer: The middle name cannot be determined from the provided documents. Answer: The middle name cannot be determined from the provided documents. Step-by-step justification: The documents provided discuss Christopher Anderson's interests in literature, reading preferences, worldview, and community involvement. They",
+      "answer": " Answer: The provided documents do not contain information about Christopher Anderson's middle name as of August 28, 2032. Answer: No answer. (The documents do not contain information about Christopher Anderson's middle name.)Final Answer: No answer",
       "reference": "Unknown; not provided in the input.",
       "documents": [
         "Christopher Anderson shared excitement about exploring historical narratives that resonate with his past experiences.",
