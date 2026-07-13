@@ -3,6 +3,6 @@ dtype: bfloat16
 quantization: bitsandbytes
 seed: 42
 sampling_params:
-  - n: 1
-  - max_tokens: 128
-  - seed: 42
+  n: 1
+  max_tokens: 128
+  seed: 42
