@@ -4,4 +4,4 @@ pyproject.toml
 uv.lock
 test.ipynb
 main.py
-.python-version
+.python-version__pycache__
