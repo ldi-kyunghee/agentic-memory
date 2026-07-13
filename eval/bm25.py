@@ -92,13 +92,13 @@ def retrieve(queries: list, answers: list, memories: list, top_k: int = 5):
     results = []
     mem_tokenized = bm25s.tokenize(memories, stemmer=stemmer)
     retriever.index(mem_tokenized)
-    for query, answer in zip(queries, answers):
-        query_tokenized = bm25s.tokenize(query, stemmer=stemmer)
-        documents, scores = retriever.retrieve(query_tokenized, corpus=mem_tokenized, k=top_k)
+    queries_tokenized = bm25s.tokenize(queries, stemmer=stemmer)
+    documents, document_scores = retriever.retrieve(queries_tokenized, corpus=mem_tokenized, k=top_k)
+    for query, answer, docs, scores in zip(queries, answers, documents, document_scores):
         results.append({
             "question": query,
             "answer": answer,
-            "documents": documents,
+            "documents": docs,
             "scores": scores
         })
 
