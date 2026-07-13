@@ -43,7 +43,7 @@ def generate_answers(queries: list[dict], **sampling_params):
 
     prompts = []
     for item in queries:
-        query = item['query']
+        query = item['question']
         documents = ""
         for doc in item['documents']:
             documents += f" - {doc}"
@@ -58,7 +58,7 @@ def generate_answers(queries: list[dict], **sampling_params):
     results = []
     for item, answer in zip(queries, answers):
         results.append({
-            "query": item['query'],
+            "question": item['question'],
             "answer": answer,
             "reference": item['answer'],
             "documents": item['documents'],
