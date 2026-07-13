@@ -78,6 +78,7 @@ def per_persona(persona, level, top_k):
         per_session_memory = [memory['memory_content'] for memory in session['memory_points']]
         
         if level == 'per_session':
+            top_k = len(per_session_memory)
             results += retrieve(per_session_query, per_session_answer, per_session_memory, top_k)
         else:
             queries += per_session_query
@@ -93,7 +94,6 @@ def retrieve(queries: list, answers: list, memories: list, top_k: int = 5):
     mem_tokenized = bm25s.tokenize(memories, stemmer=stemmer)
     retriever.index(mem_tokenized)
     queries_tokenized = bm25s.tokenize(queries, stemmer=stemmer)
-    top_k = min(top_k, len(memories))
     documents, document_scores = retriever.retrieve(queries_tokenized, corpus=memories, k=top_k)
     for query, answer, docs, scores in zip(queries, answers, documents, document_scores):
         results.append({
@@ -122,7 +122,8 @@ if __name__ == '__main__':
 
     results_dir = "results/"
     os.makedirs(results_dir, exist_ok=True)
-    with open(results_dir + f"bm25_retrieval_{args.level}_top_{args.top_k}_results.json", "w") as file:
+    dataset_name = args.dataset.split('-')[-1].split('.')[0].lower()
+    with open(results_dir + f"bm25_retrieval_{dataset_name}_{args.level}_top_{args.top_k}_results.json", "w") as file:
         json.dump(results, file, indent=2)
 
     if args.use_llm:
@@ -134,6 +135,8 @@ if __name__ == '__main__':
             llm_results.append(per_persona_llm_results)
         
         model_name = model_kwargs['model'].split('/')[-1].replace('-2507', '')
-        result_file = f"{model_name}_qa_{args.level}_top_{args.top_k}_results.json"
+        result_file = f"{model_name}_{dataset_name}_qa_{args.level}_top_{args.top_k}_results.json"
+        if args.level == 'per_session':
+            result_file = result_file.replace(f'_top_{args.top_k}', '')
         with open(results_dir + result_file, "w") as file:
             json.dump(llm_results, file, indent=2)
