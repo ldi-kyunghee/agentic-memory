@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
     results_dir = "results/"
     os.makedirs(results_dir, exist_ok=True)
-    with open(results_dir + "bm25_retrieval_results.json", "w") as file:
+    with open(results_dir + f"bm25_retrieval_top_{args.top_k}_results.json", "w") as file:
         json.dump(results, file, indent=2)
 
     if args.use_llm:
@@ -133,6 +133,6 @@ if __name__ == '__main__':
             llm_results.append(per_persona_llm_results)
         
         model_name = model_kwargs['model'].split('/')[-1].replace('-2507', '')
-        result_file = f"{model_name}_qa_results.json"
+        result_file = f"{model_name}_qa_top_{args.top_k}_results.json"
         with open(results_dir + result_file, "w") as file:
             json.dump(llm_results, file, indent=2)

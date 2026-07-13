@@ -1,0 +1,7 @@
+vllm
+transformers
+datasets
+"bm25s[core]"
+rank_bm25
+pystemmer
+python-dotenv

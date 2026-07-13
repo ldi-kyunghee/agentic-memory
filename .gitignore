@@ -3,3 +3,5 @@ pyproject.toml
 .venv
 uv.lock
 test.ipynb
+main.py
+.python-version
