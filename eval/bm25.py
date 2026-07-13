@@ -61,8 +61,13 @@ def generate_answers(queries: list[dict], **sampling_params):
             "question": item['question'],
             "answer": answer,
             "reference": item['answer'],
-            "documents": item['documents'],
-            "scores": item['scores']
+            "retrieved": [{
+                "document": document,
+                "score": score
+            } 
+            for document, score in zip(item['documents'], item['scores'])
+            ],
+            "evidence": item['evidence']
         })
     return results
 
@@ -71,34 +76,38 @@ def per_persona(persona, level, top_k):
     queries = []
     answers = []
     memories = []
+    evidences = []
     results = []
     for session in sessions:
         per_session_query = [question['question'] for question in session['questions']]
         per_session_answer = [question['answer'] for question in session['questions']]
+        per_session_evidence = [evidence['memory_content'] for question in session['questions'] for evidence in question['evidence']]
         per_session_memory = [memory['memory_content'] for memory in session['memory_points']]
         
         if level == 'per_session':
             top_k = len(per_session_memory)
-            results += retrieve(per_session_query, per_session_answer, per_session_memory, top_k)
+            results += retrieve(per_session_query, per_session_answer, per_session_memory, per_session_evidence, top_k)
         else:
             queries += per_session_query
             memories += per_session_memory
             answers  += per_session_answer
+            evidences += per_session_evidence
 
     if level == 'per_persona':
-        results = retrieve(queries, answers, memories, top_k)
+        results = retrieve(queries, answers, memories, evidences, top_k)
     return results
 
-def retrieve(queries: list, answers: list, memories: list, top_k: int = 5):
+def retrieve(queries: list, answers: list, memories: list, evidences: list, top_k: int = 5):
     results = []
     mem_tokenized = bm25s.tokenize(memories, stemmer=stemmer)
     retriever.index(mem_tokenized)
     queries_tokenized = bm25s.tokenize(queries, stemmer=stemmer)
     documents, document_scores = retriever.retrieve(queries_tokenized, corpus=memories, k=top_k)
-    for query, answer, docs, scores in zip(queries, answers, documents, document_scores):
+    for query, answer, evidence, docs, scores in zip(queries, answers, evidences, documents, document_scores):
         results.append({
             "question": query,
             "answer": answer,
+            "evidence": evidence,
             "documents": docs.tolist(),
             "scores": scores.tolist()
         })

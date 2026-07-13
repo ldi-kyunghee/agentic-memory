@@ -6,7 +6,7 @@ PROMPT = (
     "{documents}"
     "Question: {question}"
     "If the answer could not be found in the provided documents, do not hallucinate an answer."
-    "Answer concisely without any commentary."
+    "Answer concisely without commentary."
 ).strip()
 
 def load_config(config_file):
