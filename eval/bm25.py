@@ -19,7 +19,7 @@ def init_parser():
     parser.add_argument('--level', choices=['per_persona', 'per_session'], default='per_session')
     parser.add_argument('--top_k', type=int, default=5)
     parser.add_argument('--use_llm', action='store_true', default=False)
-    parser.add_argument('--llm_config', type=str | os.PathLike, default=None)
+    parser.add_argument('--llm_config', type=str, default=None)
     return parser
 
 
