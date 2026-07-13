@@ -98,8 +98,8 @@ def retrieve(queries: list, answers: list, memories: list, top_k: int = 5):
         results.append({
             "question": query,
             "answer": answer,
-            "documents": docs,
-            "scores": scores
+            "documents": docs.tolist(),
+            "scores": scores.tolist()
         })
 
     return results
