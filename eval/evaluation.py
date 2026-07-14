@@ -175,6 +175,7 @@ def main(args, max_workers: int = 10):
     output_dir = "scores/"
     output_file = output_dir + args.results_file.replace("results", "scores")
 
+    os.makedirs(output_dir, exist_ok=True)
     with open(data_file, "r") as file:
         data = json.load(file)
 
