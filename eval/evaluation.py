@@ -194,8 +194,9 @@ def main(args, max_workers: int = 10):
         eval_results['per_persona_results'] = eval_fn(item)
 
     os.makedirs("raw_scores", exist_ok=True)
-    with open('raw_scores/' + args.results_file, "r") as file:
-        file.writes(eval_results['per_persona_results'])
+    if isinstance(eval_results['per_persona_results'][0], str):
+        with open('raw_scores/' + args.results_file, "w") as file:
+            file.write(eval_results['per_persona_results'])
 
     eval_results = aggregate_results(eval_results)
 
