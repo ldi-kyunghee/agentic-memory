@@ -89,7 +89,7 @@ def aggregate_results(eval_results):
     omission_qa_num = 0
     qa_num = 0
     qa_valid_num = 0
-    for item in eval_results["question_answering_records"]:
+    for item in eval_results:
         item["is_valid"] = True
         qa_num += 1
 
@@ -126,8 +126,11 @@ def main(args, max_workers: int = 10):
     with open(data_file, "r") as file:
         data = json.load(file)
 
-    eval_results = llm_judge_eval(data, max_workers)
-    results_aggregated = aggregate_results(eval_results)
+    eval_results = []
+    for item in data:
+        results = llm_judge_eval(item, max_workers)
+        results_aggregated = aggregate_results(results)
+        eval_results += results_aggregated
 
     with open(output_file, "w") as file:
         json.dump(results_aggregated, file, indent=2)
