@@ -6,3 +6,4 @@ sampling_params:
   n: 1
   max_tokens: 16
   seed: 42
+  temperature: 0.5
