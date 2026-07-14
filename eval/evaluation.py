@@ -15,7 +15,6 @@ load_dotenv()
 def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--results_file', type=str)
-    parser.add_argument('--output_file', type=str)
     return parser
 
 def evaluation_for_question(
@@ -72,7 +71,7 @@ def llm_judge_eval(qa_results, max_workers: int = 10):
             )
             futures[future] = qa
 
-        for future in tqdm(as_completed(futures), total=len(futures), desc=f"Question-Answering Evaluation([{idx}]{user_name})"):
+        for future in tqdm(as_completed(futures), total=len(futures)):
             qa = futures[future]
             try:
                 result = future.result()
@@ -122,7 +121,7 @@ def main(args, max_workers: int = 10):
     data_dir = "results/"
     data_file = data_dir + args.results_file
     output_dir = "scores/"
-    output_file = output_dir + args.output_file
+    output_file = output_dir + args.results_file.replace("results", "scores")
 
     with open(data_file, "r") as file:
         data = json.load(file)
