@@ -193,7 +193,8 @@ def main(args, max_workers: int = 10):
     for item in data:
         eval_results['per_persona_results'] = eval_fn(item)
 
-    with open(output_file.replace("_results", "_eval_string"), "r") as file:
+    os.makedirs("raw_scores", exist_ok=True)
+    with open('raw_scores/' + args.results_file, "r") as file:
         file.writes(eval_results['per_persona_results'])
 
     eval_results = aggregate_results(eval_results)
