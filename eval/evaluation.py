@@ -3,19 +3,31 @@ import json
 import time
 import copy
 import argparse
+from vllm import LLM, SamplingParams
 from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dotenv import load_dotenv
 
+from functools import partial
+
 from llms import llm_request_for_json
-from utils import EVALUATION_PROMPT_FOR_QUESTION
+from utils import EVALUATION_PROMPT_FOR_QUESTION, load_config
 
 load_dotenv()
 
 def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--results_file', type=str)
+    parser.add_argument('--backend', choices=['vllm', 'openai'], default='vllm')
+    parser.add_argument('--config_file', type=str)
     return parser
+
+def load_vllm(**model_kwargs):
+    llm = LLM(
+        **model_kwargs
+    )
+
+    return llm
 
 def evaluation_for_question(
     question: str,
@@ -40,6 +52,40 @@ def evaluation_for_question(
     result = llm_request_for_json(prompt)
 
     return result
+
+def evaluation_for_question_vllm(
+    question: str,
+    reference_answer: str,
+    key_memory_points: str,
+    response: str
+):
+    prompt = EVALUATION_PROMPT_FOR_QUESTION.format(
+        question=question,
+        reference_answer=reference_answer,
+        key_memory_points=key_memory_points,
+        response=response
+    )
+
+    return prompt
+
+def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
+    sampling_params = SamplingParams(**sampling_params)
+    
+    prompts = []
+    for result in qa_results:
+        prompt = evaluation_for_question_vllm(
+            result['question'],
+            result['reference'],
+            '\n'.join(result['evidence']),
+            result['answer']
+        )
+        prompts.append(prompt)
+
+    request_ids = llm.enqueue(prompts, sampling_params)
+    outputs = llm.wait_for_completion()
+    results = [output.outputs[0].text for output in outputs]
+
+    return results
 
 def compute_f1(precision: float, recall: float) -> float:
     """
@@ -126,12 +172,19 @@ def main(args, max_workers: int = 10):
     with open(data_file, "r") as file:
         data = json.load(file)
 
+    if args.backend == 'vllm':
+        model_kwargs, sampling_params = load_config(args.config_file)
+        llm = load_vllm(**model_kwargs)
+        eval_fn = partial(llm_judge_vllm, llm=llm, sampling_params=sampling_params)
+    elif args.backend == 'openai':
+        eval_fn = partial(llm_judge_eval, max_workers=max_workers)
+
     eval_results = {
         "per_persona_results": [],
         "overall_score": {}
     }
     for item in data:
-        eval_results['per_persona_results'] = llm_judge_eval(item, max_workers)
+        eval_results['per_persona_results'] = eval_fn(item)
 
     eval_results = aggregate_results(eval_results)
 

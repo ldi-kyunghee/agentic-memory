@@ -4,6 +4,6 @@ quantization: bitsandbytes
 seed: 42
 sampling_params:
   n: 1
-  max_tokens: 16
+  max_tokens: 4096
   seed: 42
   temperature: 0.5
