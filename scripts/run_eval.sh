@@ -2,6 +2,6 @@ RESULTS=$(ls results)
 
 for file in ${RESULTS[@]}; do
     if [[ ${file} == *"Qwen"* ]]; then
-        uv run eval/evaluation.py --results_file ${file};
+        uv run eval/evaluation.py --results_file ${file} --backend vllm --config_file vllm_config.yaml;
     fi
 done
