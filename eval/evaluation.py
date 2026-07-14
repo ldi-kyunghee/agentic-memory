@@ -83,7 +83,13 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
 
     request_ids = llm.enqueue(prompts, sampling_params)
     outputs = llm.wait_for_completion()
-    results = [output.outputs[0].text for output in outputs]
+    results = []
+    try:
+        for output in outputs:
+            res = json.loads(output.outputs[0].text)
+            results.append(res)
+    except:
+        results = [output.outputs[0].text for output in outputs]
 
     return results
 
@@ -185,6 +191,9 @@ def main(args, max_workers: int = 10):
     }
     for item in data:
         eval_results['per_persona_results'] = eval_fn(item)
+
+    with open(output_file.replace("_results", "_eval_string"), "r") as file:
+        file.writes(eval_results['per_persona_results'])
 
     eval_results = aggregate_results(eval_results)
 
