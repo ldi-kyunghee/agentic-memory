@@ -72,12 +72,24 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
   - **정밀도 계열(Target P/Acc/FMR)이 크게 높음** — 후보: ① mini judge의 관대함 ② OSS 프롬프트가 짧고 보수적인 fact 위주라 환각 여지 적음 ③ 1유저 분산. GPT-4o 교차 채점(calibration)으로 ①을 분리 진단 예정
   - **Update C 낮고 O 높음** — mini의 update 결정 품질(id 환각 포함) 영향 추정, 서버의 강한 모델에서 재측정
 - 공식 evaluation.py를 심링크 2개(results 경로)로 무수정 재사용 성공 → **러너 산출물의 공식 스키마 호환 실증**
+- 유저 병렬(2 workers) 검증 통과 (2026-07-15): 유저별 컬렉션+history db 격리 하에 409/락/오염 없음. Martin 추출 수 716 — 순차 런(705·741)과 동일 변동 범위 → 격리 실증. UPDATE id 환각 유실 ~13/142세션 (gpt-4o-mini)
+
+## 4d. judge.py 교차 검증 (vs 공식 evaluation.py, 같은 gpt-4o-mini, 2026-07-15)
+
+- 집계 지표 12개 중 9개 ±1.5%p 이내 (R/W-R/TargetP/F1/QA 전부). 초과 3개: Acc +4.96 / FMR −4.80 / Upd O +4.93
+- **레코드 단위 조인 100%** (integrity 576/576, accuracy 705, update 142, QA 155) → build_inputs의 입력 조립이 공식과 완전 동일함을 실증
+- 레코드 일치율: integrity 92.0% / accuracy 89.8% / update 90.8% / QA 96.8% — 동일 모델의 디코딩 모드 차이(json_object 강제 vs 자유생성+펜스) 수준
+- **체계적 차이 1**: accuracy에서 json 모드가 관대한 방향으로 비대칭 (official 1점→ours 2점이 49건, 역방향 3건) → Acc +5%p의 원인. 판정 경계 사례들의 모드 민감성
+- **체계적 차이 2 (발견)**: 공식 채점기는 update 판정에서 rubric 밖 라벨('Completely omitted', 'Partially omitted')을 뱉어 invalid 처리됨 (공식 런의 update valid 137/142가 이것). 우리 json 모드는 대부분 'Omission'으로 정규화 → **우리 쪽이 오히려 rubric 준수율 높음**
+- 결론: judge.py = 공식 채점기의 충실한 강건판으로 채택. 이후 모든 비교는 judge.py 단일 채점기로 일관성 유지 (모드 차이는 판정자 정의에 흡수)
 
 ## 5. 러너 설계 결정
 
 | 항목 | 결정 | 근거 |
 |---|---|---|
 | 유저 스코핑 | `user_id=uuid`, 표시용 이름 별도 (`TEMPLATE_MEM0`에는 이름) | 이름 충돌 방지. 스코핑 키는 LLM에 안 보여 결과 무영향 |
+| 컬렉션 | **유저별 분리** (`halumem_{version}_{uuid}`) | 0.1.118 `delete_all`이 filter 무시하고 컬렉션 전체 reset (main.py:819) → 공유 컬렉션 + 유저 병렬 시 타 워커 메모리 증발/409 레이스. 유저별 분리로 원천 차단 |
+| 유저 병렬 | ProcessPool, 워커별 Memory 인스턴스 + 유저별 history_db_path | SQLite 공유 시 database is locked. history db가 유저별 CUD 이력 trace 부산물로도 남음 |
 | 컨텍스트 타임스탬프 | `metadata.session_time` | §4 |
 | add 이벤트 | `memory_events` 키로 원본 보존 | UPDATE의 previous_memory가 trace/대시보드 핵심 데이터 |
 | `extracted_memories` | DELETE 이벤트 제외 (**확정 필요** — platform의 포함 여부 불명, 편차 후보) | 죽은 메모리가 Integrity/Accuracy 판정 오염 방지 |
