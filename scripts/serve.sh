@@ -55,7 +55,7 @@ tmux new-session -d -s "$SESSION" -n llm \
 tmux new-window -t "$SESSION" -n emb \
     "TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $MEM0_EMBED_MODEL \
         --hf-overrides '{\"is_matryoshka\": true}' \
-        --port $EMB_PORT --gpu-memory-utilization 0.85 \
+        --port $EMB_PORT --gpu-memory-utilization 0.55 \
         2>&1 | tee logs/vllm-emb.log"
 
 echo "서버 기동 대기 중... (첫 실행이면 모델 다운로드 때문에 오래 걸림. tmux attach -t $SESSION 으로 로그 확인 가능)"
