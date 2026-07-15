@@ -48,12 +48,12 @@ fi
 mkdir -p logs
 
 tmux new-session -d -s "$SESSION" -n llm \
-    "CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $OPENAI_MODEL \
+    "TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $OPENAI_MODEL \
         --port $LLM_PORT --gpu-memory-utilization 0.45 --max-model-len 32768 \
         2>&1 | tee logs/vllm-llm.log"
 
 tmux new-window -t "$SESSION" -n emb \
-    "CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $MEM0_EMBED_MODEL \
+    "TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $MEM0_EMBED_MODEL \
         --port $EMB_PORT --gpu-memory-utilization 0.30 \
         2>&1 | tee logs/vllm-emb.log"
 
