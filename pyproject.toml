@@ -11,3 +11,30 @@ dependencies = [
     "transformers>=5.13.1",
     "vllm>=0.25.1",
 ]
+
+[[tool.uv.index]]
+name = "flashinfer-cu128"
+url = "https://flashinfer.ai/whl/cu128"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu128"},
+]
+torchvision = [
+  { index = "pytorch-cu128"},
+]
+torchaudio = [
+  { index = "pytorch-cu128"},
+]
+torchao = [
+  { index = "pytorch-cu128"},
+]
+flashinfer-jit-cache = [
+    { index = "pytorch-cu128" },
+]
