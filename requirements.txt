@@ -6,3 +6,4 @@ rank_bm25
 pystemmer
 python-dotenv
 bitsandbytes
+tenacity
