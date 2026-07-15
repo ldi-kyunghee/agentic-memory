@@ -48,7 +48,7 @@ fi
 mkdir -p logs
 
 tmux new-session -d -s "$SESSION" -n llm \
-    "TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $OPENAI_MODEL \
+    "VLLM_USE_FLASHINFER_SAMPLER=0 TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $OPENAI_MODEL \
         --port $LLM_PORT --gpu-memory-utilization 0.45 --max-model-len 32768 \
         2>&1 | tee logs/vllm-llm.log"
 
