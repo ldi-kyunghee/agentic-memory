@@ -33,8 +33,9 @@ OSS mem0(0.1.118) × 로컬 vLLM으로 HaluMem 평가를 프로토콜 충실하�
 # 0) 최초 1회: 클론 & 환경
 git clone --recurse-submodules https://github.com/ldi-kyunghee/agentic-memory.git && cd agentic-memory
 uv sync                          # 루트 (mem0 러너/judge)
-(cd gpu && uv sync)              # vLLM (linux에서만 설치됨)
-cp .env.example .env             # 서버값으로 편집 (아래 참고)
+(cd gpu && uv sync)              # vLLM 설치 (괄호=서브셸: 실행 후 cwd는 루트 유지)
+# 리포 루트에 .env 생성 — 아래 "서버 .env 핵심값" 블록을 그대로 복사해서 저장
+#   (스크립트/러너 모두 루트에서 실행하며 루트의 .env를 읽음. gpu/에는 .env 불필요)
 
 # 1) 서빙 기동 (Qdrant + vLLM LLM/임베딩, ready까지 대기)
 scripts/serve.sh <빈_GPU_번호>    # 예: scripts/serve.sh 2 / 로그: tmux attach -t vllm-serve
