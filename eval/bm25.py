@@ -9,14 +9,14 @@ import json
 
 import os
 
-from utils import load_config, PROMPT
+from utils import load_config, per_persona_dataset, PROMPT
 
 load_dotenv()
 
 def init_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--data_path', type=str, default='dataset/')
     parser.add_argument('--dataset', type=str, default='HaluMem-Medium.jsonl')
-    parser.add_argument('--level', choices=['per_persona', 'per_session'], default='per_session')
     parser.add_argument('--top_k', type=int, default=5)
     parser.add_argument('--use_llm', action='store_true', default=False)
     parser.add_argument('--llm_config', type=str, default=None)
@@ -24,7 +24,7 @@ def init_parser():
 
 
 def load_dataset(args):
-    with open(f'dataset/{args.dataset}', 'r') as file:
+    with open(args.data_path + args.dataset, 'r') as file:
         dataset = [json.loads(line) for line in file.readlines()]
 
     return dataset
@@ -59,7 +59,7 @@ def generate_answers(queries: list[dict], **sampling_params):
     for item, answer in zip(queries, answers):
         results.append({
             "question": item['question'],
-            "answer": answer,
+            "generated_answer": answer,
             "reference": item['answer'],
             "retrieved": [{
                 "document": document,
@@ -67,54 +67,63 @@ def generate_answers(queries: list[dict], **sampling_params):
             } 
             for document, score in zip(item['documents'], item['scores'])
             ],
-            "evidence": item['evidence']
+            "evidence": item['evidence'],
+            "question_type": item['question_type'],
+            "difficulty": item['difficulty']
         })
+
     return results
 
-def per_persona(persona, level, top_k):
-    sessions = [session for session in persona['sessions'] if session.get("questions")]
-    queries = []
-    answers = []
-    memories = []
-    evidences = []
+def retrieve(qas: list[dict], memories: list, top_k: int = 5):
     results = []
-    for session in sessions:
-        per_session_query = [question['question'] for question in session['questions']]
-        per_session_answer = [question['answer'] for question in session['questions']]
-        per_session_evidence = [evidence['memory_content'] for question in session['questions'] for evidence in question['evidence']]
-        per_session_memory = [memory['memory_content'] for memory in session['memory_points']]
-        
-        if level == 'per_session':
-            top_k = len(per_session_memory)
-            results += retrieve(per_session_query, per_session_answer, per_session_memory, per_session_evidence, top_k)
-        else:
-            queries += per_session_query
-            memories += per_session_memory
-            answers  += per_session_answer
-            evidences += per_session_evidence
+    queries = [qa['question'] for qa in qas]
 
-    if level == 'per_persona':
-        results = retrieve(queries, answers, memories, evidences, top_k)
-    return results
-
-def retrieve(queries: list, answers: list, memories: list, evidences: list, top_k: int = 5):
-    results = []
     mem_tokenized = bm25s.tokenize(memories, stemmer=stemmer)
     retriever.index(mem_tokenized)
     queries_tokenized = bm25s.tokenize(queries, stemmer=stemmer)
     documents, document_scores = retriever.retrieve(queries_tokenized, corpus=memories, k=top_k)
-    for query, answer, evidence, docs, scores in zip(queries, answers, evidences, documents, document_scores):
-        results.append({
-            "question": query,
-            "answer": answer,
-            "evidence": evidence,
-            "documents": docs.tolist(),
-            "scores": scores.tolist()
-        })
+    for qa, document, score in zip(qas, documents, document_scores):
+        res = {
+            k: v
+            for k, v in qa.items()
+        }
 
+        res['retrieved'] = {
+            "memory_content": document.tolist(),
+            "scores": score.tolist()
+        }
+
+        results += res
     return results
 
+def main(args):
+    dataset = load_dataset(args)
+    retrieval_results = []
+    llm_results = []
+    for persona in dataset:
+        qas, per_persona_memories = per_persona_dataset(persona)
+        per_persona_results = retrieve(qas, per_persona_memories, args.top_k)
+        per_persona_llm_results = generate_answers(per_persona_results, **sampling_params)
+
+        retrieval_results.append(per_persona_results)
+        llm_results.append(per_persona_llm_results)
     
+    results_dir = "results/"
+    bm25_results_dir = results_dir + "retrieval/"
+    dataset_name = args.dataset.split('-')[-1].split('.')[0].lower()
+    bm25_results_file = f"bm25_retrieval_{dataset_name}_top_{args.top_k}_results.json"
+    
+    os.makedirs(bm25_results_dir, exist_ok=True)
+    with open(bm25_results_dir + bm25_results_file, "w") as file:
+        json.dump(retrieval_results, file, indent=2)
+        
+    model_name = model_kwargs['model'].split('/')[-1].replace('-2507', '')
+    result_file = f"{model_name}_{dataset_name}_qa_top_{args.top_k}_results.json"
+    
+    results_dir += "question_answering/"
+    os.makedirs(results_dir, exist_ok=True)
+    with open(results_dir + result_file, "w") as file:
+        json.dump(llm_results, file, indent=2)
 
 if __name__ == '__main__':
     parser = init_parser()
@@ -123,29 +132,7 @@ if __name__ == '__main__':
     retriever = BM25HF()
     stemmer = Stemmer.Stemmer("english")
 
-    dataset = load_dataset(args)
-    results = []
-    for persona in dataset:
-        per_persona_results = per_persona(persona, args.level, args.top_k)
-        results.append(per_persona_results)
+    model_kwargs, sampling_params = load_config(args.llm_config)
+    llm: LLM = load_vllm(**model_kwargs)
 
-    results_dir = "results/"
-    os.makedirs(results_dir, exist_ok=True)
-    dataset_name = args.dataset.split('-')[-1].split('.')[0].lower()
-    with open(results_dir + f"bm25_retrieval_{dataset_name}_{args.level}_top_{args.top_k}_results.json", "w") as file:
-        json.dump(results, file, indent=2)
-
-    if args.use_llm:
-        model_kwargs, sampling_params = load_config(args.llm_config)
-        llm: LLM = load_vllm(**model_kwargs)
-        llm_results = []
-        for per_persona_result in results:
-            per_persona_llm_results = generate_answers(per_persona_result, **sampling_params)
-            llm_results.append(per_persona_llm_results)
-        
-        model_name = model_kwargs['model'].split('/')[-1].replace('-2507', '')
-        result_file = f"{model_name}_{dataset_name}_qa_{args.level}_top_{args.top_k}_results.json"
-        if args.level == 'per_session':
-            result_file = result_file.replace(f'_top_{args.top_k}', '')
-        with open(results_dir + result_file, "w") as file:
-            json.dump(llm_results, file, indent=2)
+    main(args)

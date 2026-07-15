@@ -76,6 +76,10 @@ Do **not** add any extra explanation or comments outside the JSON block.
 ```
 """
 
+mem_template = """[{}]
+        User: {}
+        Assistant: {}"""
+
 def load_config(config_file):
     with open(f"configs/{config_file}", "r") as file:
         model_kwargs = yaml.safe_load(file)
@@ -87,5 +91,25 @@ def add_memory_from_dialogue(session_dialogue):
     user_dialogue = session_dialogue[::2]
     assistant_dialogue = session_dialogue[1::2]
 
-    for user, assistant in zip(user_dialogue):
-        pass
+    per_session_memories = []
+    for user, assistant in zip(user_dialogue, assistant_dialogue):
+        memory = mem_template.format(
+            user['timestamp'],
+            user['content'],
+            assistant['content']
+        )
+
+        per_session_memories.append(memory)
+    
+    return per_session_memories
+
+def per_persona_dataset(persona):
+    sessions = [session for session in persona['sessions'] if session.get('questions')]
+    dialogue = [session for session in sessions['dialogue']]
+    qa_data = [session for session in sessions['questions']]
+
+    memories = []
+    for per_session_dialogue in dialogue:
+      memories += add_memory_from_dialogue(per_session_dialogue)
+
+    return qa_data, memories
