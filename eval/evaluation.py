@@ -2,6 +2,7 @@ import os
 import json
 import time
 import copy
+import re
 import argparse
 from vllm import LLM, SamplingParams
 from tqdm import tqdm
@@ -85,10 +86,18 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
     outputs = llm.wait_for_completion()
     results = []
     try:
+        
         for output in outputs:
-            res = json.loads(output.outputs[0].text)
+            content = output.outputs[0].text
+            match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
+            if not match:
+                raise ValueError(f"No JSON block found in model output: {content}")
+
+            json_str = match.group(1).strip()
+
+            res = json.loads(json_str)
             results.append(res)
-    except:
+    except Exception as e:
         results = [output.outputs[0].text for output in outputs]
 
     return results
