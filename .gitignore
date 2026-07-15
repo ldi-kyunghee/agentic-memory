@@ -4,4 +4,4 @@ __pycache__/
 .env
 results/
 traces/
-.DS_Store
+.DS_Storelogs/
