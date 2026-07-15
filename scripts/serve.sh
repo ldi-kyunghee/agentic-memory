@@ -54,6 +54,7 @@ tmux new-session -d -s "$SESSION" -n llm \
 
 tmux new-window -t "$SESSION" -n emb \
     "TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $MEM0_EMBED_MODEL \
+        --hf-overrides '{\"is_matryoshka\": true}' \
         --port $EMB_PORT --gpu-memory-utilization 0.30 \
         2>&1 | tee logs/vllm-emb.log"
 
