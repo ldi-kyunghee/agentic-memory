@@ -82,3 +82,10 @@ def load_config(config_file):
     
     sampling_params = model_kwargs.pop("sampling_params")
     return model_kwargs, sampling_params
+
+def add_memory_from_dialogue(session_dialogue):
+    user_dialogue = session_dialogue[::2]
+    assistant_dialogue = session_dialogue[1::2]
+
+    for user, assistant in zip(user_dialogue):
+        pass
