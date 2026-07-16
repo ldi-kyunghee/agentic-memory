@@ -74,6 +74,12 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 - 공식 evaluation.py를 심링크 2개(results 경로)로 무수정 재사용 성공 → **러너 산출물의 공식 스키마 호환 실증**
 - 유저 병렬(2 workers) 검증 통과 (2026-07-15): 유저별 컬렉션+history db 격리 하에 409/락/오염 없음. Martin 추출 수 716 — 순차 런(705·741)과 동일 변동 범위 → 격리 실증. UPDATE id 환각 유실 ~13/142세션 (gpt-4o-mini)
 
+## 4d-2. 서버 스모크 — Qwen3-4B 행동 지문 (1 user, 2026-07-16)
+
+- 파이프라인 건강: 추출 0건 세션 0개, session_time 왕복 정상, 텍스트 품질 정상 (전 스택 vLLM: Qwen3-4B + Qwen3-Embedding-4B/2560)
+- **모델별 메모리 관리 성향이 뚜렷이 다름**: 이벤트 ADD 505 / UPDATE 930 / DELETE 4, 추출 1,435 vs 골든 718 (≈2.0×) — mini(≈1.0×, UPDATE ~100)와 대조적인 **update-happy** 성향. UPDATE id 환각 21건 (시도 930 대비 실패율 ~2%)
+- 풀런 해석용 가설: 밀도 2× → R↑ / Target P·Acc↓ 가능, update 시도 多 → Upd O 개선 가능. 모델별 성향 차이는 대시보드 비교 소재
+
 ## 4d. judge.py 교차 검증 (vs 공식 evaluation.py, 같은 gpt-4o-mini, 2026-07-15)
 
 - 집계 지표 12개 중 9개 ±1.5%p 이내 (R/W-R/TargetP/F1/QA 전부). 초과 3개: Acc +4.96 / FMR −4.80 / Upd O +4.93
@@ -113,3 +119,8 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 - **Qdrant**: 서버 모드(host/port, docker) 기본. mac 스모크는 embedded `path` 모드 가능
 - **llms.py 주의** (서브모듈): `RETRY_TIMES` 등 env 기본값 없이 `int(os.getenv())` — .env 누락 시 import 에러. JSON 파싱이 ```json 블록 정규식 — 로컬 모델은 vLLM structured output으로 강제 필요
 - **데이터 경로**: 벤치마크는 `dataset/HaluMem-{Medium,Long}.jsonl` (`HaluMem/data/`에는 없음)
+- **서버(Blackwell RTX 6000 Pro) 실전 이슈 3종** (2026-07-15, 전부 scripts/serve.sh에 반영):
+  1. FlashInfer 샘플러 JIT이 "requires sm75+"로 죽음 — torch가 CUDA<12.9 빌드라 sm_120 capability 조회 실패 → arch 폴백 목록에 구형 arch 섞임. 우회: `VLLM_USE_FLASHINFER_SAMPLER=0` + `TORCH_CUDA_ARCH_LIST=12.0` (근본 해결은 torch cu129+ 재설치)
+  2. 같은 GPU에 vLLM 서버 2개 (순차 기동 기준) — 두 번째 서버의 `gpu-memory-utilization`은 양쪽 제약의 박스 안이어야 함: **(선점 프로세스 점유 + 자기 웨이트/그래프)/전체 < util < 잔여 메모리/전체**. 낮으면 KV cache 음수(util×전체 − 총사용량), 높으면 기동 시 free-memory 검사 탈락. LLM(0.45, ~36GB 점유) 뒤의 emb는 0.49~0.61 범위 → **0.55 채택**. 동시 기동은 프로파일링 레이스라 비결정적 — 금지
+  3. vLLM이 Qwen3-Embedding-4B의 `dimensions` 파라미터를 400으로 거부 (mem0 embedder는 항상 dimensions를 보냄) — 모델은 MRL 지원이나 HF config 미선언이 원인. 해결: serve 시 `--hf-overrides '{"is_matryoshka": true}'`
+  - 참고: 임베딩 모델은 별도 태스크 플래그 없이 자동 감지됨 (`Supported tasks: ['embed']`)
