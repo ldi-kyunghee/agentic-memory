@@ -37,3 +37,12 @@ torchao = [
 flashinfer-jit-cache = [
     { index = "pytorch-cu128" },
 ]
+
+xielu = { git = "https://github.com/rubber-duck-debug/xielu.git" }
+
+[tool.uv]
+exclude-dependencies = ['pynvml']
+
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch"]
+xielu = ["torch"]
