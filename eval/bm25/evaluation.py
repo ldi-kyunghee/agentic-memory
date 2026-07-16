@@ -179,9 +179,9 @@ def aggregate_results(eval_results):
     return eval_results
 
 def main(args, max_workers: int = 10):
-    data_dir = "results/"
+    data_dir = "results/bm25/question_answering"
     data_file = data_dir + args.results_file
-    output_dir = "scores/"
+    output_dir = "scores/bm25/"
     output_file = output_dir + args.results_file.replace("results", "scores")
 
     os.makedirs(output_dir, exist_ok=True)
@@ -203,9 +203,9 @@ def main(args, max_workers: int = 10):
         eval_results['per_persona_results'] = eval_fn(item)
 
     os.makedirs("raw_scores", exist_ok=True)
-    if isinstance(eval_results['per_persona_results'][0], str):
-        with open('raw_scores/' + args.results_file, "w") as file:
-            file.write(eval_results['per_persona_results'])
+    # if isinstance(eval_results['per_persona_results'][0], str):
+    #     with open('raw_scores/' + args.results_file, "w") as file:
+    #         file.write(eval_results['per_persona_results'])
 
     eval_results = aggregate_results(eval_results)
 

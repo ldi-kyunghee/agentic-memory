@@ -108,7 +108,7 @@ def main(args):
         retrieval_results.append(per_persona_results)
         llm_results.append(per_persona_llm_results)
     
-    results_dir = "results/"
+    results_dir = "results/bm25/"
     bm25_results_dir = results_dir + "retrieval/"
     dataset_name = args.dataset.split('-')[-1].split('.')[0].lower()
     bm25_results_file = f"bm25_retrieval_{dataset_name}_top_{args.top_k}_results.json"
@@ -120,9 +120,9 @@ def main(args):
     model_name = model_kwargs['model'].split('/')[-1].replace('-2507', '')
     result_file = f"{model_name}_{dataset_name}_qa_top_{args.top_k}_results.json"
     
-    results_dir += "question_answering/"
-    os.makedirs(results_dir, exist_ok=True)
-    with open(results_dir + result_file, "w") as file:
+    qa_results_dir = results_dir + "question_answering/"
+    os.makedirs(qa_results_dir, exist_ok=True)
+    with open(qa_results_dir + result_file, "w") as file:
         json.dump(llm_results, file, indent=2)
 
 if __name__ == '__main__':

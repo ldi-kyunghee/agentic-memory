@@ -81,7 +81,7 @@ mem_template = """[{}]
         Assistant: {}"""
 
 def load_config(config_file):
-    with open(f"configs/{config_file}", "r") as file:
+    with open(f"configs/bm25_eval/{config_file}", "r") as file:
         model_kwargs = yaml.safe_load(file)
     
     sampling_params = model_kwargs.pop("sampling_params")
