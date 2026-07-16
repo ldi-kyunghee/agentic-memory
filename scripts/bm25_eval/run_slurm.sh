@@ -18,6 +18,6 @@ uv run eval/bm25/bm25.py --data_path /local_datasets/ --top_k 10 --use_llm --llm
 uv run eval/bm25/bm25.py --data_path /local_datasets/ --dataset HaluMem-Long.jsonl --top_k 5 --use_llm --llm_config vllm_config.yaml
 uv run eval/bm25/bm25.py --data_path /local_datasets/ --dataset HaluMem-Long.jsonl --top_k 10 --use_llm --llm_config vllm_config.yaml
 
-rm -r 
+rm -r /local_datasets/halumem_dataset
 
 exit
