@@ -9,7 +9,6 @@ dependencies = [
     "torchaudio>=2.11.0",
     "torchvision>=0.26.0",
     "transformers>=5.13.1",
-    "vllm>=0.25.1",
 ]
 
 [[tool.uv.index]]
