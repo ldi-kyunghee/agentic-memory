@@ -40,7 +40,9 @@ def load_dataset(args):
     return dataset
 
 def load_vllm(**model_kwargs):
+    model_kwargs.pop('max_tokens')
     llm = LLM(
+        max_tokens=128,
         **model_kwargs
     )
 
