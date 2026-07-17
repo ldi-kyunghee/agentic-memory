@@ -9,39 +9,40 @@ dependencies = [
     "torchaudio>=2.11.0",
     "torchvision>=0.26.0",
     "transformers>=5.13.1",
+    "vllm>=0.20.0",
 ]
 
 [[tool.uv.index]]
-name = "flashinfer-cu128"
-url = "https://flashinfer.ai/whl/cu128"
+name = "flashinfer-cuda"
+url = "https://flashinfer.ai/whl/cu130"
 explicit = true
 
 [[tool.uv.index]]
-name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cuda"
+url = "https://download.pytorch.org/whl/cu130"
 explicit = true
 
 [tool.uv.sources]
 torch = [
-  { index = "pytorch-cu128"},
+  { index = "pytorch-cuda"},
 ]
 torchvision = [
-  { index = "pytorch-cu128"},
+  { index = "pytorch-cuda"},
 ]
 torchaudio = [
-  { index = "pytorch-cu128"},
+  { index = "pytorch-cuda"},
 ]
 torchao = [
-  { index = "pytorch-cu128"},
+  { index = "pytorch-cuda"},
 ]
 flashinfer-jit-cache = [
-    { index = "pytorch-cu128" },
+    { index = "pytorch-cuda" },
 ]
 
 xielu = { git = "https://github.com/rubber-duck-debug/xielu.git" }
 
 [tool.uv]
-exclude-dependencies = ['pynvml', 'nvidia-cutlass-dsl-libs-cu13']
+exclude-dependencies = ['pynvml']
 
 [tool.uv.extra-build-dependencies]
 flash-attn = ["torch"]
