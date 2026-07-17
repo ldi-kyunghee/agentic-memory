@@ -20,14 +20,46 @@ def jaccard(a: str, b: str) -> float:
     return len(ta & tb) / len(ta | tb)
 
 
+_EMB = {"client": None, "model": None, "cache": {}}  # --matcher embed일 때만 초기화됨
+
+
+def init_embed_matcher():
+    from openai import OpenAI
+    _EMB["client"] = OpenAI(
+        base_url=os.getenv("MEM0_EMBED_BASE_URL") or os.getenv("OPENAI_BASE_URL"),
+        api_key=os.getenv("OPENAI_API_KEY", "dummy"),
+    )
+    _EMB["model"] = os.getenv("MEM0_EMBED_MODEL", "text-embedding-3-small")
+
+
+def _embed(texts: list[str]) -> list[list[float]]:
+    # 텍스트 단위 캐시: writes 목록이 반복 사용되므로 API 호출은 신규 텍스트만 발생함
+    missing = [t for t in texts if t not in _EMB["cache"]]
+    for i in range(0, len(missing), 256):
+        batch = missing[i:i + 256]
+        resp = _EMB["client"].embeddings.create(model=_EMB["model"], input=batch)
+        for t, d in zip(batch, resp.data):
+            _EMB["cache"][t] = d.embedding
+    return [_EMB["cache"][t] for t in texts]
+
+
+def _cosine(a, b):
+    dot = sum(x * y for x, y in zip(a, b))
+    na = sum(x * x for x in a) ** 0.5
+    nb = sum(x * x for x in b) ** 0.5
+    return dot / (na * nb) if na and nb else 0.0
+
+
 def best_match(target: str, candidates: list[str], threshold: float) -> tuple[int, float]:
-    """골든 텍스트 <-> 시스템 저장 텍스트의 근사 정렬. 임계 미달이면 (-1, best_score)
-    주의: 1차 구현은 토큰 Jaccard임. 패러프레이즈에 약함 -> 추후 임베딩 매처로 교체 지점"""
-    best_i, best_s = -1, 0.0
-    for i, c in enumerate(candidates):
-        s = jaccard(target, c)
-        if s > best_s:
-            best_i, best_s = i, s
+    if not candidates:
+        return -1, 0.0
+    if _EMB["client"]:
+        vecs = _embed([target] + candidates)
+        scores = [_cosine(vecs[0], v) for v in vecs[1:]]
+    else:
+        scores = [jaccard(target, c) for c in candidates]
+    best_i = max(range(len(scores)), key=lambda i: scores[i])
+    best_s = scores[best_i]
     return (best_i if best_s >= threshold else -1), best_s
 
 
@@ -98,11 +130,14 @@ def classify_omissions(traces: list[dict], judge_records: dict, threshold: float
         if hit_i >= 0:
             cause = "decision_miss"
         else:
-            w_i, w_s = best_match(old, [w["text"] for _, w in writes_all], threshold)
+            # probe 시점(mp의 세션) 이전에 쓰인 것만 "저장돼 있었다"로 인정함
+            past = [(s, w) for s, w in writes_all if s <= mp["session_id"]]
+            w_i, w_s = best_match(old, [w["text"] for _, w in past], threshold)
+
             if w_i < 0:
                 cause = "extraction_miss"
             else:
-                later = [w for s, w in writes_all[w_i + 1:]
+                later = [w for s, w in past[w_i + 1:]
                          if w["op"] in ("UPDATE", "DELETE")
                          and w.get("prev_text") and jaccard(old, w["prev_text"]) >= threshold]
                 cause = "overwritten" if later else "retrieval_miss"
@@ -122,7 +157,8 @@ def classify_qa_failures(traces: list[dict], judge_records: dict, threshold: flo
     """
     qa_hits = {r["ref"]["question"]: r["retrieval"]["hits"]
                for r in traces if r["stage"] == "qa_retrieval" and r.get("ref")}
-    write_texts = [w["text"] for r in traces if r["event"] == "memory_write" for w in r["writes"]]
+    writes_all = [(r["session"], w["text"]) for r in traces if r["event"] == "memory_write"
+                for w in r["writes"]]
 
     causes, cases = Counter(), []
     wrong = [q for q in judge_records["question_answering_records"]
@@ -132,10 +168,11 @@ def classify_qa_failures(traces: list[dict], judge_records: dict, threshold: flo
         hits = [h["text"] for h in qa_hits.get(qa["question"], [])]
         evid = [e["memory_content"] for e in qa["evidence"]]
         # evidence 여러 개면 전부 context에 있어야 답 가능 -> 하나라도 없는 지점이 실패 원인
+        past_texts = [t for s, t in writes_all if s <= qa["session_id"]]
         missing = [e for e in evid if best_match(e, hits, threshold)[0] < 0]
         if not missing:
             cause = "generation_fault"       # 재료는 다 있었음 -> 답변 생성이 잘못
-        elif all(best_match(e, write_texts, threshold)[0] >= 0 for e in missing):
+        elif all(best_match(e, past_texts, threshold)[0] >= 0 for e in missing):
             cause = "retrieval_fault"        # 저장은 됐는데 top-20에 못 듦
         else:
             cause = "extraction_fault"       # 애초에 저장된 적 없음 (상류 전파)
@@ -176,5 +213,10 @@ if __name__ == "__main__":
     p.add_argument("--judge", default=None, help="results/.../judge/<uuid>.json (없으면 ⓐ만)")
     p.add_argument("--threshold", type=float, default=0.4, help="근사 매칭 Jaccard 임계값")
     p.add_argument("--out", default="reports/trace_analysis.json")
+    p.add_argument("--matcher", choices=["jaccard", "embed"], default="jaccard")
     args = p.parse_args()
+    if args.matcher == "embed":
+        init_embed_matcher()
+        if args.threshold == 0.4:  # jaccard 기본값 그대로면 코사인용 기본으로 승격
+            args.threshold = 0.65
     main(args.trace, args.judge, args.threshold, args.out)
