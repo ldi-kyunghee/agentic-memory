@@ -18,6 +18,7 @@ load_dotenv()
 
 def init_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--results_dir', type=str)
     parser.add_argument('--results_file', type=str)
     parser.add_argument('--backend', choices=['vllm', 'openai'], default='vllm')
     parser.add_argument('--config_file', type=str)
@@ -77,8 +78,8 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
         prompt = evaluation_for_question_vllm(
             result['question'],
             result['reference'],
-            '\n'.join(result['evidence']),
-            result['answer']
+            '\n'.join([evidence['memory_content'] for evidence in result['evidence']]),
+            result['generated_answer']
         )
         prompts.append(prompt)
 
@@ -127,8 +128,8 @@ def llm_judge_eval(qa_results, max_workers: int = 10):
                 evaluation_for_question,
                 qa["question"], 
                 qa["reference"], 
-                "\n".join(qa['evidence']), 
-                qa["answer"]
+                "\n".join(evidence['memory_content'] for evidence in qa['evidence']), 
+                qa["generated_answer"]
             )
             futures[future] = qa
 
@@ -179,9 +180,9 @@ def aggregate_results(eval_results):
     return eval_results
 
 def main(args, max_workers: int = 10):
-    data_dir = "results/bm25/question_answering"
+    data_dir = args.results_dir
     data_file = data_dir + args.results_file
-    output_dir = "scores/bm25/"
+    output_dir = args.results_dir.replace('results', 'scores').replace('question_answering/', '')
     output_file = output_dir + args.results_file.replace("results", "scores")
 
     os.makedirs(output_dir, exist_ok=True)
@@ -201,11 +202,6 @@ def main(args, max_workers: int = 10):
     }
     for item in data:
         eval_results['per_persona_results'] = eval_fn(item)
-
-    os.makedirs("raw_scores", exist_ok=True)
-    # if isinstance(eval_results['per_persona_results'][0], str):
-    #     with open('raw_scores/' + args.results_file, "w") as file:
-    #         file.write(eval_results['per_persona_results'])
 
     eval_results = aggregate_results(eval_results)
 

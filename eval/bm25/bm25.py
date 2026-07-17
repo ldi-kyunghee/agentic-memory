@@ -47,7 +47,7 @@ def generate_answers(queries: list[dict], **sampling_params):
         documents = ""
         for doc in item['documents']:
             documents += f" - {doc}\n"
-        prompt = PROMPT.format(content=documents, question=query)
+        prompt = PROMPT.format(context=documents, question=query)
         prompts.append(prompt)
 
     request_ids = llm.enqueue(prompts, sampling_params=sampling_params)
@@ -61,12 +61,7 @@ def generate_answers(queries: list[dict], **sampling_params):
             "question": item['question'],
             "generated_answer": answer,
             "reference": item['answer'],
-            "retrieved": [{
-                "document": document,
-                "score": score
-            } 
-            for document, score in zip(item['documents'], item['scores'])
-            ],
+            "retrieved": item['retrieved'],
             "evidence": item['evidence'],
             "question_type": item['question_type'],
             "difficulty": item['difficulty']
@@ -77,23 +72,24 @@ def generate_answers(queries: list[dict], **sampling_params):
 def retrieve(qas: list[dict], memories: list, top_k: int = 5):
     results = []
     queries = [qa['question'] for qa in qas]
-
     mem_tokenized = bm25s.tokenize(memories, stemmer=stemmer)
     retriever.index(mem_tokenized)
     queries_tokenized = bm25s.tokenize(queries, stemmer=stemmer)
     documents, document_scores = retriever.retrieve(queries_tokenized, corpus=memories, k=top_k)
-    for qa, document, score in zip(qas, documents, document_scores):
+    for qa, document, scores in zip(qas, documents, document_scores):
         res = {
             k: v
             for k, v in qa.items()
         }
 
-        res['retrieved'] = {
-            "memory_content": document.tolist(),
-            "scores": score.tolist()
-        }
+        res['retrieved'] = []
+        for doc, score in zip(document.tolist(), scores.tolist()):
+            res['retrieved'].append({
+                'memory_content': doc,
+                'score': score
+            })
 
-        results += res
+        results.append(res)
     return results
 
 def main(args):
@@ -108,7 +104,7 @@ def main(args):
         retrieval_results.append(per_persona_results)
         llm_results.append(per_persona_llm_results)
     
-    results_dir = "results/bm25/"
+    results_dir = "results/bm25/exp2/"
     bm25_results_dir = results_dir + "retrieval/"
     dataset_name = args.dataset.split('-')[-1].split('.')[0].lower()
     bm25_results_file = f"bm25_retrieval_{dataset_name}_top_{args.top_k}_results.json"

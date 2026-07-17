@@ -129,8 +129,10 @@ def add_memory_from_dialogue(session_dialogue):
 
 def per_persona_dataset(persona):
     sessions = [session for session in persona['sessions'] if session.get('questions')]
-    dialogue = [session for session in sessions['dialogue']]
-    qa_data = [session for session in sessions['questions']]
+    dialogue = [session['dialogue'] for session in sessions]
+    qa_data = []
+    for session in sessions:
+      qa_data += session['questions']
 
     memories = []
     for per_session_dialogue in dialogue:
