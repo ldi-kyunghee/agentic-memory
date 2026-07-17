@@ -1,5 +1,5 @@
 from vllm import LLM, SamplingParams
-
+import torch
 import bm25s
 from dotenv import load_dotenv
 from bm25s.hf import BM25HF
@@ -7,7 +7,7 @@ import Stemmer
 import argparse
 import json
 
-import os
+import os, gc
 
 from utils import load_config, per_persona_dataset, PROMPT
 
@@ -20,6 +20,11 @@ def with_prior(string):
         return False
     else:
         raise ValueError
+    
+def flush():
+    torch.cuda.empty_cache()
+    torch.cuda.reset_peak_memory_stats()
+    gc.collect()
 
 def init_parser():
     parser = argparse.ArgumentParser()
@@ -134,6 +139,8 @@ def main(args):
         json.dump(llm_results, file, indent=2)
 
 if __name__ == '__main__':
+    flush()
+    
     parser = init_parser()
     args = parser.parse_args()
     print(args)
