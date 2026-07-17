@@ -12,8 +12,8 @@
 
 tar -xvf dataset/halumem_dataset.tar.gz -C /local_datasets/
 
-bash scripts/bm25_eval/run_bm25.sh
-bash scripts/bm25_eval/run_eval.sh
+bash scripts/bm25_eval/run_bm25.sh $1
+bash scripts/bm25_eval/run_eval.sh $1
 
 rm -r /local_datasets/halumem_dataset
 

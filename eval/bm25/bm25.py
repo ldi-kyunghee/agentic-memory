@@ -15,6 +15,7 @@ load_dotenv()
 
 def init_parser():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--exp_num', type=int)
     parser.add_argument('--data_path', type=str, default='dataset/')
     parser.add_argument('--dataset', type=str, default='HaluMem-Medium.jsonl')
     parser.add_argument('--top_k', type=int, default=5)
@@ -104,7 +105,7 @@ def main(args):
         retrieval_results.append(per_persona_results)
         llm_results.append(per_persona_llm_results)
     
-    results_dir = "results/bm25/exp2/"
+    results_dir = "results/bm25/exp%d" % args.exp_num
     bm25_results_dir = results_dir + "retrieval/"
     dataset_name = args.dataset.split('-')[-1].split('.')[0].lower()
     bm25_results_file = f"bm25_retrieval_{dataset_name}_top_{args.top_k}_results.json"

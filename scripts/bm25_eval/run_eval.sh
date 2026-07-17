@@ -1,4 +1,4 @@
-RESULTS_DIR=results/bm25/exp2/question_answering/
+RESULTS_DIR=results/bm25/exp$1/question_answering/
 RESULTS=$(ls $RESULTS_DIR)
 
 for file in ${RESULTS[@]}; do
