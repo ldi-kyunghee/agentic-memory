@@ -46,8 +46,8 @@ def generate_answers(queries: list[dict], **sampling_params):
         query = item['question']
         documents = ""
         for doc in item['documents']:
-            documents += f" - {doc}"
-        prompt = PROMPT.format(documents=documents, question=query)
+            documents += f" - {doc}\n"
+        prompt = PROMPT.format(content=documents, question=query)
         prompts.append(prompt)
 
     request_ids = llm.enqueue(prompts, sampling_params=sampling_params)
