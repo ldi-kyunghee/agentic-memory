@@ -13,6 +13,14 @@ from utils import load_config, per_persona_dataset, PROMPT
 
 load_dotenv()
 
+def with_prior(string):
+    if 't' in string:
+        return True
+    elif 'f' in string:
+        return False
+    else:
+        raise ValueError
+
 def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_num', type=int)
@@ -21,7 +29,7 @@ def init_parser():
     parser.add_argument('--top_k', type=int, default=5)
     parser.add_argument('--use_llm', action='store_true', default=False)
     parser.add_argument('--llm_config', type=str, default=None)
-    parser.add_argument('--memory_with_prior_question', action='store_true', default=False)
+    parser.add_argument('--memory_with_prior_question', type=with_prior, default=False)
     return parser
 
 
