@@ -45,8 +45,8 @@ def generate_answers(queries: list[dict], **sampling_params):
     for item in queries:
         query = item['question']
         documents = ""
-        for doc in item['documents']:
-            documents += f" - {doc}\n"
+        for doc in item['retrieved']:
+            documents += f" - {doc['memory_content']}"
         prompt = PROMPT.format(context=documents, question=query)
         prompts.append(prompt)
 
