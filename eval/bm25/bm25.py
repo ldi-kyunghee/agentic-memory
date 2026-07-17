@@ -21,6 +21,7 @@ def init_parser():
     parser.add_argument('--top_k', type=int, default=5)
     parser.add_argument('--use_llm', action='store_true', default=False)
     parser.add_argument('--llm_config', type=str, default=None)
+    parser.add_argument('--memory_with_prior_question', action='store_true', default=False)
     return parser
 
 
@@ -125,6 +126,7 @@ def main(args):
 if __name__ == '__main__':
     parser = init_parser()
     args = parser.parse_args()
+    print(args)
 
     retriever = BM25HF()
     stemmer = Stemmer.Stemmer("english")

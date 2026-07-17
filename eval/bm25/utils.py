@@ -110,6 +110,11 @@ mem_template = """[{}]
         User: {}
         Assistant: {}"""
 
+mem_template_with_prev = """
+        Assistant: {}
+        User: {}
+        Assistant: {}"""
+
 def load_config(config_file):
     with open(f"configs/bm25_eval/{config_file}", "r") as file:
         model_kwargs = yaml.safe_load(file)
@@ -128,6 +133,36 @@ def add_memory_from_dialogue(session_dialogue):
             user['content'],
             assistant['content']
         )
+
+        per_session_memories.append(memory)
+    
+    return per_session_memories
+
+def add_memory_from_dialogue_with_prev(session_dialogue):
+    user_dialogue = session_dialogue[::2]
+    assistant_dialogue = session_dialogue[1::2]
+
+    per_session_memories = []
+    question = ""
+    for i, (user, assistant) in enumerate(zip(user_dialogue, assistant_dialogue)):
+        if question:
+            memory = mem_template_with_prev.format(
+                question,
+                user['content'],
+                assistant['content']
+            )
+
+        else:
+            memory = mem_template.format(
+                user['timestamp'],
+                user['content'],
+                assistant['content']
+            )
+
+        if assistant['content'].strip().endswith('?'):
+            question = assistant.split('.')[-1]
+        else:
+            question = ""
 
         per_session_memories.append(memory)
     
