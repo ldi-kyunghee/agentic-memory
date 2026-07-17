@@ -168,15 +168,17 @@ def add_memory_from_dialogue_with_prev(session_dialogue):
     
     return per_session_memories
 
-def per_persona_dataset(persona):
+def per_persona_dataset(persona, memory_with_prior_question: bool):
     sessions = [session for session in persona['sessions'] if session.get('questions')]
     dialogue = [session['dialogue'] for session in sessions]
     qa_data = []
     for session in sessions:
       qa_data += session['questions']
 
+    add_memory = add_memory_from_dialogue_with_prev if memory_with_prior_question else add_memory_from_dialogue
+
     memories = []
     for per_session_dialogue in dialogue:
-      memories += add_memory_from_dialogue(per_session_dialogue)
+      memories += add_memory(per_session_dialogue)
 
     return qa_data, memories

@@ -99,7 +99,7 @@ def main(args):
     retrieval_results = []
     llm_results = []
     for persona in dataset:
-        qas, per_persona_memories = per_persona_dataset(persona)
+        qas, per_persona_memories = per_persona_dataset(persona, args.memory_with_prior_question)
         per_persona_results = retrieve(qas, per_persona_memories, args.top_k)
         per_persona_llm_results = generate_answers(per_persona_results, **sampling_params)
 
