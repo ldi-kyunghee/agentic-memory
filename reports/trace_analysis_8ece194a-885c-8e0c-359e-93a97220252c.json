@@ -1,0 +1,891 @@
+{
+  "trace_file": "traces/full-traced/8ece194a-885c-8e0c-359e-93a97220252c.jsonl",
+  "threshold": 0.65,
+  "lost_updates": {
+    "intended": 2088,
+    "lost": 39,
+    "lost_rate": 0.01867816091954023,
+    "lost_by_op": {
+      "UPDATE": 39
+    },
+    "samples": [
+      {
+        "session": 4,
+        "op": "UPDATE",
+        "text": "Long-term goal: expand internationally and create destinations with unforgettabl"
+      },
+      {
+        "session": 8,
+        "op": "UPDATE",
+        "text": "Leadership style evolving to be more inclusive and empowering, focusing on colla"
+      },
+      {
+        "session": 8,
+        "op": "UPDATE",
+        "text": "Implementing mentorship programs and encouraging cross-departmental collaboratio"
+      },
+      {
+        "session": 11,
+        "op": "UPDATE",
+        "text": "Reflecting on family's history in hospitality as a motivator"
+      },
+      {
+        "session": 15,
+        "op": "UPDATE",
+        "text": "Regularly reviewing guest feedback to adapt services"
+      }
+    ]
+  },
+  "omission_linkage": {
+    "omission_total": 107,
+    "causes": {
+      "decision_miss": 37,
+      "extraction_miss": 49,
+      "retrieval_miss": 20,
+      "overwritten": 1
+    },
+    "cases": [
+      {
+        "session": 4,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's physical health status: Normal",
+        "best_probe_score": 0.705
+      },
+      {
+        "session": 3,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's job title is Owner",
+        "best_probe_score": 0.809
+      },
+      {
+        "session": 3,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's career_description is As the owner of Albi B&B, I man",
+        "best_probe_score": 0.532
+      },
+      {
+        "session": 4,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's mental health status: Positive and Sunny",
+        "best_probe_score": 0.638
+      },
+      {
+        "session": 6,
+        "mp_index": 6,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's social relationships increased NewLocalPartner, A loc",
+        "best_probe_score": 0.593
+      },
+      {
+        "session": 3,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's savings amount is 12000 yuan",
+        "best_probe_score": 0.675
+      },
+      {
+        "session": 7,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Johnson introduced new guest services at Albi B&B, including personali",
+        "best_probe_score": 0.627
+      },
+      {
+        "session": 12,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's physical health status: Excellent",
+        "best_probe_score": 0.713
+      },
+      {
+        "session": 7,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson plans to collaborate with local artists and chefs for exclusiv",
+        "best_probe_score": 0.554
+      },
+      {
+        "session": 7,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson faced challenges coordinating with local guides to ensure qual",
+        "best_probe_score": 0.609
+      },
+      {
+        "session": 9,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "[Sep 06, 2025, 16:41:20][Persona Memory]Johnson Joseph Sports I dislik",
+        "best_probe_score": 0.67
+      },
+      {
+        "session": 7,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Johnson's status as a leader in the hospitality industry is reinforced",
+        "best_probe_score": 0.636
+      },
+      {
+        "session": 8,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Johnson plans to collaborate with local artists and chefs for exclusiv",
+        "best_probe_score": 0.688
+      },
+      {
+        "session": 13,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph discussed the potential long-term benefits of consultan",
+        "best_probe_score": 0.537
+      },
+      {
+        "session": 13,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's social relationships increased ConsultancyNetwork, A ",
+        "best_probe_score": 0.521
+      },
+      {
+        "session": 12,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's situation_reason is Incorporating regular exercise an",
+        "best_probe_score": 0.526
+      },
+      {
+        "session": 14,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph Games I like to play: Puzzle games",
+        "best_probe_score": 0.638
+      },
+      {
+        "session": 12,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's mental health status: Highly Positive",
+        "best_probe_score": 0.663
+      },
+      {
+        "session": 14,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's monthly income is 4500 USD",
+        "best_probe_score": 0.75
+      },
+      {
+        "session": 12,
+        "mp_index": 9,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph plans to use AI-generated content to maintain his socia",
+        "best_probe_score": 0.687
+      },
+      {
+        "session": 14,
+        "mp_index": 5,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph Sports I dislike Golf reason: I find golf too slow-pace",
+        "best_probe_score": 0.755
+      },
+      {
+        "session": 18,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's career_description is The temporary layoff from Albi ",
+        "best_probe_score": 0.562
+      },
+      {
+        "session": 16,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph Books I dislike: Fantasy novels",
+        "best_probe_score": 0.65
+      },
+      {
+        "session": 15,
+        "mp_index": 7,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph expressed satisfaction and accomplishment with the prog",
+        "best_probe_score": 0.544
+      },
+      {
+        "session": 19,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Travel styles I dislike: Group tours - Group tours feel too restrictiv",
+        "best_probe_score": 0.806
+      },
+      {
+        "session": 23,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Sports I like: Cycling",
+        "best_probe_score": 0.61
+      },
+      {
+        "session": 18,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's career_status updated employment_status from 'unemplo",
+        "best_probe_score": 0.699
+      },
+      {
+        "session": 22,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Pets I dislike: Cats",
+        "best_probe_score": 0.691
+      },
+      {
+        "session": 21,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's exploratory motivation led him to consider new ways t",
+        "best_probe_score": 0.571
+      },
+      {
+        "session": 26,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's physical health status: Good",
+        "best_probe_score": 0.732
+      },
+      {
+        "session": 21,
+        "mp_index": 8,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's emotional state fluctuated between gratitude and dete",
+        "best_probe_score": 0.62
+      },
+      {
+        "session": 28,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph emphasized the importance of collaborative opportunitie",
+        "best_probe_score": 0.645
+      },
+      {
+        "session": 25,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's career_description is Working part-time at Albi B&B p",
+        "best_probe_score": 0.531
+      },
+      {
+        "session": 27,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph Games I like to play: Board games",
+        "best_probe_score": 0.583
+      },
+      {
+        "session": 28,
+        "mp_index": 7,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph discussed the role of cognitive curiosity in testing th",
+        "best_probe_score": 0.492
+      },
+      {
+        "session": 28,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph shared anecdotes about emotional and professional suppo",
+        "best_probe_score": 0.62
+      },
+      {
+        "session": 28,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph conveyed optimism about the future, emphasizing the sig",
+        "best_probe_score": 0.645
+      },
+      {
+        "session": 26,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's mental health status: Stressed",
+        "best_probe_score": 0.639
+      },
+      {
+        "session": 29,
+        "mp_index": 8,
+        "cause": "overwritten",
+        "old": "Johnson Joseph's life goal statement: Become a leading figure in the h",
+        "best_probe_score": 0.59
+      },
+      {
+        "session": 36,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's social relationships increased InternationalPartner, ",
+        "best_probe_score": 0.637
+      },
+      {
+        "session": 36,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's exploratory motivation, driven by cognitive curiosity",
+        "best_probe_score": 0.507
+      },
+      {
+        "session": 28,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph expressed satisfaction with his proactive approach in l",
+        "best_probe_score": 0.536
+      },
+      {
+        "session": 21,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph expressed gratitude for the emotional support and encou",
+        "best_probe_score": 0.543
+      },
+      {
+        "session": 29,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph expressed satisfaction with his health improvements, em",
+        "best_probe_score": 0.534
+      },
+      {
+        "session": 33,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's career_description is The temporary layoff from Albi ",
+        "best_probe_score": 0.522
+      },
+      {
+        "session": 30,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Books I like to read: Biographies",
+        "best_probe_score": 0.786
+      },
+      {
+        "session": 33,
+        "mp_index": 4,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's savings amount is 14000 yuan",
+        "best_probe_score": 0.602
+      },
+      {
+        "session": 33,
+        "mp_index": 2,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's job title is Part-time Manager",
+        "best_probe_score": 0.548
+      },
+      {
+        "session": 34,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph Pets I dislike: Cats",
+        "best_probe_score": 0.62
+      },
+      {
+        "session": 28,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's exploratory motivation drove his engagement with the ",
+        "best_probe_score": 0.544
+      },
+      {
+        "session": 36,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph shared anecdotes of past collaborations influencing his",
+        "best_probe_score": 0.512
+      },
+      {
+        "session": 36,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph leveraged existing relationships and built new ones to ",
+        "best_probe_score": 0.57
+      },
+      {
+        "session": 35,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Incorporating regular exercise and mindfulness into my routine has sig",
+        "best_probe_score": 0.724
+      },
+      {
+        "session": 37,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Sports I like: Hiking - Hiking is a wonderful way to clear my mind and",
+        "best_probe_score": 0.465
+      },
+      {
+        "session": 40,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Games I dislike: First-person shooters",
+        "best_probe_score": 0.79
+      },
+      {
+        "session": 39,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph Movies I dislike: Science fiction",
+        "best_probe_score": 0.545
+      },
+      {
+        "session": 42,
+        "mp_index": 3,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's monthly income is 6000 yuan",
+        "best_probe_score": 0.64
+      },
+      {
+        "session": 42,
+        "mp_index": 4,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's savings amount is 16000 yuan",
+        "best_probe_score": 0.591
+      },
+      {
+        "session": 33,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's employment status is unemployed",
+        "best_probe_score": 0.663
+      },
+      {
+        "session": 44,
+        "mp_index": 10,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph discussed the role of compensatory motivation in using ",
+        "best_probe_score": 0.615
+      },
+      {
+        "session": 44,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph expressed optimism about his team’s capabilities to mai",
+        "best_probe_score": 0.671
+      },
+      {
+        "session": 43,
+        "mp_index": 3,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's mental health status: Highly Positive",
+        "best_probe_score": 0.569
+      },
+      {
+        "session": 45,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Electronic dance music feels too repetitive and doesn't match the sere",
+        "best_probe_score": 0.485
+      },
+      {
+        "session": 42,
+        "mp_index": 2,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's job title is Entrepreneur and Expansion Leader",
+        "best_probe_score": 0.635
+      },
+      {
+        "session": 44,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph reflected on his compensatory motivation, using the ass",
+        "best_probe_score": 0.489
+      },
+      {
+        "session": 48,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Pets I like: Dogs - I love dogs because they are loyal companions and ",
+        "best_probe_score": 0.757
+      },
+      {
+        "session": 52,
+        "mp_index": 6,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph received positive feedback from guests and partners reg",
+        "best_probe_score": 0.674
+      },
+      {
+        "session": 49,
+        "mp_index": 3,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's monthly income is 3000 yuan",
+        "best_probe_score": 0.64
+      },
+      {
+        "session": 49,
+        "mp_index": 4,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's savings amount is 20000 yuan",
+        "best_probe_score": 0.613
+      },
+      {
+        "session": 49,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's job title is Retired Founder",
+        "best_probe_score": 0.65
+      },
+      {
+        "session": 49,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's employment status is retired",
+        "best_probe_score": 0.703
+      },
+      {
+        "session": 49,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's career_description is As a retired founder, I oversee",
+        "best_probe_score": 0.595
+      },
+      {
+        "session": 50,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's sports preference changed from disliking golf to liki",
+        "best_probe_score": 0.666
+      },
+      {
+        "session": 51,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's chronic disease situation: Chronic fatigue",
+        "best_probe_score": 0.674
+      },
+      {
+        "session": 44,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "On Dec 20, 2035, Johnson Joseph began delegating responsibilities to t",
+        "best_probe_score": 0.696
+      },
+      {
+        "session": 53,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's social motivation involves using AI-generated content",
+        "best_probe_score": 0.564
+      },
+      {
+        "session": 56,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's career_description is Actively leading Albi B&B, I ha",
+        "best_probe_score": 0.504
+      },
+      {
+        "session": 57,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's physical health status: Good",
+        "best_probe_score": 0.546
+      },
+      {
+        "session": 59,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph diversified Albi B&B's offerings by introducing new ser",
+        "best_probe_score": 0.749
+      },
+      {
+        "session": 57,
+        "mp_index": 2,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's mental health status: Positive",
+        "best_probe_score": 0.592
+      },
+      {
+        "session": 59,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's exploratory motivation led him to consider further di",
+        "best_probe_score": 0.475
+      },
+      {
+        "session": 57,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's situation_reason is Integrating wellness activities i",
+        "best_probe_score": 0.559
+      },
+      {
+        "session": 59,
+        "mp_index": 8,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph concluded the dialogue with optimism about future oppor",
+        "best_probe_score": 0.63
+      },
+      {
+        "session": 56,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's monthly income is 7000 yuan",
+        "best_probe_score": 0.663
+      },
+      {
+        "session": 59,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph shared excitement about new services at Albi B&B, inclu",
+        "best_probe_score": 0.722
+      },
+      {
+        "session": 59,
+        "mp_index": 7,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's improved health has contributed to his ability to man",
+        "best_probe_score": 0.642
+      },
+      {
+        "session": 61,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph expressed pride in the success of his strategies, highl",
+        "best_probe_score": 0.468
+      },
+      {
+        "session": 61,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph emphasized the importance of maintaining strong communi",
+        "best_probe_score": 0.689
+      },
+      {
+        "session": 61,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph shared anecdotes about successful past events and colla",
+        "best_probe_score": 0.606
+      },
+      {
+        "session": 56,
+        "mp_index": 2,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's savings amount is 23000 yuan",
+        "best_probe_score": 0.641
+      },
+      {
+        "session": 66,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's physical health status: Excellent",
+        "best_probe_score": 0.635
+      },
+      {
+        "session": 59,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph discussed the significance of maintaining a balance bet",
+        "best_probe_score": 0.625
+      },
+      {
+        "session": 61,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph expressed gratitude for the support from his team and p",
+        "best_probe_score": 0.58
+      },
+      {
+        "session": 65,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "[Oct 24, 2027, 20:53:40][Persona Memory]Johnson Joseph has developed a",
+        "best_probe_score": 0.564
+      },
+      {
+        "session": 71,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Games I like to play: Cooperative board games",
+        "best_probe_score": 0.768
+      },
+      {
+        "session": 73,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph shared anecdotes about past networking experiences and ",
+        "best_probe_score": 0.551
+      },
+      {
+        "session": 66,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's situation_reason is Continued focus on wellness activ",
+        "best_probe_score": 0.538
+      },
+      {
+        "session": 69,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Music I like to listen to: Jazz - Jazz creates a relaxing atmosphere t",
+        "best_probe_score": 0.67
+      },
+      {
+        "session": 72,
+        "mp_index": 2,
+        "cause": "retrieval_miss",
+        "old": "Johnson Joseph's monthly income is 6000 yuan",
+        "best_probe_score": 0.646
+      },
+      {
+        "session": 72,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph's savings amount is 25000 yuan",
+        "best_probe_score": 0.71
+      },
+      {
+        "session": 61,
+        "mp_index": 5,
+        "cause": "decision_miss",
+        "old": "Johnson Joseph plans to explore new strategies and partnerships to con",
+        "best_probe_score": 0.723
+      },
+      {
+        "session": 76,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Johnson reflected on the effectiveness of his relationship-building st",
+        "best_probe_score": 0.764
+      },
+      {
+        "session": 76,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Johnson expressed gratitude for the support from his consultancy partn",
+        "best_probe_score": 0.619
+      },
+      {
+        "session": 74,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's reading preference changed from liking biographies of",
+        "best_probe_score": 0.626
+      },
+      {
+        "session": 76,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson discussed how clarificatory motivation helped him organize tho",
+        "best_probe_score": 0.573
+      },
+      {
+        "session": 70,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Dogs are loyal companions that create a lively atmosphere and provide ",
+        "best_probe_score": 0.803
+      },
+      {
+        "session": 72,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Johnson Joseph's career_description is Transitioning to a consultancy ",
+        "best_probe_score": 0.554
+      }
+    ]
+  },
+  "qa_failure_linkage": {
+    "wrong_total": 94,
+    "causes": {
+      "generation_fault": 32,
+      "extraction_fault": 55,
+      "retrieval_fault": 7
+    },
+    "by_type": {
+      "Hallucination": {
+        "generation_fault": 22,
+        "extraction_fault": 38,
+        "retrieval_fault": 6
+      },
+      "Omission": {
+        "generation_fault": 10,
+        "extraction_fault": 17,
+        "retrieval_fault": 1
+      }
+    },
+    "cases": [
+      {
+        "question": "What is Johnson Joseph's job title as of September 5, 2025?",
+        "type": "Omission",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 1
+      },
+      {
+        "question": "Is Johnson Joseph employed by a large hotel chain as a manag",
+        "type": "Omission",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 3
+      },
+      {
+        "question": "Did Johnson Joseph's monthly income increase from 3500 yuan ",
+        "type": "Hallucination",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 1
+      },
+      {
+        "question": "Did Johnson Joseph continue to dislike golf after his outing",
+        "type": "Hallucination",
+        "cause": "extraction_fault",
+        "missing": 1,
+        "evidence": 2
+      },
+      {
+        "question": "What role did community support play in Johnson Joseph's car",
+        "type": "Omission",
+        "cause": "extraction_fault",
+        "missing": 3,
+        "evidence": 3
+      },
+      {
+        "question": "Did Johnson Joseph's fear of snakes increase after attending",
+        "type": "Omission",
+        "cause": "extraction_fault",
+        "missing": 2,
+        "evidence": 2
+      },
+      {
+        "question": "How might Johnson Joseph's enjoyment of golf influence his a",
+        "type": "Hallucination",
+        "cause": "extraction_fault",
+        "missing": 2,
+        "evidence": 3
+      },
+      {
+        "question": "What strategies might Johnson Joseph use to achieve his goal",
+        "type": "Hallucination",
+        "cause": "extraction_fault",
+        "missing": 2,
+        "evidence": 3
+      },
+      {
+        "question": "How did Johnson Joseph's promotion impact his career and fin",
+        "type": "Omission",
+        "cause": "extraction_fault",
+        "missing": 1,
+        "evidence": 3
+      },
+      {
+        "question": "How did Johnson Joseph plan to maintain his presence in the ",
+        "type": "Hallucination",
+        "cause": "retrieval_fault",
+        "missing": 2,
+        "evidence": 2
+      }
+    ]
+  }
+}

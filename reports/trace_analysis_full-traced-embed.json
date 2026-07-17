@@ -1,0 +1,777 @@
+{
+  "trace_file": "traces/full-traced/2f1f897e-d67f-dbc5-6a7b-b7634a9e294f.jsonl",
+  "threshold": 0.65,
+  "lost_updates": {
+    "intended": 1308,
+    "lost": 20,
+    "lost_rate": 0.01529051987767584,
+    "lost_by_op": {
+      "UPDATE": 20
+    },
+    "samples": [
+      {
+        "session": 9,
+        "op": "UPDATE",
+        "text": "Seeks to use insights to design more effective projects for underserved communit"
+      },
+      {
+        "session": 9,
+        "op": "UPDATE",
+        "text": "Goal is to improve access to healthcare for underserved communities"
+      },
+      {
+        "session": 14,
+        "op": "UPDATE",
+        "text": "Reconsidered clothing choices in alignment with environmental values"
+      },
+      {
+        "session": 14,
+        "op": "UPDATE",
+        "text": "Balances sustainability with personal comfort and style in clothing"
+      },
+      {
+        "session": 14,
+        "op": "UPDATE",
+        "text": "Plans to inspire others by sharing experiences and encouraging sustainable pract"
+      }
+    ]
+  },
+  "omission_linkage": {
+    "omission_total": 91,
+    "causes": {
+      "extraction_miss": 42,
+      "decision_miss": 44,
+      "retrieval_miss": 5
+    },
+    "cases": [
+      {
+        "session": 3,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Martin Mark's creative motivation is to use assistant tools to inspire",
+        "best_probe_score": 0.628
+      },
+      {
+        "session": 3,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark is considering a career change due to health impacts from ",
+        "best_probe_score": 0.624
+      },
+      {
+        "session": 3,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Martin Mark aims to find a job that better aligns with his personal we",
+        "best_probe_score": 0.664
+      },
+      {
+        "session": 4,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Pets I like: Dogs, especially Labradors",
+        "best_probe_score": 0.627
+      },
+      {
+        "session": 6,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Joshua's collaborative approach and insights into healthcare managemen",
+        "best_probe_score": 0.801
+      },
+      {
+        "session": 10,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Travel styles I like: Wellness retreats",
+        "best_probe_score": 0.62
+      },
+      {
+        "session": 3,
+        "mp_index": 9,
+        "cause": "extraction_miss",
+        "old": "Martin Mark expressed his commitment to improving healthcare access wh",
+        "best_probe_score": 0.62
+      },
+      {
+        "session": 8,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Sports I dislike: Extreme sports like skydiving",
+        "best_probe_score": 0.631
+      },
+      {
+        "session": 10,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Travel styles I like: Wellness retreats",
+        "best_probe_score": 0.62
+      },
+      {
+        "session": 7,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin is considering a career change due to health impacts from his c",
+        "best_probe_score": 0.705
+      },
+      {
+        "session": 7,
+        "mp_index": 10,
+        "cause": "decision_miss",
+        "old": "Martin's friend Susan provided crucial support during his job transiti",
+        "best_probe_score": 0.677
+      },
+      {
+        "session": 6,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Daniel's expertise in healthcare consulting challenges me to push boun",
+        "best_probe_score": 0.623
+      },
+      {
+        "session": 13,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark Music I dislike Heavy metal reason: I find heavy metal too",
+        "best_probe_score": 0.824
+      },
+      {
+        "session": 12,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "I enjoy herbal teas for their calming properties and health benefits, ",
+        "best_probe_score": 0.909
+      },
+      {
+        "session": 16,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Martin expressed uncertainty about the social and professional implica",
+        "best_probe_score": 0.638
+      },
+      {
+        "session": 14,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Martin Mark Clothing I like to wear: Comfortable athletic wear",
+        "best_probe_score": 0.696
+      },
+      {
+        "session": 5,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Martin has modified his pet preference from Labradors to Golden Retrie",
+        "best_probe_score": 0.636
+      },
+      {
+        "session": 16,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Martin's mental health is mildly abnormal due to the pressures of his ",
+        "best_probe_score": 0.729
+      },
+      {
+        "session": 16,
+        "mp_index": 8,
+        "cause": "decision_miss",
+        "old": "Martin expressed his commitment to improving healthcare access while m",
+        "best_probe_score": 0.663
+      },
+      {
+        "session": 6,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Susan's support and encouragement inspire me to maintain my focus on p",
+        "best_probe_score": 0.758
+      },
+      {
+        "session": 20,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Sports I dislike: Boxing",
+        "best_probe_score": 0.627
+      },
+      {
+        "session": 18,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Daniel's expertise in healthcare consulting challenges me to push boun",
+        "best_probe_score": 0.623
+      },
+      {
+        "session": 17,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "[Sep 06, 2025, 22:43:36][Persona Memory]Martin Mark Pets I dislike: Re",
+        "best_probe_score": 0.681
+      },
+      {
+        "session": 21,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Martin acknowledged the importance of his social network in providing ",
+        "best_probe_score": 0.55
+      },
+      {
+        "session": 23,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Travel styles I dislike: Crowded tourist spots reason: I avoid crowded",
+        "best_probe_score": 0.792
+      },
+      {
+        "session": 24,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark's job title is director",
+        "best_probe_score": 0.785
+      },
+      {
+        "session": 21,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Martin plans to attend workshops and seminars during his sabbatical to",
+        "best_probe_score": 0.668
+      },
+      {
+        "session": 22,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Games I like to play: Puzzle games",
+        "best_probe_score": 0.656
+      },
+      {
+        "session": 21,
+        "mp_index": 9,
+        "cause": "decision_miss",
+        "old": "Martin acknowledges the importance of balancing professional responsib",
+        "best_probe_score": 0.702
+      },
+      {
+        "session": 23,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Travel styles I dislike: Crowded tourist spots reason: I avoid crowded",
+        "best_probe_score": 0.532
+      },
+      {
+        "session": 18,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Susan's support and encouragement inspire me to maintain my focus on p",
+        "best_probe_score": 0.758
+      },
+      {
+        "session": 25,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Movies I dislike: Horror films",
+        "best_probe_score": 0.623
+      },
+      {
+        "session": 27,
+        "mp_index": 5,
+        "cause": "decision_miss",
+        "old": "Martin Mark's colleague Joshua's insights have improved team collabora",
+        "best_probe_score": 0.753
+      },
+      {
+        "session": 26,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark's mental health status: Mildly Abnormal",
+        "best_probe_score": 0.664
+      },
+      {
+        "session": 24,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Martin Mark's monthly income is 15700 yuan",
+        "best_probe_score": 0.77
+      },
+      {
+        "session": 29,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark's mental health status changed from 'Mildly Abnormal' to '",
+        "best_probe_score": 0.621
+      },
+      {
+        "session": 21,
+        "mp_index": 8,
+        "cause": "decision_miss",
+        "old": "Martin is optimistic about exploring new career paths that align with ",
+        "best_probe_score": 0.734
+      },
+      {
+        "session": 26,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Martin Mark's situation_reason is While my physical health remains sta",
+        "best_probe_score": 0.59
+      },
+      {
+        "session": 29,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Martin Mark's colleague Joshua's insights have improved team collabora",
+        "best_probe_score": 0.753
+      },
+      {
+        "session": 27,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Martin Mark's colleague Daniel's innovative ideas have pushed him to t",
+        "best_probe_score": 0.792
+      },
+      {
+        "session": 29,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Martin Mark's compensatory motivation is evident in his exploration of",
+        "best_probe_score": 0.497
+      },
+      {
+        "session": 21,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Martin intends to engage in stress-reducing activities such as yoga re",
+        "best_probe_score": 0.678
+      },
+      {
+        "session": 34,
+        "mp_index": 7,
+        "cause": "decision_miss",
+        "old": "I steer clear of gambling games because they can lead to addiction and",
+        "best_probe_score": 0.915
+      },
+      {
+        "session": 30,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Music I like to listen to: Classical music reason: Classic",
+        "best_probe_score": 0.612
+      },
+      {
+        "session": 27,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark's social relationships increased NewColleague, A new colle",
+        "best_probe_score": 0.67
+      },
+      {
+        "session": 27,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Martin Mark views this challenging period as an opportunity for person",
+        "best_probe_score": 0.607
+      },
+      {
+        "session": 29,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Martin Mark expressed mixed emotions about his promotion, feeling both",
+        "best_probe_score": 0.556
+      },
+      {
+        "session": 38,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark's monthly income is 18000 yuan",
+        "best_probe_score": 0.737
+      },
+      {
+        "session": 29,
+        "mp_index": 8,
+        "cause": "decision_miss",
+        "old": "Martin Mark's friend Susan has been pivotal in providing emotional sup",
+        "best_probe_score": 0.796
+      },
+      {
+        "session": 31,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Clothing I like to wear: Casual business attire",
+        "best_probe_score": 0.605
+      },
+      {
+        "session": 36,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "[Sep 06, 2025, 22:43:36][Persona Memory]Martin Mark Movies I dislike: ",
+        "best_probe_score": 0.554
+      },
+      {
+        "session": 41,
+        "mp_index": 10,
+        "cause": "extraction_miss",
+        "old": "Martin Mark's health status changed, reason: Regular engagement in hea",
+        "best_probe_score": 0.635
+      },
+      {
+        "session": 40,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Martin Mark's situation_reason is The demands of my new role have inte",
+        "best_probe_score": 0.45
+      },
+      {
+        "session": 41,
+        "mp_index": 6,
+        "cause": "retrieval_miss",
+        "old": "Martin's physical health status changed from 'Normal' to 'Improved'",
+        "best_probe_score": 0.65
+      },
+      {
+        "session": 43,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin successfully maintained a balance between lifestyle enhancement",
+        "best_probe_score": 0.579
+      },
+      {
+        "session": 43,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Martin's lifestyle changes have positively impacted his professional p",
+        "best_probe_score": 0.578
+      },
+      {
+        "session": 43,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Martin uses clarificatory motivation to organize thoughts and gain per",
+        "best_probe_score": 0.567
+      },
+      {
+        "session": 41,
+        "mp_index": 7,
+        "cause": "extraction_miss",
+        "old": "Martin's health status changed, reason: Regular engagement in health a",
+        "best_probe_score": 0.601
+      },
+      {
+        "session": 41,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin began investing in health and wellness activities, such as fitn",
+        "best_probe_score": 0.694
+      },
+      {
+        "session": 43,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Martin's financial stability has enabled him to explore new hobbies an",
+        "best_probe_score": 0.669
+      },
+      {
+        "session": 43,
+        "mp_index": 9,
+        "cause": "extraction_miss",
+        "old": "Martin's dialogue was filled with optimism and a sense of fulfillment,",
+        "best_probe_score": 0.586
+      },
+      {
+        "session": 27,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Martin Mark expressed gratitude for the support from his social networ",
+        "best_probe_score": 0.628
+      },
+      {
+        "session": 42,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark Clothing I dislike: Formal wear",
+        "best_probe_score": 0.691
+      },
+      {
+        "session": 47,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Travel styles I like: Cultural tours",
+        "best_probe_score": 0.648
+      },
+      {
+        "session": 44,
+        "mp_index": 8,
+        "cause": "retrieval_miss",
+        "old": "Pets I like: Parrots reason: I enjoy parrots because they are intellig",
+        "best_probe_score": 0.516
+      },
+      {
+        "session": 45,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Sports I dislike: Automobile racing",
+        "best_probe_score": 0.614
+      },
+      {
+        "session": 49,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Martin Mark's monthly income is 20000 yuan",
+        "best_probe_score": 0.712
+      },
+      {
+        "session": 49,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "Martin Mark's job title is senior director",
+        "best_probe_score": 0.588
+      },
+      {
+        "session": 50,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Martin Mark's mental health status: Normal",
+        "best_probe_score": 0.655
+      },
+      {
+        "session": 51,
+        "mp_index": 9,
+        "cause": "decision_miss",
+        "old": "Martin expressed uncertainty and doubt regarding his ability to balanc",
+        "best_probe_score": 0.65
+      },
+      {
+        "session": 52,
+        "mp_index": 3,
+        "cause": "decision_miss",
+        "old": "Martin's health improvements have positively influenced his work envir",
+        "best_probe_score": 0.651
+      },
+      {
+        "session": 52,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Martin emphasized the importance of integrating health practices into ",
+        "best_probe_score": 0.624
+      },
+      {
+        "session": 51,
+        "mp_index": 7,
+        "cause": "decision_miss",
+        "old": "Martin's health improvements have positively influenced his work envir",
+        "best_probe_score": 0.651
+      },
+      {
+        "session": 52,
+        "mp_index": 7,
+        "cause": "extraction_miss",
+        "old": "Martin's dialogue reflected optimism and fulfillment, highlighting his",
+        "best_probe_score": 0.587
+      },
+      {
+        "session": 58,
+        "mp_index": 1,
+        "cause": "retrieval_miss",
+        "old": "[Sep 06, 2025, 22:43:36][Persona Memory]Martin Mark Beverages I like t",
+        "best_probe_score": 0.644
+      },
+      {
+        "session": 57,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Movies I dislike: Horror films because they can be disturbing and detr",
+        "best_probe_score": 0.688
+      },
+      {
+        "session": 52,
+        "mp_index": 2,
+        "cause": "decision_miss",
+        "old": "Martin's physical health status changed from 'Improved' to 'Excellent'",
+        "best_probe_score": 0.664
+      },
+      {
+        "session": 50,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Regular engagement in health and wellness activities has significantly",
+        "best_probe_score": 0.695
+      },
+      {
+        "session": 52,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin successfully integrated his health improvements into his profes",
+        "best_probe_score": 0.552
+      },
+      {
+        "session": 55,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark Clothing I like to wear: Eco-friendly fabrics",
+        "best_probe_score": 0.661
+      },
+      {
+        "session": 56,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Jan 06, 2026, 17:48:59",
+        "best_probe_score": 0.342
+      },
+      {
+        "session": 51,
+        "mp_index": 6,
+        "cause": "extraction_miss",
+        "old": "Martin expressed gratitude for the support from colleagues and friends",
+        "best_probe_score": 0.545
+      },
+      {
+        "session": 52,
+        "mp_index": 5,
+        "cause": "extraction_miss",
+        "old": "Martin expressed gratitude for the support from colleagues and friends",
+        "best_probe_score": 0.543
+      },
+      {
+        "session": 52,
+        "mp_index": 4,
+        "cause": "extraction_miss",
+        "old": "Martin shared how his personal well-being has inspired his team, motiv",
+        "best_probe_score": 0.543
+      },
+      {
+        "session": 54,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark Music I dislike: Rap music reason: I find rap music often ",
+        "best_probe_score": 0.814
+      },
+      {
+        "session": 59,
+        "mp_index": 1,
+        "cause": "extraction_miss",
+        "old": "Martin Mark Music I like to listen to: Ambient music",
+        "best_probe_score": 0.522
+      },
+      {
+        "session": 60,
+        "mp_index": 4,
+        "cause": "decision_miss",
+        "old": "Martin Mark's monthly income is 23000 yuan",
+        "best_probe_score": 0.71
+      },
+      {
+        "session": 64,
+        "mp_index": 5,
+        "cause": "decision_miss",
+        "old": "Martin discussed the strategic planning involved in launching his Glob",
+        "best_probe_score": 0.752
+      },
+      {
+        "session": 64,
+        "mp_index": 2,
+        "cause": "extraction_miss",
+        "old": "Martin received positive initial feedback on the launch of his Global ",
+        "best_probe_score": 0.637
+      },
+      {
+        "session": 64,
+        "mp_index": 3,
+        "cause": "extraction_miss",
+        "old": "Martin expressed gratitude for the support and encouragement from his ",
+        "best_probe_score": 0.614
+      },
+      {
+        "session": 62,
+        "mp_index": 1,
+        "cause": "decision_miss",
+        "old": "Martin Mark Clothing I like to wear: Comfortable athletic wear",
+        "best_probe_score": 0.696
+      }
+    ]
+  },
+  "qa_failure_linkage": {
+    "wrong_total": 96,
+    "causes": {
+      "generation_fault": 40,
+      "extraction_fault": 53,
+      "retrieval_fault": 3
+    },
+    "by_type": {
+      "Hallucination": {
+        "generation_fault": 31,
+        "extraction_fault": 43,
+        "retrieval_fault": 3
+      },
+      "Omission": {
+        "extraction_fault": 10,
+        "generation_fault": 9
+      }
+    },
+    "cases": [
+      {
+        "question": "Did Martin Mark establish a global health initiative with hi",
+        "type": "Hallucination",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 2
+      },
+      {
+        "question": "What was Martin Mark's salary as a director at Huaxin Consul",
+        "type": "Hallucination",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 0
+      },
+      {
+        "question": "Did Martin Mark work as a nurse at Huaxin Consulting on Sep ",
+        "type": "Hallucination",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 2
+      },
+      {
+        "question": "Did Martin Mark have any siblings mentioned in the dialogues",
+        "type": "Hallucination",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 0
+      },
+      {
+        "question": "Did Martin express a preference for Labradors over Golden Re",
+        "type": "Hallucination",
+        "cause": "extraction_fault",
+        "missing": 3,
+        "evidence": 3
+      },
+      {
+        "question": "What alternatives is Martin exploring to wellness retreats a",
+        "type": "Hallucination",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 1
+      },
+      {
+        "question": "What role did Martin transition to on March 01, 2026, that i",
+        "type": "Hallucination",
+        "cause": "extraction_fault",
+        "missing": 1,
+        "evidence": 2
+      },
+      {
+        "question": "What activity did Martin participate in during a team-buildi",
+        "type": "Hallucination",
+        "cause": "extraction_fault",
+        "missing": 1,
+        "evidence": 1
+      },
+      {
+        "question": "What was the main reason Martin wanted to change his career ",
+        "type": "Hallucination",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 2
+      },
+      {
+        "question": "Did Martin express interest in violent video games on July 1",
+        "type": "Hallucination",
+        "cause": "generation_fault",
+        "missing": 0,
+        "evidence": 1
+      }
+    ]
+  }
+}

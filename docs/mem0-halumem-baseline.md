@@ -115,6 +115,18 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 - **체계적 차이 2 (발견)**: 공식 채점기는 update 판정에서 rubric 밖 라벨('Completely omitted', 'Partially omitted')을 뱉어 invalid 처리됨 (공식 런의 update valid 137/142가 이것). 우리 json 모드는 대부분 'Omission'으로 정규화 → **우리 쪽이 오히려 rubric 준수율 높음**
 - 결론: judge.py = 공식 채점기의 충실한 강건판으로 채택. 이후 모든 비교는 judge.py 단일 채점기로 일관성 유지 (모드 차이는 판정자 정의에 흡수)
 
+## 4f. Trace 인과 분석 결과 (full-traced 유저1, Qwen 스택, 4B judge 라벨, 2026-07-17)
+
+`src/analyze_trace.py` (ⓐ 유실 정량화 / ⓑ omission 원인 / ⓒ QA 실패 전파). 매처: 임베딩 코사인(threshold 0.65) — **Jaccard는 패러프레이즈 실명으로 extraction_miss를 87%로 과대 산정** (스팟 체크로 적발) → 임베딩 매처를 표준 확정. 대시보드의 골든↔시스템 정렬도 임베딩 기반 필수.
+
+3유저 집계 (traced full 3 users):
+
+- ⓐ 유실 UPDATE: 87/4,707 (**1.85%**, 유저별 1.5~2.1%) — mini 스택(0.66%)의 ~3배
+- ⓑ Omission 265건: **extraction_miss 49% / decision_miss 39%** / retrieval_miss 11% — 논문 §6.2.1("추출 누락이 주원인")의 정밀화: 절반만 맞고, **~40%는 old memory가 검색에 잡혔는데도 update가 안 된 결정 실패** (집계 관점에선 불가시)
+- ⓒ QA 실패 267건: extraction_fault 58% / generation_fault 37% / retrieval_fault 4.5%
+- 일관 결론: **retrieval은 주 병목이 아님** — 병목은 저장(추출)과 갱신(결정). 단 유저3(세션 77개, 최대 메모리 축적)은 retrieval_miss 19%로 유독 높음 → **저장량 증가에 따른 검색 실패 스케일 효과 의심** (대시보드에서 탐구할 단서)
+- 단서: 분모는 4B judge 라벨(판정 기질 영향), cosine threshold 0.65 민감도 미측정 (refinement 항목)
+
 ## 5. 러너 설계 결정
 
 | 항목 | 결정 | 근거 |

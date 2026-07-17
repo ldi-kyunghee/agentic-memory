@@ -30,8 +30,8 @@
 | 구성 | 파일 | 상태 |
 |---|---|---|
 | 기록 계층: LLM/검색/상태변화 trace | `src/tracing.py` + 러너 `--trace` | ✅ 1유저 스모크 검증 (이벤트 1,279건) |
-| 소비 계층: 인과 분석 | `src/analyze_trace.py` | 🔄 ⓐ 유실정량화 검증 완료 (mini 스택: 763건 중 유실 5, 0.66% — stderr 카운트와 교차 일치). ⓑⓒ는 full-traced 데이터 대기 |
-| Qwen 스택 traced 데이터 (3유저) | 서버 `full-traced` 런 | ⬜ 대기 |
+| 소비 계층: 인과 분석 | `src/analyze_trace.py` | ✅ ⓐⓑⓒ 검증 완료 + 임베딩 매처 표준화 (baseline §4f: extraction_miss 46% / decision_miss 48%, retrieval 병목 아님) |
+| Qwen 스택 traced 데이터 (3유저) | 서버 `full-traced` 런 | ✅ traces + 4B judge 라벨 확보 |
 
 **analyze_trace.py의 존재 이유** (= 대시보드에서 UI를 뺀 것):
 1. 대시보드 착수 전 trace 데이터의 유효성 검증 (최저비용 리허설)
