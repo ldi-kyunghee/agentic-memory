@@ -82,7 +82,31 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 - **모델별 메모리 관리 성향이 뚜렷이 다름**: 이벤트 ADD 505 / UPDATE 930 / DELETE 4, 추출 1,435 vs 골든 718 (≈2.0×) — mini(≈1.0×, UPDATE ~100)와 대조적인 **update-happy** 성향. UPDATE id 환각 21건 (시도 930 대비 실패율 ~2%)
 - 풀런 해석용 가설: 밀도 2× → R↑ / Target P·Acc↓ 가능, update 시도 多 → Upd O 개선 가능. 모델별 성향 차이는 대시보드 비교 소재
 
-## 4d. judge.py 교차 검증 (vs 공식 evaluation.py, 같은 gpt-4o-mini, 2026-07-15)
+## 4e. 풀런 결과 (20 users, 전 스택 Qwen3-4B + Qwen3-Embedding-4B, 2026-07-16)
+
+| | R | W-R | Target P | Acc | FMR | F1 | Upd C/H/O | QA C/H/O |
+|---|---|---|---|---|---|---|---|---|
+| ours | 29.41 | 45.29 | 99.24 | 16.27 | 73.83 | 45.37 | 31.01 / 3.14 / 65.86 | 48.75 / 37.93 / 13.33 |
+| paper | 42.91 | 65.03 | 86.26 | 60.86 | 56.80 | 57.31 | 25.50 / 0.45 / 74.02 | 53.02 / 19.17 / 27.81 |
+
+- **Update C/O는 논문 대비 개선** (31.0/65.9 vs 25.5/74.0) — Qwen의 update-happy 성향(§4d-2)의 순기능 실증. 대가로 Upd H 3.1
+- **Target P 99.2 vs Acc 16.3 괴리**: 골든 매칭 추출물은 정확하나 잉여 추출 대량이 0점 — 재작성 drift vs 판정자 엄격성 미분리
+- **⚠ 해석 보류 항목**: 스모크(전부 mini) 대비 시스템·판정자가 동시에 바뀜 → Acc 폭락/QA H 급등/R 하락이 시스템 요인인지 judge 요인인지 분리 불가. **후속: gpt-4o-mini judge로 유저 슬라이스 재채점(calibration)** 후 확정 해석
+- QA 프로파일 역전: 논문은 Omission형(27.8), 우리는 Hallucination형(37.9) — Qwen 답변 생성기가 기권 대신 추측하는 성향 (judge 요인 배제 후 확정)
+
+### 4e-1. Judge calibration (3-user 슬라이스, Qwen judge vs gpt-4o-mini judge, 2026-07-16)
+
+- **결론: Qwen3-4B는 judge 부적격** — 카테고리별 방향이 다른 체계적 편향: accuracy 일치율 56.8%에 극단적 엄격 (같은 레코드 Acc 17.2 vs 46.8, 0점 남발 1,701/4,659), update는 반대로 후함 (Correct 35% vs 9.7% → 풀런의 Upd C 개선은 judge 착시), QA는 Hallucination 남발 (41.6% vs 25.1%, Omission→Hallucination 재라벨 72건), integrity 다소 엄격 (R 28.1 vs 34.0)
+- 시스템 요인도 실재: mini judge 기준으로도 Acc ~47 (mini-스모크의 82 대비) — Qwen backbone의 재작성 drift는 진짜 있음. 다만 judge가 과장
+- **결정: 풀런을 gpt-4o-mini judge로 전체 재채점 후 수치 확정** (mini는 공식 채점기와 교차 검증된 기준 판정자). gpt-oss-120b 로컬 judge는 후속 ablation 후보
+- 교훈: judge 모델은 시스템 backbone과 독립적으로 검증해야 하며, 4B급은 judge로 쓰기엔 판정 성향이 불안정
+
+### 4e-2. Qwen3-30B-A3B judge calibration (같은 슬라이스, 2026-07-16)
+
+- 30B는 mini에 수렴하지 않고 **제3의 기질**: integrity 관대 (R 65.0 vs mini 34.0, 일치 56.4%), update 극단적 관대 (Correct 57% vs 9.7%, 일치 43.0%), accuracy는 근접 (52.6 vs 46.8, 일치 67.9%)하나 is_included 89.5 vs 38.7
+- **Upd C가 judge 선택에 따라 9.7↔35↔57%** — HaluMem judge 태스크의 rubric 해석 민감도가 매우 큼. mini 역시 GPT-4o(논문 judge)와의 일치율은 미측정 상태라 "기준"이라 부를 근거 불충분
+- **[미결] judge 표준화 보류** (2026-07-16, 기능 구현 우선 결정): 풀런 수치는 "judge 미확정" 단서를 달고 잠정치로 유지. 내부 분석(linkage 등)은 무료인 30B 라벨 사용. 추후 확정 필요 시 GPT-4o 앵커 실험(층화 샘플 ~400건, ~$3)으로 mini vs 30B 중 논문 judge에 가까운 쪽 선택
+- 서빙 참고 (Blackwell): MoE 모델(30B-A3B)은 FlashInfer CUTLASS MoE 백엔드가 sm120 JIT에서 사망 → TRITON MoE 백엔드 강제로 우회 (torch CUDA<12.9 문제의 연장). 혼재 GPU 서버는 `CUDA_DEVICE_ORDER=PCI_BUS_ID` 필수 (vs 공식 evaluation.py, 같은 gpt-4o-mini, 2026-07-15)
 
 - 집계 지표 12개 중 9개 ±1.5%p 이내 (R/W-R/TargetP/F1/QA 전부). 초과 3개: Acc +4.96 / FMR −4.80 / Upd O +4.93
 - **레코드 단위 조인 100%** (integrity 576/576, accuracy 705, update 142, QA 155) → build_inputs의 입력 조립이 공식과 완전 동일함을 실증

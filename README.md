@@ -15,7 +15,7 @@ git clone --recurse-submodules https://github.com/ldi-kyunghee/agentic-memory.gi
 ## mem0-classic-oss
 
 OSS mem0(0.1.118) × 로컬 vLLM으로 HaluMem 평가를 프로토콜 충실하게 수행하는 파이프라인.
-설계 배경·mem0 내부 구조·검증 기록은 [docs/mem0-halumem-baseline.md](docs/mem0-halumem-baseline.md) 참고.
+프로젝트 전체 조망은 [docs/roadmap.md](docs/roadmap.md), 설계 배경·검증 기록은 [docs/mem0-halumem-baseline.md](docs/mem0-halumem-baseline.md), trace 데이터 계약은 [docs/trace-schema.md](docs/trace-schema.md) 참고.
 
 ### 구성
 
