@@ -1,3 +1,5 @@
+from pydantic import BaseModel, Field
+from typing_extensions import Literal
 import yaml
 
 PROMPT = """
@@ -99,6 +101,10 @@ Do **not** add any extra explanation or comments outside the JSON block.
 }}
 ```
 """
+
+class QAEval(BaseModel):
+  reasoning: str = Field(description="Provide a concise and traceable evaluation rationale: first compare the system’s response with the Key Memory Points (which were correctly used, which were missing, and whether there was any fabrication/contradiction), then assess its consistency with the Reference Answer, and finally state the classification basis.")
+  evaluation_result: Literal["Correct", "Hallucination", "Omission"]
 
 mem_template = """[{}]
         User: {}

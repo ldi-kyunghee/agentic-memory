@@ -3,8 +3,11 @@ import json
 import time
 import copy
 import re
+import gc
+import torch
 import argparse
 from vllm import LLM, SamplingParams
+from vllm.sampling_params import StructuredOutputsParams
 from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dotenv import load_dotenv
@@ -12,9 +15,11 @@ from dotenv import load_dotenv
 from functools import partial
 
 from llms import llm_request_for_json
-from utils import EVALUATION_PROMPT_FOR_QUESTION, load_config
+from utils import EVALUATION_PROMPT_FOR_QUESTION, load_config, QAEval
 
 load_dotenv()
+torch.cuda.empty_cache()
+gc.collect()
 
 def init_parser():
     parser = argparse.ArgumentParser()
@@ -70,8 +75,14 @@ def evaluation_for_question_vllm(
 
     return prompt
 
+def parse_answers(outputs):
+    contents = [output.outputs[0].text for output in outputs]
+    results = [json.loads(content) for content in contents]
+    return results
+
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
-    sampling_params = SamplingParams(**sampling_params)
+    structured_outputs = StructuredOutputsParams(json=QAEval.model_json_schema())
+    sampling_params = SamplingParams(structured_outputs=structured_outputs, **sampling_params)
     
     prompts = []
     for result in qa_results:
@@ -85,23 +96,18 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
 
     request_ids = llm.enqueue(prompts, sampling_params)
     outputs = llm.wait_for_completion()
-    results = []
-    try:
-        
-        for output in outputs:
-            content = output.outputs[0].text
-            match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
-            if not match:
-                raise ValueError(f"No JSON block found in model output: {content}")
+    results = parse_answers(outputs)
 
-            json_str = match.group(1).strip()
-
-            res = json.loads(json_str)
-            results.append(res)
-    except Exception as e:
-        results = [output.outputs[0].text for output in outputs]
-
-    return results
+    eval_results = []
+    for i, result in enumerate(results):
+        result_type = result.get("evaluation_result")
+        eval_result = {
+            k: v 
+            for k, v in qa_results[i].items()
+        }
+        eval_result['result_type'] = result_type
+        eval_results.append(eval_result)
+    return eval_results
 
 def compute_f1(precision: float, recall: float) -> float:
     """
@@ -200,9 +206,9 @@ def main(args, max_workers: int = 10):
         "per_persona_results": [],
         "overall_score": {}
     }
-    for item in data:
-        eval_results['per_persona_results'] = eval_fn(item)
 
+    inputs = [session for item in data for session in item]
+    eval_results['per_persona_results'] = eval_fn(inputs) # [results[s] for s in slices]
     eval_results = aggregate_results(eval_results)
 
     with open(output_file, "w") as file:
