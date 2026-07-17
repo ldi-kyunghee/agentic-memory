@@ -31,6 +31,7 @@ def init_parser():
 
 def load_vllm(**model_kwargs):
     llm = LLM(
+        max_num_seqs=128,
         **model_kwargs
     )
 
