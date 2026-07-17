@@ -40,16 +40,16 @@ def load_dataset(args):
     return dataset
 
 def load_vllm(**model_kwargs):
-    model_kwargs.pop('max_tokens')
     llm = LLM(
-        max_tokens=128,
         **model_kwargs
     )
 
     return llm
 
 def generate_answers(queries: list[dict], **sampling_params):
+    sampling_params.pop("max_tokens")
     sampling_params = SamplingParams(
+        max_tokens=128,
         **sampling_params
     )
 
