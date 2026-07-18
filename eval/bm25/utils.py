@@ -160,7 +160,7 @@ def add_memory_from_dialogue_with_prev(session_dialogue):
             )
 
         if assistant['content'].strip().endswith('?'):
-            question = assistant.split('.')[-1]
+            question = assistant['content'].split('.')[-1]
         else:
             question = ""
 
