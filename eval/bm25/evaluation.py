@@ -93,9 +93,9 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
             '\n'.join([evidence['memory_content'] for evidence in result['evidence']]),
             result['generated_answer']
         )
-        prompts.append(prompt)
+        prompts.append([dict(role='user', content=prompt)])
 
-    request_ids = llm.enqueue(prompts, sampling_params)
+    request_ids = llm.enqueue_chat(prompts, sampling_params)
     outputs = llm.wait_for_completion()
     results = parse_answers(outputs)
 

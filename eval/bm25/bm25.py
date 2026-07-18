@@ -65,9 +65,9 @@ def generate_answers(queries: list[dict], **sampling_params):
         for doc in item['retrieved']:
             documents += f" - {doc['memory_content']}"
         prompt = PROMPT.format(context=documents, question=query)
-        prompts.append(prompt)
+        prompts.append([dict(role='user', content=prompt)])
 
-    request_ids = llm.enqueue(prompts, sampling_params=sampling_params)
+    request_ids = llm.enqueue_chat(prompts, sampling_params=sampling_params)
     outputs = llm.wait_for_completion()
 
     answers = [output.outputs[0].text for output in outputs]
