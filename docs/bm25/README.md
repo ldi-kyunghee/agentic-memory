@@ -1,4 +1,13 @@
 # Naive Memory System
+## 디렉토리 구조
+```
+eval/bm25 # 평가 코드
+docs/bm25 # documentation 
+results/bm25 # 평가 생성 결과
+scores/bm25 # 평가 결과 점수
+configs/bm25_eval # 생성 모델용 configuration file (즉, model_kwargs)
+scripts/bm25_eval # 평가 코드 실행 스크립트
+```
 ## 실행 방법
 
 1. 환경 설치
