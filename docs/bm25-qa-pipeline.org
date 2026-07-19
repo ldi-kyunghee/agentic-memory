@@ -1,0 +1,31 @@
+#+title: BM25 Retriever를 통한 Naive Memory System 구성
+#+CATEGORY: Research
+#+TAGS: agenticmemory documentation
+* 메모리 구성
+** 데이터셋 탐색
+HaluMem 데이터셋은 medium과 long 세팅 두가지로 있으나 대략적으로 dialogue utterance 개수 밖에 없습니다.
+|--------+---------------+----------+-----------|
+| Subset | Memory Points | Dialogue | Questions |
+|--------+---------------+----------+-----------|
+| Medium |         14948 |    60146 |      3467 |
+| Long   |         14948 |   107032 |      3467 |
+|--------+---------------+----------+-----------|
+
+다만 그럼에도 불구하고 메모리 스토어는 dialogue 기준으로 해서 데이터셋 둘다로 실험해봤습니다.
+** 메모리 구조
+문서는 dialogue 턴 기준으로 구성하였습니다. 즉
+#+NAME: Memory Example
+#+BEGIN_EXAMPLE
+[timestamp]
+User: <user utterence>
+Assistant: <assistant utterance>
+#+END_EXAMPLE
+
+추가로 데이터셋을 한번 살펴봤을 때 =<assistant utterance>= 에서 마지막 문장은 보통 질문이기 때문에 질문 들어가 있는 실험 세팅도 있습니다.
+#+NAME: Memory Example w/ Previous Question
+#+BEGIN_EXAMPLE
+[timestamp]
+Assistant: <question>
+User: <user utterance>
+Assistant: <assistant utterance>
+#+END_EXAMPLE

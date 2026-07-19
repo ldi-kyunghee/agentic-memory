@@ -1,0 +1,21 @@
+#+title: Naive Memory System 평가 결과
+* 실험 세팅
+** 실험 정보
+- =exp1/= 과 =exp2/= 의 차이는 메모리 구조 밖에 없습니다.
+  #+NAME: Experiment 1
+  #+BEGIN_EXAMPLE
+  [timestamp]
+  User: <user utterence>
+  Assistant: <assistant utterance>
+  #+END_EXAMPLE
+
+  #+NAME: Experiment 2
+  #+BEGIN_EXAMPLE
+  [timestamp]
+  Assistant: <question>
+  User: <user utterance>
+  Assistant: <assistant utterance>
+  #+END_EXAMPLE
+
+** 세팅
+| Subset | Retrieval@k 
