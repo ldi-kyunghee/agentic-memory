@@ -122,9 +122,11 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 **20유저 확정 집계** (traced full 20 users, 2026-07-17 — 3유저 예비 결과와 분포 일치, 대표성 확인):
 
 - ⓐ 유실 UPDATE: 766/30,793 (**2.49%**) — mini 스택(0.66%)의 ~4배. 매처 무관 지표라 맥/서버 동일 (교차 검증)
-- ⓑ Omission 2,071건: **extraction_miss 48.3% / decision_miss 42.3%** / retrieval_miss 9.3% — 논문 §6.2.1("추출 누락이 주원인")의 정밀화: 절반만 맞고, **~42%는 old memory가 검색에 잡혔는데도 update가 안 된 결정 실패** (집계 관점에선 불가시)
-- ⓒ QA 실패 1,770건: extraction_fault 63.5% / generation_fault 30.1% / retrieval_fault 6.4%
-- 일관 결론: **retrieval은 주 병목이 아님** — 병목은 저장(추출)과 갱신(결정)
+- ⓑ Omission 2,071건 (분류기 픽스 ce858cd 반영: 복수 이전 버전 대응 + overwritten 검사 매처 일관화): **decision_miss 47.9% / extraction_miss 44.3% / overwritten 7.1% / retrieval_miss 0.7%**
+  - 논문 §6.2.1("추출 누락이 주원인")의 정밀화를 넘어 역전: **최대 단일 원인은 결정 실패** — old memory가 검색에 잡혔는데도 update가 안 됨 (집계 관점에선 불가시)
+  - 픽스 전 "retrieval_miss 9.3%"의 대부분은 실제로는 **overwritten** (시스템이 old를 스스로 갱신/삭제했으나 골든 새 버전과 다른 내용 — 어휘 매칭이 prev_text를 못 알아봐 오분류됐던 것). overwritten은 사실상 "갱신은 했으나 틀리게"라는 결정 품질의 아종
+- ⓒ QA 실패 1,770건: extraction_fault 63.5% / generation_fault 30.1% / retrieval_fault 6.4% (이번 픽스 무관 경로, 불변)
+- 일관 결론 (더 강해짐): **retrieval은 무죄에 가까움 (0.7%)** — 병목은 갱신(결정+overwritten ≈ 55%)과 저장(추출 44%)
 - **매처 표준 확정: Qwen3-Embedding-4B + cosine 0.65 (서버)** — 임베딩 모델을 바꾸면 같은 threshold라도 결론이 왜곡됨을 실측 (동일 유저에서 OpenAI 3-small 사용 시 extraction_miss 42→68로 부풀어). 원인 라벨은 측정 모델 종속 — 모든 분석은 이 표준 설정으로만
 - 단서: 분모는 4B judge 라벨(판정 기질 영향). threshold 민감도 스윕은 외부 보고 시점에 GPT-4o 앵커와 묶어 수행 (백로그). 관찰자 효과 없음 확인: traced/untraced 풀런 성적표 차이 ±0.2%p
 
