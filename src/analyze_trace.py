@@ -92,7 +92,7 @@ def analyze_lost_updates(traces: list[dict]) -> dict:
         if r["event"] == "memory_write":
             by_session_writes[r["session"]] = {(w["op"], w["text"]) for w in r["writes"]}
 
-    intended_total, lost = 0, []
+    intended_total, lost, intended_by_op = 0, [], Counter()
     for r in traces:
         if r["event"] == "llm_call" and r.get("purpose") == "update_decision":
             applied = by_session_writes.get(r["session"], set())
@@ -101,10 +101,11 @@ def analyze_lost_updates(traces: list[dict]) -> dict:
                 if op not in ("ADD", "UPDATE", "DELETE") or not text:
                     continue  # NONE은 적용대상이 아니므로 제외
                 intended_total += 1
+                intended_by_op[op] += 1
                 if (op, text) not in applied:
                     lost.append({"session": r["session"], "op": op, "text": text[:80]})
 
-    return {"intended": intended_total, "lost": len(lost),
+    return {"intended": intended_total, "intended_by_op": dict(intended_by_op), "lost": len(lost),
             "lost_rate": len(lost) / intended_total if intended_total else 0.0,
             "lost_by_op": dict(Counter(l["op"] for l in lost)), "samples": lost[:5]}
 
