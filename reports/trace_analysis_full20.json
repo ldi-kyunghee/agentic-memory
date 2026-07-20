@@ -20,8 +20,8 @@
       "wrong_total": 1770,
       "causes": {
         "extraction_fault": 1124,
-        "generation_fault": 533,
-        "retrieval_fault": 113
+        "generation_fault": 532,
+        "retrieval_fault": 114
       }
     }
   },
@@ -30,6 +30,11 @@
       "trace_file": "traces/full-traced/1b846c59-456e-9550-dffd-4d23f1eca81f.jsonl",
       "lost_updates": {
         "intended": 1568,
+        "intended_by_op": {
+          "ADD": 543,
+          "UPDATE": 1024,
+          "DELETE": 1
+        },
         "lost": 55,
         "lost_rate": 0.035076530612244895,
         "lost_by_op": {
@@ -90,7 +95,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Williams Daniel Pets I like Persian cats reason: I admire the regal an",
-            "best_probe_score": 0.655
+            "best_probe_score": 0.653
           },
           {
             "session": 4,
@@ -153,7 +158,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Williams Daniel's job title is Lead Director",
-            "best_probe_score": 0.733
+            "best_probe_score": 0.734
           },
           {
             "session": 16,
@@ -188,7 +193,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Williams directed several films that won awards at international festi",
-            "best_probe_score": 0.589
+            "best_probe_score": 0.588
           },
           {
             "session": 15,
@@ -279,7 +284,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Williams Daniel's monthly income is 90000 yuan",
-            "best_probe_score": 0.723
+            "best_probe_score": 0.722
           },
           {
             "session": 33,
@@ -293,7 +298,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Williams Daniel relies on compensatory motivation, using the assistant",
-            "best_probe_score": 0.56
+            "best_probe_score": 0.561
           },
           {
             "session": 33,
@@ -307,7 +312,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Williams Daniel plans to integrate insights from historical research a",
-            "best_probe_score": 0.568
+            "best_probe_score": 0.567
           },
           {
             "session": 35,
@@ -328,7 +333,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "[Jan 06, 2026, 06:49:58][Persona Memory]Williams Daniel reflected on b",
-            "best_probe_score": 0.599
+            "best_probe_score": 0.6
           },
           {
             "session": 35,
@@ -363,7 +368,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Foods I dislike: Artificially flavored snacks reason: Artificially fla",
-            "best_probe_score": 0.642
+            "best_probe_score": 0.641
           },
           {
             "session": 35,
@@ -391,7 +396,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Music I like to listen to: Classical symphonies",
-            "best_probe_score": 0.697
+            "best_probe_score": 0.698
           },
           {
             "session": 50,
@@ -426,14 +431,14 @@
             "mp_index": 7,
             "cause": "retrieval_miss",
             "old": "While still finding them too sweet, learning about their historical de",
-            "best_probe_score": 0.617
+            "best_probe_score": 0.616
           },
           {
             "session": 45,
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Williams Daniel shared anecdotes about past experiences where musical ",
-            "best_probe_score": 0.513
+            "best_probe_score": 0.514
           },
           {
             "session": 54,
@@ -524,7 +529,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "On Oct 15, 2034, Williams Daniel focused on reorganizing the studio's ",
-            "best_probe_score": 0.5
+            "best_probe_score": 0.502
           },
           {
             "session": 55,
@@ -580,14 +585,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Williams Daniel's employment status is unemployed",
-            "best_probe_score": 0.742
+            "best_probe_score": 0.744
           },
           {
             "session": 60,
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Williams Daniel Foods I like to eat Sourdough bread reason: The tangy ",
-            "best_probe_score": 0.447
+            "best_probe_score": 0.446
           },
           {
             "session": 59,
@@ -792,6 +797,11 @@
       "trace_file": "traces/full-traced/2e36c193-a605-8cc7-70ff-80b2336d4980.jsonl",
       "lost_updates": {
         "intended": 1285,
+        "intended_by_op": {
+          "ADD": 427,
+          "UPDATE": 851,
+          "DELETE": 7
+        },
         "lost": 40,
         "lost_rate": 0.0311284046692607,
         "lost_by_op": {
@@ -880,7 +890,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Susan Thompson's career_description is Being laid off was unexpected, ",
-            "best_probe_score": 0.539
+            "best_probe_score": 0.538
           },
           {
             "session": 13,
@@ -922,7 +932,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Susan Thompson acknowledged the significant progress in managing her p",
-            "best_probe_score": 0.629
+            "best_probe_score": 0.628
           },
           {
             "session": 16,
@@ -999,7 +1009,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Susan Thompson's career_description is Retirement has opened up new po",
-            "best_probe_score": 0.513
+            "best_probe_score": 0.511
           },
           {
             "session": 25,
@@ -1055,7 +1065,7 @@
             "mp_index": 2,
             "cause": "overwritten",
             "old": "Susan Thompson's mental illness situation: Increased anxiety",
-            "best_probe_score": 0.604
+            "best_probe_score": 0.603
           },
           {
             "session": 24,
@@ -1153,7 +1163,7 @@
             "mp_index": 1,
             "cause": "overwritten",
             "old": "Susan Thompson's mental health status: Stressed",
-            "best_probe_score": 0.516
+            "best_probe_score": 0.515
           },
           {
             "session": 36,
@@ -1188,7 +1198,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Susan Thompson expressed a renewed sense of purpose and motivation to ",
-            "best_probe_score": 0.589
+            "best_probe_score": 0.59
           },
           {
             "session": 40,
@@ -1370,7 +1380,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Susan Thompson plans to reconnect with friends Linda and Joseph for gu",
-            "best_probe_score": 0.589
+            "best_probe_score": 0.59
           },
           {
             "session": 53,
@@ -1426,14 +1436,14 @@
             "mp_index": 4,
             "cause": "overwritten",
             "old": "Susan Thompson's mental illness situation: Mild anxiety",
-            "best_probe_score": 0.579
+            "best_probe_score": 0.578
           },
           {
             "session": 63,
             "mp_index": 3,
             "cause": "overwritten",
             "old": "Susan Thompson continues to leverage her professional skills to contri",
-            "best_probe_score": 0.592
+            "best_probe_score": 0.591
           },
           {
             "session": 61,
@@ -1468,7 +1478,7 @@
             "mp_index": 3,
             "cause": "overwritten",
             "old": "Susan Thompson's mental illness situation: Increased anxiety",
-            "best_probe_score": 0.604
+            "best_probe_score": 0.603
           },
           {
             "session": 63,
@@ -1510,7 +1520,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Susan Thompson's monthly income is 6500 yuan",
-            "best_probe_score": 0.667
+            "best_probe_score": 0.668
           },
           {
             "session": 71,
@@ -1667,6 +1677,11 @@
       "trace_file": "traces/full-traced/2f1f897e-d67f-dbc5-6a7b-b7634a9e294f.jsonl",
       "lost_updates": {
         "intended": 1308,
+        "intended_by_op": {
+          "ADD": 485,
+          "UPDATE": 821,
+          "DELETE": 2
+        },
         "lost": 20,
         "lost_rate": 0.01529051987767584,
         "lost_by_op": {
@@ -1938,7 +1953,7 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Martin Mark's colleague Joshua's insights have improved team collabora",
-            "best_probe_score": 0.752
+            "best_probe_score": 0.753
           },
           {
             "session": 26,
@@ -1980,14 +1995,14 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Martin Mark's colleague Joshua's insights have improved team collabora",
-            "best_probe_score": 0.752
+            "best_probe_score": 0.753
           },
           {
             "session": 27,
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Martin Mark's colleague Daniel's innovative ideas have pushed him to t",
-            "best_probe_score": 0.792
+            "best_probe_score": 0.793
           },
           {
             "session": 29,
@@ -2022,7 +2037,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Martin Mark's social relationships increased NewColleague, A new colle",
-            "best_probe_score": 0.671
+            "best_probe_score": 0.67
           },
           {
             "session": 27,
@@ -2316,7 +2331,7 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Martin Mark's monthly income is 23000 yuan",
-            "best_probe_score": 0.711
+            "best_probe_score": 0.71
           },
           {
             "session": 64,
@@ -2444,6 +2459,11 @@
       "trace_file": "traces/full-traced/2f4b4206-20bc-19a5-a5ed-4d110f91f4db.jsonl",
       "lost_updates": {
         "intended": 1443,
+        "intended_by_op": {
+          "ADD": 481,
+          "UPDATE": 950,
+          "DELETE": 12
+        },
         "lost": 36,
         "lost_rate": 0.02494802494802495,
         "lost_by_op": {
@@ -2519,7 +2539,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 06:38:01] Games I like to play Strategy games like ches",
-            "best_probe_score": 0.744
+            "best_probe_score": 0.743
           },
           {
             "session": 5,
@@ -2568,7 +2588,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Sep 06, 2025, 06:38:01 - Williams Donna Games I like to play: Tech-the",
-            "best_probe_score": 0.377
+            "best_probe_score": 0.375
           },
           {
             "session": 17,
@@ -2603,7 +2623,7 @@
             "mp_index": 1,
             "cause": "overwritten",
             "old": "Williams Donna Pets I like: Dogs",
-            "best_probe_score": 0.632
+            "best_probe_score": 0.634
           },
           {
             "session": 15,
@@ -2617,7 +2637,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Williams Donna's monthly income is 8500 yuan",
-            "best_probe_score": 0.672
+            "best_probe_score": 0.673
           },
           {
             "session": 19,
@@ -2638,7 +2658,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Williams Donna's physical health status: Below Average",
-            "best_probe_score": 0.762
+            "best_probe_score": 0.763
           },
           {
             "session": 21,
@@ -2652,7 +2672,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 06:38:01] Foods I dislike Fast food reason: I avoid fas",
-            "best_probe_score": 0.737
+            "best_probe_score": 0.739
           },
           {
             "session": 24,
@@ -2666,21 +2686,21 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Clothing I like to wear: Smart watches",
-            "best_probe_score": 0.664
+            "best_probe_score": 0.665
           },
           {
             "session": 24,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Williams Donna's monthly income is 9500 yuan",
-            "best_probe_score": 0.668
+            "best_probe_score": 0.669
           },
           {
             "session": 19,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Williams Donna's chronic disease situation: Hypertension",
-            "best_probe_score": 0.726
+            "best_probe_score": 0.727
           },
           {
             "session": 26,
@@ -2708,21 +2728,21 @@
             "mp_index": 4,
             "cause": "overwritten",
             "old": "Sep 06, 2025, 06:38:01 - Williams Donna Games I like to play Tech-them",
-            "best_probe_score": 0.436
+            "best_probe_score": 0.435
           },
           {
             "session": 26,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Williams Donna's GonzalezAnthony is {'relationship_type': 'Friend', 'd",
-            "best_probe_score": 0.816
+            "best_probe_score": 0.813
           },
           {
             "session": 32,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Games I dislike: First-person shooters reason: I find first-person sho",
-            "best_probe_score": 0.821
+            "best_probe_score": 0.819
           },
           {
             "session": 30,
@@ -2743,7 +2763,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Williams Donna Beverages I dislike Energy drinks reason: I dislike ene",
-            "best_probe_score": 0.715
+            "best_probe_score": 0.714
           },
           {
             "session": 34,
@@ -2778,7 +2798,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Williams Donna's physical health status: Below Average",
-            "best_probe_score": 0.762
+            "best_probe_score": 0.763
           },
           {
             "session": 36,
@@ -2820,7 +2840,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Foods I dislike: Highly processed snacks because I am conscious about ",
-            "best_probe_score": 0.817
+            "best_probe_score": 0.818
           },
           {
             "session": 39,
@@ -2876,7 +2896,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Williams Donna's mental health status: Stable and Normal",
-            "best_probe_score": 0.727
+            "best_probe_score": 0.728
           },
           {
             "session": 44,
@@ -2890,14 +2910,14 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Donna integrates mindfulness and exercise into her routine to maintain",
-            "best_probe_score": 0.754
+            "best_probe_score": 0.753
           },
           {
             "session": 42,
             "mp_index": 2,
             "cause": "overwritten",
             "old": "Williams Donna works in the Mobile Device Refurbishment industry",
-            "best_probe_score": 0.629
+            "best_probe_score": 0.628
           },
           {
             "session": 50,
@@ -2918,7 +2938,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Movies I like to watch: Documentaries about innovation",
-            "best_probe_score": 0.67
+            "best_probe_score": 0.671
           },
           {
             "session": 47,
@@ -2932,7 +2952,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Williams Donna's physical health status: Excellent",
-            "best_probe_score": 0.768
+            "best_probe_score": 0.769
           },
           {
             "session": 49,
@@ -2974,7 +2994,7 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "I dislike rodents because I find them difficult to care for and prefer",
-            "best_probe_score": 0.86
+            "best_probe_score": 0.859
           },
           {
             "session": 54,
@@ -3030,7 +3050,7 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Williams Donna's job title is Founder and CEO",
-            "best_probe_score": 0.721
+            "best_probe_score": 0.72
           },
           {
             "session": 57,
@@ -3114,7 +3134,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Donna's instrumental motivation involves engaging with the AI assistan",
-            "best_probe_score": 0.542
+            "best_probe_score": 0.543
           },
           {
             "session": 54,
@@ -3271,6 +3291,11 @@
       "trace_file": "traces/full-traced/348492a7-cfe4-ee1d-73c3-c276d6ba8277.jsonl",
       "lost_updates": {
         "intended": 1596,
+        "intended_by_op": {
+          "ADD": 542,
+          "UPDATE": 1032,
+          "DELETE": 22
+        },
         "lost": 38,
         "lost_rate": 0.023809523809523808,
         "lost_by_op": {
@@ -3451,7 +3476,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 13:22:33][Persona Memory]Donald Smith Music they dislik",
-            "best_probe_score": 0.706
+            "best_probe_score": 0.704
           },
           {
             "session": 8,
@@ -3535,7 +3560,7 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Donald expressed a desire to enhance his influence in political circle",
-            "best_probe_score": 0.69
+            "best_probe_score": 0.689
           },
           {
             "session": 25,
@@ -3619,14 +3644,14 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Donald Smith plans to leverage his network to influence political camp",
-            "best_probe_score": 0.61
+            "best_probe_score": 0.609
           },
           {
             "session": 38,
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Donald Smith Beverages they dislike: Soda",
-            "best_probe_score": 0.642
+            "best_probe_score": 0.645
           },
           {
             "session": 39,
@@ -3668,7 +3693,7 @@
             "mp_index": 7,
             "cause": "extraction_miss",
             "old": "The layoff period provided an opportunity to recover from stress and r",
-            "best_probe_score": 0.567
+            "best_probe_score": 0.566
           },
           {
             "session": 39,
@@ -3682,7 +3707,7 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Donald Smith highlighted the importance of strategic partnerships in t",
-            "best_probe_score": 0.69
+            "best_probe_score": 0.691
           },
           {
             "session": 34,
@@ -3731,7 +3756,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Donald Smith Music they like to, they like to remove classical music f",
-            "best_probe_score": 0.597
+            "best_probe_score": 0.598
           },
           {
             "session": 43,
@@ -3759,7 +3784,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Donald Smith's career_description is As the founder of Donald Politica",
-            "best_probe_score": 0.582
+            "best_probe_score": 0.578
           },
           {
             "session": 49,
@@ -3843,7 +3868,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Donald reflected on his career transition to a political strategy cons",
-            "best_probe_score": 0.712
+            "best_probe_score": 0.714
           },
           {
             "session": 48,
@@ -3857,7 +3882,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Donald Smith expressed determination and cautious optimism while build",
-            "best_probe_score": 0.689
+            "best_probe_score": 0.69
           },
           {
             "session": 46,
@@ -3892,7 +3917,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Donald Smith shared anecdotes from past career transitions that prepar",
-            "best_probe_score": 0.6
+            "best_probe_score": 0.599
           },
           {
             "session": 60,
@@ -3990,7 +4015,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Donald Smith expressed gratitude for support from his network in susta",
-            "best_probe_score": 0.558
+            "best_probe_score": 0.557
           },
           {
             "session": 65,
@@ -4018,14 +4043,14 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "On Jun 20, 2038, Donald reflected on the financial success and growth ",
-            "best_probe_score": 0.567
+            "best_probe_score": 0.568
           },
           {
             "session": 67,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Donald Smith's social relationships increased NewContactPatricia, Patr",
-            "best_probe_score": 0.707
+            "best_probe_score": 0.699
           },
           {
             "session": 67,
@@ -4060,14 +4085,14 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Donald discussed plans to leverage his consultancy's reputation to att",
-            "best_probe_score": 0.679
+            "best_probe_score": 0.681
           },
           {
             "session": 67,
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Donald Smith engaged with influential figures, including Patricia, a p",
-            "best_probe_score": 0.64
+            "best_probe_score": 0.639
           },
           {
             "session": 70,
@@ -4088,7 +4113,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Donald Smith's career_description is With the consultancy thriving, I ",
-            "best_probe_score": 0.528
+            "best_probe_score": 0.527
           },
           {
             "session": 68,
@@ -4151,7 +4176,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "On Oct 15, 2041, Donald Smith implemented strategic changes in the pol",
-            "best_probe_score": 0.582
+            "best_probe_score": 0.581
           },
           {
             "session": 73,
@@ -4193,7 +4218,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Donald Smith reflected on his strategic approach to networking and its",
-            "best_probe_score": 0.585
+            "best_probe_score": 0.584
           },
           {
             "session": 75,
@@ -4420,6 +4445,11 @@
       "trace_file": "traces/full-traced/42f702e3-750c-1acc-9101-051f1f75991e.jsonl",
       "lost_updates": {
         "intended": 1652,
+        "intended_by_op": {
+          "ADD": 560,
+          "UPDATE": 1084,
+          "DELETE": 8
+        },
         "lost": 40,
         "lost_rate": 0.024213075060532687,
         "lost_by_op": {
@@ -4488,7 +4518,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Karen Brown's physical health status: Affected by Chronic Disease",
-            "best_probe_score": 0.7
+            "best_probe_score": 0.699
           },
           {
             "session": 7,
@@ -4502,7 +4532,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Karen Brown's Friend MooreAndrew, Andrew is a close friend who inspire",
-            "best_probe_score": 0.708
+            "best_probe_score": 0.712
           },
           {
             "session": 5,
@@ -4523,7 +4553,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Karen Brown's physical health status: Severely Affected by Chronic Dis",
-            "best_probe_score": 0.688
+            "best_probe_score": 0.689
           },
           {
             "session": 17,
@@ -4607,7 +4637,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Karen Brown plans to maintain her current health regimen to ensure con",
-            "best_probe_score": 0.614
+            "best_probe_score": 0.613
           },
           {
             "session": 21,
@@ -4635,7 +4665,7 @@
             "mp_index": 1,
             "cause": "overwritten",
             "old": "Karen Brown's physical health status: Improved",
-            "best_probe_score": 0.612
+            "best_probe_score": 0.611
           },
           {
             "session": 24,
@@ -4677,7 +4707,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Karen Brown's social relationships increased NewConnection4, A key fig",
-            "best_probe_score": 0.473
+            "best_probe_score": 0.469
           },
           {
             "session": 30,
@@ -4698,7 +4728,7 @@
             "mp_index": 9,
             "cause": "extraction_miss",
             "old": "Karen Brown plans to maintain her current health regimen to ensure con",
-            "best_probe_score": 0.614
+            "best_probe_score": 0.613
           },
           {
             "session": 27,
@@ -4712,7 +4742,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Karen Brown's situation_reason is With effective management and lifest",
-            "best_probe_score": 0.522
+            "best_probe_score": 0.521
           },
           {
             "session": 27,
@@ -4768,7 +4798,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Karen Brown Music I like to listen to Ambient music reason: I enjoy am",
-            "best_probe_score": 0.79
+            "best_probe_score": 0.792
           },
           {
             "session": 32,
@@ -4782,7 +4812,7 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Karen's exploratory motivation drives her to continuously seek out new",
-            "best_probe_score": 0.696
+            "best_probe_score": 0.697
           },
           {
             "session": 32,
@@ -4852,7 +4882,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Karen Brown Pets I like Cats reason: I like cats because they're indep",
-            "best_probe_score": 0.678
+            "best_probe_score": 0.677
           },
           {
             "session": 39,
@@ -4880,7 +4910,7 @@
             "mp_index": 4,
             "cause": "overwritten",
             "old": "Karen Brown's monthly income is 9000 yuan",
-            "best_probe_score": 0.615
+            "best_probe_score": 0.614
           },
           {
             "session": 41,
@@ -4929,14 +4959,14 @@
             "mp_index": 7,
             "cause": "extraction_miss",
             "old": "Karen Brown demonstrated resilience and adaptability in using her netw",
-            "best_probe_score": 0.593
+            "best_probe_score": 0.592
           },
           {
             "session": 40,
             "mp_index": 8,
             "cause": "extraction_miss",
             "old": "Karen Brown's dialogue revealed the role of her network in enriching h",
-            "best_probe_score": 0.569
+            "best_probe_score": 0.57
           },
           {
             "session": 43,
@@ -4957,7 +4987,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Karen's creative motivation drives her to innovate in the property man",
-            "best_probe_score": 0.64
+            "best_probe_score": 0.639
           },
           {
             "session": 49,
@@ -4992,7 +5022,7 @@
             "mp_index": 1,
             "cause": "overwritten",
             "old": "Karen Brown's employment status is unemployed",
-            "best_probe_score": 0.632
+            "best_probe_score": 0.633
           },
           {
             "session": 49,
@@ -5181,7 +5211,7 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Karen Brown's strategic partnerships have opened new avenues for growt",
-            "best_probe_score": 0.667
+            "best_probe_score": 0.666
           },
           {
             "session": 65,
@@ -5237,14 +5267,14 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Karen Brown's career_description is I am now employed as a Senior Prod",
-            "best_probe_score": 0.609
+            "best_probe_score": 0.61
           },
           {
             "session": 64,
             "mp_index": 4,
             "cause": "overwritten",
             "old": "Karen Brown's monthly income is 14000 yuan",
-            "best_probe_score": 0.624
+            "best_probe_score": 0.623
           },
           {
             "session": 67,
@@ -5272,7 +5302,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Karen Brown focused on developing core features for her property manag",
-            "best_probe_score": 0.624
+            "best_probe_score": 0.625
           },
           {
             "session": 68,
@@ -5335,7 +5365,7 @@
             "mp_index": 8,
             "cause": "extraction_miss",
             "old": "Karen's dialogue was filled with optimism and a clear vision for achie",
-            "best_probe_score": 0.638
+            "best_probe_score": 0.637
           }
         ]
       },
@@ -5436,6 +5466,11 @@
       "trace_file": "traces/full-traced/4fd09df4-d0df-ff7e-bb39-5f4faedfac2c.jsonl",
       "lost_updates": {
         "intended": 1420,
+        "intended_by_op": {
+          "ADD": 481,
+          "UPDATE": 927,
+          "DELETE": 12
+        },
         "lost": 34,
         "lost_rate": 0.023943661971830985,
         "lost_by_op": {
@@ -5482,7 +5517,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Sharon Brown's employment status is employed",
-            "best_probe_score": 0.83
+            "best_probe_score": 0.829
           },
           {
             "session": 7,
@@ -5531,7 +5566,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Sharon Brown's job title is Senior Consultant",
-            "best_probe_score": 0.663
+            "best_probe_score": 0.665
           },
           {
             "session": 12,
@@ -5580,7 +5615,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Sharon Brown's employment status is retired",
-            "best_probe_score": 0.712
+            "best_probe_score": 0.713
           },
           {
             "session": 18,
@@ -5608,7 +5643,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Sharon Brown's physical health status: Improving",
-            "best_probe_score": 0.667
+            "best_probe_score": 0.666
           },
           {
             "session": 24,
@@ -5713,7 +5748,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Sharon Brown discussed her instrumental motivation in using AI to opti",
-            "best_probe_score": 0.591
+            "best_probe_score": 0.59
           },
           {
             "session": 34,
@@ -5762,7 +5797,7 @@
             "mp_index": 2,
             "cause": "overwritten",
             "old": "Sharon Brown's mental health status: Stable",
-            "best_probe_score": 0.613
+            "best_probe_score": 0.612
           },
           {
             "session": 36,
@@ -6170,6 +6205,11 @@
       "trace_file": "traces/full-traced/52e6d9cd-f63e-4065-cbaf-a20347590e07.jsonl",
       "lost_updates": {
         "intended": 1160,
+        "intended_by_op": {
+          "ADD": 392,
+          "UPDATE": 764,
+          "DELETE": 4
+        },
         "lost": 31,
         "lost_rate": 0.026724137931034484,
         "lost_by_op": {
@@ -6244,7 +6284,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Oleksandr Shevchenko's social relationships increased NewColleague, A ",
-            "best_probe_score": 0.601
+            "best_probe_score": 0.6
           },
           {
             "session": 7,
@@ -6265,14 +6305,14 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko Clothing I dislike Dislikes flashy clothing reaso",
-            "best_probe_score": 0.714
+            "best_probe_score": 0.715
           },
           {
             "session": 14,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko's job title is Defense Lawyer",
-            "best_probe_score": 0.748
+            "best_probe_score": 0.749
           },
           {
             "session": 15,
@@ -6286,7 +6326,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko's monthly income is 3000 yuan",
-            "best_probe_score": 0.693
+            "best_probe_score": 0.694
           },
           {
             "session": 14,
@@ -6335,7 +6375,7 @@
             "mp_index": 3,
             "cause": "overwritten",
             "old": "Oleksandr Shevchenko's physical health status changed from 'Improved' ",
-            "best_probe_score": 0.549
+            "best_probe_score": 0.55
           },
           {
             "session": 19,
@@ -6356,14 +6396,14 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Oleksandr Shevchenko's Colleague NewColleague, A new colleague who has",
-            "best_probe_score": 0.603
+            "best_probe_score": 0.602
           },
           {
             "session": 18,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko expressed pride in leading complex human rights c",
-            "best_probe_score": 0.677
+            "best_probe_score": 0.679
           },
           {
             "session": 20,
@@ -6398,7 +6438,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Oleksandr Shevchenko's social relationships increased TeamMemberSuppor",
-            "best_probe_score": 0.621
+            "best_probe_score": 0.62
           },
           {
             "session": 20,
@@ -6461,7 +6501,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko Pets I like: Likes dogs",
-            "best_probe_score": 0.654
+            "best_probe_score": 0.653
           },
           {
             "session": 34,
@@ -6517,7 +6557,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko's savings amount is 30000 yuan",
-            "best_probe_score": 0.737
+            "best_probe_score": 0.738
           },
           {
             "session": 39,
@@ -6538,7 +6578,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko's mental health status: Strained but Determined",
-            "best_probe_score": 0.714
+            "best_probe_score": 0.713
           },
           {
             "session": 34,
@@ -6622,7 +6662,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko's monthly income is 4500 yuan",
-            "best_probe_score": 0.692
+            "best_probe_score": 0.693
           },
           {
             "session": 37,
@@ -6650,7 +6690,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Oleksandr shared anecdotes about lifestyle adjustments providing clari",
-            "best_probe_score": 0.579
+            "best_probe_score": 0.578
           },
           {
             "session": 48,
@@ -6706,7 +6746,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko's mental health status: Resilient but Cautious",
-            "best_probe_score": 0.706
+            "best_probe_score": 0.705
           },
           {
             "session": 50,
@@ -6734,21 +6774,21 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Oleksandr Shevchenko's mental health status: Optimistic and Energized",
-            "best_probe_score": 0.72
+            "best_probe_score": 0.719
           },
           {
             "session": 54,
             "mp_index": 1,
             "cause": "overwritten",
             "old": "Oleksandr Shevchenko Pets I like: Likes dogs",
-            "best_probe_score": 0.629
+            "best_probe_score": 0.628
           },
           {
             "session": 55,
             "mp_index": 7,
             "cause": "extraction_miss",
             "old": "Oleksandr emphasized the importance of emotional support from friends ",
-            "best_probe_score": 0.451
+            "best_probe_score": 0.45
           },
           {
             "session": 55,
@@ -6909,6 +6949,11 @@
       "trace_file": "traces/full-traced/5c005ed8-0d18-99f8-a20e-6a776a7ea30a.jsonl",
       "lost_updates": {
         "intended": 1499,
+        "intended_by_op": {
+          "ADD": 494,
+          "UPDATE": 1001,
+          "DELETE": 4
+        },
         "lost": 27,
         "lost_rate": 0.01801200800533689,
         "lost_by_op": {
@@ -7032,7 +7077,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Sarah Garcia completed a major financial project at Oracle, leading to",
-            "best_probe_score": 0.711
+            "best_probe_score": 0.712
           },
           {
             "session": 7,
@@ -7137,7 +7182,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Sarah Garcia identified areas for growth and improvement in her social",
-            "best_probe_score": 0.601
+            "best_probe_score": 0.6
           },
           {
             "session": 11,
@@ -7522,7 +7567,7 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Sarah Garcia works at Community Change Initiative",
-            "best_probe_score": 0.653
+            "best_probe_score": 0.654
           },
           {
             "session": 45,
@@ -7809,7 +7854,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Sarah Garcia evaluated the impact of her global advocacy efforts on Ja",
-            "best_probe_score": 0.515
+            "best_probe_score": 0.516
           },
           {
             "session": 69,
@@ -7851,7 +7896,7 @@
             "mp_index": 9,
             "cause": "extraction_miss",
             "old": "Sarah Garcia's social motivation was evident as she sought ways to exp",
-            "best_probe_score": 0.6
+            "best_probe_score": 0.601
           }
         ]
       },
@@ -7952,6 +7997,11 @@
       "trace_file": "traces/full-traced/6106afc1-6ad6-c821-3f0f-b491e3e0b833.jsonl",
       "lost_updates": {
         "intended": 1311,
+        "intended_by_op": {
+          "ADD": 511,
+          "UPDATE": 798,
+          "DELETE": 2
+        },
         "lost": 28,
         "lost_rate": 0.02135774218154081,
         "lost_by_op": {
@@ -8040,7 +8090,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Donald Brown discussed the importance of aligning future endeavors wit",
-            "best_probe_score": 0.614
+            "best_probe_score": 0.613
           },
           {
             "session": 7,
@@ -8054,7 +8104,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Donald continued to explore personal growth opportunities during retir",
-            "best_probe_score": 0.65
+            "best_probe_score": 0.649
           },
           {
             "session": 6,
@@ -8138,7 +8188,7 @@
             "mp_index": 7,
             "cause": "extraction_miss",
             "old": "Donald Brown expressed enthusiasm about the continued comfort and envi",
-            "best_probe_score": 0.623
+            "best_probe_score": 0.625
           },
           {
             "session": 24,
@@ -8208,14 +8258,14 @@
             "mp_index": 7,
             "cause": "extraction_miss",
             "old": "Donald Brown's stress management techniques include meditation and yog",
-            "best_probe_score": 0.64
+            "best_probe_score": 0.639
           },
           {
             "session": 44,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Donald Brown's employment status is self-employed",
-            "best_probe_score": 0.713
+            "best_probe_score": 0.714
           },
           {
             "session": 32,
@@ -8250,7 +8300,7 @@
             "mp_index": 3,
             "cause": "overwritten",
             "old": "Donald Brown works at EmpowerTech Innovations",
-            "best_probe_score": 0.648
+            "best_probe_score": 0.649
           },
           {
             "session": 44,
@@ -8292,14 +8342,14 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Donald Brown works in the technology for disabilities industry",
-            "best_probe_score": 0.686
+            "best_probe_score": 0.687
           },
           {
             "session": 47,
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Donald Brown's situation_reason is The demands of launching and managi",
-            "best_probe_score": 0.435
+            "best_probe_score": 0.434
           },
           {
             "session": 43,
@@ -8355,7 +8405,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Donald Brown expressed determination to find a sustainable approach to",
-            "best_probe_score": 0.52
+            "best_probe_score": 0.521
           },
           {
             "session": 58,
@@ -8390,7 +8440,7 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Donald Brown highlighted the reciprocal nature of mentorship, learning",
-            "best_probe_score": 0.665
+            "best_probe_score": 0.664
           },
           {
             "session": 60,
@@ -8560,6 +8610,11 @@
       "trace_file": "traces/full-traced/6b005479-e3b6-02fc-e52d-3a41eb0cf288.jsonl",
       "lost_updates": {
         "intended": 1964,
+        "intended_by_op": {
+          "ADD": 657,
+          "UPDATE": 1293,
+          "DELETE": 14
+        },
         "lost": 40,
         "lost_rate": 0.020366598778004074,
         "lost_by_op": {
@@ -8656,7 +8711,7 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Barbara Jones Movies I dislike: Action movies with unrealistic science",
-            "best_probe_score": 0.718
+            "best_probe_score": 0.717
           },
           {
             "session": 8,
@@ -8719,7 +8774,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Barbara Jones Movies I dislike: Action movies with unrealistic science",
-            "best_probe_score": 0.718
+            "best_probe_score": 0.717
           },
           {
             "session": 11,
@@ -8803,7 +8858,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Barbara Jones shared anecdotes about past collaborations leading to br",
-            "best_probe_score": 0.545
+            "best_probe_score": 0.543
           },
           {
             "session": 20,
@@ -8929,7 +8984,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Barbara Jones emphasized the role of her social network in providing s",
-            "best_probe_score": 0.573
+            "best_probe_score": 0.574
           },
           {
             "session": 28,
@@ -9083,7 +9138,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Barbara Jones's monthly income is 12000 yuan",
-            "best_probe_score": 0.735
+            "best_probe_score": 0.736
           },
           {
             "session": 43,
@@ -9174,7 +9229,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "I enjoy quinoa salad because it's nutritious and versatile, fitting we",
-            "best_probe_score": 0.841
+            "best_probe_score": 0.842
           },
           {
             "session": 46,
@@ -9496,7 +9551,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Barbara Jones's monthly income is 12000 yuan",
-            "best_probe_score": 0.735
+            "best_probe_score": 0.736
           },
           {
             "session": 76,
@@ -9681,6 +9736,11 @@
       "trace_file": "traces/full-traced/8ece194a-885c-8e0c-359e-93a97220252c.jsonl",
       "lost_updates": {
         "intended": 2088,
+        "intended_by_op": {
+          "ADD": 604,
+          "UPDATE": 1465,
+          "DELETE": 19
+        },
         "lost": 39,
         "lost_rate": 0.01867816091954023,
         "lost_by_op": {
@@ -9749,14 +9809,14 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Johnson Joseph's mental health status: Positive and Sunny",
-            "best_probe_score": 0.638
+            "best_probe_score": 0.641
           },
           {
             "session": 6,
             "mp_index": 6,
             "cause": "retrieval_miss",
             "old": "Johnson Joseph's social relationships increased NewLocalPartner, A loc",
-            "best_probe_score": 0.592
+            "best_probe_score": 0.591
           },
           {
             "session": 3,
@@ -10099,7 +10159,7 @@
             "mp_index": 1,
             "cause": "overwritten",
             "old": "Sports I like: Hiking - Hiking is a wonderful way to clear my mind and",
-            "best_probe_score": 0.464
+            "best_probe_score": 0.465
           },
           {
             "session": 40,
@@ -10571,6 +10631,11 @@
       "trace_file": "traces/full-traced/91b283d7-7236-3b83-abeb-f0a159564f45.jsonl",
       "lost_updates": {
         "intended": 1386,
+        "intended_by_op": {
+          "ADD": 494,
+          "UPDATE": 888,
+          "DELETE": 4
+        },
         "lost": 33,
         "lost_rate": 0.023809523809523808,
         "lost_by_op": {
@@ -10631,7 +10696,7 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Michelle Hernandez's career_status updated monthly_income from '8210' ",
-            "best_probe_score": 0.774
+            "best_probe_score": 0.773
           },
           {
             "session": 5,
@@ -10659,7 +10724,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Michelle Hernandez's career_status updated career_description to 'Mich",
-            "best_probe_score": 0.596
+            "best_probe_score": 0.595
           },
           {
             "session": 7,
@@ -10673,7 +10738,7 @@
             "mp_index": 7,
             "cause": "decision_miss",
             "old": "Michelle Hernandez's Colleague LopezBarbara, Barbara is a colleague wh",
-            "best_probe_score": 0.777
+            "best_probe_score": 0.776
           },
           {
             "session": 10,
@@ -10694,7 +10759,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Michelle Hernandez has implemented lifestyle changes to manage her dia",
-            "best_probe_score": 0.551
+            "best_probe_score": 0.552
           },
           {
             "session": 13,
@@ -10708,7 +10773,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Michelle Hernandez continues to pursue her professional goals despite ",
-            "best_probe_score": 0.61
+            "best_probe_score": 0.608
           },
           {
             "session": 8,
@@ -10729,7 +10794,7 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Michelle Hernandez successfully adapted to a new work-life balance, op",
-            "best_probe_score": 0.658
+            "best_probe_score": 0.657
           },
           {
             "session": 14,
@@ -10743,7 +10808,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Michelle Hernandez successfully adapted to a new work-life balance, op",
-            "best_probe_score": 0.658
+            "best_probe_score": 0.657
           },
           {
             "session": 16,
@@ -10764,14 +10829,14 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Michelle Hernandez's chronic disease situation: Diabetes with complica",
-            "best_probe_score": 0.75
+            "best_probe_score": 0.751
           },
           {
             "session": 23,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Michelle Hernandez's physical health status: Further affected by chron",
-            "best_probe_score": 0.773
+            "best_probe_score": 0.774
           },
           {
             "session": 30,
@@ -10799,7 +10864,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Michelle Hernandez's situation_reason is The complications from diabet",
-            "best_probe_score": 0.574
+            "best_probe_score": 0.575
           },
           {
             "session": 33,
@@ -10834,14 +10899,14 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Michelle Hernandez's career_description is I am currently unemployed d",
-            "best_probe_score": 0.544
+            "best_probe_score": 0.543
           },
           {
             "session": 37,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Michelle Hernandez enjoys flavored sparkling water for its refreshing ",
-            "best_probe_score": 0.752
+            "best_probe_score": 0.753
           },
           {
             "session": 34,
@@ -10855,14 +10920,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Michelle Hernandez's physical health status: Excellent",
-            "best_probe_score": 0.781
+            "best_probe_score": 0.782
           },
           {
             "session": 31,
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Michelle Hernandez conveyed a sense of empowerment and autonomy gained",
-            "best_probe_score": 0.67
+            "best_probe_score": 0.667
           },
           {
             "session": 40,
@@ -10904,7 +10969,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Michelle Hernandez works in the AI consulting industry",
-            "best_probe_score": 0.745
+            "best_probe_score": 0.744
           },
           {
             "session": 39,
@@ -10932,14 +10997,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Michelle Hernandez's employment status is freelance",
-            "best_probe_score": 0.759
+            "best_probe_score": 0.76
           },
           {
             "session": 43,
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Processed snacks are unappealing to me due to their artificial ingredi",
-            "best_probe_score": 0.888
+            "best_probe_score": 0.889
           },
           {
             "session": 44,
@@ -10967,14 +11032,14 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Michelle Hernandez works at Self-Employed",
-            "best_probe_score": 0.715
+            "best_probe_score": 0.716
           },
           {
             "session": 48,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Michelle Hernandez's mental health status: Increasing stress",
-            "best_probe_score": 0.727
+            "best_probe_score": 0.728
           },
           {
             "session": 45,
@@ -11009,7 +11074,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Michelle Hernandez prefers natural flavored sparkling water for its re",
-            "best_probe_score": 0.703
+            "best_probe_score": 0.704
           },
           {
             "session": 52,
@@ -11023,7 +11088,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Michelle Hernandez's mental health status: High stress levels",
-            "best_probe_score": 0.702
+            "best_probe_score": 0.704
           },
           {
             "session": 54,
@@ -11065,14 +11130,14 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Michelle Hernandez built relationships with key stakeholders at Innova",
-            "best_probe_score": 0.616
+            "best_probe_score": 0.615
           },
           {
             "session": 58,
             "mp_index": 9,
             "cause": "extraction_miss",
             "old": "Michelle Hernandez's integration into Innovative AI Corp involved unde",
-            "best_probe_score": 0.576
+            "best_probe_score": 0.575
           },
           {
             "session": 60,
@@ -11228,6 +11293,11 @@
       "trace_file": "traces/full-traced/9ca7c5ff-487c-ba5d-04f6-05f27d35ba2a.jsonl",
       "lost_updates": {
         "intended": 1667,
+        "intended_by_op": {
+          "ADD": 552,
+          "UPDATE": 1104,
+          "DELETE": 11
+        },
         "lost": 33,
         "lost_rate": 0.01979604079184163,
         "lost_by_op": {
@@ -11275,14 +11345,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Christopher Anderson's physical health status: Healthy",
-            "best_probe_score": 0.695
+            "best_probe_score": 0.696
           },
           {
             "session": 4,
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Christopher Anderson's mental health status: Positive and Sunny",
-            "best_probe_score": 0.646
+            "best_probe_score": 0.645
           },
           {
             "session": 3,
@@ -11324,7 +11394,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Christopher Anderson reflected on the support from colleagues and frie",
-            "best_probe_score": 0.549
+            "best_probe_score": 0.551
           },
           {
             "session": 9,
@@ -11373,7 +11443,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Christopher Anderson works in the healthcare industry",
-            "best_probe_score": 0.683
+            "best_probe_score": 0.684
           },
           {
             "session": 14,
@@ -11457,7 +11527,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Christopher Anderson discussed the role of social motivation in drivin",
-            "best_probe_score": 0.625
+            "best_probe_score": 0.624
           },
           {
             "session": 12,
@@ -11499,7 +11569,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Christopher Anderson's job title is Community Program Director",
-            "best_probe_score": 0.712
+            "best_probe_score": 0.711
           },
           {
             "session": 23,
@@ -11520,14 +11590,14 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Christopher Anderson's monthly income is 7000 yuan",
-            "best_probe_score": 0.694
+            "best_probe_score": 0.693
           },
           {
             "session": 14,
             "mp_index": 7,
             "cause": "extraction_miss",
             "old": "Christopher Anderson seeks advice on maintaining momentum and ensuring",
-            "best_probe_score": 0.59
+            "best_probe_score": 0.591
           },
           {
             "session": 26,
@@ -11576,7 +11646,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Christopher Anderson's social relationships increased CommunityCenter,",
-            "best_probe_score": 0.578
+            "best_probe_score": 0.58
           },
           {
             "session": 32,
@@ -11590,7 +11660,7 @@
             "mp_index": 7,
             "cause": "extraction_miss",
             "old": "Christopher shared anecdotes about positive outcomes from past program",
-            "best_probe_score": 0.614
+            "best_probe_score": 0.613
           },
           {
             "session": 38,
@@ -11723,7 +11793,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Christopher Anderson's social relationships increased SeniorAdvocacyGr",
-            "best_probe_score": 0.514
+            "best_probe_score": 0.513
           },
           {
             "session": 51,
@@ -11758,7 +11828,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Christopher Anderson utilized his advocacy role to influence policy ch",
-            "best_probe_score": 0.571
+            "best_probe_score": 0.572
           },
           {
             "session": 48,
@@ -12054,6 +12124,11 @@
       "trace_file": "traces/full-traced/bde53a03-5db5-ec95-ed7a-37b16b358336.jsonl",
       "lost_updates": {
         "intended": 1326,
+        "intended_by_op": {
+          "ADD": 413,
+          "UPDATE": 904,
+          "DELETE": 9
+        },
         "lost": 34,
         "lost_rate": 0.02564102564102564,
         "lost_by_op": {
@@ -12150,7 +12225,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Steven Miller's monthly income is 7500 yuan",
-            "best_probe_score": 0.752
+            "best_probe_score": 0.751
           },
           {
             "session": 9,
@@ -12171,7 +12246,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Steven Miller's career_status updated monthly_income from '7500' to '9",
-            "best_probe_score": 0.692
+            "best_probe_score": 0.691
           },
           {
             "session": 12,
@@ -12255,7 +12330,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Steven Miller's monthly income is 9500 yuan",
-            "best_probe_score": 0.708
+            "best_probe_score": 0.707
           },
           {
             "session": 15,
@@ -12360,7 +12435,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Steven Miller's engagement with the AI assistant is driven by instrume",
-            "best_probe_score": 0.558
+            "best_probe_score": 0.559
           },
           {
             "session": 24,
@@ -12682,7 +12757,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Steven Miller's social relationships increased BrownLiam, Liam's mento",
-            "best_probe_score": 0.556
+            "best_probe_score": 0.552
           },
           {
             "session": 45,
@@ -12696,14 +12771,14 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Steven Miller emphasized the importance of strategic alliances in supp",
-            "best_probe_score": 0.574
+            "best_probe_score": 0.575
           },
           {
             "session": 54,
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Steven Miller's exploratory motivation drives his interest in testing ",
-            "best_probe_score": 0.599
+            "best_probe_score": 0.598
           },
           {
             "session": 53,
@@ -12738,7 +12813,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Steven Miller's social relationships increased WilliamsSophia, Sophia ",
-            "best_probe_score": 0.624
+            "best_probe_score": 0.622
           },
           {
             "session": 58,
@@ -12815,7 +12890,7 @@
             "mp_index": 7,
             "cause": "decision_miss",
             "old": "Steven discusses the potential impact of his financial success on his ",
-            "best_probe_score": 0.669
+            "best_probe_score": 0.668
           },
           {
             "session": 57,
@@ -12850,7 +12925,7 @@
             "mp_index": 9,
             "cause": "decision_miss",
             "old": "Steven Miller reflected on the emotional resonance of achieving his fi",
-            "best_probe_score": 0.703
+            "best_probe_score": 0.702
           },
           {
             "session": 60,
@@ -12871,7 +12946,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Steven Miller expressed a sense of fulfillment and motivation to conti",
-            "best_probe_score": 0.619
+            "best_probe_score": 0.618
           },
           {
             "session": 66,
@@ -13021,6 +13096,11 @@
       "trace_file": "traces/full-traced/d850d98b-ba45-3fd5-e3fa-2104b6724e10.jsonl",
       "lost_updates": {
         "intended": 1114,
+        "intended_by_op": {
+          "ADD": 368,
+          "UPDATE": 741,
+          "DELETE": 5
+        },
         "lost": 22,
         "lost_rate": 0.019748653500897665,
         "lost_by_op": {
@@ -13066,7 +13146,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Jennifer Martin's physical health status: Normal",
-            "best_probe_score": 0.742
+            "best_probe_score": 0.743
           },
           {
             "session": 3,
@@ -13087,7 +13167,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Jennifer Martin's savings amount is 5340 yuan",
-            "best_probe_score": 0.742
+            "best_probe_score": 0.744
           },
           {
             "session": 6,
@@ -13101,21 +13181,21 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Jennifer Martin's mental health status: Stable and Normal",
-            "best_probe_score": 0.703
+            "best_probe_score": 0.704
           },
           {
             "session": 10,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Jennifer Martin's job title is Cloud Solutions Consultant",
-            "best_probe_score": 0.734
+            "best_probe_score": 0.737
           },
           {
             "session": 6,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Jennifer Martin was diagnosed with Stress-related fatigue",
-            "best_probe_score": 0.75
+            "best_probe_score": 0.752
           },
           {
             "session": 8,
@@ -13129,14 +13209,14 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Jennifer Martin's monthly income is 11628 yuan",
-            "best_probe_score": 0.705
+            "best_probe_score": 0.707
           },
           {
             "session": 12,
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Jennifer Martin's mental health status: Anxious",
-            "best_probe_score": 0.732
+            "best_probe_score": 0.733
           },
           {
             "session": 12,
@@ -13150,7 +13230,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Jennifer Martin's mental illness situation: Work-related stress",
-            "best_probe_score": 0.616
+            "best_probe_score": 0.618
           },
           {
             "session": 12,
@@ -13164,7 +13244,7 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Jennifer Martin implemented new time management strategies to improve ",
-            "best_probe_score": 0.66
+            "best_probe_score": 0.661
           },
           {
             "session": 10,
@@ -13185,14 +13265,14 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Jennifer Martin's ability to lead and inspire her team was recognized ",
-            "best_probe_score": 0.561
+            "best_probe_score": 0.563
           },
           {
             "session": 16,
             "mp_index": 7,
             "cause": "extraction_miss",
             "old": "Jennifer Martin is exploring opportunities for executive training prog",
-            "best_probe_score": 0.602
+            "best_probe_score": 0.603
           },
           {
             "session": 17,
@@ -13220,7 +13300,7 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Jennifer Martin is considering further education to enhance her leader",
-            "best_probe_score": 0.655
+            "best_probe_score": 0.657
           },
           {
             "session": 6,
@@ -13241,7 +13321,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 12:14:49][Persona Memory]Jennifer Martin Books I dislik",
-            "best_probe_score": 0.662
+            "best_probe_score": 0.665
           },
           {
             "session": 16,
@@ -13255,7 +13335,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Jennifer Martin's monthly income is 12900 yuan",
-            "best_probe_score": 0.7
+            "best_probe_score": 0.702
           },
           {
             "session": 28,
@@ -13269,7 +13349,7 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Jennifer Martin's monthly income is 14190 yuan",
-            "best_probe_score": 0.719
+            "best_probe_score": 0.72
           },
           {
             "session": 30,
@@ -13290,7 +13370,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Jennifer Martin's employment status is employed",
-            "best_probe_score": 0.78
+            "best_probe_score": 0.783
           },
           {
             "session": 33,
@@ -13325,7 +13405,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Jennifer Martin's career_description is I am now a Senior Consultant a",
-            "best_probe_score": 0.488
+            "best_probe_score": 0.49
           },
           {
             "session": 26,
@@ -13346,7 +13426,7 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Jennifer Martin's job title is Senior Consultant",
-            "best_probe_score": 0.751
+            "best_probe_score": 0.754
           },
           {
             "session": 27,
@@ -13367,7 +13447,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Jennifer Martin's employment status is unemployed",
-            "best_probe_score": 0.731
+            "best_probe_score": 0.733
           },
           {
             "session": 36,
@@ -13381,7 +13461,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Jennifer Martin Clothing I dislike: Brightly colored outfits",
-            "best_probe_score": 0.655
+            "best_probe_score": 0.656
           },
           {
             "session": 40,
@@ -13395,7 +13475,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Jennifer Martin began exploring new career opportunities in the cloud ",
-            "best_probe_score": 0.601
+            "best_probe_score": 0.602
           },
           {
             "session": 39,
@@ -13430,7 +13510,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Jennifer Martin works in the IT consulting industry",
-            "best_probe_score": 0.705
+            "best_probe_score": 0.708
           },
           {
             "session": 47,
@@ -13451,7 +13531,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 12:14:49][Persona Memory]Jennifer Martin Games I dislik",
-            "best_probe_score": 0.722
+            "best_probe_score": 0.724
           },
           {
             "session": 36,
@@ -13465,14 +13545,14 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Jennifer Martin leveraged her network to identify potential roles and ",
-            "best_probe_score": 0.628
+            "best_probe_score": 0.627
           },
           {
             "session": 54,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Jennifer Martin's job title is Cloud Integration Specialist",
-            "best_probe_score": 0.743
+            "best_probe_score": 0.74
           },
           {
             "session": 54,
@@ -13493,14 +13573,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 12:14:49][Persona Memory]Jennifer Martin Games I dislik",
-            "best_probe_score": 0.67
+            "best_probe_score": 0.672
           },
           {
             "session": 53,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Jennifer Martin Clothing I dislike: Formal suits",
-            "best_probe_score": 0.659
+            "best_probe_score": 0.66
           },
           {
             "session": 57,
@@ -13535,7 +13615,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Jennifer Martin aligned her career path with her ultimate life goal of",
-            "best_probe_score": 0.606
+            "best_probe_score": 0.608
           },
           {
             "session": 56,
@@ -13577,7 +13657,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Jennifer Martin expressed gratitude for the mentorship and strategic p",
-            "best_probe_score": 0.578
+            "best_probe_score": 0.579
           }
         ]
       },
@@ -13678,6 +13758,11 @@
       "trace_file": "traces/full-traced/d96baf54-00e3-afee-239c-1f3ef9054095.jsonl",
       "lost_updates": {
         "intended": 1818,
+        "intended_by_op": {
+          "ADD": 497,
+          "UPDATE": 1311,
+          "DELETE": 10
+        },
         "lost": 64,
         "lost_rate": 0.0352035203520352,
         "lost_by_op": {
@@ -13746,35 +13831,35 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Joseph Garcia feels a sense of achievement and relief after securing a",
-            "best_probe_score": 0.584
+            "best_probe_score": 0.585
           },
           {
             "session": 4,
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Joseph Garcia received encouragement from friends JohnsonMichelle and ",
-            "best_probe_score": 0.634
+            "best_probe_score": 0.635
           },
           {
             "session": 6,
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Joseph Garcia's networking efforts were pivotal in securing his new ro",
-            "best_probe_score": 0.586
+            "best_probe_score": 0.587
           },
           {
             "session": 10,
             "mp_index": 3,
             "cause": "overwritten",
             "old": "Joseph Garcia's target metrics: Educate 100,000 people through screeni",
-            "best_probe_score": 0.6
+            "best_probe_score": 0.599
           },
           {
             "session": 10,
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Joseph Garcia's emotions include excitement, gratitude, and determinat",
-            "best_probe_score": 0.597
+            "best_probe_score": 0.598
           },
           {
             "session": 10,
@@ -13795,7 +13880,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Joseph Garcia is in a supportive environment at the film archive, whic",
-            "best_probe_score": 0.585
+            "best_probe_score": 0.587
           },
           {
             "session": 7,
@@ -13816,7 +13901,7 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Joseph Garcia's job title is Film Preservation Specialist",
-            "best_probe_score": 0.679
+            "best_probe_score": 0.68
           },
           {
             "session": 11,
@@ -13837,7 +13922,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Joseph Garcia works at Local Film Archive",
-            "best_probe_score": 0.629
+            "best_probe_score": 0.631
           },
           {
             "session": 7,
@@ -13879,7 +13964,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Music I dislike: Auto-tuned pop songs reason: I find them to be overpr",
-            "best_probe_score": 0.836
+            "best_probe_score": 0.837
           },
           {
             "session": 19,
@@ -13907,7 +13992,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Joseph Garcia's job title is Founder",
-            "best_probe_score": 0.768
+            "best_probe_score": 0.769
           },
           {
             "session": 26,
@@ -13984,7 +14069,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Joseph Garcia's job title is Film Educator",
-            "best_probe_score": 0.69
+            "best_probe_score": 0.691
           },
           {
             "session": 25,
@@ -14005,7 +14090,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Joseph Garcia's career transition to education reinforced his commitme",
-            "best_probe_score": 0.63
+            "best_probe_score": 0.631
           },
           {
             "session": 35,
@@ -14047,7 +14132,7 @@
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Joseph Garcia planned to foster connections within the film community ",
-            "best_probe_score": 0.577
+            "best_probe_score": 0.576
           },
           {
             "session": 33,
@@ -14061,7 +14146,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Joseph Garcia expressed a mix of excitement and anxiety while improvin",
-            "best_probe_score": 0.61
+            "best_probe_score": 0.611
           },
           {
             "session": 35,
@@ -14089,7 +14174,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Joseph Garcia launched his first series of educational programs on cla",
-            "best_probe_score": 0.634
+            "best_probe_score": 0.633
           },
           {
             "session": 32,
@@ -14103,14 +14188,14 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Joseph Garcia is optimistic about the impact of the new genre offering",
-            "best_probe_score": 0.538
+            "best_probe_score": 0.536
           },
           {
             "session": 40,
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Joseph Garcia's job title is Director of Educational Outreach",
-            "best_probe_score": 0.67
+            "best_probe_score": 0.671
           },
           {
             "session": 39,
@@ -14124,7 +14209,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Joseph Garcia works at Joseph's Film Archive",
-            "best_probe_score": 0.659
+            "best_probe_score": 0.66
           },
           {
             "session": 38,
@@ -14138,14 +14223,14 @@
             "mp_index": 9,
             "cause": "extraction_miss",
             "old": "Joseph received positive feedback from attendees and collaborators, re",
-            "best_probe_score": 0.487
+            "best_probe_score": 0.488
           },
           {
             "session": 36,
             "mp_index": 5,
             "cause": "extraction_miss",
             "old": "Joseph Garcia expressed gratitude towards mentors and colleagues for t",
-            "best_probe_score": 0.526
+            "best_probe_score": 0.527
           },
           {
             "session": 39,
@@ -14236,7 +14321,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Joseph expressed gratitude towards his network for their support in en",
-            "best_probe_score": 0.636
+            "best_probe_score": 0.635
           },
           {
             "session": 43,
@@ -14285,7 +14370,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 07:05:59][Persona Memory]Joseph Garcia Beverages I like",
-            "best_probe_score": 0.689
+            "best_probe_score": 0.69
           },
           {
             "session": 44,
@@ -14306,7 +14391,7 @@
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Joseph Garcia works at Joseph's Diversified Film Archive",
-            "best_probe_score": 0.634
+            "best_probe_score": 0.635
           },
           {
             "session": 53,
@@ -14362,14 +14447,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 07:05:59][Persona Memory]Joseph Garcia Beverages I like",
-            "best_probe_score": 0.704
+            "best_probe_score": 0.705
           },
           {
             "session": 55,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Joseph Garcia works in the Film Archive industry",
-            "best_probe_score": 0.659
+            "best_probe_score": 0.66
           },
           {
             "session": 58,
@@ -14383,7 +14468,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Joseph Garcia evaluated the impact of his online educational programs,",
-            "best_probe_score": 0.614
+            "best_probe_score": 0.615
           },
           {
             "session": 60,
@@ -14425,14 +14510,14 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Joseph expressed gratitude for his network's support during his transi",
-            "best_probe_score": 0.746
+            "best_probe_score": 0.747
           },
           {
             "session": 57,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Joseph Garcia's mental health status: Highly Stressed",
-            "best_probe_score": 0.65
+            "best_probe_score": 0.651
           },
           {
             "session": 58,
@@ -14446,7 +14531,7 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Joseph Garcia's job title is Online Film Educator",
-            "best_probe_score": 0.693
+            "best_probe_score": 0.694
           },
           {
             "session": 65,
@@ -14488,7 +14573,7 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Joseph Garcia's social relationships increased CarterJames, James is a",
-            "best_probe_score": 0.55
+            "best_probe_score": 0.549
           },
           {
             "session": 67,
@@ -14572,7 +14657,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 07:05:59][Persona Memory]Joseph Garcia Beverages I like",
-            "best_probe_score": 0.683
+            "best_probe_score": 0.684
           },
           {
             "session": 74,
@@ -14680,6 +14765,11 @@
       "trace_file": "traces/full-traced/dd27d8ab-7d2d-acbe-de11-9bc249ea3829.jsonl",
       "lost_updates": {
         "intended": 1838,
+        "intended_by_op": {
+          "ADD": 598,
+          "UPDATE": 1223,
+          "DELETE": 17
+        },
         "lost": 46,
         "lost_rate": 0.025027203482045703,
         "lost_by_op": {
@@ -14727,14 +14817,14 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Ananya's childhood love for storytelling motivates her career in film ",
-            "best_probe_score": 0.541
+            "best_probe_score": 0.539
           },
           {
             "session": 6,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's physical health status: Average",
-            "best_probe_score": 0.677
+            "best_probe_score": 0.678
           },
           {
             "session": 5,
@@ -14762,7 +14852,7 @@
             "mp_index": 7,
             "cause": "decision_miss",
             "old": "Ananya Sharma's mental health condition: Optimistic",
-            "best_probe_score": 0.655
+            "best_probe_score": 0.657
           },
           {
             "session": 11,
@@ -14776,35 +14866,35 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Ananya Sharma's salary increase provides financial stability to explor",
-            "best_probe_score": 0.776
+            "best_probe_score": 0.777
           },
           {
             "session": 6,
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Ananya Sharma's situation_reason is I maintain average physical health",
-            "best_probe_score": 0.418
+            "best_probe_score": 0.416
           },
           {
             "session": 11,
             "mp_index": 9,
             "cause": "decision_miss",
             "old": "Ananya Sharma's life goal statement: Promote Indian cinema globally an",
-            "best_probe_score": 0.694
+            "best_probe_score": 0.692
           },
           {
             "session": 7,
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Ananya Sharma Games they dislike: First-person shooters",
-            "best_probe_score": 0.591
+            "best_probe_score": 0.593
           },
           {
             "session": 14,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's employment status is freelance",
-            "best_probe_score": 0.675
+            "best_probe_score": 0.676
           },
           {
             "session": 11,
@@ -14839,7 +14929,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Ananya Sharma's career_description is I have been promoted to Senior F",
-            "best_probe_score": 0.563
+            "best_probe_score": 0.561
           },
           {
             "session": 16,
@@ -14860,14 +14950,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's physical health status: Good",
-            "best_probe_score": 0.671
+            "best_probe_score": 0.672
           },
           {
             "session": 20,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 15:11:43][Persona Memory]Ananya Sharma Music they like ",
-            "best_probe_score": 0.685
+            "best_probe_score": 0.686
           },
           {
             "session": 15,
@@ -14888,21 +14978,21 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Ananya Sharma's savings amount is 30000 yuan",
-            "best_probe_score": 0.665
+            "best_probe_score": 0.666
           },
           {
             "session": 21,
             "mp_index": 4,
             "cause": "overwritten",
             "old": "Ananya Sharma refines her blog content strategy to focus on niche topi",
-            "best_probe_score": 0.599
+            "best_probe_score": 0.6
           },
           {
             "session": 17,
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Ananya Sharma's social relationships increased NewCriticAlex, Alex, a ",
-            "best_probe_score": 0.573
+            "best_probe_score": 0.571
           },
           {
             "session": 21,
@@ -14916,14 +15006,14 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Ananya Sharma works at Ananya's Film Critique Blog",
-            "best_probe_score": 0.674
+            "best_probe_score": 0.676
           },
           {
             "session": 27,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's physical health status: Below Average",
-            "best_probe_score": 0.691
+            "best_probe_score": 0.692
           },
           {
             "session": 25,
@@ -14937,21 +15027,21 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Ananya Sharma's chronic disease situation: Fatigue",
-            "best_probe_score": 0.689
+            "best_probe_score": 0.69
           },
           {
             "session": 25,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's employment status is entrepreneur",
-            "best_probe_score": 0.67
+            "best_probe_score": 0.671
           },
           {
             "session": 30,
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Ananya Sharma expressed excitement about influencing film discourse in",
-            "best_probe_score": 0.543
+            "best_probe_score": 0.544
           },
           {
             "session": 30,
@@ -14965,7 +15055,7 @@
             "mp_index": 9,
             "cause": "extraction_miss",
             "old": "Ananya Sharma considered next steps in her career to continue making a",
-            "best_probe_score": 0.576
+            "best_probe_score": 0.577
           },
           {
             "session": 26,
@@ -15014,7 +15104,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Ananya Sharma feels more confident and prepared to take on new challen",
-            "best_probe_score": 0.575
+            "best_probe_score": 0.576
           },
           {
             "session": 30,
@@ -15028,14 +15118,14 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "On Jan 01, 2030, Ananya Sharma shared anecdotes about collaborating wi",
-            "best_probe_score": 0.596
+            "best_probe_score": 0.597
           },
           {
             "session": 32,
             "mp_index": 8,
             "cause": "decision_miss",
             "old": "I love dogs for their loyalty and the joy they bring to my family.",
-            "best_probe_score": 0.88
+            "best_probe_score": 0.879
           },
           {
             "session": 37,
@@ -15049,7 +15139,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Ananya Sharma reflected on past career transitions and their impact on",
-            "best_probe_score": 0.555
+            "best_probe_score": 0.556
           },
           {
             "session": 34,
@@ -15063,7 +15153,7 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Ananya Sharma's savings amount is 27000 yuan",
-            "best_probe_score": 0.662
+            "best_probe_score": 0.663
           },
           {
             "session": 37,
@@ -15077,7 +15167,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "I love dogs for their loyalty and the joy they bring to my family.",
-            "best_probe_score": 0.88
+            "best_probe_score": 0.879
           },
           {
             "session": 37,
@@ -15091,7 +15181,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's physical health status: Good",
-            "best_probe_score": 0.671
+            "best_probe_score": 0.672
           },
           {
             "session": 38,
@@ -15105,7 +15195,7 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Ananya Sharma's life goal statement: Promote Indian cinema globally an",
-            "best_probe_score": 0.694
+            "best_probe_score": 0.692
           },
           {
             "session": 40,
@@ -15140,28 +15230,28 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Ananya Sharma's savings amount is 28000 yuan",
-            "best_probe_score": 0.665
+            "best_probe_score": 0.667
           },
           {
             "session": 47,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's employment status is freelance",
-            "best_probe_score": 0.672
+            "best_probe_score": 0.673
           },
           {
             "session": 48,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's mental health status: Content",
-            "best_probe_score": 0.681
+            "best_probe_score": 0.683
           },
           {
             "session": 43,
             "mp_index": 1,
             "cause": "overwritten",
             "old": "Ananya Sharma Sports they like: Cricket",
-            "best_probe_score": 0.621
+            "best_probe_score": 0.623
           },
           {
             "session": 41,
@@ -15189,7 +15279,7 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Ananya Sharma appreciates the creative freedom of freelance work, allo",
-            "best_probe_score": 0.693
+            "best_probe_score": 0.692
           },
           {
             "session": 51,
@@ -15294,7 +15384,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's employment status is consultant",
-            "best_probe_score": 0.658
+            "best_probe_score": 0.66
           },
           {
             "session": 63,
@@ -15308,7 +15398,7 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Ananya Sharma's job title is Film Festival Consultant",
-            "best_probe_score": 0.652
+            "best_probe_score": 0.653
           },
           {
             "session": 59,
@@ -15329,7 +15419,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Ananya Sharma feels optimistic about implementing advice from her frie",
-            "best_probe_score": 0.59
+            "best_probe_score": 0.592
           },
           {
             "session": 66,
@@ -15343,28 +15433,28 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "ThomasJennifer advises Ananya Sharma on balancing work and personal co",
-            "best_probe_score": 0.584
+            "best_probe_score": 0.583
           },
           {
             "session": 70,
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Ananya Sharma's creative motivation is fueled by new connections with ",
-            "best_probe_score": 0.535
+            "best_probe_score": 0.536
           },
           {
             "session": 68,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Ananya Sharma's savings amount is 30000 yuan",
-            "best_probe_score": 0.665
+            "best_probe_score": 0.666
           },
           {
             "session": 68,
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Ananya Sharma's career_description is As the Head of Film Studies Depa",
-            "best_probe_score": 0.5
+            "best_probe_score": 0.496
           },
           {
             "session": 72,
@@ -15406,7 +15496,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Ananya Sharma's monthly income is 22000 yuan",
-            "best_probe_score": 0.656
+            "best_probe_score": 0.657
           },
           {
             "session": 73,
@@ -15491,14 +15581,14 @@
         "wrong_total": 96,
         "causes": {
           "extraction_fault": 61,
-          "generation_fault": 26,
-          "retrieval_fault": 9
+          "generation_fault": 25,
+          "retrieval_fault": 10
         },
         "by_type": {
           "Hallucination": {
             "extraction_fault": 53,
-            "generation_fault": 20,
-            "retrieval_fault": 6
+            "generation_fault": 19,
+            "retrieval_fault": 7
           },
           "Omission": {
             "generation_fault": 6,
@@ -15584,6 +15674,11 @@
       "trace_file": "traces/full-traced/ed9b924b-6bc0-67f9-67a1-a36401dd1782.jsonl",
       "lost_updates": {
         "intended": 1448,
+        "intended_by_op": {
+          "ADD": 411,
+          "UPDATE": 1032,
+          "DELETE": 5
+        },
         "lost": 22,
         "lost_rate": 0.015193370165745856,
         "lost_by_op": {
@@ -15707,7 +15802,7 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Donna Gonzalez discussed strategies for maintaining relationships that",
-            "best_probe_score": 0.677
+            "best_probe_score": 0.676
           },
           {
             "session": 7,
@@ -15791,7 +15886,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Donna Gonzalez Books I like to read: Biographies of famous composers",
-            "best_probe_score": 0.683
+            "best_probe_score": 0.684
           },
           {
             "session": 24,
@@ -15952,7 +16047,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "I find soccer too chaotic and noisy, which disrupts my focus and creat",
-            "best_probe_score": 0.894
+            "best_probe_score": 0.895
           },
           {
             "session": 38,
@@ -15973,7 +16068,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "[Sep 06, 2025, 17:06:48][Persona Memory]Donna Gonzalez Books I like to",
-            "best_probe_score": 0.742
+            "best_probe_score": 0.74
           },
           {
             "session": 43,
@@ -16148,7 +16243,7 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Donna Gonzalez uses AI-generated content to express her identity and e",
-            "best_probe_score": 0.714
+            "best_probe_score": 0.713
           },
           {
             "session": 65,
@@ -16267,6 +16362,11 @@
       "trace_file": "traces/full-traced/ffccb278-6ad3-7c1b-e682-44543d5a12cb.jsonl",
       "lost_updates": {
         "intended": 1902,
+        "intended_by_op": {
+          "ADD": 595,
+          "UPDATE": 1299,
+          "DELETE": 8
+        },
         "lost": 84,
         "lost_rate": 0.04416403785488959,
         "lost_by_op": {
@@ -16314,14 +16414,14 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Taylor David's social relationships increased JohnsonEmily, Emily join",
-            "best_probe_score": 0.524
+            "best_probe_score": 0.522
           },
           {
             "session": 3,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Taylor David's employment status is freelance consultant",
-            "best_probe_score": 0.676
+            "best_probe_score": 0.675
           },
           {
             "session": 3,
@@ -16335,7 +16435,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Taylor David works at Self-employed",
-            "best_probe_score": 0.699
+            "best_probe_score": 0.697
           },
           {
             "session": 3,
@@ -16349,14 +16449,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Taylor David's employment status is entrepreneur",
-            "best_probe_score": 0.698
+            "best_probe_score": 0.697
           },
           {
             "session": 11,
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Taylor David works at Taylor's Nutrition Consultancy",
-            "best_probe_score": 0.732
+            "best_probe_score": 0.731
           },
           {
             "session": 7,
@@ -16377,7 +16477,7 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Taylor David's job title is Founder and CEO",
-            "best_probe_score": 0.744
+            "best_probe_score": 0.743
           },
           {
             "session": 14,
@@ -16398,35 +16498,35 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Taylor David's physical health status: Improved",
-            "best_probe_score": 0.72
+            "best_probe_score": 0.719
           },
           {
             "session": 11,
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Taylor David's monthly income is 4500 yuan",
-            "best_probe_score": 0.676
+            "best_probe_score": 0.674
           },
           {
             "session": 14,
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Taylor David sought advice on maintaining momentum and exploring new s",
-            "best_probe_score": 0.647
+            "best_probe_score": 0.646
           },
           {
             "session": 12,
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Taylor David's career_status updated employment_status from 'entrepren",
-            "best_probe_score": 0.707
+            "best_probe_score": 0.705
           },
           {
             "session": 15,
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Taylor David expressed curiosity about further optimizing nutrition pl",
-            "best_probe_score": 0.637
+            "best_probe_score": 0.636
           },
           {
             "session": 15,
@@ -16454,7 +16554,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Taylor David works in the hospital healthcare industry",
-            "best_probe_score": 0.676
+            "best_probe_score": 0.675
           },
           {
             "session": 19,
@@ -16468,7 +16568,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Taylor David works at City Children's Hospital",
-            "best_probe_score": 0.644
+            "best_probe_score": 0.643
           },
           {
             "session": 14,
@@ -16482,14 +16582,14 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Taylor David's savings amount is 215000 yuan",
-            "best_probe_score": 0.69
+            "best_probe_score": 0.689
           },
           {
             "session": 19,
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Taylor David's monthly income is 5000 yuan",
-            "best_probe_score": 0.672
+            "best_probe_score": 0.671
           },
           {
             "session": 15,
@@ -16517,21 +16617,21 @@
             "mp_index": 1,
             "cause": "extraction_miss",
             "old": "Taylor David Travel styles I dislike: Crowded tourist spots",
-            "best_probe_score": 0.648
+            "best_probe_score": 0.647
           },
           {
             "session": 20,
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Taylor David's situation_reason is The demands of the hospital role to",
-            "best_probe_score": 0.478
+            "best_probe_score": 0.477
           },
           {
             "session": 19,
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Taylor David's job title is Hospital Nutrition Specialist",
-            "best_probe_score": 0.694
+            "best_probe_score": 0.693
           },
           {
             "session": 22,
@@ -16552,7 +16652,7 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Taylor David's savings amount is 210000 yuan",
-            "best_probe_score": 0.692
+            "best_probe_score": 0.69
           },
           {
             "session": 24,
@@ -16573,14 +16673,14 @@
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Taylor David's job title is Founder and Director",
-            "best_probe_score": 0.732
+            "best_probe_score": 0.731
           },
           {
             "session": 27,
             "mp_index": 2,
             "cause": "extraction_miss",
             "old": "Taylor David works at Global Nutrition Initiative",
-            "best_probe_score": 0.643
+            "best_probe_score": 0.641
           },
           {
             "session": 26,
@@ -16601,7 +16701,7 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Taylor David's employment status is part-time consultant",
-            "best_probe_score": 0.661
+            "best_probe_score": 0.66
           },
           {
             "session": 29,
@@ -16615,7 +16715,7 @@
             "mp_index": 6,
             "cause": "extraction_miss",
             "old": "Taylor David's career_description is As the Founder and Director of th",
-            "best_probe_score": 0.526
+            "best_probe_score": 0.525
           },
           {
             "session": 31,
@@ -16629,7 +16729,7 @@
             "mp_index": 7,
             "cause": "decision_miss",
             "old": "Oct 01, 2031, 22:25:20][Persona Memory]Taylor David sought advice on b",
-            "best_probe_score": 0.66
+            "best_probe_score": 0.658
           },
           {
             "session": 29,
@@ -16643,7 +16743,7 @@
             "mp_index": 2,
             "cause": "decision_miss",
             "old": "Taylor David works at Self-employed",
-            "best_probe_score": 0.699
+            "best_probe_score": 0.697
           },
           {
             "session": 37,
@@ -16678,14 +16778,14 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Taylor David's employment status is entrepreneur",
-            "best_probe_score": 0.698
+            "best_probe_score": 0.697
           },
           {
             "session": 43,
             "mp_index": 3,
             "cause": "decision_miss",
             "old": "Taylor David's job title is Founder and CEO",
-            "best_probe_score": 0.744
+            "best_probe_score": 0.743
           },
           {
             "session": 42,
@@ -16706,21 +16806,21 @@
             "mp_index": 8,
             "cause": "decision_miss",
             "old": "Taylor's resolve to leverage partnerships to enhance consultancy effec",
-            "best_probe_score": 0.844
+            "best_probe_score": 0.843
           },
           {
             "session": 43,
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Taylor David's savings amount is 205000 yuan",
-            "best_probe_score": 0.696
+            "best_probe_score": 0.695
           },
           {
             "session": 43,
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Taylor David's monthly income is 3500 yuan",
-            "best_probe_score": 0.673
+            "best_probe_score": 0.672
           },
           {
             "session": 43,
@@ -16762,7 +16862,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Taylor David discussed the challenges of balancing new responsibilitie",
-            "best_probe_score": 0.567
+            "best_probe_score": 0.566
           },
           {
             "session": 49,
@@ -16797,7 +16897,7 @@
             "mp_index": 4,
             "cause": "extraction_miss",
             "old": "Taylor David's situation_reason is Managing a chronic disease has requ",
-            "best_probe_score": 0.565
+            "best_probe_score": 0.564
           },
           {
             "session": 48,
@@ -16818,7 +16918,7 @@
             "mp_index": 8,
             "cause": "decision_miss",
             "old": "Taylor sought advice on navigating upcoming obstacles in nutrition adv",
-            "best_probe_score": 0.663
+            "best_probe_score": 0.662
           },
           {
             "session": 44,
@@ -16895,7 +16995,7 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Taylor David's monthly income is 4000 yuan",
-            "best_probe_score": 0.676
+            "best_probe_score": 0.675
           },
           {
             "session": 50,
@@ -16909,7 +17009,7 @@
             "mp_index": 3,
             "cause": "extraction_miss",
             "old": "Taylor David's situation_reason is Improved dietary habits and regular",
-            "best_probe_score": 0.506
+            "best_probe_score": 0.505
           },
           {
             "session": 47,
@@ -16937,7 +17037,7 @@
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Taylor David's savings amount is 210000 yuan",
-            "best_probe_score": 0.692
+            "best_probe_score": 0.69
           },
           {
             "session": 57,
@@ -16972,21 +17072,21 @@
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Taylor David's physical health status: Improved",
-            "best_probe_score": 0.72
+            "best_probe_score": 0.719
           },
           {
             "session": 62,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Taylor David's employment status is non-profit founder",
-            "best_probe_score": 0.679
+            "best_probe_score": 0.681
           },
           {
             "session": 62,
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Taylor David's savings amount is 210000 yuan",
-            "best_probe_score": 0.692
+            "best_probe_score": 0.69
           },
           {
             "session": 62,
@@ -17070,14 +17170,14 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Taylor David's job title is Global Nutrition Director",
-            "best_probe_score": 0.709
+            "best_probe_score": 0.71
           },
           {
             "session": 68,
             "mp_index": 6,
             "cause": "decision_miss",
             "old": "Taylor David's savings amount is 215000 yuan",
-            "best_probe_score": 0.69
+            "best_probe_score": 0.689
           },
           {
             "session": 68,
@@ -17091,14 +17191,14 @@
             "mp_index": 5,
             "cause": "decision_miss",
             "old": "Taylor David's monthly income is 6000 yuan",
-            "best_probe_score": 0.673
+            "best_probe_score": 0.672
           },
           {
             "session": 75,
             "mp_index": 1,
             "cause": "decision_miss",
             "old": "Taylor David's employment status is international advocate",
-            "best_probe_score": 0.667
+            "best_probe_score": 0.666
           },
           {
             "session": 75,
@@ -17112,7 +17212,7 @@
             "mp_index": 4,
             "cause": "decision_miss",
             "old": "Taylor David's monthly income is 4500 yuan",
-            "best_probe_score": 0.676
+            "best_probe_score": 0.674
           },
           {
             "session": 76,

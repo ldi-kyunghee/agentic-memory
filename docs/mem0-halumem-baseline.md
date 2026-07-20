@@ -121,13 +121,11 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 
 **20유저 확정 집계** (traced full 20 users, 2026-07-17 — 3유저 예비 결과와 분포 일치, 대표성 확인):
 
-- ⓐ 유실 UPDATE: 766/30,793 (**2.49%**) — mini 스택(0.66%)의 ~4배. 매처 무관 지표라 맥/서버 동일 (교차 검증)
-- ⓑ Omission 2,071건 (분류기 픽스 ce858cd 반영: 복수 이전 버전 대응 + overwritten 검사 매처 일관화): **decision_miss 47.9% / extraction_miss 44.3% / overwritten 7.1% / retrieval_miss 0.7%**
-  - 논문 §6.2.1("추출 누락이 주원인")의 정밀화를 넘어 역전: **최대 단일 원인은 결정 실패** — old memory가 검색에 잡혔는데도 update가 안 됨 (집계 관점에선 불가시)
-  - 픽스 전 "retrieval_miss 9.3%"의 대부분은 실제로는 **overwritten** (시스템이 old를 스스로 갱신/삭제했으나 골든 새 버전과 다른 내용 — 어휘 매칭이 prev_text를 못 알아봐 오분류됐던 것). overwritten은 사실상 "갱신은 했으나 틀리게"라는 결정 품질의 아종
-- ⓒ QA 실패 1,770건: extraction_fault 63.5% / generation_fault 30.1% / retrieval_fault 6.4% (이번 픽스 무관 경로, 불변)
-- 일관 결론 (더 강해짐): **retrieval은 무죄에 가까움 (0.7%)** — 병목은 갱신(결정+overwritten ≈ 55%)과 저장(추출 44%)
-- **매처 표준 확정: Qwen3-Embedding-4B + cosine 0.65 (서버)** — 임베딩 모델을 바꾸면 같은 threshold라도 결론이 왜곡됨을 실측 (동일 유저에서 OpenAI 3-small 사용 시 extraction_miss 42→68로 부풀어). 원인 라벨은 측정 모델 종속 — 모든 분석은 이 표준 설정으로만
+- ⓐ 유실 액션: 766/30,793 (2.49%) — op별 분해: ADD 0/10,105 (0%) / UPDATE 760/20,512 (3.71%) / DELETE 6/176 (3.41%). id 참조가 필요한 연산(UPDATE/DELETE)만 동률로 유실되고 ADD는 정확히 0 — id 환각 메커니즘의 op 수준 검증. 취약 연산 한정 유실률 3.70%. 매처 무관 지표 (맥/서버 동일)
+- ⓑ Omission 2,071건: **decision_miss 47.9% / extraction_miss 44.3%** / overwritten 7.1% / retrieval_miss 0.7% — 논문 §6.2.1("추출 누락이 주원인")의 정밀화: 추출 누락은 절반 이하이고, **최대 원인은 old memory가 검색에 잡혔는데도 update가 안 된 결정 실패**. overwritten 7.1%는 update-happy 성향이 골든 갱신 도착 전에 old를 먼저 재작성해 소실시키는 실재 현상 (분류기 v2: 복수 이전 버전 매칭 + overwritten 체크 매처 일관성 수정, 2026-07-17)
+- ⓒ QA 실패 1,770건: extraction_fault 63.5% / generation_fault 30.1% / retrieval_fault 6.4% (분류기 v2에서 변동 없음 — 회귀 검증 겸함)
+- 일관 결론: **retrieval은 병목이 아님** (omission 기준 0.7%) — 병목은 저장(추출) 44%와 갱신(결정) 48%, 그리고 과잉 재작성(overwritten) 7%
+- **매처 표준: Qwen3-Embedding-4B + cosine 0.65 (서버)** — 임베딩 모델 교체 시 같은 threshold라도 결론 왜곡 (동일 유저에서 OpenAI 3-small 사용 시 extraction_miss 42→68). 원인 라벨은 측정 모델 종속 — 모든 분석은 이 표준 설정으로만
 - 단서: 분모는 4B judge 라벨(판정 기질 영향). threshold 민감도 스윕은 외부 보고 시점에 GPT-4o 앵커와 묶어 수행 (백로그). 관찰자 효과 없음 확인: traced/untraced 풀런 성적표 차이 ±0.2%p
 
 ## 5. 러너 설계 결정
