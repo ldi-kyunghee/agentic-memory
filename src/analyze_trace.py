@@ -4,6 +4,10 @@ import json
 import argparse
 from collections import Counter
 
+from tqdm import tqdm
+from dotenv import load_dotenv
+load_dotenv()
+
 
 def load_traces(trace_path: str) -> list[dict]:
     return [json.loads(l) for l in open(trace_path, encoding="utf-8")]
@@ -122,7 +126,7 @@ def classify_omissions(traces: list[dict], judge_records: dict, threshold: float
     omissions = [m for m in judge_records["memory_update_records"]
                  if m.get("memory_update_type") == "Omission"]
 
-    for mp in omissions:
+    for mp in tqdm(omissions, desc="Classifying omissions", leave=False):
         old = mp["original_memories"][0] if mp["original_memories"] else ""
         hits = probes.get((mp["session_id"], mp["index"]), [])
 
@@ -164,7 +168,7 @@ def classify_qa_failures(traces: list[dict], judge_records: dict, threshold: flo
     wrong = [q for q in judge_records["question_answering_records"]
              if q.get("result_type") in ("Hallucination", "Omission")]
 
-    for qa in wrong:
+    for qa in tqdm(wrong, desc="qa-failures", leave=False):
         hits = [h["text"] for h in qa_hits.get(qa["question"], [])]
         evid = [e["memory_content"] for e in qa["evidence"]]
         # evidence 여러 개면 전부 context에 있어야 답 가능 -> 하나라도 없는 지점이 실패 원인
@@ -186,24 +190,53 @@ def classify_qa_failures(traces: list[dict], judge_records: dict, threshold: flo
 # ========================== for: generic, applies to all memory systems ==========================
 
 
-
-def main(trace_path: str, judge_path: str | None, threshold: float, out_path: str):
+def analyze_one(trace_path: str, judge_path: str | None, threshold: float) -> dict:
     traces = load_traces(trace_path)
-    report = {"trace_file": trace_path, "threshold": threshold,
-              "lost_updates": analyze_lost_updates(traces)}
-
+    report = {"trace_file": trace_path, "lost_updates": analyze_lost_updates(traces)}
     if judge_path and os.path.exists(judge_path):
         judge = json.load(open(judge_path, encoding="utf-8"))
         report["omission_linkage"] = classify_omissions(traces, judge, threshold)
         report["qa_failure_linkage"] = classify_qa_failures(traces, judge, threshold)
+    return report
 
-    summary = {k: {kk: vv for kk, vv in v.items() if kk not in ("cases", "samples")}
-               if isinstance(v, dict) else v for k, v in report.items()}
-    print(json.dumps(summary, ensure_ascii=False, indent=2))
 
+def aggregate(reports: list[dict]) -> dict:
+    agg = {"users": len(reports)}
+    li = sum(r["lost_updates"]["intended"] for r in reports)
+    ll = sum(r["lost_updates"]["lost"] for r in reports)
+    agg["lost_updates"] = {"intended": li, "lost": ll, "lost_rate": ll / li if li else 0.0}
+    for key, total_key in (("omission_linkage", "omission_total"),
+                           ("qa_failure_linkage", "wrong_total")):
+        causes, total = Counter(), 0
+        for r in reports:
+            if key in r:
+                causes.update(r[key]["causes"])
+                total += r[key][total_key]
+        agg[key] = {total_key: total, "causes": dict(causes)}
+    return agg
+
+
+def main(trace: str, judge: str | None, threshold: float, out_path: str):
+    # --trace에 디렉토리를 주면 안의 모든 *.jsonl을 처리하고 집계함 (judge도 디렉토리로 대응)
+    if os.path.isdir(trace):
+        pairs = []
+        for f in sorted(os.listdir(trace)):
+            if f.endswith(".jsonl"):
+                jp = os.path.join(judge, f[:-6] + ".json") if judge else None
+                pairs.append((os.path.join(trace, f), jp))
+    else:
+        pairs = [(trace, judge)]
+
+    reports = []
+    for tp, jp in tqdm(pairs, desc="Analyzing user traces"):
+        reports.append(analyze_one(tp, jp, threshold))
+
+    result = {"threshold": threshold, "aggregate": aggregate(reports), "per_user": reports}
+    print(json.dumps({"threshold": threshold, "aggregate": result["aggregate"]},
+                     ensure_ascii=False, indent=2))
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(report, f, ensure_ascii=False, indent=2)
+        json.dump(result, f, ensure_ascii=False, indent=2)
     print(f"saved -> {out_path}")
 
 
