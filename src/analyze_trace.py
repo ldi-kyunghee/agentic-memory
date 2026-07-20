@@ -127,10 +127,15 @@ def classify_omissions(traces: list[dict], judge_records: dict, threshold: float
                  if m.get("memory_update_type") == "Omission"]
 
     for mp in tqdm(omissions, desc="Classifying omissions", leave=False):
-        old = mp["original_memories"][0] if mp["original_memories"] else ""
+        olds = mp["original_memories"] or [""]
         hits = probes.get((mp["session_id"], mp["index"]), [])
+        hit_texts = [h["text"] for h in hits]
 
-        hit_i, hit_s = best_match(old, [h["text"] for h in hits], threshold)
+        # 병합형 갱신 대응: 이전 버전 중 하나라도 잡히면 인정, 이후 단계는 최고 매칭 버전을 대표로 씀
+        results = [best_match(o, hit_texts, threshold) for o in olds]
+        best_oi = max(range(len(olds)), key=lambda i: results[i][1])
+        old = olds[best_oi]
+        hit_i, hit_s = results[best_oi]
         if hit_i >= 0:
             cause = "decision_miss"
         else:
@@ -142,8 +147,9 @@ def classify_omissions(traces: list[dict], judge_records: dict, threshold: float
                 cause = "extraction_miss"
             else:
                 later = [w for s, w in past[w_i + 1:]
-                         if w["op"] in ("UPDATE", "DELETE")
-                         and w.get("prev_text") and jaccard(old, w["prev_text"]) >= threshold]
+                        if w["op"] in ("UPDATE", "DELETE")
+                        and w.get("prev_text")
+                        and best_match(old, [w["prev_text"]], threshold)[0] >= 0]
                 cause = "overwritten" if later else "retrieval_miss"
 
         causes[cause] += 1
