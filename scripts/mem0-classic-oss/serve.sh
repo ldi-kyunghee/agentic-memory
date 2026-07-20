@@ -4,7 +4,7 @@
 #   scripts/serve.sh <gpu_id>   # 예: scripts/serve.sh 2  -> tmux 세션 vllm-serve에 LLM+임베딩 서빙 기동
 #   scripts/serve.sh stop       # 세션 종료 + GPU 반납
 set -euo pipefail
-cd "$(dirname "$0")/.."   # 어디서 실행해도 리포 루트 기준으로 동작함
+cd "$(dirname "$0")/../.."   # 어디서 실행해도 리포 루트 기준으로 동작함
 
 SESSION=vllm-serve
 LLM_PORT=8000
@@ -48,12 +48,12 @@ fi
 mkdir -p logs
 
 tmux new-session -d -s "$SESSION" -n llm \
-    "VLLM_USE_FLASHINFER_SAMPLER=0 TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $OPENAI_MODEL \
+    "VLLM_USE_FLASHINFER_SAMPLER=0 TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu/mem0-classic-oss vllm serve $OPENAI_MODEL \
         --port $LLM_PORT --gpu-memory-utilization 0.45 --max-model-len 32768 \
         2>&1 | tee logs/vllm-llm.log"
 
 tmux new-window -t "$SESSION" -n emb \
-    "TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu vllm serve $MEM0_EMBED_MODEL \
+    "TORCH_CUDA_ARCH_LIST=12.0 CUDA_VISIBLE_DEVICES=$GPU uv run --project gpu/mem0-classic-oss vllm serve $MEM0_EMBED_MODEL \
         --hf-overrides '{\"is_matryoshka\": true}' \
         --port $EMB_PORT --gpu-memory-utilization 0.55 \
         2>&1 | tee logs/vllm-emb.log"

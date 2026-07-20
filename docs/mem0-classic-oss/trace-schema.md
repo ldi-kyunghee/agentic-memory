@@ -83,13 +83,13 @@ trace 한 줄(JSONL) = 이벤트 하나.
 
 ## 4. 파일 배치
 
-- 경로: `traces/{run}/{user_uuid}.jsonl` — 유저당 1파일 (병렬 워커 격리 목적)
+- 경로: `traces/mem0-classic-oss/{run}/{user_uuid}.jsonl` — 유저당 1파일 (병렬 워커 격리 목적)
 - gitignore 영역 (용량 큼). 서버↔로컬 이동은 rsync/scp
 - 크래시 대비 라인 단위 flush 권장
 
 ## 5. 새 시스템에 tracing 추가하기 (협업자 가이드)
 
-참조 구현: `src/tracing.py` (TraceLogger + 래퍼) 및 `eval/eval_memzero_oss.py`의 통합 지점.
+참조 구현: `src/mem0-classic-oss/tracing.py` (TraceLogger + 래퍼) 및 `eval/mem0-classic-oss/eval_memzero_oss.py`의 통합 지점.
 
 1. **TraceLogger는 그대로 재사용** — `system=` 식별자만 자기 것으로.
 2. **관측 지점 매핑표부터 작성**: 내 시스템의 어떤 함수 호출이 `llm_call` / `retrieval` / `memory_write`에 해당하는가. 예시:
@@ -114,7 +114,7 @@ trace는 **메모리 시스템 자신의 동작**만 담는다. 채점(judge)과
 
 | 층 | 위치 | 조인 키 |
 |---|---|---|
-| trace | `traces/{run}/{uuid}.jsonl` | `user`, `session`, `ref.mp_index`/`ref.question` |
+| trace | `traces/mem0-classic-oss/{run}/{uuid}.jsonl` | `user`, `session`, `ref.mp_index`/`ref.question` |
 | 평가 산출물 (context/답변/이벤트) | `results/.../*_eval_results.jsonl` | uuid, 세션, mp index, question |
 | judge 판정 | `results/.../judge/{uuid}.json` | `uuid`, `session_id`, `index`/`question` |
 

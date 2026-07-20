@@ -64,7 +64,7 @@ def main(results_path: str, max_workers: int):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--results", default="results/memzero-oss-smoke/memzero-oss_eval_results.jsonl")
+    parser.add_argument("--results", default="results/mem0-classic-oss/memzero-oss-smoke/memzero-oss_eval_results.jsonl")
     parser.add_argument("--max-workers", type=int, default=8)
     args = parser.parse_args()
     main(args.results, args.max_workers)

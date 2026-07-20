@@ -25,10 +25,10 @@
 
 | 파일 | 내용 | 쓰임 |
 |---|---|---|
-| `results/memzero-oss-full/memzero-oss_eval_results.jsonl` | 유저 1명 = 1줄. 세션별: 대화 원문, 골든 메모리(`memory_points`), 시스템 추출 메모리(`extracted_memories`), 이벤트 원본(`memory_events`, prev_text 포함), update 검색 스냅샷(`memories_from_system`), 질문별 context+시스템 답변 | **모든 정성분석의 원본** (20유저) |
-| `results/memzero-oss-full/judge-qwen4b/{uuid}.json` | 레코드별 judge 라벨: integrity 0/1/2, accuracy 0/1/2+is_included, update C/H/O, QA C/H/O | 사례 필터링 |
-| `traces/full-traced/{uuid}.jsonl` | 내부 동작 전체(3유저): 추출 LLM 프롬프트/응답 전문, fact별 후보 검색 hits, update 결정 프롬프트/응답, probe/QA 검색 hits+score | "왜 그랬나"의 최종 증거 (스키마: trace-schema.md) |
-| `reports/trace_analysis_*.json` | 원인 라벨이 붙은 사례 목록 (`cases` 배열: omission별 원인, QA 실패별 원인) | **각 분석 태스크의 시작 목록** — 여기서 사례를 골라 원본으로 들어가면 됨 |
+| `results/mem0-classic-oss/memzero-oss-full/memzero-oss_eval_results.jsonl` | 유저 1명 = 1줄. 세션별: 대화 원문, 골든 메모리(`memory_points`), 시스템 추출 메모리(`extracted_memories`), 이벤트 원본(`memory_events`, prev_text 포함), update 검색 스냅샷(`memories_from_system`), 질문별 context+시스템 답변 | **모든 정성분석의 원본** (20유저) |
+| `results/mem0-classic-oss/memzero-oss-full/judge-qwen4b/{uuid}.json` | 레코드별 judge 라벨: integrity 0/1/2, accuracy 0/1/2+is_included, update C/H/O, QA C/H/O | 사례 필터링 |
+| `traces/mem0-classic-oss/full-traced/{uuid}.jsonl` | 내부 동작 전체(3유저): 추출 LLM 프롬프트/응답 전문, fact별 후보 검색 hits, update 결정 프롬프트/응답, probe/QA 검색 hits+score | "왜 그랬나"의 최종 증거 (스키마: trace-schema.md) |
+| `reports/mem0-classic-oss/trace_analysis_*.json` | 원인 라벨이 붙은 사례 목록 (`cases` 배열: omission별 원인, QA 실패별 원인) | **각 분석 태스크의 시작 목록** — 여기서 사례를 골라 원본으로 들어가면 됨 |
 
 ## 4. 분석 태스크 (연구원별 분담 단위)
 
@@ -86,7 +86,7 @@
 ```python
 # 유저 1명 로드 + 특정 세션 훑기
 import json
-users = [json.loads(l) for l in open("results/memzero-oss-full/memzero-oss_eval_results.jsonl")]
+users = [json.loads(l) for l in open("results/mem0-classic-oss/memzero-oss-full/memzero-oss_eval_results.jsonl")]
 u = users[0]                      # 또는 uuid로 검색
 s = u["sessions"][12]
 for t in s["dialogue"]: print(f'[{t["role"]}] {t["content"][:100]}')
@@ -94,11 +94,11 @@ print([m["memory_content"] for m in s["memory_points"]])   # 골든
 print(s["extracted_memories"])                             # 시스템 추출
 
 # 원인 라벨된 사례 목록에서 시작하기
-rep = json.load(open("reports/trace_analysis_full-traced-embed.json"))
+rep = json.load(open("reports/mem0-classic-oss/trace_analysis_full-traced-embed.json"))
 [c for c in rep["omission_linkage"]["cases"] if c["cause"] == "decision_miss"][:5]
 
 # trace에서 update 결정 원문 찾기 (세션 12)
-tr = [json.loads(l) for l in open("traces/full-traced/2f1f897e-....jsonl")]
+tr = [json.loads(l) for l in open("traces/mem0-classic-oss/full-traced/2f1f897e-....jsonl")]
 d = next(r for r in tr if r["session"] == 12 and r.get("purpose") == "update_decision")
 print(d["llm"]["response"][:2000])
 ```

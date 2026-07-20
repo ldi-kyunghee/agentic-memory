@@ -18,7 +18,7 @@ logger = logging.getLogger("runner")
 logging.basicConfig(level=logging.WARNING)  # tenacity 재시도 경고를 콘솔로
 logging.getLogger("mem0.vector_stores.qdrant").setLevel(logging.ERROR)  # Resetting Index 관련 Warning 숨기는 목적
 
-sys.path.insert(0, "src")  # tracing.py import를 위해 src를 sys.path에 추가
+sys.path.insert(0, "src/mem0-classic-oss")  # tracing.py import를 위해 src를 sys.path에 추가
 from tracing import TraceLogger, TracingLLM, TracingVectorStore
 
 from mem0 import Memory
@@ -245,12 +245,12 @@ def process_user(user_data: dict, top_k: int, save_path: str, collection_name: s
             tracer.close()
 
 def main(data_path: str, version: str, top_k: int=20, user_num: int | None = None, max_workers: int = 1, trace: bool = False):
-    save_path = f"results/memzero-oss-{version}/"
+    save_path = f"results/mem0-classic-oss/memzero-oss-{version}/"
     os.makedirs(os.path.join(save_path, "tmp"), exist_ok=True)
     collection_name = f"halumem_{version}"
     trace_dir = None
     if trace:
-        trace_dir = f"traces/{version}/"
+        trace_dir = f"traces/mem0-classic-oss/{version}/"
         os.makedirs(trace_dir, exist_ok=True)
 
     # 각 User별로 병렬 처리하여 Process_User 소요시간 단축

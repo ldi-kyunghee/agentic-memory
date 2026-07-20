@@ -15,11 +15,11 @@
 
 | 구성 | 파일 | 상태 |
 |---|---|---|
-| Stage A: 세션 투입·추출·검색 수집 | `eval/eval_memzero_oss.py` | ✅ 유저 병렬, 서버 검증 완료 |
-| Stage A': 답변 일괄 생성 | `eval/gen_answers.py` | ✅ |
-| Stage B: judge 채점·집계 | `eval/judge.py` | ✅ 공식 채점기와 교차검증 |
-| 서빙 자동화 | `scripts/serve.sh` | ✅ Blackwell 이슈 3종 해결 |
-| 20유저 풀런 (Qwen3-4B 스택) | `results/memzero-oss-full/` | ✅ 산출물 확보 |
+| Stage A: 세션 투입·추출·검색 수집 | `eval/mem0-classic-oss/eval_memzero_oss.py` | ✅ 유저 병렬, 서버 검증 완료 |
+| Stage A': 답변 일괄 생성 | `eval/mem0-classic-oss/gen_answers.py` | ✅ |
+| Stage B: judge 채점·집계 | `eval/mem0-classic-oss/judge.py` | ✅ 공식 채점기와 교차검증 |
+| 서빙 자동화 | `scripts/mem0-classic-oss/serve.sh` | ✅ Blackwell 이슈 3종 해결 |
+| 20유저 풀런 (Qwen3-4B 스택) | `results/mem0-classic-oss/memzero-oss-full/` | ✅ 산출물 확보 |
 
 **[미결] judge 표준화**: mini/4B/30B가 서로 다른 채점 기질 (Upd C 9.7↔35↔57%). 풀런 수치는 잠정치. 확정 필요 시 GPT-4o 앵커 실험(~$3). 내부 분석은 30B 라벨 사용.
 
@@ -29,8 +29,8 @@
 
 | 구성 | 파일 | 상태 |
 |---|---|---|
-| 기록 계층: LLM/검색/상태변화 trace | `src/tracing.py` + 러너 `--trace` | ✅ 1유저 스모크 검증 (이벤트 1,279건) |
-| 소비 계층: 인과 분석 | `src/analyze_trace.py` | ✅ ⓐⓑⓒ 검증 완료 + 임베딩 매처 표준화 (baseline §4f: extraction_miss 46% / decision_miss 48%, retrieval 병목 아님) |
+| 기록 계층: LLM/검색/상태변화 trace | `src/mem0-classic-oss/tracing.py` + 러너 `--trace` | ✅ 1유저 스모크 검증 (이벤트 1,279건) |
+| 소비 계층: 인과 분석 | `src/mem0-classic-oss/analyze_trace.py` | ✅ ⓐⓑⓒ 검증 완료 + 임베딩 매처 표준화 (baseline §4f: extraction_miss 46% / decision_miss 48%, retrieval 병목 아님) |
 | Qwen 스택 traced 데이터 (3유저) | 서버 `full-traced` 런 | ✅ traces + 4B judge 라벨 확보 |
 
 **analyze_trace.py의 존재 이유** (= 대시보드에서 UI를 뺀 것):

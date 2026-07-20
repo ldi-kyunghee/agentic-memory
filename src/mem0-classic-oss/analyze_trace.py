@@ -252,7 +252,7 @@ if __name__ == "__main__":
     p.add_argument("--trace", required=True, help="traces/<run>/<uuid>.jsonl")
     p.add_argument("--judge", default=None, help="results/.../judge/<uuid>.json (없으면 ⓐ만)")
     p.add_argument("--threshold", type=float, default=0.4, help="근사 매칭 Jaccard 임계값")
-    p.add_argument("--out", default="reports/trace_analysis.json")
+    p.add_argument("--out", default="reports/mem0-classic-oss/trace_analysis.json")
     p.add_argument("--matcher", choices=["jaccard", "embed"], default="jaccard")
     args = p.parse_args()
     if args.matcher == "embed":

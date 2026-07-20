@@ -23,8 +23,8 @@ R 42.91 / Weighted R 65.03 / Target P 86.26 / Acc 60.86 / FMR 56.80 / F1 57.31 �
 
 | Stage | 무엇 | 실행 형태 |
 |---|---|---|
-| A | mem0 메모리 연산: 세션 add → 추출 메모리·이벤트 수집, update MP top-10 검색, 질문 top-20 검색 → context 저장 | `src/runner_mem0_oss.py`, vLLM **serve** (순차 의존이라 배치 불가) |
-| A' | 저장된 context+question → 답변 일괄 생성 | vLLM **offline batch** (`gpu/` 프로젝트) |
+| A | mem0 메모리 연산: 세션 add → 추출 메모리·이벤트 수집, update MP top-10 검색, 질문 top-20 검색 → context 저장 | `eval/mem0-classic-oss/eval_memzero_oss.py`, vLLM **serve** (순차 의존이라 배치 불가) |
+| A' | 저장된 context+question → 답변 일괄 생성 | vLLM **offline batch** (`gpu/mem0-classic-oss/` 프로젝트) |
 | B | judge 4종(integrity/accuracy/update/QA) 일괄 채점 + 집계 | vLLM **offline batch** |
 
 산출물은 원본 `memzero_eval_results.jsonl` 스키마와 호환 유지 (원본 `evaluation.py`로도 채점 가능하게) + `memory_events` 키 추가.
@@ -117,7 +117,7 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 
 ## 4f. Trace 인과 분석 결과 (full-traced 유저1, Qwen 스택, 4B judge 라벨, 2026-07-17)
 
-`src/analyze_trace.py` (ⓐ 유실 정량화 / ⓑ omission 원인 / ⓒ QA 실패 전파). 매처: 임베딩 코사인(threshold 0.65) — **Jaccard는 패러프레이즈 실명으로 extraction_miss를 87%로 과대 산정** (스팟 체크로 적발) → 임베딩 매처를 표준 확정. 대시보드의 골든↔시스템 정렬도 임베딩 기반 필수.
+`src/mem0-classic-oss/analyze_trace.py` (ⓐ 유실 정량화 / ⓑ omission 원인 / ⓒ QA 실패 전파). 매처: 임베딩 코사인(threshold 0.65) — **Jaccard는 패러프레이즈 실명으로 extraction_miss를 87%로 과대 산정** (스팟 체크로 적발) → 임베딩 매처를 표준 확정. 대시보드의 골든↔시스템 정렬도 임베딩 기반 필수.
 
 **20유저 확정 집계** (traced full 20 users, 2026-07-17 — 3유저 예비 결과와 분포 일치, 대표성 확인):
 
@@ -153,12 +153,12 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 
 ## 7. 환경·인프라 사실
 
-- **uv 구조**: 루트 = `mem0ai==0.1.118` + `openai>=1.90,<1.110` (mem0 상한 때문). vLLM은 **독립 프로젝트 `gpu/`** (`uv init --bare --no-workspace`) — vllm≥0.25가 openai≥2.0을 요구해 한 lockfile에 공존 불가. 서버: `uv run --project gpu vllm serve ...`
+- **uv 구조**: 루트 = `mem0ai==0.1.118` + `openai>=1.90,<1.110` (mem0 상한 때문). vLLM은 **독립 프로젝트 `gpu/mem0-classic-oss/`** (`uv init --bare --no-workspace`) — vllm≥0.25가 openai≥2.0을 요구해 한 lockfile에 공존 불가. 서버: `uv run --project gpu vllm serve ...`
 - **mem0 2.0.12 주의**: 최신 OSS는 additive-only 파이프라인 (update 결정 단계 없음, 이벤트 전부 ADD, linked_memory_ids 방식). HaluMem Updating 태스크와 부정합 → baseline은 0.1.118 고정. 2.x는 추후 대시보드의 "비교 아키텍처 #2" 후보
 - **Qdrant**: 서버 모드(host/port, docker) 기본. mac 스모크는 embedded `path` 모드 가능
 - **llms.py 주의** (서브모듈): `RETRY_TIMES` 등 env 기본값 없이 `int(os.getenv())` — .env 누락 시 import 에러. JSON 파싱이 ```json 블록 정규식 — 로컬 모델은 vLLM structured output으로 강제 필요
 - **데이터 경로**: 벤치마크는 `dataset/HaluMem-{Medium,Long}.jsonl` (`HaluMem/data/`에는 없음)
-- **서버(Blackwell RTX 6000 Pro) 실전 이슈 3종** (2026-07-15, 전부 scripts/serve.sh에 반영):
+- **서버(Blackwell RTX 6000 Pro) 실전 이슈 3종** (2026-07-15, 전부 scripts/mem0-classic-oss/serve.sh에 반영):
   1. FlashInfer 샘플러 JIT이 "requires sm75+"로 죽음 — torch가 CUDA<12.9 빌드라 sm_120 capability 조회 실패 → arch 폴백 목록에 구형 arch 섞임. 우회: `VLLM_USE_FLASHINFER_SAMPLER=0` + `TORCH_CUDA_ARCH_LIST=12.0` (근본 해결은 torch cu129+ 재설치)
   2. 같은 GPU에 vLLM 서버 2개 (순차 기동 기준) — 두 번째 서버의 `gpu-memory-utilization`은 양쪽 제약의 박스 안이어야 함: **(선점 프로세스 점유 + 자기 웨이트/그래프)/전체 < util < 잔여 메모리/전체**. 낮으면 KV cache 음수(util×전체 − 총사용량), 높으면 기동 시 free-memory 검사 탈락. LLM(0.45, ~36GB 점유) 뒤의 emb는 0.49~0.61 범위 → **0.55 채택**. 동시 기동은 프로파일링 레이스라 비결정적 — 금지
   3. vLLM이 Qwen3-Embedding-4B의 `dimensions` 파라미터를 400으로 거부 (mem0 embedder는 항상 dimensions를 보냄) — 모델은 MRL 지원이나 HF config 미선언이 원인. 해결: serve 시 `--hf-overrides '{"is_matryoshka": true}'`
