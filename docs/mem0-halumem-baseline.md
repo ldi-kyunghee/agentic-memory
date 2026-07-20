@@ -119,13 +119,14 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 
 `src/analyze_trace.py` (ⓐ 유실 정량화 / ⓑ omission 원인 / ⓒ QA 실패 전파). 매처: 임베딩 코사인(threshold 0.65) — **Jaccard는 패러프레이즈 실명으로 extraction_miss를 87%로 과대 산정** (스팟 체크로 적발) → 임베딩 매처를 표준 확정. 대시보드의 골든↔시스템 정렬도 임베딩 기반 필수.
 
-3유저 집계 (traced full 3 users):
+**20유저 확정 집계** (traced full 20 users, 2026-07-17 — 3유저 예비 결과와 분포 일치, 대표성 확인):
 
-- ⓐ 유실 UPDATE: 87/4,707 (**1.85%**, 유저별 1.5~2.1%) — mini 스택(0.66%)의 ~3배
-- ⓑ Omission 265건: **extraction_miss 49% / decision_miss 39%** / retrieval_miss 11% — 논문 §6.2.1("추출 누락이 주원인")의 정밀화: 절반만 맞고, **~40%는 old memory가 검색에 잡혔는데도 update가 안 된 결정 실패** (집계 관점에선 불가시)
-- ⓒ QA 실패 267건: extraction_fault 58% / generation_fault 37% / retrieval_fault 4.5%
-- 일관 결론: **retrieval은 주 병목이 아님** — 병목은 저장(추출)과 갱신(결정). 단 유저3(세션 77개, 최대 메모리 축적)은 retrieval_miss 19%로 유독 높음 → **저장량 증가에 따른 검색 실패 스케일 효과 의심** (대시보드에서 탐구할 단서)
-- 단서: 분모는 4B judge 라벨(판정 기질 영향), cosine threshold 0.65 민감도 미측정 (refinement 항목)
+- ⓐ 유실 UPDATE: 766/30,793 (**2.49%**) — mini 스택(0.66%)의 ~4배. 매처 무관 지표라 맥/서버 동일 (교차 검증)
+- ⓑ Omission 2,071건: **extraction_miss 48.3% / decision_miss 42.3%** / retrieval_miss 9.3% — 논문 §6.2.1("추출 누락이 주원인")의 정밀화: 절반만 맞고, **~42%는 old memory가 검색에 잡혔는데도 update가 안 된 결정 실패** (집계 관점에선 불가시)
+- ⓒ QA 실패 1,770건: extraction_fault 63.5% / generation_fault 30.1% / retrieval_fault 6.4%
+- 일관 결론: **retrieval은 주 병목이 아님** — 병목은 저장(추출)과 갱신(결정)
+- **매처 표준 확정: Qwen3-Embedding-4B + cosine 0.65 (서버)** — 임베딩 모델을 바꾸면 같은 threshold라도 결론이 왜곡됨을 실측 (동일 유저에서 OpenAI 3-small 사용 시 extraction_miss 42→68로 부풀어). 원인 라벨은 측정 모델 종속 — 모든 분석은 이 표준 설정으로만
+- 단서: 분모는 4B judge 라벨(판정 기질 영향). threshold 민감도 스윕은 외부 보고 시점에 GPT-4o 앵커와 묶어 수행 (백로그). 관찰자 효과 없음 확인: traced/untraced 풀런 성적표 차이 ±0.2%p
 
 ## 5. 러너 설계 결정
 
