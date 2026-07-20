@@ -64,7 +64,7 @@ wait_ready() {
 # 순차 기동: 동시 기동은 두 프로세스가 서로의 메모리 프로파일링을 밟아 비결정적으로 실패함
 tmux new-session -d -s "$SESSION" -n llm \
     "VLLM_USE_FLASHINFER_SAMPLER=0 $COMMON_ENV uv run --project gpu/mem0-classic-oss vllm serve $OPENAI_MODEL \
-        --port $LLM_PORT --gpu-memory-utilization 0.45 --max-model-len 32768 \
+        --port $LLM_PORT --gpu-memory-utilization 0.40 --max-model-len 32768 \
         2>&1 | tee logs/vllm-llm.log"
 echo "LLM 서버 기동 대기 중... (첫 실행이면 모델 다운로드로 오래 걸림. tmux attach -t $SESSION)"
 wait_ready "$LLM_PORT" llm
