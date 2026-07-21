@@ -72,3 +72,8 @@
                          with open(sample_path, 'w') as file:
                              json.dump(sample, file, indent=2)
 #+end_src
+
+* 좀 더 깊이 살펴보면 좋을 것 같다는 부분
+1. Correct보다 Hallucination과 Omission에 집중하는 것
+   - 여기서 hallucination과 omission은 어디서 발생했는지 확인하는 것
+     - .e.g. retrieval 단계에서 중요 정보 떨어져 답변에 미포함, retrieval에서 포함됨에도 불구하고 LLM 자체 해당 문서가 relevant하다는 것 인식 못 함, retrieval에서 떨어졌으나 LLM 새로운 정보나 다른 문서를 보고 답변하는 것 등등
