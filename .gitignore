@@ -7,3 +7,4 @@ main.py
 __pycache__
 logs
 check_results.ipynb
+*.org~

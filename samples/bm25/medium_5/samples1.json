@@ -1,0 +1,151 @@
+{
+  "Correct": {
+    "question": "What is Joseph Garcia's middle name as of Sep 04, 2025?",
+    "generated_answer": "Joseph Garcia has no middle name mentioned.",
+    "reference": "Unknown",
+    "retrieved": [
+      {
+        "memory_content": "[Sep 04, 2025, 15:24:24]\n        User: My name is Joseph Garcia, and I am a Male. I was born on 1994-07-04, and I am now 29 years old. I currently live in Jacksonville.\n        Assistant: Can you tell me about your educational background?",
+        "score": 15.154515266418457
+      },
+      {
+        "memory_content": "[Sep 04, 2025, 15:22:01]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
+        "score": 6.5389509201049805
+      },
+      {
+        "memory_content": "[Sep 06, 2025, 07:14:38]\n        User: I'd like to share my Sports Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Sports Preference.",
+        "score": 4.294286727905273
+      },
+      {
+        "memory_content": "[Sep 06, 2025, 07:38:02]\n        User: I'd like to share my Clothing Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Clothing Preference.",
+        "score": 4.294286727905273
+      },
+      {
+        "memory_content": "[Sep 06, 2025, 07:49:26]\n        User: I'd like to share my Reading Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Reading Preference.",
+        "score": 4.294286727905273
+      }
+    ],
+    "evidence": [],
+    "question_type": "Memory Boundary",
+    "difficulty": "medium",
+    "result_type": "Correct",
+    "is_valid": true,
+    "index": {
+      "persona": 11,
+      "session": 0,
+      "question": 2
+    }
+  },
+  "Hallucination": {
+    "question": "How did Susan Thompson's salary increase influence her ability to inspire others in the wellness sector?",
+    "generated_answer": "The memories provided do not contain any information about Susan Thompson's salary or how it influenced her ability to inspire others in the wellness sector. Therefore, based on the given data, there is no answer to the question. \n\nAnswer: Not specified in the memories.",
+    "reference": "It enhanced her capacity to support other women.",
+    "retrieved": [
+      {
+        "memory_content": "[Sep 04, 2025, 20:53:21]\n        User: My name is Susan Thompson, and I am a Female. I was born on 1965-06-15, and I am now 60 years old. I currently live in Fort Worth.\n        Assistant: Can you tell me about your educational background?",
+        "score": 3.8401050567626953
+      },
+      {
+        "memory_content": "\n        Assistant:  What specific outcomes would you like your participants to achieve through these sessions?\n        User: I hope participants will feel a sense of peace and contentment, just as I did. It's about enhancing mental well-being through nature.\n        Assistant: Fostering a sense of peace and contentment is a beautiful goal, Susan. Nature has a remarkable ability to enhance mental well-being, and your workshops can be a gateway for participants to experience this firsthand. By emphasizing both the calming and exhilarating effects of birdwatching, you can provide a balanced perspective on wellness that addresses both mental and physical aspects. Encouraging participants to integrate birdwatching into their routines could lead to lasting positive changes. How do you plan to measure the impact of these sessions on your participants?",
+        "score": 3.8115243911743164
+      },
+      {
+        "memory_content": "\n        Assistant:  Have you considered incorporating these insights into your health workshops to inspire others with the calming benefits of pet ownership?\n        User: I definitely plan to share the calming effects of fish in my workshops. Creating a tranquil environment has become increasingly important in my wellness journey.\n        Assistant: That's a fantastic approach, Susan. Sharing your experiences with fish can offer valuable insights to others seeking tranquility and relaxation. Your focus on these aspects is crucial for holistic wellness. Similarly, appreciation for flowers and their calming effect can also contribute to a tranquil environment. It's inspiring to see how your journey emphasizes peace and contentment. How do you envision these elements playing a role in your future workshops?",
+        "score": 3.28145694732666
+      },
+      {
+        "memory_content": "[Jan 13, 2032, 16:51:11]\n        User: I've been reflecting on my career progress recently, and it's been quite a journey transitioning into my role as a Lead Wellness Coach. Despite the challenges, I feel accomplished and optimistic about the future.\n        Assistant: It's wonderful to hear that you're feeling accomplished and optimistic, Susan! Reflecting on your career progress, especially considering your transition to a Lead Wellness Coach, is a testament to your resilience and adaptability. It's essential to acknowledge the role of mindfulness practices, regular exercise, and time management in managing stress effectively. These strategies have undoubtedly contributed to your well-being amidst increased responsibilities. Additionally, your creative motivation has helped you inspire ideas and overcome creative blocks in your career, allowing you to expand your influence in the health and wellness community. I'm curious, how have your workshops evolved with your focus on creativity and innovation?",
+        "score": 3.103200674057007
+      },
+      {
+        "memory_content": "\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are deceased, Married, Two children. My Husband was born on 1962-09-01, Supportive partner in health journey. My Child1 was born on 1990-05-10, Eldest child, living independently. My Child2 was born on 1993-08-22, Youngest child, pursuing a career in medicine. Overall, Susan has a supportive family who encourages her pursuit of health and wellness.\n        Assistant: What are your life goals?",
+        "score": 3.0623631477355957
+      }
+    ],
+    "evidence": [
+      {
+        "memory_content": "Susan plans to allocate a portion of her increased income toward developing new wellness initiatives.",
+        "memory_type": "Event Memory"
+      },
+      {
+        "memory_content": "Susan discussed the potential for her financial boost to enhance her ability to inspire and support other women.",
+        "memory_type": "Event Memory"
+      },
+      {
+        "memory_content": "Susan Thompson expressed empowerment and satisfaction with her recent achievements in financial stability and social influence, which she plans to leverage for expanding her wellness projects.",
+        "memory_type": "Persona Memory"
+      }
+    ],
+    "question_type": "Multi-hop Inference",
+    "difficulty": "medium",
+    "result_type": "Hallucination",
+    "is_valid": true,
+    "index": {
+      "persona": 9,
+      "session": 71,
+      "question": 0
+    }
+  },
+  "Omission": {
+    "question": "What wardrobe changes might Oleksandr consider for a business conference in April 2027?",
+    "generated_answer": "No specific wardrobe changes mentioned.",
+    "reference": "Opt for subtle, elegant styles to maintain a professional image.",
+    "retrieved": [
+      {
+        "memory_content": "\n        Assistant:  What specific conferences or discussions are you most excited to attend?\n        User: I'm particularly excited about attending conferences that focus on cultural heritage and human rights. These topics are closely related to my work and interests.\n        Assistant: Attending conferences that focus on cultural heritage and human rights is a wonderful way to deepen your understanding of these important topics and their connection to your work. These conferences can provide valuable insights and perspectives that can inform your legal strategies and advocacy work. By engaging with experts and thought leaders in these fields, you can enhance your appreciation for music that resonates with cultural themes and your commitment to social justice. As you continue to explore how changes in your music preferences fit into your life goals, consider how these conferences can enhance your strategic planning and influence policy changes. Your dedication to combating corruption and promoting human rights is admirable, and these evolving preferences reflect your ongoing commitment to making a meaningful impact. How do you plan to apply the insights gained from these conferences to your advocacy work?",
+        "score": 5.579118728637695
+      },
+      {
+        "memory_content": "\n        Assistant:  As you continue to refine your wardrobe, what additional steps do you plan to take to ensure you maintain this balance?\n        User: I'll continue to evaluate my wardrobe regularly, ensuring each piece serves a purpose and aligns with my goals of comfort and versatility.\n        Assistant: Regularly evaluating your wardrobe is a proactive approach to maintaining balance. Ensuring each piece serves a purpose aligns with your strategic thinking and compensatory motivation. It's intriguing how some might opt for more rigid business attire, but your focus on comfort and versatility is a testament to your understanding of your needs. How do you see these changes impacting your overall lifestyle and wellbeing?",
+        "score": 5.066338062286377
+      },
+      {
+        "memory_content": "\n        Assistant:  As you continue to refine your wardrobe, what additional steps do you plan to take to ensure you maintain this balance?\n        User: I'll keep assessing my wardrobe choices, ensuring they align with my goals of comfort, versatility, and professional appearance.\n        Assistant: Continuously assessing your wardrobe choices is a proactive strategy for maintaining balance. Ensuring each piece aligns with your goals reflects your strategic thinking and compensatory motivation. It's intriguing how some might opt for more rigid business attire, but your focus on comfort and versatility is a testament to your understanding of your needs. How do you see these changes impacting your overall lifestyle and wellbeing?",
+        "score": 5.066338062286377
+      },
+      {
+        "memory_content": "\n        Assistant:  As you continue to refine your wardrobe, what additional steps do you plan to take to ensure you maintain this balance?\n        User: I'll keep assessing my wardrobe choices, ensuring they align with my goals of comfort, versatility, and professional appearance.\n        Assistant: Continuously assessing your wardrobe choices is a proactive strategy for maintaining balance. Ensuring each piece aligns with your goals reflects your strategic thinking and compensatory motivation. It's intriguing how some might opt for more rigid business attire, but your focus on comfort and versatility is a testament to your understanding of your needs. How do you see these changes impacting your overall lifestyle and wellbeing?",
+        "score": 5.066338062286377
+      },
+      {
+        "memory_content": "\n        Assistant:  As you continue to refine your wardrobe, what additional steps do you plan to take to ensure you maintain this balance?\n        User: I'll keep assessing my wardrobe choices, ensuring they align with my goals of comfort, versatility, and professional appearance.\n        Assistant: Continuously assessing your wardrobe choices is a proactive strategy for maintaining balance. Ensuring each piece aligns with your goals reflects your strategic thinking and compensatory motivation. It's intriguing how some might opt for more rigid business attire, but your focus on comfort and versatility is a testament to your understanding of your needs. How do you see these changes impacting your overall lifestyle and wellbeing?",
+        "score": 5.066338062286377
+      }
+    ],
+    "evidence": [
+      {
+        "memory_content": "Oleksandr attended a fashion seminar that emphasized balancing style with professionalism.",
+        "memory_type": "Event Memory"
+      },
+      {
+        "memory_content": "Oleksandr's appreciation for subtlety and elegance in clothing deepened after attending the seminar.",
+        "memory_type": "Persona Memory"
+      },
+      {
+        "memory_content": "Oleksandr dislikes overly flashy clothing, preferring styles that balance elegance and subtlety.",
+        "memory_type": "Persona Memory"
+      },
+      {
+        "memory_content": "Oleksandr's clothing preferences reflect his desire for a mature professional image.",
+        "memory_type": "Persona Memory"
+      },
+      {
+        "memory_content": "Oleksandr expressed the importance of feeling comfortable and confident in professional attire.",
+        "memory_type": "Persona Memory"
+      },
+      {
+        "memory_content": "Oleksandr aims to integrate insights from the seminar into his wardrobe for a sophisticated style.",
+        "memory_type": "Event Memory"
+      }
+    ],
+    "question_type": "Generalization & Application",
+    "difficulty": "medium",
+    "result_type": "Omission",
+    "is_valid": true,
+    "index": {
+      "persona": 15,
+      "session": 11,
+      "question": 2
+    }
+  }
+}
