@@ -8,3 +8,4 @@ __pycache__
 logs
 check_results.ipynb
 *.org~
+results_analysis.ipynb
