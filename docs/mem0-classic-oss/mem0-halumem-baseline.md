@@ -160,6 +160,7 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 - **데이터 경로**: 벤치마크는 `dataset/HaluMem-{Medium,Long}.jsonl` (`HaluMem/data/`에는 없음)
 - **서버(Blackwell RTX 6000 Pro) 실전 이슈 3종** (2026-07-15, 전부 scripts/mem0-classic-oss/serve.sh에 반영):
   1. FlashInfer 샘플러 JIT이 "requires sm75+"로 죽음 — torch가 CUDA<12.9 빌드라 sm_120 capability 조회 실패 → arch 폴백 목록에 구형 arch 섞임. 우회: `VLLM_USE_FLASHINFER_SAMPLER=0` + `TORCH_CUDA_ARCH_LIST=12.0` (근본 해결은 torch cu129+ 재설치)
-  2. 같은 GPU에 vLLM 서버 2개 (순차 기동 기준) — 두 번째 서버의 `gpu-memory-utilization`은 양쪽 제약의 박스 안이어야 함: **(선점 프로세스 점유 + 자기 웨이트/그래프)/전체 < util < 잔여 메모리/전체**. 낮으면 KV cache 음수(util×전체 − 총사용량), 높으면 기동 시 free-memory 검사 탈락. LLM(0.45, ~36GB 점유) 뒤의 emb는 0.49~0.61 범위 → **0.55 채택**. 동시 기동은 프로파일링 레이스라 비결정적 — 금지
+  2. 같은 GPU에 vLLM 서버 2개 (순차 기동 기준) — 두 번째 서버의 `gpu-memory-utilization`은 양쪽 제약의 박스 안이어야 함: **(선점 프로세스 점유 + 자기 웨이트/그래프)/전체 < util < 잔여 메모리/전체**. 낮으면 KV cache 음수(util×전체 − 총사용량), 높으면 기동 시 free-memory 검사 탈락. 동시 기동은 프로파일링 레이스라 비결정적 — 금지 (serve.sh가 순차 기동 + 윈도우 단위 생존 확인으로 강제)
+     **확정 설정 (2026-07-20)**: llm 0.40 + emb 0.55 `--enforce-eager`. emb의 CUDA graph 메모리 추정(~15GiB)이 박스를 공집합으로 만들 수 있어 eager 강제 (임베딩 서버는 graph 이득 미미). llm 0.45일 땐 emb 기동 검사 탈락 (free 49.6 < 요구 52.2)
   3. vLLM이 Qwen3-Embedding-4B의 `dimensions` 파라미터를 400으로 거부 (mem0 embedder는 항상 dimensions를 보냄) — 모델은 MRL 지원이나 HF config 미선언이 원인. 해결: serve 시 `--hf-overrides '{"is_matryoshka": true}'`
   - 참고: 임베딩 모델은 별도 태스크 플래그 없이 자동 감지됨 (`Supported tasks: ['embed']`)
