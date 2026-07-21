@@ -81,27 +81,19 @@
 | 인용 | 대화/trace/답변에서 핵심 1-2줄 |
 | 시사점 | 강점/약점/병목 중 무엇의 증거인지 한 줄 |
 
-## 6. 데이터 여는 법 (스니펫)
+## 6. 표준 열람 절차 — 유저 단위, 파일 3개, 파생 파일 없음
 
-```python
-# 유저 1명 로드 + 특정 세션 훑기
-import json
-users = [json.loads(l) for l in open("results/mem0-classic-oss/memzero-oss-full/memzero-oss_eval_results.jsonl")]
-u = users[0]                      # 또는 uuid로 검색
-s = u["sessions"][12]
-for t in s["dialogue"]: print(f'[{t["role"]}] {t["content"][:100]}')
-print([m["memory_content"] for m in s["memory_points"]])   # 골든
-print(s["extracted_memories"])                             # 시스템 추출
+**분석 단위는 유저 1명**이고, 유저 하나의 재료는 파일 3개가 전부다. 서브셋을 뽑거나 스크립트를 돌릴 필요 없이 이 파일들을 직접 연다 (에디터에서 JSON 포맷팅 + 접기 기능으로 보면 충분하다):
 
-# 원인 라벨된 사례 목록에서 시작하기
-rep = json.load(open("reports/mem0-classic-oss/trace_analysis_full-traced-embed.json"))
-[c for c in rep["omission_linkage"]["cases"] if c["cause"] == "decision_miss"][:5]
+| 순서 | 파일 | 목적 |
+|---|---|---|
+| ① | `results/mem0-classic-oss/memzero-oss-full-traced/judge/{uuid}.json` | **사례 고르기** — `question_answering_records`에서 `result_type`(H/O)과 `question_type`을 보며 눈에 걸리는 실패를 고름. update 쪽은 `memory_update_records`의 `memory_update_type` |
+| ② | `results/mem0-classic-oss/memzero-oss-full-traced/tmp/{uuid}.json` | **원본 대조** — 고른 사례의 세션을 펼쳐 `dialogue` ↔ `memory_points`(골든) ↔ `extracted_memories` 3단 대조. QA면 `questions[]`의 `context`/`system_response`/`answer`/`evidence` 4자 대조 |
+| ③ | `traces/mem0-classic-oss/full-traced/{uuid}.jsonl` | **내부 원인** — ②에서 의심이 생긴 세션만. 해당 `session` 번호에서 `purpose: fact_extraction`(추출 프롬프트/응답)과 `update_decision`(갱신 결정 원문)을 찾아 읽음 |
 
-# trace에서 update 결정 원문 찾기 (세션 12)
-tr = [json.loads(l) for l in open("traces/mem0-classic-oss/full-traced/2f1f897e-....jsonl")]
-d = next(r for r in tr if r["session"] == 12 and r.get("purpose") == "update_decision")
-print(d["llm"]["response"][:2000])
-```
+- **분배**: 연구원 1명당 유저 2~3명 (uuid 파일 단위로 나누면 싱크 문제 없음)
+- 원인 라벨(`reports/mem0-classic-oss/trace_analysis_full20.json`의 `per_user[].cases`)은 참고용 — 자동 분류라 경계 사례는 틀릴 수 있고, 그 오분류 발견 자체가 기록 대상이다 (§7)
+- 표본은 "훑다가 걸리는 것" 중심이면 된다 — 체계적 표집과 3층 자동 조인은 대시보드(로드맵 기둥 3)의 몫
 
 ## 7. 주의사항
 
