@@ -81,19 +81,31 @@
 | 인용 | 대화/trace/답변에서 핵심 1-2줄 |
 | 시사점 | 강점/약점/병목 중 무엇의 증거인지 한 줄 |
 
-## 6. 표준 열람 절차 — 유저 단위, 파일 3개, 파생 파일 없음
+## 6. 표준 열람 절차 — 유저 단위, judge → tmp → trace 순
 
-**분석 단위는 유저 1명**이고, 유저 하나의 재료는 파일 3개가 전부다. 서브셋을 뽑거나 스크립트를 돌릴 필요 없이 이 파일들을 직접 연다 (에디터에서 JSON 포맷팅 + 접기 기능으로 보면 충분하다):
+**분석 단위는 유저 1명.** 파생 파일이나 스크립트 없이 파일 3개를 정해진 순서로 직접 연다 (에디터의 JSON 포맷팅 + 접기면 충분).
 
-| 순서 | 파일 | 목적 |
-|---|---|---|
-| ① | `results/mem0-classic-oss/memzero-oss-full-traced/judge/{uuid}.json` | **사례 고르기** — `question_answering_records`에서 `result_type`(H/O)과 `question_type`을 보며 눈에 걸리는 실패를 고름. update 쪽은 `memory_update_records`의 `memory_update_type` |
-| ② | `results/mem0-classic-oss/memzero-oss-full-traced/tmp/{uuid}.json` | **원본 대조** — 고른 사례의 세션을 펼쳐 `dialogue` ↔ `memory_points`(골든) ↔ `extracted_memories` 3단 대조. QA면 `questions[]`의 `context`/`system_response`/`answer`/`evidence` 4자 대조 |
-| ③ | `traces/mem0-classic-oss/full-traced/{uuid}.jsonl` | **내부 원인** — ②에서 의심이 생긴 세션만. 해당 `session` 번호에서 `purpose: fact_extraction`(추출 프롬프트/응답)과 `update_decision`(갱신 결정 원문)을 찾아 읽음 |
+**Step 1 — QA 실패 훑기: `judge/{uuid}.json` 하나로 완결**
 
-- **분배**: 연구원 1명당 유저 2~3명 (uuid 파일 단위로 나누면 싱크 문제 없음)
-- 원인 라벨(`reports/mem0-classic-oss/trace_analysis_full20.json`의 `per_user[].cases`)은 참고용 — 자동 분류라 경계 사례는 틀릴 수 있고, 그 오분류 발견 자체가 기록 대상이다 (§7)
-- 표본은 "훑다가 걸리는 것" 중심이면 된다 — 체계적 표집과 3층 자동 조인은 대시보드(로드맵 기둥 3)의 몫
+`question_answering_records`를 스크롤하며 `result_type`이 Hallucination/Omission인 레코드에서 정지. **QA 레코드는 자기완결**이라 (question, answer=골든 정답, system_response, evidence, context, question_type이 모두 안에 있음) 다른 파일 없이 레코드 안에서 4자 대조한다:
+
+1. 질문·골든 정답 확인 → 2. 시스템 답변 대조 → 3. evidence(근거 골든) 확인 → 4. **context에서 evidence가 있는지, 있으면 몇 번째인지, 오답의 출처가 된 다른 메모리는 무엇인지** 관찰
+
+⚠ `tmp/{uuid}.json`의 questions에는 `system_response`가 **없다** (답변은 병합 jsonl에만 기록됨) — QA 분석은 반드시 judge 파일에서 할 것.
+
+**Step 2 — 의심 메모리의 정체 확인: `tmp/{uuid}.json`** (필요할 때만)
+
+context의 수상한 메모리(오답 출처 등)를 해당 세션에서 추적: `memory_points`에서 비슷한 골든을 찾아 **`memory_source` 확인** (`interference`면 미끼 흡수 사례), `dialogue`에서 원 발화 확인 (유저 발화 vs assistant 제안), `extracted_memories`와 골든 대조.
+
+**Step 3 — 시스템 내부 결정 확인: `traces/.../{uuid}.jsonl`** (필요할 때만)
+
+해당 `session` 번호로 검색해 `purpose: fact_extraction`(그 정보를 아예 안 뽑았나) / `update_decision`(뽑았는데 결정에서 버렸나) 응답 원문을 읽는다.
+
+**Step 4 — update 실패 훑기** (QA 후): judge 파일의 `memory_update_records`에서 `Omission`을 골라 `original_memories`(옛 버전) ↔ `memories_from_system`(top-10 스냅샷) 비교 — 옛 버전이 스냅샷에 보이면 결정 실패, 안 보이면 Step 2·3으로 소급.
+
+- **분배**: 연구원 1명당 유저 2~3명 (uuid 단위)
+- 열람의 80%는 Step 1에서 끝난다. 원인 라벨(`reports/.../trace_analysis_full20.json`)은 참고용 — 오분류 발견도 기록 대상 (§7)
+- 같은 유형 태그가 3번 반복되면 그것이 발견이다. 체계적 표집·자동 조인은 대시보드(기둥 3)의 몫
 
 ## 7. 주의사항
 

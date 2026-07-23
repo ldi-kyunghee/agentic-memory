@@ -25,16 +25,23 @@ from evaluation import aggregate_eval_results
 
 client = OpenAI()  # OPENAI_API_KEY / OPENAI_BASE_URL env에서 자동으로 물어옴
 MODEL = os.getenv("JUDGE_MODEL", os.getenv("OPENAI_MODEL"))
+REASONING_EFFORT = os.getenv("JUDGE_REASONING_EFFORT")  # gpt-5 계열일 때만 설정 (예: minimal)
 
 @retry(wait=wait_random_exponential(min=5, max=30), stop=stop_after_attempt(3), reraise=True)
 def llm_json(prompt: str) -> dict:
-    resp = client.chat.completions.create(
+    kwargs = dict(
         model=MODEL,
         messages=[{"role": "user", "content": prompt}],
-        temperature=0.0,
-        max_tokens=2048,
-        response_format={"type": "json_object"},  # OpenAI / vLLM 양쪽 다 JSON 강제 -> fence 목적의 정규식 의존 제거
+        response_format={"type": "json_object"},
     )
+    if REASONING_EFFORT:
+        # reasoning 모델: temperature 미지원, max_tokens 대신 max_completion_tokens (추론 토큰 포함 예산)
+        kwargs["reasoning_effort"] = REASONING_EFFORT
+        kwargs["max_completion_tokens"] = 4096
+    else:
+        kwargs["temperature"] = 0.0
+        kwargs["max_tokens"] = 2048
+    resp = client.chat.completions.create(**kwargs)
     content = resp.choices[0].message.content or ""
     m = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
     if m:
@@ -156,11 +163,23 @@ def judge_user(user_data: dict, max_workers: int) -> dict:
     return results
 
 
-def main(results_path: str, max_workers: int):
-    out_dir = os.path.join(os.path.dirname(results_path), "judge")
+def main(results_path: str, max_workers: int, user_num: int | None = None, data_path: str = "dataset/HaluMem-Medium.jsonl", out_root: str | None = None):
+    out_root = out_root or os.path.dirname(results_path)
+    out_dir = os.path.join(out_root, "judge")
     os.makedirs(out_dir, exist_ok=True)
 
     users = [json.loads(l) for l in open(results_path, encoding="utf-8") if l.strip()]
+
+    if user_num:
+        # 병합된 jsonl은 uuid 기준 알파벳 정렬이므로, HaluMem 데이터셋 원본의 유저 순서에 맞게 첫 N명을 선별함
+        order = []
+        for i, l in enumerate(open(data_path, encoding="utf-8")):
+            if i >= user_num:
+                break
+            order.append(json.loads(l)["uuid"])
+        by_uuid = {u["uuid"]: u for u in users}
+        users = [by_uuid[uid] for uid in order if uid in by_uuid]
+        print(f"user-num={user_num}: 데이터셋 순서 기준 {len(users)}명 선별")
 
     for user in users:
         cache = os.path.join(out_dir, f"{user['uuid']}.json")
@@ -212,7 +231,7 @@ def main(results_path: str, max_workers: int):
 
     eval_results = aggregate_eval_results(eval_results)  # 집계는 공식 함수 그대로 사용
 
-    out_file = os.path.join(os.path.dirname(results_path), "eval_stat_result.json")
+    out_file = os.path.join(out_root, "eval_stat_result.json")
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(eval_results, f, ensure_ascii=False, indent=4)
     print(f"done -> {out_file}")
@@ -222,5 +241,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--results", required=True, help="Stage A' 완료된 *_eval_results.jsonl 경로 (평가 대상)")
     parser.add_argument("--max-workers", type=int, default=8, help="Maximum number of worker threads")
+    parser.add_argument("--user-num", type=int, default=None, help="데이터셋 순서 기준 첫 N명만 채점 (러너와 동일 의미론)")
+    parser.add_argument("--data", default="dataset/HaluMem-Medium.jsonl", help="유저 순서의 기준이 되는 데이터셋 경로")
+    parser.add_argument("--out-dir", default=None, help="판정/집계 출력 루트 (기본: --results 옆 — 재채점 시 반드시 별도 지정)")
     args = parser.parse_args()
-    main(args.results, args.max_workers)
+    main(args.results, args.max_workers, args.user_num, args.data, args.out_dir)
