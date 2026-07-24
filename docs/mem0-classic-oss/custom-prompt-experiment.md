@@ -141,4 +141,24 @@ uv run python src/mem0-classic-oss/analyze_acc_by_origin.py \
 
 **⑤ QA: 정체 — 이 실험의 핵심 역설.** R이 2.3배가 됐는데 QA C는 42.84→40.57로 오히려 소폭 하락, H는 29.08→35.46으로 상승. **저장은 됐는데 검색·활용이 안 되는 상태로 병목이 이동한 것.** 유력 가설: (a) 문단 하나에 여러 주제가 뭉개져 임베딩 판별력 저하 → top-20에 정답 문단이 못 들어옴, (b) 들어와도 top-20 × 초장문 context에서 4B generator가 근거를 못 찾음, (c) 문단 속 오염(②)이 H 상승으로 발현. Target P 모수 급감(1,583→360)도 문단화가 필드 단위 대응을 깨뜨린 부작용. → **trace의 qa_retrieval hits로 (a)/(b) 분리 가능** (analyze_trace.py QA 실패 트리 재실행이 다음 단계).
 
+## 9. trace 인과 분석 — QA 역설의 판별 (2026-07-24)
+
+`reports/mem0-classic-oss/trace_analysis_custom20.json` (analyze_trace, 20유저) + judge 라벨 교차검증.
+
+**⚠ 리포트 한계 (해석 전 필독)**
+1. **granularity blindspot**: 원자 단위 evidence ↔ 2,000자 문단의 cosine은 내용이 포함돼도 낮게 나옴 → 문단형 런에서 matcher가 포함 관계를 놓쳐 extraction_miss를 체계적으로 과대 집계. 실제로 judge(R 61~69%)와 trace 트리(QA 실패의 66%가 extraction_fault)가 모순 — 어느 임베딩 모델을 써도 남는 구조적 한계이며, **문단형 런의 인과 트리는 judge 라벨 교차검증과 함께 읽어야 함**
+2. (기록) 최초 실행은 로컬에서 돌아가 matcher가 OpenAI `text-embedding-3-small`로 폴백됐고, 서버 표준(Qwen3-Embedding-4B)으로 재실행해 교체함. 두 matcher 간 원인 귀속이 상당히 달랐음 (예: update decision_miss 219→365, QA retrieval_fault 139→43) — "matcher 모델이 결론을 바꾼다" 원칙 재실증. 아래 수치는 표준 matcher 기준
+
+**trace 집계 (표준 Qwen-emb 0.65)**: lost updates 198/10,131 = 1.95% (default와 유사, matcher 무관 값이라 두 실행에서 동일 — 일관성 검증) · update omission 1,225: extraction 68.9%/decision 29.8%/overwritten 1.0%/retrieval 0.3% (default: 49/39/–/11 — extraction 비중은 blindspot 과대 포함) · QA 실패 1,790: extraction 66.0%/generation 31.6%/retrieval 2.4% (default: 58/37/4.5)
+
+**judge 라벨 교차검증 (matcher 무관·양 런 동일 기준, 4B judge 20u)** — 실패 QA의 evidence 골든이 integrity 2점/update Correct로 "완전 저장" 판정된 비율:
+
+| 실패 QA의 evidence 저장 상태 | default | custom |
+|---|---|---|
+| 전부 완전 저장 = **저장됐는데 못 씀** | 11.7% | **37.0% (3.2배)** |
+| 일부 미저장 = 진짜 추출 문제 | 48.2% | 27.7% |
+| (evidence 매칭불가 — 교차세션 evidence 등, 양 런 동일 ~30%) | 29.0% | 30.2% |
+
+**결론 — §8 ⑤의 판별**: 병목 이동 확정. 그리고 post-extraction 실패 내부는 generation 566 : retrieval 43 ≈ **93:7로 생성(활용) 실패가 압도적** — top-20에 정답 문단이 들어와도 4B generator가 초장문 context에서 근거 발굴에 실패하는 (b)가 주범, 임베딩 판별력 (a)는 부수 (표준 matcher 기준 검색은 사실상 무죄 — default 런의 "retrieval 비병목" 결론이 문단형에서도 유지됨). §8에서 (a)를 앞세운 가설 순위는 정정됨. 다음 개입 후보: 검색 결과 후처리(문단→원자 재분할 후 컨텍스트 투입), generator 강화, context 축약.
+
 **개선 우선순위 갱신**: 1) 저장 단위와 검색 단위의 불일치 해소 (문단 저장 + 원자 단위 검색 — 청킹/하이브리드), 2) 재작성 빈도·범위 억제, 3) distractor 오염 필터. 추출 프롬프트는 이미 승부가 났고, 다음 개입 지점은 검색·갱신이다.
