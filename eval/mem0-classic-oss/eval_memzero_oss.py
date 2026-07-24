@@ -20,6 +20,7 @@ logging.getLogger("mem0.vector_stores.qdrant").setLevel(logging.ERROR)  # Resett
 
 sys.path.insert(0, "src/mem0-classic-oss")  # tracing.py import를 위해 src를 sys.path에 추가
 from tracing import TraceLogger, TracingLLM, TracingVectorStore
+from custom_prompt import CUSTOM_FACT_EXTRACTION_PROMPT
 
 from mem0 import Memory
 # mem0 0.1.118 텔레메트리 무력화:
@@ -90,6 +91,8 @@ def build_memory(collection_name: str, history_db_path: str) -> Memory:
         },
         "history_db_path": history_db_path,  # 워커(프로세스)마다 SQLite 히스토리 파일을 분리함 -> 여러 프로세스가 ~/.mem0/history.db 하나에 쓰면 database is locked 터짐
     }
+    if os.getenv("MEM0_CUSTOM_FACT_PROMPT") == "halumem":
+        config["custom_fact_extraction_prompt"] = CUSTOM_FACT_EXTRACTION_PROMPT
     return Memory.from_config(config)
 
 
@@ -248,6 +251,7 @@ def main(data_path: str, version: str, top_k: int=20, user_num: int | None = Non
     save_path = f"results/mem0-classic-oss/memzero-oss-{version}/"
     os.makedirs(os.path.join(save_path, "tmp"), exist_ok=True)
     collection_name = f"halumem_{version}"
+    print(f"fact extraction prompt: {'halumem-custom' if os.getenv('MEM0_CUSTOM_FACT_PROMPT') == 'halumem' else 'mem0-default'}")
     trace_dir = None
     if trace:
         trace_dir = f"traces/mem0-classic-oss/{version}/"
