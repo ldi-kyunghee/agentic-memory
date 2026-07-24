@@ -1,0 +1,83 @@
+# 실험: Memory Agent 백본 강화 (Qwen3-4B → GPT-5-Nano) — mem0-classic-oss
+
+> 작성 2026-07-24. 배경: [custom-prompt-experiment.md](custom-prompt-experiment.md) · [mem0-halumem-baseline.md](mem0-halumem-baseline.md)
+> **변인은 memory agent 백본 하나** (mem0의 추출·update 결정 LLM). 프롬프트는 default/custom 양쪽을 돌려 **백본×프롬프트 2×2**를 완성한다. Generator(답변 생성)는 Qwen3-4B 고정, judge는 gpt-5-nano(4유저) 고정.
+
+## 1. 목적
+
+- 병목 분석 결과 추출 커버리지(custom 프롬프트로 해소됨)와 update 디테일 보존·재작성 drift는 **백본 능력 문제**로 지목돼 왔음 — 백본을 강화하면 어떤 지표가 얼마나 움직이는지 실측
+- 특히: ① update 결정 품질 (Upd C, decision_miss), ② 재작성 drift (유래별 Acc), ③ 지침 준수 (custom 프롬프트에서 문단형·"user 발화만" 준수 — Qwen은 과잉 준수+FMR 오염이 있었음)
+
+## 2. 설계 결정
+
+- **4유저 레인이 canonical.** 20유저 Stage A는 백본이 유료가 되면서 근거 상실 (4B judge 20u 행은 왜곡 있는 judge의 보조 비교였고, 신뢰 축은 nano judge 4u). 4유저 = QA 705·골든 1,861개로 방향 탐색엔 충분하며, 우승 조합 확정 시 그 조합만 20유저로 승격
+- **코드 변경 불필요 (검증 완료)**: mem0 0.1.118 `LLMBase._get_supported_params`가 모델명 "gpt-5" 감지 시 temperature/max_tokens/top_p를 자동 필터링. `MEM0_LLM_MODEL` env 교체만으로 동작
+- **reasoning effort는 기본값** (mem0 config로 전달 불가) — judge에서 쓰는 minimal이 아님. "백본 강화" 취지에는 부합하나 출력 과금이 늘어나는 요인으로 기록
+- 임베더(서버 Qwen3-Embedding-4B)·Qdrant·top-k 20·데이터셋 첫 4유저 모두 기존과 동일
+
+## 3. 비용 (trace 실측 외삽)
+
+Stage A 20유저 기준 입력 ~11M tok + 출력 ~5M tok → 4유저는 ~20% → **런당 ~$0.6, reasoning 여유 포함 ~$1**. B-2 judge ~$1.1/런. 2런 총 **~$4 내외**.
+
+## 4. 실행 (전부 서버, tmux)
+
+```bash
+# Run C: nano 백본 × default 프롬프트
+OPENAI_BASE_URL=https://api.openai.com/v1 \
+MEM0_LLM_MODEL=gpt-5-nano-2025-08-07 \
+uv run python eval/mem0-classic-oss/eval_memzero_oss.py \
+    --version nano4 --user-num 4 --top-k 20 --max-workers 20 --trace
+
+# Run D: nano 백본 × custom 프롬프트 (토글 추가)
+OPENAI_BASE_URL=https://api.openai.com/v1 \
+MEM0_LLM_MODEL=gpt-5-nano-2025-08-07 MEM0_CUSTOM_FACT_PROMPT=halumem \
+uv run python eval/mem0-classic-oss/eval_memzero_oss.py \
+    --version nano4-custom --user-num 4 --top-k 20 --max-workers 20 --trace
+
+# 이후 각 런에 대해 (버전명만 교체):
+# A' — generator는 Qwen이므로 env 프리픽스 없이!
+uv run python eval/mem0-classic-oss/gen_answers.py \
+    --results results/mem0-classic-oss/memzero-oss-nano4/memzero-oss_eval_results.jsonl --max-workers 20
+# B-2 — nano judge 4유저
+OPENAI_BASE_URL=https://api.openai.com/v1 \
+JUDGE_MODEL=gpt-5-nano-2025-08-07 JUDGE_REASONING_EFFORT=minimal \
+uv run python eval/mem0-classic-oss/judge.py \
+    --results results/mem0-classic-oss/memzero-oss-nano4/memzero-oss_eval_results.jsonl \
+    --user-num 4 --max-workers 20 --out-dir results/mem0-classic-oss/judge-gpt5nano-4u-nano
+# (Run D는 nano4 -> nano4-custom, out-dir -> judge-gpt5nano-4u-nano-custom)
+
+# 로컬 동기화 후: 유래별 분해 + evidence 저장 교차검증
+uv run python src/mem0-classic-oss/analyze_acc_by_origin.py \
+    --artifacts results/mem0-classic-oss/memzero-oss-nano4/tmp \
+    --judge results/mem0-classic-oss/judge-gpt5nano-4u-nano/judge
+uv run python src/mem0-classic-oss/analyze_qa_evidence_storage.py \
+    --judge results/mem0-classic-oss/judge-gpt5nano-4u-nano/judge
+```
+
+두 런 동시 실행 안전 (공유 상태 없음 — 버전별 컬렉션/디렉토리 분리, OpenAI rate limit만 공유).
+
+## 5. 트러블 기록
+
+- **tmux 전역 환경의 dummy 키**: 과거 `export OPENAI_API_KEY=dummy` 상태에서 tmux 서버가 떠서 새 윈도우마다 dummy를 상속 → `.env`의 진짜 키를 `load_dotenv()`가 덮지 못함 (기존 env 우선). Run D 첫 시도가 이걸로 실패. 조치: 해당 윈도우 `unset` + `tmux set-environment -g -u OPENAI_API_KEY` (전역 테이블에서 제거). 교훈: **OpenAI로 나가는 커맨드 전 `echo $OPENAI_API_KEY` 확인** (빈 값이 정상)
+
+## 6. 결과 (실행 후 기입) — 백본×프롬프트 2×2, nano judge 4유저 고정
+
+| Agent 백본 | Prompt | R↑ | WR↑ | Acc.↑ (# mem) | Target P↑ (# mem) | FMR↑ | F1↑ | Upd C↑ | Upd H↓ | Upd O↓ | QA C↑ | QA H↓ | QA O↓ |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Qwen3-4B | default | 26.65 | 49.38 | 30.12 (6,065) | 82.15 (1,583) | 63.16 | 40.25 | 8.57 | 0.17 | 88.91 | 42.84 | 29.08 | 27.94 |
+| Qwen3-4B | custom | 61.47 | 74.83 | 26.82 (1,734) | 90.14 (360) | 39.38 | 73.10 | 13.78 | 0.34 | 83.19 | 40.57 | 35.46 | 23.97 |
+| GPT-5-Nano | default | | | | | | | | | | | | |
+| GPT-5-Nano | custom | | | | | | | | | | | | |
+
+유래별 Acc 분해 (nano judge):
+
+| Agent 백본 × Prompt | ADD n / Acc | UPDATE n / Acc | UPDATE 비중 |
+|---|---|---|---|
+| Qwen × default | 2,094 / 48.6% | 3,971 / 20.4% | 65.5% |
+| Qwen × custom | 460 / 54.5% | 1,274 / 16.8% | 73.5% |
+| Nano × default | | | |
+| Nano × custom | | | |
+
+실패 QA evidence 저장 교차검증 ("저장됐는데 못 씀" 비율): Qwen×default 11.7% / Qwen×custom 37.0% (4B judge 20u 기준 — 백본 런은 nano judge 4u 기준으로 별도 산출) / Nano×default — / Nano×custom —
+
+- 분석 메모: (실행 후)
