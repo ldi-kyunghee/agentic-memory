@@ -162,6 +162,8 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 | ***Mem0-Classic-oss*** | 4 | `Qwen3-4B` | `GPT-5-Nano` | 26.65 | 49.38 | 30.12 (6,065) | 82.15 (1,583) | 63.16 | 40.25 | 8.57 | **0.17** | 88.91 | 42.84 | 29.08 | 27.94 |
 | ***Mem0-oss+커스텀프롬프트***⁸ | 20 | `Qwen3-4B` | `Qwen3-4B` | 68.99 | 74.75 | 22.66 (9,878) | 96.32 (1,659) | 61.52 | 80.40 | 58.20 | 2.53 | 39.24 | 48.37 | 39.78 | 11.85 |
 | ***Mem0-oss+커스텀프롬프트***⁸ | 4 | `Qwen3-4B` | `GPT-5-Nano` | 61.47 | 74.83 | 26.82 (1,734) | 90.14 (360) | 39.38 | 73.10 | 13.78 | 0.34 | 83.19 | 40.57 | 35.46 | 23.97 |
+| ***Mem0-oss (nano 백본)***⁹ | 4 | `GPT-5-Nano`(agent)+`Qwen3-4B`(gen) | `GPT-5-Nano` | 22.62 | 45.84 | 42.37 (3,544) | 81.22 (1,411) | 60.23 | 35.39 | 17.14 | 0.50 | 79.66 | 49.79 | 22.84 | 27.38 |
+| ***Mem0-oss (nano 백본)+커스텀***⁹ | 4 | `GPT-5-Nano`(agent)+`Qwen3-4B`(gen) | `GPT-5-Nano` | 34.82 | 44.76 | 33.98 (1,164) | 88.00 (300) | 60.82 | 49.90 | 11.76 | 0.00 | 85.71 | 39.29 | 29.22 | 31.21 |
 | ***BM25 (@10)*** | 20 | `Qwen3-4B` | `Qwen3-4B` | – | – | – | – | – | – | – | – | – | 61.14 | 28.49 | **10.35** |
 | ***BM25 (@10)*** | 4 | `Qwen3-4B` | `GPT-5-Nano` | – | – | – | – | – | – | – | – | – | 미실행 | 미실행 | 미실행 |
 
@@ -175,6 +177,7 @@ HaluMem 태스크 대응: LLM #1 = Extraction, LLM #2 = Updating, `search()` = R
 6. 열 순서 주의: 이 표는 Acc.를 Target P 앞에 배치 (논문 Table 3와 반대). 굵은 값은 열별 최고치
 7. BM25 행: 동료 실험(naive-mem-eval)의 top-10 검색 베이스라인 — 비에이전틱 검색이라 extraction/updating 지표 없음. **BM25 × GPT-5-Nano 행은 미실행** (BM25 산출물에 nano judge 재채점 필요 — 4유저 기준 QA 판정만이면 ~700콜, <$0.2 예상)
 8. 커스텀 프롬프트 행 (2026-07-24): HaluMem 원본의 custom instructions를 OSS `custom_fact_extraction_prompt`로 이식한 런 — 추출 프롬프트 외 전 조건은 같은 judge의 default 행과 동일 (설계·상세 분석: [custom-prompt-experiment.md](custom-prompt-experiment.md)). 요지: R/F1 급등(추출 병목 해소), FMR 급락(문단이 distractor 흡수), Upd C 개선(8.57→13.78), QA 정체(병목이 검색·활용으로 이동). 표의 굵은 값은 이 행들 추가 전 기준이므로 열별 최고치 표시로 재해석하지 말 것
+9. nano 백본 행 (2026-07-24): memory agent LLM만 GPT-5-Nano로 교체 (추출·update 결정 담당), 답변 생성은 Qwen3-4B 유지 — 백본×프롬프트 2×2 완성 (설계·상세 분석: [backbone-experiment.md](backbone-experiment.md)). 요지: **QA 최고 셀은 nano×default (49.79)** — R 최저(22.62)인데도 QA 최고 = 커버리지 총량보다 저장소 청결도가 유효. drift는 Qwen 특이 행동으로 확정 (UPDATE 비중 65.5→17.0%, UPDATE-유래 Acc 20.4→40.3%), FMR로 "user 발화만" 지침 준수의 백본 의존성 입증 (nano custom 60.82 ≈ default 수준)
 
 ### 4h-부록. 지표 정의 (공유용)
 
