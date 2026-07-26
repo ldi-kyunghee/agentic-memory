@@ -95,3 +95,19 @@ uv run python src/mem0-classic-oss/analyze_qa_evidence_storage.py \
 **⑤ 병목 지도 (evidence 저장 교차검증)**: nano 두 셀 모두 실패 QA의 절반 이상이 "일부 미저장"(49.7%/60.6%)이고 "저장됐는데 못 씀"은 7.7%/9.6%뿐 — **nano 런의 병목은 다시 추출 커버리지로 회귀** (Qwen×custom의 37%와 대조적). 셀별 병목: Qwen×default = 추출+drift / Qwen×custom = 초장문 활용(생성) / nano×default·custom = 추출 커버리지.
 
 **개선 방향 시사**: 현 최선 조합은 **nano 백본 × default 프롬프트** (QA C 49.79, Acc 42.37, H 최저). 다음 개입은 이 셀의 남은 병목인 커버리지 — "깨끗함을 유지한 채 더 많이 뽑기" (예: default 프롬프트에 커버리지 지시만 추가, 세션당 fact 수 하한, 2-pass 추출). Qwen 계열로 돌아갈 경우엔 재작성 억제가 선결 과제.
+
+## 8. 확장: 백본 사다리 E/F/G (2026-07-26 계획)
+
+2×2의 발견("청결도가 QA를 결정")의 원인을 가르는 3개 런. 전부 default 프롬프트 × 4유저 × nano judge, 리포 코드 변경 0 (env 교체만).
+
+| Run | 백본 | 검증 질문 | 비용 (A + judge) | 버전명 |
+|---|---|---|---|---|
+| E | gpt-5-mini (API) | 능력 사다리를 더 올리면 QA 49.79가 더 오르나, nano에서 포화인가 | ~$2.5 + $1.1 | `mini4` |
+| F | Qwen3-30B-A3B-Instruct **bf16** (로컬) | 청결도는 능력 문제인가 Qwen 스타일 문제인가 — 30B가 재작성을 절제하면 능력 스토리 | $0 + $1.1 | `30b4` |
+| G | Qwen3-4B-Thinking-2507 (로컬) | 같은 크기에서 reasoning만 얹으면 update 결정·drift가 개선되나 | $0 + $1.1 | `think4` |
+
+보류: 30B-Thinking (E/F/G 결과가 필요성 결정), gemma-4 계열 (family 축 — F에서 능력 스토리 기각 시 1종만), custom 프롬프트 변형 (우승 백본 확정 후).
+
+**인프라 (GPU 3 단일, 96GB)**: emb 상시 (8001, util **0.20** — 기존 0.55는 과예약이었음, ~19GB면 충분 확인) + LLM 슬롯 (8000) 실험별 교체. emb 축소로 30B bf16(~61GB, util 0.72)이 FP8 양자화 없이 탑재 가능해짐 (교란 요인 제거). A′는 generator=4B-Instruct가 8000에 있어야 하므로 실행 동선: E(A′까지) → 30B 스왑·F-A → Thinking 스왑·G-A → 4B 복원·F/G-A′ → B-2 ×2. G는 vLLM `--reasoning-parser` 필수 (`<think>`가 content에 남으면 mem0 JSON 파싱 파손 — 기동 후 1콜 검증).
+
+- 결과: (실행 후 §6 테이블에 행 추가)
