@@ -3,6 +3,7 @@
 runs:
   full-traced:
     label: "Qwen3-4B × default (20u)"
+    note: \"Qwen 베이스라인 — 다작(6k)·과잉 재작성(65%)으로 Acc 저하, 병목=추출 커버리지\"
     backbone: Qwen3-4B-Instruct-2507
     prompt: default
     embedder: Qwen3-Embedding-4B
@@ -15,6 +16,7 @@ runs:
 
   full-custom:
     label: "Qwen3-4B × custom (20u)"
+    note: \"R/F1 급등하나 FMR 급락(지침 무시 오염 커버리지), QA 정체 — 병목이 초장문 활용(생성)으로 이동\"
     backbone: Qwen3-4B-Instruct-2507
     prompt: custom
     embedder: Qwen3-Embedding-4B
@@ -27,6 +29,7 @@ runs:
 
   nano4:
     label: "GPT-5-Nano × default (4u)"
+    note: \"적지만 깨끗한 저장 — R 최저인데 QA 상위, '청결도>커버리지 총량' 증거\"
     backbone: gpt-5-nano
     prompt: default
     embedder: Qwen3-Embedding-4B
@@ -38,6 +41,7 @@ runs:
 
   nano4-custom:
     label: "GPT-5-Nano × custom (4u)"
+    note: \"지침 과잉 준수로 커버리지 부족 — QA 최저 셀\"
     backbone: gpt-5-nano
     prompt: custom
     embedder: Qwen3-Embedding-4B
@@ -49,6 +53,7 @@ runs:
 
   mini4:
     label: "GPT-5-Mini × default (4u)"
+    note: \"현 QA 1위(52.91) — 능력 사다리 미포화, Upd C 27.56로 논문 GPT-4o(25.50) 상회\"
     backbone: gpt-5-mini
     prompt: default
     embedder: Qwen3-Embedding-4B
@@ -60,6 +65,7 @@ runs:
 
   mini4-custom:
     label: "GPT-5-Mini × custom (4u)"
+    note: \"선별 정밀형 — Acc·Target P 전 셀 최고, 빈 세션 다수로 QA는 default에 밀림\"
     backbone: gpt-5-mini
     prompt: custom
     embedder: Qwen3-Embedding-4B
@@ -71,6 +77,7 @@ runs:
 
   30b4:
     label: "Qwen3-30B-A3B × default (4u)"
+    note: \"체급 7.5배에도 재작성 품질은 4B 수준(UPDATE-유래 Acc 21%) — family 각인 증거\"
     backbone: Qwen3-30B-A3B-Instruct-2507
     prompt: default
     embedder: Qwen3-Embedding-4B
@@ -82,6 +89,7 @@ runs:
 
   30b4-custom:
     label: "Qwen3-30B-A3B × custom (4u)"
+    note: \"custom 프롬프트 QA 기준 4백본 전패 패턴 유지\"
     backbone: Qwen3-30B-A3B-Instruct-2507
     prompt: custom
     embedder: Qwen3-Embedding-4B

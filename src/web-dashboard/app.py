@@ -204,6 +204,89 @@ def api_fielddict():
     return load_fielddict()
 
 
+# ---------- 지표 테이블 (공식 집계 함수 재사용 — 문서 테이블과 수치 일치 보장) ----------
+
+import sys as _sys
+_sys.path.insert(0, str(ROOT / "HaluMem" / "eval"))
+from evaluation import aggregate_eval_results  # noqa: E402
+
+
+@lru_cache(maxsize=1)
+def first4_uuids() -> tuple:
+    """모든 실험이 공유하는 데이터셋 첫 4유저 — 4u 런의 judge 디렉토리 파일 목록에서 확보."""
+    reg = load_registry()
+    for r in reg.values():
+        if r.get("users") == 4:
+            d = ROOT / list(r["judges"].values())[0]
+            if d.exists():
+                return tuple(sorted(f[:-5] for f in os.listdir(d) if f.endswith(".json")))
+    return ()
+
+
+@lru_cache(maxsize=256)
+def compute_metrics(run: str, judge_name: str, scope: str) -> dict | None:
+    """scope: 'first4' | 'all' | <uuid>. 선택 범위의 judge 레코드를 모아 공식 집계로 지표 산출."""
+    reg = load_registry()
+    jd = reg[run].get("judges", {}).get(judge_name)
+    if not jd or not (ROOT / jd).exists():
+        return None
+    files = sorted(f for f in os.listdir(ROOT / jd) if f.endswith(".json"))
+    if scope == "first4":
+        f4 = set(first4_uuids())
+        files = [f for f in files if f[:-5] in f4]
+    elif scope != "all":
+        files = [f for f in files if f[:-5] == scope]
+    if not files:
+        return None
+
+    skeleton = {
+        "overall_score": {
+            "memory_integrity": {}, "memory_accuracy": {}, "memory_extraction_f1": 0,
+            "memory_update": {}, "question_answering": {},
+            "memory_type_accuracy": {k: {"memory_integrity_acc": 0, "memory_update_acc": 0, "total_num": 0}
+                                     for k in ["Event Memory", "Persona Memory", "Relationship Memory"]},
+            "time_consuming": {"add_dialogue_duration_time": 0, "search_memory_duration_time": 0, "total_duration_time": 0},
+        },
+        "memory_integrity_records": [], "memory_accuracy_records": [],
+        "memory_update_records": [], "question_answering_records": [],
+    }
+    for fn in files:
+        with open(ROOT / jd / fn, encoding="utf-8") as f:
+            u = json.load(f)
+        for k in ["memory_integrity_records", "memory_accuracy_records", "memory_update_records", "question_answering_records"]:
+            skeleton[k].extend(u.get(k, []))
+    o = aggregate_eval_results(skeleton)["overall_score"]
+    mi, ma, mu, qa = o["memory_integrity"], o["memory_accuracy"], o["memory_update"], o["question_answering"]
+    pct = lambda v: round(v * 100, 2)
+    return {
+        "n_users": len(files),
+        "r": pct(mi["recall(all)"]), "wr": pct(mi["weighted_recall(all)"]),
+        "acc": pct(ma["weighted_accuracy(all)"]), "acc_n": ma["memory_num"],
+        "tp": pct(ma["target_accuracy(all)"]), "tp_n": ma["target_memory_num"],
+        "fmr": pct(ma["interference_accuracy(all)"]), "f1": pct(o["memory_extraction_f1"]),
+        "upd_c": pct(mu["correct_update_memory_ratio(all)"]), "upd_h": pct(mu["hallucination_update_memory_ratio(all)"]),
+        "upd_o": pct(mu["omission_update_memory_ratio(all)"]),
+        "qa_c": pct(qa["correct_qa_ratio(all)"]), "qa_h": pct(qa["hallucination_qa_ratio(all)"]),
+        "qa_o": pct(qa["omission_qa_ratio(all)"]),
+    }
+
+
+@app.get("/api/metrics")
+def api_metrics(judge: str = "nano", scope: str = "first4"):
+    reg = load_registry()
+    rows = []
+    for name, r in reg.items():
+        if not (ROOT / r["results"]).exists():
+            continue
+        rows.append({
+            "run": name, "label": r.get("label", name),
+            "backbone": r.get("backbone"), "prompt": r.get("prompt"),
+            "note": r.get("note", ""),
+            "metrics": compute_metrics(name, judge, scope),
+        })
+    return {"judge": judge, "scope": scope, "first4": list(first4_uuids()), "rows": rows}
+
+
 # ---------- 코멘트 ----------
 
 DB_PATH = DATA_DIR / "comments.sqlite3"

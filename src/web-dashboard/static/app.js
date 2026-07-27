@@ -341,6 +341,7 @@ function render() {
   if (S.tab === "sessions") renderSessions();
   else if (S.tab === "qa") renderQA();
   else if (S.tab === "compare") renderCompare();
+  else if (S.tab === "metrics") renderMetrics();
   else renderDigest();
   renderInspector();
 }
@@ -737,6 +738,100 @@ function renderCompare() {
       tr.after(x);
     };
   });
+}
+
+/* ----- Metrics (전체 실험 지표 테이블) ----- */
+
+const METRIC_DEFS = {
+  r: "Recall↑ — 골든 메모리 포인트(interference 제외) 중 judge가 '완전 포함(2점)'으로 판정한 비율. 추출 커버리지의 핵심 지표",
+  wr: "Weighted Recall↑ — 부분 포함(1점)에 0.5 가중치를 준 포함률. R과의 격차가 크면 '부분만 건진' 골든이 많다는 뜻",
+  acc: "Accuracy↑ — 추출 메모리가 당해 세션 대화·골든에 근거하는 정도(2/1/0 가중평균). 괄호=채점된 추출 메모리 수. ⚠ 교차 세션 내용을 담은 UPDATE 재작성본은 구조적으로 불리",
+  tp: "Target Precision↑ — 필드(주제) 단위로 골든과 대응한다고 판정된 추출 메모리만 모수(괄호)로 한 accuracy 가중평균",
+  fmr: "FMR↑ — 미끼(interference: AI 발화에만 있고 user가 확정 안 한 내용) 골든 중 시스템이 흡수하지 않은 비율. 높을수록 distractor 저항이 강함",
+  f1: "F1↑ — R과 Target P의 조화평균. R≪P 레짐에선 사실상 R이 지배 (F1 개선 ≡ R 개선)",
+  upd_c: "Update Correct↑ — 갱신 요구 골든에 대해 갱신본의 모든 원자 정보·수치가 정확한 비율",
+  upd_h: "Update Hallucination↓ — 갱신 중 틀린 값을 만들어낸 비율",
+  upd_o: "Update Omission↓ — 갱신 중 디테일을 누락한 비율 (Qwen 계열의 주 실패 모드)",
+  qa_c: "QA Correct↑ — 다요소 질문에 대한 답변이 완전 정답인 비율",
+  qa_h: "QA Hallucination↓ — 답변이 날조인 비율",
+  qa_o: "QA Omission↓ — 답변이 누락·회피인 비율",
+};
+const METRIC_COLS = [
+  { k: "r", label: "R↑", dir: 1 }, { k: "wr", label: "Weighted R↑", dir: 1 },
+  { k: "acc", label: "Acc.↑ (#mem)", dir: 1, n: "acc_n" }, { k: "tp", label: "Target P↑ (#mem)", dir: 1, n: "tp_n" },
+  { k: "fmr", label: "FMR↑", dir: 1 }, { k: "f1", label: "F1↑", dir: 1 },
+  { k: "upd_c", label: "Upd C↑", dir: 1 }, { k: "upd_h", label: "Upd H↓", dir: -1 }, { k: "upd_o", label: "Upd O↓", dir: -1 },
+  { k: "qa_c", label: "QA C↑", dir: 1 }, { k: "qa_h", label: "QA H↓", dir: -1 }, { k: "qa_o", label: "QA O↓", dir: -1 },
+];
+const metricsCache = new Map();
+S.metricsJudge = "nano"; S.metricsScope = "first4";
+
+async function renderMetrics() {
+  const key = `${S.metricsJudge}|${S.metricsScope}`;
+  if (!metricsCache.has(key)) {
+    busy(true, "지표 집계 중 (공식 집계 함수)…");
+    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.metricsJudge}&scope=${S.metricsScope}`)); }
+    finally { busy(false); }
+  }
+  const data = metricsCache.get(key);
+
+  // 스코프 옵션: 공통 4유저 + 개별 유저(이름은 현재 유저 목록에서 매핑)
+  const nameOf = (uid) => S.users.find((u) => u.uuid === uid)?.user_name || uid.slice(0, 8);
+  $("#sidebar").innerHTML = `<div style="padding:10px">
+    <p class="small muted"><b>Judge LLM</b></p>
+    <div class="pill-filter" style="margin:0 0 10px">
+      <button class="${S.metricsJudge === "nano" ? "on" : ""}" data-j="nano" data-desc="GPT-5-Nano judge — 신뢰 기준 라벨, 첫 4유저">nano</button>
+      <button class="${S.metricsJudge === "qwen4b" ? "on" : ""}" data-j="qwen4b" data-desc="Qwen3-4B judge — 20유저 전체를 덮지만 판정 왜곡 있음 (일부 런만 보유)">qwen4b</button></div>
+    <p class="small muted"><b>유저 범위</b></p>
+    <select id="metrics-scope" style="width:100%">
+      <option value="first4" ${S.metricsScope === "first4" ? "selected" : ""}>첫 4유저 (전 실험 공통)</option>
+      <option value="all" ${S.metricsScope === "all" ? "selected" : ""}>런별 전체 유저</option>
+      ${data.first4.map((u) => `<option value="${u}" ${S.metricsScope === u ? "selected" : ""}>${esc(nameOf(u))}</option>`).join("")}
+    </select>
+    <p class="small muted" style="margin-top:10px">굵은 값 = 열별 최고(방향 반영). 셀 호버 = 순위·해석, 행 첫 칸 호버 = 런 요약 노트.</p></div>`;
+  $$("#sidebar .pill-filter button").forEach((b) => (b.onclick = () => { S.metricsJudge = b.dataset.j; renderMetrics(); }));
+  $("#metrics-scope").onchange = () => { S.metricsScope = $("#metrics-scope").value; renderMetrics(); };
+
+  const rows = data.rows.filter((r) => r.metrics);
+  // 열별 최고/순위 (방향 반영)
+  const rank = {};
+  METRIC_COLS.forEach((c) => {
+    const vals = rows.map((r) => r.metrics[c.k]);
+    const sorted = [...vals].sort((a, b) => c.dir === 1 ? b - a : a - b);
+    rank[c.k] = { sorted, best: sorted[0] };
+  });
+  const judgeName = data.judge === "nano" ? "GPT-5-Nano" : "Qwen3-4B";
+
+  const body = rows.map((r) => {
+    const m = r.metrics;
+    const sysName = `Mem0-Classic-OSS${r.prompt === "custom" ? " +custom" : ""}`;
+    const cells = METRIC_COLS.map((c) => {
+      const v = m[c.k];
+      const rk = rank[c.k].sorted.indexOf(v) + 1;
+      const isBest = v === rank[c.k].best;
+      const bestRow = rows.find((x) => x.metrics[c.k] === rank[c.k].best);
+      const nTxt = c.n ? ` <span class="small muted">(${m[c.n].toLocaleString()})</span>` : "";
+      const desc = `<b>${esc(c.label)}</b> = ${v} — ${rk}위/${rows.length} (${c.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow.label)})<br>${esc(METRIC_DEFS[c.k])}`;
+      return `<td data-desc="${esc(desc)}" ${isBest ? 'style="font-weight:800"' : ""}>${v.toFixed(2)}${nTxt}</td>`;
+    }).join("");
+    return `<tr>
+      <td data-desc="${esc(r.note || r.label)}"><b>${esc(sysName)}</b></td>
+      <td>${m.n_users}</td>
+      <td>${esc(r.backbone)}<br><span class="small muted">${esc(r.prompt)} prompt</span></td>
+      <td>${esc(judgeName)}</td>${cells}</tr>`;
+  }).join("");
+
+  $("#content").innerHTML = `
+    <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}</div>
+    <div class="card"><div class="body" style="overflow-x:auto">
+      <table class="cmp"><tr>
+        <th data-desc="메모리 시스템 — 전부 mem0 OSS 0.1.118 classic. +custom = HaluMem 원본 추출 프롬프트 이식">Memory System</th>
+        <th data-desc="이 행의 지표가 집계된 유저 수">#Users</th>
+        <th data-desc="memory agent 백본 (fact 추출·update 결정 LLM) × 추출 프롬프트">Agent LLM</th>
+        <th data-desc="채점 LLM — 행 간 비교는 동일 judge에서만 유효">Judge LLM</th>
+        ${METRIC_COLS.map((c) => `<th data-desc="${esc(METRIC_DEFS[c.k])}">${esc(c.label)}</th>`).join("")}
+      </tr>${body}</table></div></div>
+    ${rows.length < data.rows.length ? `<p class="hint">⚠ ${data.rows.length - rows.length}개 런은 이 judge(${judgeName}) 라벨이 없어 표시 제외</p>` : ""}`;
 }
 
 /* ----- Digest ----- */
