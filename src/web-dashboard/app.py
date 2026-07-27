@@ -146,6 +146,7 @@ def build_bundle(run: str, uuid: str, judge_name: str) -> dict:
         sessions.append({
             "session_id": si,
             "start_time": s.get("start_time"),
+            "add_dialogue_duration_ms": s.get("add_dialogue_duration_ms"),
             "dialogue": s.get("dialogue", []),
             "golden": golden,
             "extracted": extracted,
@@ -309,6 +310,41 @@ def api_first4():
     return list(first4_uuids())
 
 
+def compute_latency(run: str, scope: str) -> dict | None:
+    """Stage A가 기록한 시간 실측 — 세션 투입(mem0.add: LLM 콜 포함)과 질문 검색. 백본 속도 비교용."""
+    try:
+        users = load_run_users(run)
+    except HTTPException:
+        return None
+    if scope == "first4":
+        keep = set(first4_uuids())
+    elif scope == "all":
+        keep = set(users.keys())
+    else:
+        keep = {scope}
+    adds, searches = [], []
+    for uid, u in users.items():
+        if uid not in keep:
+            continue
+        for s in u["sessions"]:
+            d = s.get("add_dialogue_duration_ms")
+            if d:
+                adds.append(d)
+            for q in s.get("questions", []):
+                sd = q.get("search_duration_ms")
+                if sd:
+                    searches.append(sd)
+    if not adds:
+        return None
+    adds.sort()
+    return {
+        "ingest_avg_s": round(sum(adds) / len(adds) / 1000, 1),
+        "ingest_p50_s": round(adds[len(adds) // 2] / 1000, 1),
+        "search_avg_ms": round(sum(searches) / max(len(searches), 1), 0),
+        "n_sessions": len(adds),
+    }
+
+
 @app.get("/api/metrics")
 def api_metrics(judge: str = "nano", scope: str = "first4"):
     reg = load_registry()
@@ -321,6 +357,7 @@ def api_metrics(judge: str = "nano", scope: str = "first4"):
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
             "note": r.get("note", ""),
             "metrics": compute_metrics(name, judge, scope),
+            "latency": compute_latency(name, scope),
         })
     return {"judge": judge, "scope": scope, "first4": list(first4_uuids()), "rows": rows}
 

@@ -119,6 +119,9 @@ tr.qa-x > td { background: #fbfbfd; }
 /* context 원문 토글 */
 .ctx-toggle { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 2px 9px; cursor: pointer; font-size: 11px; margin-left: auto; }
 
+/* 레이턴시 막대 (Metrics) */
+.lat-bar { height: 8px; min-width: 2px; border-radius: 4px; background: linear-gradient(90deg, #74a9ff, var(--accent)); margin-bottom: 2px; }
+
 .turn-x { margin: 6px 0 2px 72px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 8px 10px; background: #fcfcfe; }
 .turn-x h5 { margin: 2px 0 4px; font-size: 11px; color: var(--dim); }
 .turn-x h5 .b-tag { color: var(--bcol); font-weight: 800; }

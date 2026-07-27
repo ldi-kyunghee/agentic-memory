@@ -468,7 +468,7 @@ function renderSessions() {
   }
 
   $("#content").innerHTML = `
-    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(핑크)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
+    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${s.add_dialogue_duration_ms ? ` · <span data-desc="이 세션의 mem0.add 소요 시간 (fact 추출·update 결정 LLM 콜 포함) — 백본 속도 실측">⏱ 투입 ${(s.add_dialogue_duration_ms / 1000).toFixed(1)}s</span>` : ""}${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(핑크)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
     <div class="legend" data-desc="배지 범례 — 사이드바 원형 숫자: 빨강=미포함(0점) 골든 수, 보라=오답 QA 수">
       <b>범례</b>
       <span><span class="badge b2">2</span>완전</span><span><span class="badge b1">1</span>부분</span><span><span class="badge b0">0</span>실패</span>
@@ -841,9 +841,16 @@ async function renderMetrics() {
   });
   const judgeName = data.judge === "nano" ? "GPT-5-Nano" : "Qwen3-4B";
 
+  const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);
   const body = rows.map((r) => {
     const m = r.metrics;
     const sysName = `Mem0-Classic-OSS${r.prompt === "custom" ? " +custom" : ""}`;
+    const lat = r.latency;
+    const latCell = lat
+      ? `<td data-desc="<b>세션 투입 시간</b> — mem0.add 1회(fact 추출→유사 검색→update 결정 LLM 콜 포함) 평균 ${lat.ingest_avg_s}s · 중앙값 ${lat.ingest_p50_s}s · 세션 ${lat.n_sessions}개 실측. 백본 크기·API 왕복이 그대로 반영됨. 질문 검색(임베더 고정)은 평균 ${lat.search_avg_ms}ms로 백본 무관">
+          <div class="lat-bar" style="width:${(lat.ingest_avg_s / maxIngest * 100).toFixed(0)}%"></div>
+          <span class="small">${lat.ingest_avg_s}s</span></td>`
+      : `<td>–</td>`;
     const cells = METRIC_COLS.map((c) => {
       const v = m[c.k];
       const rk = rank[c.k].sorted.indexOf(v) + 1;
@@ -857,7 +864,7 @@ async function renderMetrics() {
       <td data-desc="${esc(r.note || r.label)}"><b>${esc(sysName)}</b></td>
       <td>${m.n_users}</td>
       <td>${esc(r.backbone)}<br><span class="small muted">${esc(r.prompt)} prompt</span></td>
-      <td>${esc(judgeName)}</td>${cells}</tr>`;
+      <td>${esc(judgeName)}</td>${latCell}${cells}</tr>`;
   }).join("");
 
   $("#content").innerHTML = `
@@ -868,6 +875,7 @@ async function renderMetrics() {
         <th data-desc="이 행의 지표가 집계된 유저 수">#Users</th>
         <th data-desc="memory agent 백본 (fact 추출·update 결정 LLM) × 추출 프롬프트">Agent LLM</th>
         <th data-desc="채점 LLM — 행 간 비교는 동일 judge에서만 유효">Judge LLM</th>
+        <th data-desc="세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. 로컬 vLLM vs API 왕복, 백본 크기, reasoning 토큰이 그대로 드러남. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용">Ingest/세션↓</th>
         ${METRIC_COLS.map((c) => `<th data-desc="${esc(METRIC_DEFS[c.k])}">${esc(c.label)}</th>`).join("")}
       </tr>${body}</table></div></div>
     ${rows.length < data.rows.length ? `<p class="hint">⚠ ${data.rows.length - rows.length}개 런은 이 judge(${judgeName}) 라벨이 없어 표시 제외</p>` : ""}`;
