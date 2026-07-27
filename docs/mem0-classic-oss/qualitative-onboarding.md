@@ -108,16 +108,17 @@ while ($true) { ssh -o ExitOnForwardFailure=yes Hamster -N -L 8501:localhost:850
 
 ## 5. 평가 대상
 
-**분담**: 유저 단위 - ★ 4명(Martin Mark / Sarah Garcia / Donald Brown / Johnson Joseph)을 나눠 맡습니다.
+**분담**: 분석 대상이 되는 유저는 일단 **Martin Mark**로 통일하겠습니다.
 
 **세션 하나당 워크플로**: ① 세션의 QA부터 - 오답(H/O)이 있으면 클릭해 4자 대조(질문→정답→답변→검색 context: 정답 재료가 context에 있었는데 틀렸나? 아예 없나?) → ② 대화를 스크롤하며 골든🟡 옆에 추출🟢이 따라붙는지 (골든만 있고 추출이 빈 턴 = 추출 누락 지점) → ③ 수상하면 우측 Trace로 "추출 LLM이 실제로 뭘 뱉었는지" 확인 → ④ 발견은 그 자리에서 코멘트.
 
-**집중 질문 5가지** (정량분석이 남긴 미결 - 이걸 판별하는 게 이번 정성분석의 기여):
+**포커스**:
 
-1. **재작성 drift의 실물** - `UPDATE` 칩이 붙고 accuracy 0점인 메모리를 열어(상세의 `previous_memory`와 대조) 재작성 과정에서 정보가 실제로 망가졌는지, 아니면 과거 세션 내용이라 채점만 불리했는지 (Qwen 4B/30B 세팅에서. 태그: 재작성drift)
-2. **추출 누락의 유형** - 안 뽑힌 골든은 어떤 종류인가? (관계 정보? 시간·조건부? 대화 후반? assistant 발화에만 존재?) 특히 nano/mini의 "절제 추출"이 버리는 것의 패턴 (태그: 추출누락)
-3. **custom 프롬프트의 오염** - Qwen×custom(B로 걸어 비교)에서 문단 메모리가 미끼(골든의 `interference` 태그)나 assistant 제안을 삼키는 장면 (태그: 약점)
-4. **생성 실패** - 정답 재료가 검색 context에 다 있는데 오답인 QA: 4B generator가 초장문 context에서 근거를 못 찾는 사례 (Qwen×custom에서 다수 예상)
-5. **judge 오판** - 라벨이 이상하면 그 자체가 발견 (사람이 보기에 맞는데 0점 등. 태그: judge오판) - 라벨은 필터일 뿐 정답이 아닙니다
+1. **재작성(UPDATE) drift의 존재여부** - `UPDATE` 태그가 붙고 accuracy 0점인 메모리를 열어(우측탭 상세 정보의 `previous_memory`와 대조하기) 재작성(UPDATE) 과정에서 정보가 실제로 망가졌는지, 아니면 과거 세션 내용이라 채점만 불리했는지 검증해야 함 (HaluMem 평가 세팅의 특성 때문에 불필요한 페널티를 받고 있는 건 아닌지 확인할 필요가 있음. 채점 과정에선 해당 세션의 대화 내용만 Judge에게 제공되므로, Agent가 앞선 세션의 정보를 제대로 UPDATE 한 케이스인데도 Judge는 앞선 세션 정보를 모르므로 Hallucination이라고 평가했을 가능성이 있다고 보고 있음.)
+2. **추출 누락의 유형** - 안 뽑힌 골든 메모리는 어떤 종류인지 (관계 정보? 시간·조건부? 대화 후반? assistant 발화에만 존재?) 모델/리즈닝/프롬프트 세팅별로 추출 양상의 차이가 어떠한지, 추출 단계에서의 병목은 무엇인지 식별이 필요함.
+3. **프롬프트의 영향** - 동일 모델에서 프롬프트 변경에 따른 메모리 추출 양상 변화를 관찰 -> 달라진다면 후행하는 메모리 결정(ADD/UPDATE/DELETE)에도 큰 차이가 발생하는지도 중요한 관찰 지점임
+4. **답변 생성 모델의 실패** - 정답을 맞추기 위한 재료가 검색 context에 다 있는데 오답이 생성된 QA 샘플. e.g. 4B generator가 장문 context에서 근거를 못 보는 사례 등
+5. **judge 모델의 오판** - Judge가 판정을 제대로 못 내리는 경우(사람이 보기에 맞는데 0점 등)가 많을 것으로 예상됨 - GPT 모델의 경우 비용 이슈로 reasoning effort = minimal로 돌림
+6. **벤치마크 품질** - 정답으로 제시된 golden memory의 품질 검수 (단, golden memory 중 interference인 경우는 해석을 신경써야 함. golden memory라고 표현은 하지만 실제로는 방해용으로 넣은 미끼 메모리이므로, 성능이 좋은 메모리 시스템이라면 해당 메모리는 저장하지 않았어야 함을 기억할 것). 세션 내 대화 자체의 품질 등도 문제가 있을 경우 코멘트 부탁함.
 
-**추천 비교 조합** (A vs B): `Qwen3-4B×default vs custom` (프롬프트 효과), `Qwen3-4B vs gpt-5-mini (default)` (백본 효과 - 왜 mini가 QA 1위인가), `gpt-5-nano×default vs custom` (절제 vs 과잉절제).
+**우선 비교할 조합 (순서대로)** (A vs B): `Qwen3-4B vs GPT-5-Mini (default)` (백본 효과 - 왜 GPT-5-Mini가 QA 1위인가), `GPT-5-Mini × default vs custom` (프롬프트 효과),  `Qwen3-4B×default vs custom` (프롬프트 효과), `Qwen3-4B vs Qwen3-30B (default)` (백본 효과)
