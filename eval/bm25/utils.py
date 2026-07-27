@@ -110,7 +110,7 @@ mem_template = """[{}]
         User: {}
         Assistant: {}"""
 
-mem_template_with_prev = """
+mem_template_with_prev = """[{}]
         Assistant: {}
         User: {}
         Assistant: {}"""
@@ -147,9 +147,10 @@ def add_memory_from_dialogue_with_prev(session_dialogue):
     for i, (user, assistant) in enumerate(zip(user_dialogue, assistant_dialogue)):
         if question:
             memory = mem_template_with_prev.format(
-                question,
-                user['content'],
-                assistant['content']
+              user['timestamp'],
+              question,
+              user['content'],
+              assistant['content']
             )
 
         else:
