@@ -278,6 +278,8 @@ const verdictBadge = (v) => {
   return `<span class="badge ${c}" data-desc="판정: ${esc(v)}">${esc(v[0])}</span>`;
 };
 const opChip = (op) => op ? `<span class="op ${esc(op)}" data-desc="이 메모리를 만든 연산: ${esc(op)} (ADD=신규 추출 / UPDATE=기존 메모리 재작성본)">${esc(op)}</span>` : "";
+// QA 상세 등 공간 여유 있는 곳은 풀네임 판정 배지
+const verdictFull = (v) => v ? `<span class="badge ${v[0] === "C" ? "bC" : v[0] === "H" ? "bH" : "bO"}">${esc(v)}</span>` : `<span class="badge bnull">판정 없음</span>`;
 const initials = (name) => esc((name || "?").trim().slice(0, 2));
 
 /* ---------- 근사 턴 앵커링 ---------- */
@@ -422,12 +424,26 @@ function renderSessions() {
       <span class="cmt-chip" style="cursor:default">가</span><span>= 코멘트 (호버/클릭)</span>
     </div>
     <div class="card"><h4 data-k="questions">QA (${s.questions.length})</h4><div class="body">${qas}</div></div>
-    <div class="card"><h4 data-k="dialogue_turn">대화 (${s.dialogue.length}턴)</h4><div class="body">${dlg}</div></div>
+    <div class="card"><h4 data-k="dialogue_turn">대화 (${s.dialogue.length}턴)
+      <span class="small muted" style="margin-left:auto" data-desc="대화 오른쪽 메모리 칩 칼럼의 너비 조절 (드래그)">칩 폭</span>
+      <input type="range" id="anch-w" min="140" max="640" step="10" style="width:110px"></h4>
+      <div class="body">${dlg}</div></div>
     <div class="${B?.session ? "three-col" : "two-col"}">
       <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})</h4><div class="body">${goldenRows}</div></div>
       <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(S.run)} (${s.extracted.length})</h4><div class="body">${extRows}</div></div>
       ${extBCard}
     </div>`;
+
+  // 칩 칼럼 너비 슬라이더 (localStorage 유지)
+  const anchW = +localStorage.getItem("anchw") || 280;
+  document.documentElement.style.setProperty("--anchw", `${anchW}px`);
+  const slider = $("#anch-w");
+  slider.value = anchW;
+  slider.oninput = () => {
+    document.documentElement.style.setProperty("--anchw", `${slider.value}px`);
+    localStorage.setItem("anchw", slider.value);
+  };
+  slider.onclick = (ev) => ev.stopPropagation();
 
   $$("#content [data-a]").forEach((el) => {
     const [kind, idx] = el.dataset.a.split(":");
@@ -449,28 +465,22 @@ function renderSessions() {
     };
   });
   $$("#content [data-qa]").forEach((el) => (el.onclick = () => renderQADetail(s.session_id, +el.dataset.qa, true)));
+  // 칩 클릭: 우측 상세만 (자동 스크롤 없음 — 대화 읽던 위치 유지)
   $$("#content [data-chip]").forEach((el) => {
     el.onclick = (ev) => {
       ev.stopPropagation();
       const [kind, idx] = el.dataset.chip.split(":");
       const row = $(`#content [data-a="${kind}:${idx}"]`);
-      row?.scrollIntoView({ block: "center", behavior: "smooth" });
-      row?.classList.add("flash");
-      setTimeout(() => row?.classList.remove("flash"), 1300);
-      setAnchor(`session:${s.session_id}/${kind}:${idx}`, kind === "mp" ? s.golden[+idx] : s.extracted[+idx]);
       row?.classList.add("selected");
+      setAnchor(`session:${s.session_id}/${kind}:${idx}`, kind === "mp" ? s.golden[+idx] : s.extracted[+idx]);
     };
   });
   $$("#content [data-chip-b]").forEach((el) => {
     el.onclick = (ev) => {
       ev.stopPropagation();
       const i = +el.dataset.chipB;
-      const row = $(`#content [data-b-ext="${i}"]`);
-      row?.scrollIntoView({ block: "center", behavior: "smooth" });
-      row?.classList.add("flash");
-      setTimeout(() => row?.classList.remove("flash"), 1300);
+      $(`#content [data-b-ext="${i}"]`)?.classList.add("selected");
       setAnchor(`session:${s.session_id}/extb:${i}`, B.session.extracted[i]);
-      row?.classList.add("selected");
     };
   });
   $$("#content [data-turnx]").forEach((el) => {
@@ -622,16 +632,16 @@ function renderQADetail(sid, qi, fromSession) {
   if (S.bundleB) {
     const sb = S.bundleB.sessions.find((x) => x.session_id === sid);
     const qb = sb?.questions?.find((x) => x.question === q.question);
-    bCard = `<div class="card b-card"><h4>B: ${esc(S.runB)} 판정 ${verdictBadge(qb?.judge)}</h4>
+    bCard = `<div class="card b-card"><h4>B: ${esc(S.runB)} 답변 ${verdictFull(qb?.judge)}</h4>
       <div class="body">${esc(qb?.system_response || "(B 런에 답변 없음)")}</div></div>`;
   }
 
   $("#content").innerHTML = `
     ${fromSession ? `<span class="backlink" id="btn-back">← 세션 S${sid}로 돌아가기</span>` : ""}
-    <div class="hint">S${sid} · ${esc(q.question_type || "")} — 4자 대조: 질문 → 정답 → 시스템 답변 → context</div>
-    <div class="card"><h4>질문 ${verdictBadge(q.judge)}</h4><div class="body">${esc(q.question)}</div></div>
+    <div class="hint">S${sid} · ${esc(q.question_type || "")} — 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → context</div>
+    <div class="card"><h4>질문</h4><div class="body">${esc(q.question)}</div></div>
     <div class="card"><h4 data-k="answer">골든 정답</h4><div class="body">${esc(q.answer)}</div></div>
-    <div class="card"><h4 data-k="system_response">시스템 답변 (A′)</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
+    <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(S.run)} 답변` : "시스템 답변 (A′)"} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
     ${bCard}
     <div class="card"><h4 data-k="evidence">Evidence (${(q.evidence || []).length})</h4><div class="body">${ev}</div></div>
     <div class="card"><h4 data-k="context">검색 Context (${items ? items.length + "건" : "원문"})
@@ -703,8 +713,8 @@ function renderCompare() {
       x.className = "qa-x";
       x.innerHTML = `<td colspan="4">
         <p class="small"><b>골든 정답</b> — ${esc(r.q.answer)}</p>
-        <p class="small"><b>A 답변</b> ${verdictBadge(r.q.judge)}</p><pre class="mono">${esc(r.q.system_response || "(없음)")}</pre>
-        <p class="small"><b>B 답변</b> ${verdictBadge(r.qb?.judge)}</p><pre class="mono">${esc(r.qb?.system_response || "(B 런에 없음)")}</pre>
+        <p class="small"><b>A 답변</b> ${verdictFull(r.q.judge)}</p><pre class="mono">${esc(r.q.system_response || "(없음)")}</pre>
+        <p class="small"><b>B 답변</b> ${verdictFull(r.qb?.judge)}</p><pre class="mono">${esc(r.qb?.system_response || "(B 런에 없음)")}</pre>
         <p class="small"><b>근거 골든</b> — ${(r.q.evidence || []).map((e) => esc(e.memory_content)).join(" · ") || "없음"}</p></td>`;
       tr.after(x);
     };

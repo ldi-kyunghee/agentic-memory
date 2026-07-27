@@ -76,11 +76,11 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 .turn .role { flex: 0 0 62px; font-weight: 700; font-size: 11px; color: var(--dim); text-align: right; padding-top: 2px; }
 .turn.user .role { color: var(--accent); }
 .turn .bubble { flex: 1; white-space: pre-wrap; }
-.turn .anchors { flex: 0 0 200px; display: flex; flex-direction: column; gap: 3px; }
+.turn .anchors { flex: 0 0 var(--anchw, 280px); display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .turn.hl { background: #fff9db; }
-.anchor-chip { font-size: 11px; border-radius: 5px; padding: 1px 6px; cursor: pointer; border: 1px solid var(--line); background: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anchor-chip { font-size: 11px; border-radius: 5px; padding: 1px 6px; cursor: pointer; border: 1px solid var(--line); background: #fff; white-space: normal; word-break: break-word; }
 .anchor-chip.g { border-left: 3px solid var(--gold); background: #fffaf0; }
-.anchor-chip.e { border-left: 3px solid var(--ok); }
+.anchor-chip.e { border-left: 3px solid var(--ok); background: #eefbf1; }
 .anchor-chip:hover { outline: 1px solid var(--accent); }
 .gold-h { color: var(--gold) !important; }
 .turn.hl-tr, .row.hl-tr { background: #fff9db; outline: 1px dashed var(--warn); border-radius: 6px; }
