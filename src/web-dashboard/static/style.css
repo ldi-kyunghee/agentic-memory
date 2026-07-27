@@ -1,7 +1,8 @@
 :root {
   --bg: #f7f7f8; --panel: #ffffff; --line: #e2e2e6; --ink: #1c1c21; --dim: #6b6b76;
   --accent: #3b5bdb; --ok: #2b8a3e; --warn: #e8930c; --bad: #c92a2a; --chip: #eef0f4;
-  --bcol: #9c36b5; --gold: #c9920e;
+  /* 컬러 체계: 판정=초록/주황/빨강/보라, 세팅 A=파랑 B=핑크, 골든=금, 코멘트=청록 — 상호 비겹침 */
+  --bcol: #d6336c; --gold: #c9920e; --cmt: #0c8599;
 }
 * { box-sizing: border-box; }
 .hidden { display: none !important; }
@@ -82,16 +83,24 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 .turn.hl { background: #fff9db; }
 .anchor-chip { font-size: 11px; border-radius: 5px; padding: 1px 6px; cursor: pointer; border: 1px solid var(--line); background: #fff; white-space: normal; word-break: break-word; }
 .anchor-chip.g { border-left: 3px solid var(--gold); background: #fffaf0; }
-.anchor-chip.e { border-left: 3px solid var(--ok); background: #eefbf1; }
+.anchor-chip.g.upd { border-left-color: #8a6400; background: #f8ecc8; font-weight: 600; }
+.anchor-chip.g.intf { border-left-color: var(--bad); background: #fdecec; }
+.anchor-chip.e { border-left: 3px solid var(--accent); background: #eef2ff; }
 .anchor-chip:hover { outline: 1px solid var(--accent); }
 .gold-h { color: var(--gold) !important; }
 .turn.hl-tr, .row.hl-tr { background: #fff9db; outline: 1px dashed var(--warn); border-radius: 6px; }
 tr.qa-x > td { background: #fbfbfd; }
 .legend { font-size: 11px; color: var(--dim); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 2px 0 10px; }
 
-/* B 세팅 컬러코딩 (보라) */
-.anchor-chip.eb { border-left: 3px solid var(--bcol); background: #faf5fc; }
+/* B 세팅 컬러코딩 (핑크 — 판정 보라(O)와 구분) */
+.anchor-chip.eb { border-left: 3px solid var(--bcol); background: #fff0f6; }
 .card.b-card > h4 { color: var(--bcol); }
+
+/* 골든 변형 강조: 갱신(upd) / 미끼(interference) */
+.row.upd-row { background: #faf3dc; }
+.row.intf-row { background: #fdeeee; }
+.tagchip.t-upd { background: #e7c96a; color: #5c4300; font-weight: 800; }
+.tagchip.t-intf { background: var(--bad); color: #fff; font-weight: 800; }
 .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: start; }
 
 /* 로딩 오버레이 */
@@ -99,10 +108,10 @@ tr.qa-x > td { background: #fbfbfd; }
 .spinner { width: 22px; height: 22px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* 코멘트 표시 (노션풍) */
-.has-cmt { background: #fff6d9 !important; box-shadow: inset 3px 0 0 var(--warn); }
-.cmt-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--warn); color: #fff; font-size: 10px; font-weight: 800; cursor: pointer; margin-left: 4px; vertical-align: middle; }
-.cmt-quote { border-left: 3px solid var(--warn); background: #fffaf0; padding: 3px 8px; margin: 3px 0; font-size: 12px; color: var(--dim); white-space: pre-wrap; border-radius: 0 5px 5px 0; }
+/* 코멘트 표시 (노션풍, 청록 — 1점 주황·골든 금색과 구분) */
+.has-cmt { background: #e0f7fb !important; box-shadow: inset 3px 0 0 var(--cmt); }
+.cmt-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--cmt); color: #fff; font-size: 10px; font-weight: 800; cursor: pointer; margin-left: 4px; vertical-align: middle; }
+.cmt-quote { border-left: 3px solid var(--cmt); background: #ecfbfd; padding: 3px 8px; margin: 3px 0; font-size: 12px; color: var(--dim); white-space: pre-wrap; border-radius: 0 5px 5px 0; }
 #sel-cmt { position: fixed; z-index: 95; border: none; background: var(--ink); color: #fff; border-radius: 7px; padding: 5px 10px; cursor: pointer; font-size: 12px; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
 #btn-reload { position: fixed; right: 16px; bottom: 14px; z-index: 94; border: 1px solid var(--line); background: #fff; color: var(--dim); border-radius: 16px; padding: 5px 12px; cursor: pointer; font-size: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
 #btn-reload:hover { color: var(--accent); border-color: var(--accent); }

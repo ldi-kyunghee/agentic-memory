@@ -314,6 +314,11 @@ const verdictBadge = (v) => {
 const opChip = (op) => op ? `<span class="op ${esc(op)}" data-desc="이 메모리를 만든 연산: ${esc(op)} (ADD=신규 추출 / UPDATE=기존 메모리 재작성본)">${esc(op)}</span>` : "";
 // QA 상세 등 공간 여유 있는 곳은 풀네임 판정 배지
 const verdictFull = (v) => v ? `<span class="badge ${v[0] === "C" ? "bC" : v[0] === "H" ? "bH" : "bO"}">${esc(v)}</span>` : `<span class="badge bnull">판정 없음</span>`;
+// 미끼(interference) 골든은 포함 점수의 좋고 나쁨이 반전됨: 0=미포함=저항 성공(FMR 기여), 2=흡수=감점
+const intfBadge = (v) => v == null ? `<span class="badge bnull" data-desc="judge 라벨 없음">–</span>`
+  : v === 0 ? `<span class="badge b2" data-desc="미끼 차단 (포함 점수 0) — 시스템이 이 미끼를 흡수하지 않음 = 저항 성공, FMR에 긍정 기여">차단</span>`
+  : v === 1 ? `<span class="badge b1" data-desc="미끼 일부 흡수 (포함 점수 1) — 미끼 내용 일부가 추출 메모리에 들어감">일부흡수</span>`
+  : `<span class="badge b0" data-desc="미끼 흡수 (포함 점수 2) — 시스템이 미끼를 통째로 기억함 = FMR 감점">흡수</span>`;
 const initials = (name) => esc((name || "?").trim().slice(0, 2));
 
 /* ---------- 근사 턴 앵커링 ---------- */
@@ -363,11 +368,14 @@ function render() {
 }
 
 function sessionSummary(s) {
-  const g2 = s.golden.filter((m) => m.judge?.score === 2 || m.judge?.label === "Correct").length;
-  const g0 = s.golden.filter((m) => m.judge?.kind === "integrity" && m.judge?.score === 0).length;
+  // 미끼(interference)는 점수 해석이 반전되므로 실패/포함 카운트에서 분리
+  const reg = s.golden.filter((m) => m.memory_source !== "interference");
+  const g2 = reg.filter((m) => m.judge?.score === 2 || m.judge?.label === "Correct").length;
+  const g0 = reg.filter((m) => m.judge?.kind === "integrity" && m.judge?.score === 0).length;
+  const gTot = reg.length;
   const a0 = s.extracted.filter((m) => m.judge?.score === 0).length;
   const qaBad = s.questions.filter((q) => q.judge && q.judge !== "Correct").length;
-  return { g2, g0, a0, qaBad };
+  return { g2, g0, gTot, a0, qaBad };
 }
 
 /* ----- Sessions ----- */
@@ -378,8 +386,8 @@ function renderSessions() {
     if (s.generated_qa_session) return "";
     const m = sessionSummary(s);
     const flags = [
-      m.g0 ? `<span class="badge b0" data-desc="integrity 0점(미포함) 골든 수">${m.g0}</span>` : "",
-      m.qaBad ? `<span class="badge bH" data-desc="오답(H/O) QA 수">${m.qaBad}</span>` : "",
+      m.g0 ? `<span class="badge b0" data-desc="빨간 원 — 이 세션에서 judge가 미포함(0점) 판정한 골든 수">${m.g0}</span>` : "",
+      m.qaBad ? `<span class="badge bO" data-desc="보라 원 — 이 세션의 오답(H/O) QA 수">${m.qaBad}</span>` : "",
     ].join("");
     return `<div class="side-item ${s.session_id === S.session ? "active" : ""}" data-sid="${s.session_id}">
       <b>S${s.session_id}</b><span class="t">${esc((s.start_time || "").slice(0, 12))}</span>
@@ -394,13 +402,14 @@ function renderSessions() {
 
   // QA (워크플로상 최상단)
   const qas = s.questions.map((q, i) => {
-    let bBadge = "";
+    let aLabel = "", bBadge = "";
     if (B?.session) {
+      aLabel = `<span class="small muted">A</span>`;
       const qb = B.session.questions?.find((x) => x.question === q.question);
       bBadge = `<span class="small" style="color:var(--bcol)">B</span>${verdictBadge(qb?.judge)}`;
     }
     return `<div class="row" data-qa="${i}" data-desc="클릭하면 이 QA의 4자 대조 화면으로 이동. 드래그로 텍스트 선택 후 코멘트도 가능">
-      <span>${verdictBadge(q.judge)}</span>${bBadge}
+      <span>${aLabel}${verdictBadge(q.judge)}</span>${bBadge}
       <span class="txt">${esc(q.question)}</span>
       <span class="small muted">${esc(q.question_type || "")}</span></div>`;
   }).join("");
@@ -409,7 +418,16 @@ function renderSessions() {
     const a = A.map[ti];
     const bMap = B?.map?.[ti];
     const chips = [
-      ...a.g.map((gi) => `<span class="anchor-chip g" data-chip="mp:${gi}" data-desc="골든 (근사 앵커·추정)">G ${esc(s.golden[gi].memory_content)}</span>`),
+      ...a.g.map((gi) => {
+        const mp = s.golden[gi];
+        const upd = mp.is_update === "True", intf = mp.memory_source === "interference";
+        const cls = upd ? " upd" : intf ? " intf" : "";
+        const icon = upd ? "↻" : intf ? "⚠" : "";
+        const desc = upd ? "갱신 골든 (근사 앵커·추정) — 과거 정보의 업데이트본. Update(C/H/O) 평가 대상"
+          : intf ? "미끼(interference) 골든 (근사 앵커·추정) — AI 발화에만 있고 user가 확정 안 한 내용. 시스템이 흡수하면 감점(FMR)"
+          : "골든 (근사 앵커·추정)";
+        return `<span class="anchor-chip g${cls}" data-chip="mp:${gi}" data-desc="${desc}">G${icon} ${esc(mp.memory_content)}</span>`;
+      }),
       ...a.e.map((ei) => `<span class="anchor-chip e" data-chip="ext:${ei}" data-desc="A 세팅 추출 (근사 앵커·추정)">A ${esc(s.extracted[ei].text)}</span>`),
       ...(bMap?.e || []).map((ei) => `<span class="anchor-chip eb" data-chip-b="${ei}" data-desc="B 세팅 추출 (근사 앵커·추정)">B ${esc(B.session.extracted[ei].text)}</span>`),
     ].join("");
@@ -423,11 +441,13 @@ function renderSessions() {
 
   const goldenRows = s.golden.map((mp, i) => {
     const j = mp.judge || {};
-    const badge = j.kind === "update" ? verdictBadge(j.label) : scoreBadge(j.score);
-    return `<div class="row" data-a="mp:${i}" data-turn="${A.gTurn[i]}">
+    const upd = mp.is_update === "True", intf = mp.memory_source === "interference";
+    const badge = j.kind === "update" ? verdictBadge(j.label) : intf ? intfBadge(j.score) : scoreBadge(j.score);
+    return `<div class="row${upd ? " upd-row" : intf ? " intf-row" : ""}" data-a="mp:${i}" data-turn="${A.gTurn[i]}">
       <span>${badge}</span>
-      ${mp.is_update === "True" ? '<span class="tagchip" data-k="is_update">upd</span>' : ""}
-      ${mp.memory_source !== "system" ? `<span class="tagchip" data-k="memory_source">${esc(mp.memory_source)}</span>` : ""}
+      ${upd ? '<span class="tagchip t-upd" data-k="is_update">↻ upd</span>' : ""}
+      ${intf ? '<span class="tagchip t-intf" data-k="memory_source">⚠ 미끼</span>'
+        : mp.memory_source !== "system" ? `<span class="tagchip" data-k="memory_source">${esc(mp.memory_source)}</span>` : ""}
       <span class="txt">${esc(mp.memory_content)}</span></div>`;
   }).join("");
 
@@ -448,14 +468,16 @@ function renderSessions() {
   }
 
   $("#content").innerHTML = `
-    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(보라)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
+    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(핑크)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
     <div class="legend" data-desc="배지 범례 — 사이드바 원형 숫자: 빨강=미포함(0점) 골든 수, 보라=오답 QA 수">
       <b>범례</b>
       <span><span class="badge b2">2</span>완전</span><span><span class="badge b1">1</span>부분</span><span><span class="badge b0">0</span>실패</span>
       <span><span class="badge bC">C</span>/<span class="badge bH">H</span>/<span class="badge bO">O</span></span>
       <span class="anchor-chip g" style="cursor:default">G 골든(금)</span>
-      <span class="anchor-chip e" style="cursor:default">A 추출(초록)</span>
-      ${S.bundleB ? '<span class="anchor-chip eb" style="cursor:default">B 추출(보라)</span>' : ""}
+      <span class="anchor-chip g upd" style="cursor:default" data-desc="갱신 골든 — Update(C/H/O) 평가 대상">G↻ 갱신</span>
+      <span class="anchor-chip g intf" style="cursor:default" data-desc="미끼 골든 — 흡수하면 감점(FMR)">G⚠ 미끼</span>
+      <span class="anchor-chip e" style="cursor:default">A 추출(파랑)</span>
+      ${S.bundleB ? '<span class="anchor-chip eb" style="cursor:default">B 추출(핑크)</span>' : ""}
       <span class="cmt-chip" style="cursor:default">가</span><span>= 코멘트 (호버/클릭)</span>
     </div>
     <div class="card"><h4 data-k="questions">QA (${s.questions.length})</h4><div class="body">${qas}</div></div>
@@ -535,7 +557,8 @@ function toggleTurnPanel(s, A, B, ti) {
   const secA = `
     <h5>A: ${esc(S.run)} — 이 턴 앵커 (추정)</h5>
     ${a.g.map((gi) => { const mp = s.golden[gi]; const j = mp.judge || {};
-      return `<div class="row"><span class="tagchip" style="color:var(--gold)">골든</span>${j.kind === "update" ? verdictBadge(j.label) : scoreBadge(j.score)}<span class="txt">${esc(mp.memory_content)}</span></div>`; }).join("")}
+      const badge = j.kind === "update" ? verdictBadge(j.label) : mp.memory_source === "interference" ? intfBadge(j.score) : scoreBadge(j.score);
+      return `<div class="row"><span class="tagchip" style="color:var(--gold)">골든</span>${badge}<span class="txt">${esc(mp.memory_content)}</span></div>`; }).join("")}
     ${a.e.map((ei) => { const m = s.extracted[ei];
       return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("")}
     ${!a.g.length && !a.e.length ? "<p class='small muted'>앵커된 메모리 없음</p>" : ""}`;
@@ -708,7 +731,7 @@ function renderCompare() {
     bundle.sessions.forEach((s) => {
       if (s.generated_qa_session) return;
       const m = sessionSummary(s);
-      a.g += s.golden.length; a.g2 += m.g2; a.ext += s.extracted.length; a.a0 += m.a0;
+      a.g += m.gTot; a.g2 += m.g2; a.ext += s.extracted.length; a.a0 += m.a0;
       s.questions.forEach((q) => { if (q.judge) a[q.judge[0]] = (a[q.judge[0]] || 0) + 1; });
     });
     return a;
