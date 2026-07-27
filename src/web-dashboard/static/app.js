@@ -468,7 +468,7 @@ function renderSessions() {
   }
 
   $("#content").innerHTML = `
-    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${s.add_dialogue_duration_ms ? ` · <span data-desc="이 세션의 mem0.add 소요 시간 (fact 추출·update 결정 LLM 콜 포함) — 백본 속도 실측">⏱ 투입 ${(s.add_dialogue_duration_ms / 1000).toFixed(1)}s</span>` : ""}${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(핑크)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
+    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${s.add_dialogue_duration_ms ? ` · <span data-desc="이 세션의 mem0.add 소요 시간 (fact 추출·update 결정 LLM 콜 포함) — 백본 속도 실측">⏱ 투입 ${(s.add_dialogue_duration_ms / 1000).toFixed(1)}s</span>` : ""}${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(회색)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
     <div class="legend" data-desc="배지 범례 — 사이드바 원형 숫자: 빨강=미포함(0점) 골든 수, 보라=오답 QA 수">
       <b>범례</b>
       <span><span class="badge b2">2</span>완전</span><span><span class="badge b1">1</span>부분</span><span><span class="badge b0">0</span>실패</span>
@@ -477,7 +477,7 @@ function renderSessions() {
       <span class="anchor-chip g upd" style="cursor:default" data-desc="갱신 골든 — Update(C/H/O) 평가 대상">G↻ 갱신</span>
       <span class="anchor-chip g intf" style="cursor:default" data-desc="미끼 골든 — 흡수하면 감점(FMR)">G⚠ 미끼</span>
       <span class="anchor-chip e" style="cursor:default">A 추출(파랑)</span>
-      ${S.bundleB ? '<span class="anchor-chip eb" style="cursor:default">B 추출(핑크)</span>' : ""}
+      ${S.bundleB ? '<span class="anchor-chip eb" style="cursor:default">B 추출(회색)</span>' : ""}
       <span class="cmt-chip" style="cursor:default">가</span><span>= 코멘트 (호버/클릭)</span>
     </div>
     <div class="card"><h4 data-k="questions">QA (${s.questions.length})</h4><div class="body">${qas}</div></div>

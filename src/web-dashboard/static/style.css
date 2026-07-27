@@ -1,8 +1,8 @@
 :root {
   --bg: #f7f7f8; --panel: #ffffff; --line: #e2e2e6; --ink: #1c1c21; --dim: #6b6b76;
   --accent: #3b5bdb; --ok: #2b8a3e; --warn: #e8930c; --bad: #c92a2a; --chip: #eef0f4;
-  /* 컬러 체계: 판정=초록/주황/빨강/보라, 세팅 A=파랑 B=핑크, 골든=금, 코멘트=청록 — 상호 비겹침 */
-  --bcol: #d6336c; --gold: #c9920e; --cmt: #0c8599;
+  /* 컬러 체계: 판정=초록/주황/빨강/보라, 세팅 A=파랑 B=진회색, 골든=금, 코멘트=청록 — 상호 비겹침 */
+  --bcol: #495057; --gold: #c9920e; --cmt: #0c8599;
 }
 * { box-sizing: border-box; }
 .hidden { display: none !important; }
@@ -92,8 +92,8 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 tr.qa-x > td { background: #fbfbfd; }
 .legend { font-size: 11px; color: var(--dim); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 2px 0 10px; }
 
-/* B 세팅 컬러코딩 (핑크 — 판정 보라(O)와 구분) */
-.anchor-chip.eb { border-left: 3px solid var(--bcol); background: #fff0f6; }
+/* B 세팅 컬러코딩 (진회색 — 판정색·미끼 빨강 어느 것과도 비인접) */
+.anchor-chip.eb { border-left: 3px solid var(--bcol); background: #f1f3f5; }
 .card.b-card > h4 { color: var(--bcol); }
 
 /* 골든 변형 강조: 갱신(upd) / 미끼(interference) */
