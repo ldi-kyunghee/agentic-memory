@@ -1,0 +1,95 @@
+# 런 레지스트리 — 새 실험 추가 시 이 파일에만 항목 추가 (경로는 리포 루트 기준)
+# judges: 라벨 세트 이름 -> judge 디렉토리 (유저별 {uuid}.json). 초기 런들의 불규칙 네이밍은 여기서 흡수함.
+runs:
+  full-traced:
+    label: "Qwen3-4B × default (20u)"
+    backbone: Qwen3-4B-Instruct-2507
+    prompt: default
+    users: 20
+    results: results/mem0-classic-oss/memzero-oss-full-traced/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/full-traced
+    judges:
+      qwen4b: results/mem0-classic-oss/memzero-oss-full-traced/judge
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u/judge
+
+  full-custom:
+    label: "Qwen3-4B × custom (20u)"
+    backbone: Qwen3-4B-Instruct-2507
+    prompt: custom
+    users: 20
+    results: results/mem0-classic-oss/memzero-oss-full-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/full-custom
+    judges:
+      qwen4b: results/mem0-classic-oss/memzero-oss-full-custom/judge
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-custom/judge
+
+  nano4:
+    label: "GPT-5-Nano × default (4u)"
+    backbone: gpt-5-nano
+    prompt: default
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-nano4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/nano4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-nano/judge
+
+  nano4-custom:
+    label: "GPT-5-Nano × custom (4u)"
+    backbone: gpt-5-nano
+    prompt: custom
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-nano4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/nano4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-nano-custom/judge
+
+  mini4:
+    label: "GPT-5-Mini × default (4u)"
+    backbone: gpt-5-mini
+    prompt: default
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-mini4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/mini4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-mini/judge
+
+  mini4-custom:
+    label: "GPT-5-Mini × custom (4u)"
+    backbone: gpt-5-mini
+    prompt: custom
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-mini4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/mini4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-mini-custom/judge
+
+  30b4:
+    label: "Qwen3-30B-A3B × default (4u)"
+    backbone: Qwen3-30B-A3B-Instruct-2507
+    prompt: default
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-30b4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/30b4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-30b4/judge
+
+  30b4-custom:
+    label: "Qwen3-30B-A3B × custom (4u)"
+    backbone: Qwen3-30B-A3B-Instruct-2507
+    prompt: custom
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-30b4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/30b4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-30b4-custom/judge
+
+  # think4 / think4-custom: Stage B까지 완료되면 주석 해제
+  # think4:
+  #   label: "Qwen3-4B-Thinking × default (4u)"
+  #   backbone: Qwen3-4B-Thinking-2507
+  #   prompt: default
+  #   users: 4
+  #   results: results/mem0-classic-oss/memzero-oss-think4/memzero-oss_eval_results.jsonl
+  #   traces: traces/mem0-classic-oss/think4
+  #   judges:
+  #     nano: results/mem0-classic-oss/judge-gpt5nano-4u-think4/judge
