@@ -118,9 +118,11 @@ mem_template_with_prev = """[{}]
 def load_config(config_file):
     with open(f"configs/bm25_eval/{config_file}", "r") as file:
         model_kwargs = yaml.safe_load(file)
-    
-    sampling_params = model_kwargs.pop("sampling_params")
-    return model_kwargs, sampling_params
+
+    if model_kwargs.get('sampling_params'):
+      sampling_params = model_kwargs.pop("sampling_params")
+      return model_kwargs, sampling_params
+    return model_kwargs
 
 def add_memory_from_dialogue(session_dialogue):
     user_dialogue = session_dialogue[::2]

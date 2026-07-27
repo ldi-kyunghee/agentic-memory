@@ -201,6 +201,8 @@ def main(args, max_workers: int = 10):
         llm = load_vllm(**model_kwargs)
         eval_fn = partial(llm_judge_vllm, llm=llm, sampling_params=sampling_params)
     elif args.backend == 'openai':
+        model_kwargs = load_config(args.config_file)
+        os.environ['OPENAI_MODEL'] = model_kwargs['model']
         eval_fn = partial(llm_judge_eval, max_workers=max_workers)
 
     eval_results = {
