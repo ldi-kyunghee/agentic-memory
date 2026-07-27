@@ -25,7 +25,7 @@ MODEL = os.getenv('OPENAI_MODEL')
 common_params = {}
 
 if os.getenv('OPENAI_MAX_TOKENS'):
-    common_params["max_tokens"] = int(os.getenv('OPENAI_MAX_TOKENS'))
+    common_params["max_completion_tokens"] = int(os.getenv('OPENAI_MAX_TOKENS'))
 
 if os.getenv('OPENAI_TEMPERATURE'):
     common_params["temperature"] = float(os.getenv('OPENAI_TEMPERATURE'))
