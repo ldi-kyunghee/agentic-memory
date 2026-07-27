@@ -13,19 +13,32 @@ const api = async (path, opt) => {
 const S = {
   runs: [], run: null, judge: null, users: [], uuid: null,
   backbone: null, prompt: null, backboneB: null, promptB: null, runB: null,
-  bundle: null, bundleB: null,
+  bundle: null, bundleB: null, bundleCache: new Map(),
   tab: "sessions", itab: "detail",
-  session: null, qaFilter: "all",
-  anchor: "run", anchorObj: null,
+  session: null, qaFilter: "all", digestScope: "user",
+  anchor: "run", anchorObj: null, pendingQuote: "",
   comments: [], fielddict: {}, traceCache: new Map(), anchorCacheB: new Map(),
   author: localStorage.getItem("analyst_name") || "",
 };
 
+/* ---------- 로딩 표시 ---------- */
+
+let busyCount = 0;
+function busy(on, msg = "불러오는 중…") {
+  busyCount = Math.max(0, busyCount + (on ? 1 : -1));
+  $("#loading").classList.toggle("hidden", busyCount === 0);
+  if (on) $("#loading-msg").textContent = msg;
+  $$("#topbar select").forEach((s) => (s.disabled = busyCount > 0));
+}
+
 /* ---------- 부트스트랩 ---------- */
 
 async function boot() {
-  S.fielddict = await api("/api/fielddict");
-  S.runs = (await api("/api/runs")).filter((r) => r.available);
+  busy(true, "레지스트리 로딩…");
+  try {
+    S.fielddict = await api("/api/fielddict");
+    S.runs = (await api("/api/runs")).filter((r) => r.available);
+  } finally { busy(false); }
 
   const backbones = [...new Set(S.runs.map((r) => r.backbone))];
   $("#sel-backbone").innerHTML = backbones.map((b) => `<option>${esc(b)}</option>`).join("");
@@ -51,6 +64,8 @@ async function boot() {
 
   initResizers();
   initDescBar();
+  initSelectionComment();
+  startPolling();
 
   S.backbone = backbones[0];
   syncPrompts("A");
@@ -77,7 +92,8 @@ async function applyRun() {
     : meta.judges.includes("nano") ? "nano" : meta.judges[0];
   $("#sel-judge").innerHTML = meta.judges.map((j) => `<option ${j === defJudge ? "selected" : ""}>${j}</option>`).join("");
   S.judge = $("#sel-judge").value;
-  S.users = await api(`/api/runs/${S.run}/users`);
+  busy(true, "유저 목록…");
+  try { S.users = await api(`/api/runs/${S.run}/users`); } finally { busy(false); }
   const prev = S.uuid;
   $("#sel-user").innerHTML = S.users.map((u) => `<option value="${u.uuid}" ${u.uuid === prev ? "selected" : ""}>${esc(u.user_name)}</option>`).join("");
   S.uuid = $("#sel-user").value;
@@ -87,7 +103,6 @@ async function applyRun() {
 function initB() {
   const backbones = [...new Set(S.runs.map((r) => r.backbone))];
   $("#sel-backbone-b").innerHTML = backbones.map((b) => `<option>${esc(b)}</option>`).join("");
-  // 기본값: A와 같은 백본, 다른 프롬프트가 있으면 그걸로 (가장 흔한 비교축)
   S.backboneB = S.backbone;
   $("#sel-backbone-b").value = S.backboneB;
   syncPrompts("B");
@@ -96,13 +111,23 @@ function initB() {
   applyRunB();
 }
 
+async function fetchBundle(run, judge, uuid) {
+  const key = `${run}|${judge}|${uuid}`;
+  if (!S.bundleCache.has(key)) {
+    S.bundleCache.set(key, await api(`/api/bundle/${run}/${uuid}?judge=${judge}`));
+  }
+  return S.bundleCache.get(key);
+}
+
 async function applyRunB() {
   const meta = resolveRun(S.backboneB, S.promptB);
   if (!meta) { S.runB = null; S.bundleB = null; render(); return; }
   S.runB = meta.run;
   const judgeB = meta.judges.includes(S.judge) ? S.judge : (meta.judges.includes("nano") ? "nano" : meta.judges[0]);
-  try { S.bundleB = await api(`/api/bundle/${S.runB}/${S.uuid}?judge=${judgeB}`); }
+  busy(true, `B 세팅 로딩 (${S.runB})…`);
+  try { S.bundleB = await fetchBundle(S.runB, judgeB, S.uuid); }
   catch { S.bundleB = null; }
+  finally { busy(false); }
   S.anchorCacheB.clear();
   render();
 }
@@ -117,14 +142,34 @@ function saveName() {
 function renderWho() { $("#who").textContent = S.author ? `👤 ${S.author}` : "👤 이름 설정"; }
 
 async function loadBundle() {
-  S.bundle = await api(`/api/bundle/${S.run}/${S.uuid}?judge=${S.judge}`);
-  S.comments = await api(`/api/comments/${S.run}/${S.uuid}`);
+  busy(true, `A 세팅 로딩 (${S.run})…`);
+  try {
+    S.bundle = await fetchBundle(S.run, S.judge, S.uuid);
+    S.comments = await api(`/api/comments/${S.run}/${S.uuid}`);
+  } finally { busy(false); }
   S.traceCache.clear();
   const firstReal = S.bundle.sessions.find((s) => !s.generated_qa_session);
   S.session = firstReal ? firstReal.session_id : null;
-  if (S.runB) await applyRunB(); // 유저 변경 시 B도 재로딩
+  if (S.runB) { await applyRunB(); return; } // applyRunB가 render까지 수행
   setAnchor("run", { run: S.run, uuid: S.uuid, user: S.bundle.user_name }, false);
   render();
+}
+
+/* ---------- 실시간 동기화 (폴링) ---------- */
+
+function startPolling() {
+  setInterval(async () => {
+    if (document.visibilityState !== "visible" || !S.run || !S.uuid) return;
+    try {
+      const fresh = await api(`/api/comments/${S.run}/${S.uuid}`);
+      if (JSON.stringify(fresh) !== JSON.stringify(S.comments)) {
+        S.comments = fresh;
+        renderCmtMarks();
+        if (S.itab === "comments") renderInspector();
+        if (S.tab === "digest") renderDigest();
+      }
+    } catch {}
+  }, 4000);
 }
 
 /* ---------- 레이아웃 리사이즈 ---------- */
@@ -154,7 +199,7 @@ function initResizers() {
   drag($("#rz1"), "left"); drag($("#rz2"), "right");
 }
 
-/* ---------- 설명 바 (필드 사전) ---------- */
+/* ---------- 설명 바 ---------- */
 
 function initDescBar() {
   document.addEventListener("mouseover", (e) => {
@@ -168,6 +213,52 @@ function initDescBar() {
   });
 }
 
+/* ---------- 드래그 하이라이트 코멘트 ---------- */
+
+function initSelectionComment() {
+  const btn = $("#sel-cmt");
+  document.addEventListener("mouseup", (e) => {
+    if (e.target === btn) return;
+    setTimeout(() => {
+      const sel = window.getSelection();
+      const text = sel?.toString().trim() || "";
+      const inContent = sel?.anchorNode && $("#content").contains(sel.anchorNode);
+      if (text.length < 3 || !inContent) { btn.classList.add("hidden"); return; }
+      const el = (sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode)
+        ?.closest("[data-a], [data-qa], [data-b-ext], .turn");
+      if (!el) { btn.classList.add("hidden"); return; }
+      btn.style.left = `${e.clientX + 8}px`;
+      btn.style.top = `${e.clientY - 34}px`;
+      btn.classList.remove("hidden");
+      btn.onclick = () => {
+        btn.classList.add("hidden");
+        S.pendingQuote = text;
+        const { anchor, obj } = anchorOfElement(el);
+        setAnchor(anchor, obj, false);
+        setITab("comments");
+      };
+    }, 10);
+  });
+}
+
+function anchorOfElement(el) {
+  const s = S.bundle.sessions.find((x) => x.session_id === S.session);
+  if (el.dataset?.a) {
+    const [kind, idx] = el.dataset.a.split(":");
+    return { anchor: `session:${S.session}/${kind}:${idx}`, obj: kind === "mp" ? s.golden[+idx] : s.extracted[+idx] };
+  }
+  if (el.dataset?.qa != null) return { anchor: `session:${S.session}/qa:${el.dataset.qa}`, obj: s.questions[+el.dataset.qa] };
+  if (el.dataset?.bExt != null) {
+    const sb = S.bundleB?.sessions.find((x) => x.session_id === S.session);
+    return { anchor: `session:${S.session}/extb:${el.dataset.bExt}`, obj: sb?.extracted[+el.dataset.bExt] };
+  }
+  if (el.classList?.contains("turn")) {
+    const ti = +el.id.replace("turn-", "");
+    return { anchor: `session:${S.session}/turn:${ti}`, obj: s.dialogue[ti] };
+  }
+  return { anchor: `session:${S.session}`, obj: s };
+}
+
 /* ---------- 탭/앵커 ---------- */
 
 function setTab(t) { S.tab = t; $$("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === t)); render(); }
@@ -178,7 +269,7 @@ function setAnchor(anchor, obj, focusDetail = true) {
   if (focusDetail && S.itab !== "comments") setITab("detail"); else renderInspector();
 }
 
-/* ---------- 배지 헬퍼 ---------- */
+/* ---------- 배지 ---------- */
 
 const scoreBadge = (v) => v == null ? `<span class="badge bnull" data-desc="judge 라벨 없음 — 이 judge 세트가 이 유저를 안 덮거나 무효 판정">–</span>` : `<span class="badge b${v}" data-desc="judge 점수 ${v} — 2=완전 포함(골든)/전부 근거(추출), 1=부분, 0=미포함/비지지·모순">${v}</span>`;
 const verdictBadge = (v) => {
@@ -187,8 +278,9 @@ const verdictBadge = (v) => {
   return `<span class="badge ${c}" data-desc="판정: ${esc(v)}">${esc(v[0])}</span>`;
 };
 const opChip = (op) => op ? `<span class="op ${esc(op)}" data-desc="이 메모리를 만든 연산: ${esc(op)} (ADD=신규 추출 / UPDATE=기존 메모리 재작성본)">${esc(op)}</span>` : "";
+const initials = (name) => esc((name || "?").trim().slice(0, 2));
 
-/* ---------- 근사 턴 앵커링 (lexical, "추정") ---------- */
+/* ---------- 근사 턴 앵커링 ---------- */
 
 function tokens(t) {
   return new Set((t || "").toLowerCase().match(/[a-z가-힣0-9][a-z가-힣0-9.\-:/]{2,}/g) || []);
@@ -233,8 +325,6 @@ function render() {
   renderInspector();
 }
 
-/* ----- Sessions ----- */
-
 function sessionSummary(s) {
   const g2 = s.golden.filter((m) => m.judge?.score === 2 || m.judge?.label === "Correct").length;
   const g0 = s.golden.filter((m) => m.judge?.kind === "integrity" && m.judge?.score === 0).length;
@@ -242,6 +332,8 @@ function sessionSummary(s) {
   const qaBad = s.questions.filter((q) => q.judge && q.judge !== "Correct").length;
   return { g2, g0, a0, qaBad };
 }
+
+/* ----- Sessions ----- */
 
 function renderSessions() {
   const sb = $("#sidebar");
@@ -263,14 +355,29 @@ function renderSessions() {
   const A = anchorTurns(s);
   const B = anchorsForB(s.session_id);
 
+  // QA (워크플로상 최상단)
+  const qas = s.questions.map((q, i) => {
+    let bBadge = "";
+    if (B?.session) {
+      const qb = B.session.questions?.find((x) => x.question === q.question);
+      bBadge = `<span class="small" style="color:var(--bcol)">B</span>${verdictBadge(qb?.judge)}`;
+    }
+    return `<div class="row" data-qa="${i}" data-desc="클릭하면 이 QA의 4자 대조 화면으로 이동. 드래그로 텍스트 선택 후 코멘트도 가능">
+      <span>${verdictBadge(q.judge)}</span>${bBadge}
+      <span class="txt">${esc(q.question)}</span>
+      <span class="small muted">${esc(q.question_type || "")}</span></div>`;
+  }).join("");
+
   const dlg = s.dialogue.map((t, ti) => {
     const a = A.map[ti];
+    const bMap = B?.map?.[ti];
     const chips = [
-      ...a.g.map((gi) => `<span class="anchor-chip g" data-chip="mp:${gi}" data-desc="골든 (근사 앵커·추정) — 클릭하면 아래 골든 목록에서 강조">G ${esc(s.golden[gi].memory_content)}</span>`),
-      ...a.e.map((ei) => `<span class="anchor-chip e" data-chip="ext:${ei}" data-desc="추출 (근사 앵커·추정) — 클릭하면 아래 추출 목록에서 강조">E ${esc(s.extracted[ei].text)}</span>`),
+      ...a.g.map((gi) => `<span class="anchor-chip g" data-chip="mp:${gi}" data-desc="골든 (근사 앵커·추정)">G ${esc(s.golden[gi].memory_content)}</span>`),
+      ...a.e.map((ei) => `<span class="anchor-chip e" data-chip="ext:${ei}" data-desc="A 세팅 추출 (근사 앵커·추정)">A ${esc(s.extracted[ei].text)}</span>`),
+      ...(bMap?.e || []).map((ei) => `<span class="anchor-chip eb" data-chip-b="${ei}" data-desc="B 세팅 추출 (근사 앵커·추정)">B ${esc(B.session.extracted[ei].text)}</span>`),
     ].join("");
     return `<div class="turn ${t.role}" id="turn-${ti}">
-      <div class="main" data-turnx="${ti}" data-desc="클릭하면 이 턴에 앵커된 A/B 세팅의 메모리를 펼쳐 비교">
+      <div class="main" data-turnx="${ti}" data-desc="클릭 = 이 턴 앵커 상세 펼침 + 코멘트 앵커 지정. 드래그 선택 후 코멘트도 가능">
         <div class="role">${esc(t.role)}<br><span class="small muted">#${esc(t.dialogue_turn)}</span></div>
         <div class="bubble">${esc(t.content)}</div>
         <div class="anchors">${chips}</div></div>
@@ -284,43 +391,44 @@ function renderSessions() {
       <span>${badge}</span>
       ${mp.is_update === "True" ? '<span class="tagchip" data-k="is_update">upd</span>' : ""}
       ${mp.memory_source !== "system" ? `<span class="tagchip" data-k="memory_source">${esc(mp.memory_source)}</span>` : ""}
-      <span class="txt">${esc(mp.memory_content)}</span>
-      <span class="small muted">${esc((mp.memory_type || "").split(" ")[0])}</span></div>`;
+      <span class="txt">${esc(mp.memory_content)}</span></div>`;
   }).join("");
 
   const extRows = s.extracted.map((m, i) => `
     <div class="row" data-a="ext:${i}" data-turn="${A.eTurn[i]}">
       <span>${scoreBadge(m.judge?.score)}</span>${opChip(m.origin)}
-      <span class="txt">${esc(m.text)}</span>
-      ${m.judge?.is_included === "true" ? '<span class="tagchip" data-k="is_included_in_golden_memories">tgt</span>' : ""}</div>`).join("");
+      <span class="txt">${esc(m.text)}</span></div>`).join("");
 
-  const qas = s.questions.map((q, i) => `
-    <div class="row" data-qa="${i}" data-desc="클릭하면 이 QA의 4자 대조 화면(질문→정답→답변→context)으로 이동">
-      <span>${verdictBadge(q.judge)}</span>
-      <span class="txt">${esc(q.question)}</span>
-      <span class="small muted">${esc(q.question_type || "")}</span></div>`).join("");
+  let extBCard = "";
+  if (B?.session) {
+    const extBRows = B.session.extracted.map((m, i) => `
+      <div class="row" data-b-ext="${i}">
+        <span>${scoreBadge(m.judge?.score)}</span>${opChip(m.origin)}
+        <span class="txt">${esc(m.text)}</span></div>`).join("");
+    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(S.runB)} (${B.session.extracted.length})</h4><div class="body">${extBRows}</div></div>`;
+  } else if (S.runB) {
+    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(S.runB)}</h4><div class="body"><p class="small muted">이 유저/세션 데이터가 B 런에 없음</p></div></div>`;
+  }
 
   $("#content").innerHTML = `
-    <div class="hint">S${s.session_id} — 대화 턴 클릭 = A/B 앵커 비교 펼치기 · 메모리 행 클릭 = 우측 상세 · 행 호버 = 유래 턴 하이라이트${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}</span>` : " · 상단 [+ 비교(B)]로 다른 세팅과 비교"}</div>
-    <div class="legend" data-desc="배지 범례 — 사이드바의 원형 숫자: 빨강=이 세션에서 judge가 미포함(0점) 판정한 골든 수, 보라=오답(H/O) QA 수">
+    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(보라)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
+    <div class="legend" data-desc="배지 범례 — 사이드바 원형 숫자: 빨강=미포함(0점) 골든 수, 보라=오답 QA 수">
       <b>범례</b>
-      <span><span class="badge b2">2</span>완전포함/근거有</span>
-      <span><span class="badge b1">1</span>부분</span>
-      <span><span class="badge b0">0</span>미포함/비지지</span>
-      <span><span class="badge bC">C</span>orrect</span>
-      <span><span class="badge bH">H</span>allucination</span>
-      <span><span class="badge bO">O</span>mission</span>
-      <span class="anchor-chip g" style="cursor:default">G 골든(금색)</span>
-      <span class="anchor-chip e" style="cursor:default">E 추출(초록)</span>
+      <span><span class="badge b2">2</span>완전</span><span><span class="badge b1">1</span>부분</span><span><span class="badge b0">0</span>실패</span>
+      <span><span class="badge bC">C</span>/<span class="badge bH">H</span>/<span class="badge bO">O</span></span>
+      <span class="anchor-chip g" style="cursor:default">G 골든(금)</span>
+      <span class="anchor-chip e" style="cursor:default">A 추출(초록)</span>
+      ${S.bundleB ? '<span class="anchor-chip eb" style="cursor:default">B 추출(보라)</span>' : ""}
+      <span class="cmt-chip" style="cursor:default">가</span><span>= 코멘트 (호버/클릭)</span>
     </div>
+    <div class="card"><h4 data-k="questions">QA (${s.questions.length})</h4><div class="body">${qas}</div></div>
     <div class="card"><h4 data-k="dialogue_turn">대화 (${s.dialogue.length}턴)</h4><div class="body">${dlg}</div></div>
-    <div class="two-col">
+    <div class="${B?.session ? "three-col" : "two-col"}">
       <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})</h4><div class="body">${goldenRows}</div></div>
-      <div class="card"><h4 data-k="extracted_memories">추출 (${s.extracted.length})</h4><div class="body">${extRows}</div></div>
-    </div>
-    <div class="card"><h4 data-k="questions">QA (${s.questions.length})</h4><div class="body">${qas}</div></div>`;
+      <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(S.run)} (${s.extracted.length})</h4><div class="body">${extRows}</div></div>
+      ${extBCard}
+    </div>`;
 
-  // 행: 클릭 -> 상세, 호버 -> 유래 턴 하이라이트
   $$("#content [data-a]").forEach((el) => {
     const [kind, idx] = el.dataset.a.split(":");
     el.onclick = () => {
@@ -333,9 +441,14 @@ function renderSessions() {
       el.onmouseleave = () => $(`#turn-${t}`)?.classList.remove("hl");
     }
   });
-  // QA 행: 클릭 -> QA 상세 화면
+  $$("#content [data-b-ext]").forEach((el) => {
+    el.onclick = () => {
+      const i = +el.dataset.bExt;
+      setAnchor(`session:${s.session_id}/extb:${i}`, B.session.extracted[i]);
+      el.classList.add("selected");
+    };
+  });
   $$("#content [data-qa]").forEach((el) => (el.onclick = () => renderQADetail(s.session_id, +el.dataset.qa, true)));
-  // 앵커 칩: 클릭 -> 해당 행 강조 + 상세
   $$("#content [data-chip]").forEach((el) => {
     el.onclick = (ev) => {
       ev.stopPropagation();
@@ -348,10 +461,26 @@ function renderSessions() {
       row?.classList.add("selected");
     };
   });
-  // 턴 클릭 -> A/B 앵커 비교 패널 토글
-  $$("#content [data-turnx]").forEach((el) => {
-    el.onclick = () => toggleTurnPanel(s, A, B, +el.dataset.turnx);
+  $$("#content [data-chip-b]").forEach((el) => {
+    el.onclick = (ev) => {
+      ev.stopPropagation();
+      const i = +el.dataset.chipB;
+      const row = $(`#content [data-b-ext="${i}"]`);
+      row?.scrollIntoView({ block: "center", behavior: "smooth" });
+      row?.classList.add("flash");
+      setTimeout(() => row?.classList.remove("flash"), 1300);
+      setAnchor(`session:${s.session_id}/extb:${i}`, B.session.extracted[i]);
+      row?.classList.add("selected");
+    };
   });
+  $$("#content [data-turnx]").forEach((el) => {
+    el.onclick = () => {
+      const ti = +el.dataset.turnx;
+      setAnchor(`session:${s.session_id}/turn:${ti}`, s.dialogue[ti], false);
+      toggleTurnPanel(s, A, B, ti);
+    };
+  });
+  renderCmtMarks();
 }
 
 function toggleTurnPanel(s, A, B, ti) {
@@ -361,7 +490,7 @@ function toggleTurnPanel(s, A, B, ti) {
   const secA = `
     <h5>A: ${esc(S.run)} — 이 턴 앵커 (추정)</h5>
     ${a.g.map((gi) => { const mp = s.golden[gi]; const j = mp.judge || {};
-      return `<div class="row"><span class="tagchip">골든</span>${j.kind === "update" ? verdictBadge(j.label) : scoreBadge(j.score)}<span class="txt">${esc(mp.memory_content)}</span></div>`; }).join("")}
+      return `<div class="row"><span class="tagchip" style="color:var(--gold)">골든</span>${j.kind === "update" ? verdictBadge(j.label) : scoreBadge(j.score)}<span class="txt">${esc(mp.memory_content)}</span></div>`; }).join("")}
     ${a.e.map((ei) => { const m = s.extracted[ei];
       return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("")}
     ${!a.g.length && !a.e.length ? "<p class='small muted'>앵커된 메모리 없음</p>" : ""}`;
@@ -371,14 +500,82 @@ function toggleTurnPanel(s, A, B, ti) {
     secB = `<h5><span class="b-tag">B</span>: ${esc(S.runB)} — 이 턴 추출 (추정)</h5>
       ${bMap.e.map((ei) => { const m = B.session.extracted[ei];
         return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
-  } else if (S.runB) {
-    secB = `<h5><span class="b-tag">B</span>: ${esc(S.runB)}</h5><p class="small muted">이 유저/세션 데이터가 B 런에 없음</p>`;
   }
   box.innerHTML = secA + secB;
   box.classList.remove("hidden");
 }
 
-/* ----- QA ----- */
+/* ----- 코멘트 마크 (노션풍 표시) ----- */
+
+function anchorSelector(anchor) {
+  const m = anchor.match(/^session:(\d+)(?:\/(\w+):(\d+))?$/);
+  if (!m || +m[1] !== S.session) return null;
+  if (!m[2]) return null;
+  const kind = m[2], idx = m[3];
+  if (kind === "mp" || kind === "ext") return `[data-a="${kind}:${idx}"]`;
+  if (kind === "extb") return `[data-b-ext="${idx}"]`;
+  if (kind === "qa") return `[data-qa="${idx}"]`;
+  if (kind === "turn") return `#turn-${idx} .main`;
+  return null;
+}
+
+function renderCmtMarks() {
+  if (S.tab !== "sessions") return;
+  $$("#content .cmt-chip.live").forEach((el) => el.remove());
+  $$("#content .has-cmt").forEach((el) => el.classList.remove("has-cmt"));
+  const byAnchor = {};
+  S.comments.forEach((c) => (byAnchor[c.anchor] = byAnchor[c.anchor] || []).push(c));
+  Object.entries(byAnchor).forEach(([anchor, list]) => {
+    const sel = anchorSelector(anchor);
+    if (!sel) return;
+    const el = $(`#content ${sel}`);
+    if (!el) return;
+    el.classList.add("has-cmt");
+    const chip = document.createElement("span");
+    chip.className = "cmt-chip live";
+    chip.textContent = list.length > 1 ? `${initials(list[0].author)}+${list.length - 1}` : initials(list[0].author);
+    chip.dataset.desc = `코멘트 ${list.length}개 — ${esc(list.map((c) => `${c.author}: ${c.body.slice(0, 40)}`).join(" | "))} (클릭하면 스레드)`;
+    chip.onclick = (ev) => {
+      ev.stopPropagation();
+      const { obj } = resolveAnchorObj(anchor);
+      setAnchor(anchor, obj, false);
+      setITab("comments");
+    };
+    el.appendChild(chip);
+  });
+}
+
+function resolveAnchorObj(anchor) {
+  const m = anchor.match(/^session:(\d+)(?:\/(\w+):(\d+))?$/);
+  const s = m ? S.bundle.sessions.find((x) => x.session_id === +m[1]) : null;
+  if (!m || !s) return { obj: null };
+  if (!m[2]) return { obj: s };
+  const idx = +m[3];
+  if (m[2] === "mp") return { obj: s.golden[idx] };
+  if (m[2] === "ext") return { obj: s.extracted[idx] };
+  if (m[2] === "qa") return { obj: s.questions[idx] };
+  if (m[2] === "turn") return { obj: s.dialogue[idx] };
+  if (m[2] === "extb") return { obj: S.bundleB?.sessions.find((x) => x.session_id === +m[1])?.extracted[idx] };
+  return { obj: null };
+}
+
+function gotoAnchor(anchor) {
+  const m = anchor.match(/^session:(\d+)/);
+  if (!m) return;
+  setTab("sessions");
+  S.session = +m[1];
+  renderSessions();
+  const sel = anchorSelector(anchor);
+  const el = sel ? $(`#content ${sel}`) : null;
+  el?.scrollIntoView({ block: "center", behavior: "smooth" });
+  el?.classList.add("flash");
+  setTimeout(() => el?.classList.remove("flash"), 1500);
+  const { obj } = resolveAnchorObj(anchor);
+  setAnchor(anchor, obj, false);
+  setITab("comments");
+}
+
+/* ----- QA 탭 ----- */
 
 function allQAs() {
   const out = [];
@@ -403,25 +600,29 @@ function renderQA() {
   $("#content").innerHTML = `<p class="hint">좌측에서 QA를 선택하세요 (판정 필터: 전체/C/H/O). 총 ${allQAs().length}문항.</p>`;
 }
 
+function parseContext(raw) {
+  if (Array.isArray(raw)) return raw.map((c) => (typeof c === "string" ? c : c.memory || c.text || JSON.stringify(c)));
+  if (typeof raw !== "string") return null;
+  const a = raw.indexOf("["), b = raw.lastIndexOf("]");
+  if (a < 0 || b <= a) return null;
+  try { const arr = JSON.parse(raw.slice(a, b + 1)); return Array.isArray(arr) ? arr : null; } catch { return null; }
+}
+
 function renderQADetail(sid, qi, fromSession) {
   const s = S.bundle.sessions.find((x) => x.session_id === sid);
   const q = s.questions[qi];
   const ev = (q.evidence || []).map((e) => `<div class="row"><span class="tagchip" data-k="evidence">근거</span><span class="txt">${esc(e.memory_content)}</span></div>`).join("");
-  const ctxArr = Array.isArray(q.context) ? q.context : null;
-  const ctx = ctxArr
-    ? ctxArr.map((c, i) => {
-        const text = typeof c === "string" ? c : c.memory || c.text || JSON.stringify(c);
-        return `<div class="row"><span class="small muted">#${i + 1}</span><span class="txt">${esc(text)}</span></div>`;
-      }).join("")
-    : `<pre class="mono">${esc(q.context || "(없음)")}</pre>`;
-  const ctxCount = ctxArr ? ctxArr.length : (q.context ? "원문" : 0);
+  const items = parseContext(q.context);
+  const listHTML = items
+    ? items.map((c, i) => `<div class="row"><span class="small muted">#${i + 1}</span><span class="txt">${esc(c)}</span></div>`).join("")
+    : null;
+  const rawHTML = `<pre class="mono">${esc(typeof q.context === "string" ? q.context : JSON.stringify(q.context, null, 2))}</pre>`;
 
-  // B 세팅의 같은 질문 판정/답변
   let bCard = "";
   if (S.bundleB) {
     const sb = S.bundleB.sessions.find((x) => x.session_id === sid);
     const qb = sb?.questions?.find((x) => x.question === q.question);
-    bCard = `<div class="card"><h4><span style="color:var(--bcol)">B: ${esc(S.runB)}</span> 판정 ${verdictBadge(qb?.judge)}</h4>
+    bCard = `<div class="card b-card"><h4>B: ${esc(S.runB)} 판정 ${verdictBadge(qb?.judge)}</h4>
       <div class="body">${esc(qb?.system_response || "(B 런에 답변 없음)")}</div></div>`;
   }
 
@@ -433,13 +634,22 @@ function renderQADetail(sid, qi, fromSession) {
     <div class="card"><h4 data-k="system_response">시스템 답변 (A′)</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
     ${bCard}
     <div class="card"><h4 data-k="evidence">Evidence (${(q.evidence || []).length})</h4><div class="body">${ev}</div></div>
-    <div class="card"><h4 data-k="context">검색 Context (${ctxCount})</h4><div class="body">${ctx}</div></div>`;
+    <div class="card"><h4 data-k="context">검색 Context (${items ? items.length + "건" : "원문"})
+      ${items ? '<button class="ctx-toggle" id="ctx-toggle">원문 보기</button>' : ""}</h4>
+      <div class="body"><div id="ctx-list">${listHTML ?? rawHTML}</div><div id="ctx-raw" class="hidden">${rawHTML}</div></div></div>`;
+  if (items) {
+    $("#ctx-toggle").onclick = () => {
+      const showRaw = $("#ctx-raw").classList.toggle("hidden");
+      $("#ctx-list").classList.toggle("hidden", !showRaw);
+      $("#ctx-toggle").textContent = showRaw ? "원문 보기" : "목록 보기";
+    };
+  }
   $("#btn-back") && ($("#btn-back").onclick = () => renderSessions());
   S.session = sid;
   setAnchor(`session:${sid}/qa:${qi}`, q);
 }
 
-/* ----- Compare (상단 B 세팅 사용) ----- */
+/* ----- Compare ----- */
 
 function renderCompare() {
   $("#sidebar").innerHTML = `<div style="padding:10px">
@@ -448,7 +658,6 @@ function renderCompare() {
     <p class="small">상단의 [+ 비교(B)]에서 B 세팅을 선택하면 여기서 전체 대조표가 나옵니다.</p></div>`;
   if (!S.bundleB) { $("#content").innerHTML = "<p class='hint'>상단 [+ 비교(B)]로 비교 세팅을 먼저 선택하세요.</p>"; return; }
 
-  // 유저 단위 집계 (세션별 표는 정보 과잉이라 요약 한 줄씩만)
   const agg = (bundle) => {
     const a = { g: 0, g2: 0, ext: 0, a0: 0, C: 0, H: 0, O: 0 };
     bundle.sessions.forEach((s) => {
@@ -476,7 +685,7 @@ function renderCompare() {
       <td ${r.diff ? 'class="diff"' : ""}>${verdictBadge(r.qb?.judge)}</td></tr>`);
 
   $("#content").innerHTML = `
-    <div class="hint">A = ${esc(S.run)} / B = ${esc(S.runB)} — 유저 ${esc(S.bundle.user_name)}. 주황 = 판정 갈림. QA 행 클릭 = 상세 대조 펼침.</div>
+    <div class="hint">A = ${esc(S.run)} / B = ${esc(S.runB)} — 유저 ${esc(S.bundle.user_name)}. 주황 = 판정 갈림. QA 행 클릭 = 상세 대조.</div>
     <div class="card"><h4>요약 (유저 전체)</h4><div class="body">
       <div class="row" style="cursor:default"><span class="tagchip">A</span><span class="txt">${esc(S.run)}</span><span>${fmtAgg(aA)}</span></div>
       <div class="row" style="cursor:default"><span class="tagchip" style="color:var(--bcol)">B</span><span class="txt">${esc(S.runB)}</span><span>${fmtAgg(aB)}</span></div>
@@ -484,7 +693,6 @@ function renderCompare() {
     <div class="card"><h4>QA 판정 대조 (${qas.filter((r) => r.diff).length}건 갈림 / ${qas.length})</h4><div class="body">
       <table class="cmp" id="cmp-qa"><tr><th>세션</th><th>질문</th><th>A</th><th>B</th></tr>${qaRows.join("")}</table></div></div>`;
 
-  // QA 행 클릭 -> 상세 대조 아코디언 (A/B 답변·정답·근거)
   $$("#cmp-qa .qa-row").forEach((tr) => {
     tr.onclick = () => {
       const open = tr.nextElementSibling?.classList.contains("qa-x");
@@ -497,8 +705,7 @@ function renderCompare() {
         <p class="small"><b>골든 정답</b> — ${esc(r.q.answer)}</p>
         <p class="small"><b>A 답변</b> ${verdictBadge(r.q.judge)}</p><pre class="mono">${esc(r.q.system_response || "(없음)")}</pre>
         <p class="small"><b>B 답변</b> ${verdictBadge(r.qb?.judge)}</p><pre class="mono">${esc(r.qb?.system_response || "(B 런에 없음)")}</pre>
-        <p class="small"><b>근거 골든</b> — ${(r.q.evidence || []).map((e) => esc(e.memory_content)).join(" · ") || "없음"}</p>
-        <p class="small muted">검색 context·trace까지 보려면 QA 탭(A) / B는 상단 세팅을 맞바꿔 확인</p></td>`;
+        <p class="small"><b>근거 골든</b> — ${(r.q.evidence || []).map((e) => esc(e.memory_content)).join(" · ") || "없음"}</p></td>`;
       tr.after(x);
     };
   });
@@ -508,26 +715,34 @@ function renderCompare() {
 
 async function renderDigest() {
   const all = await api(`/api/digest/${S.uuid}`);
+  const scoped = S.digestScope === "session"
+    ? all.filter((c) => c.run === S.run && (c.anchor === `session:${S.session}` || c.anchor.startsWith(`session:${S.session}/`)))
+    : all;
   $("#sidebar").innerHTML = `<div style="padding:10px">
-    <p class="small muted">유저 <b>${esc(S.bundle.user_name)}</b>의 전체 런·전체 분석가 코멘트</p>
+    <p class="small muted">유저 <b>${esc(S.bundle.user_name)}</b> 코멘트</p>
+    <div class="pill-filter" style="margin:0 0 8px">
+      <button class="${S.digestScope === "user" ? "on" : ""}" data-sc="user">유저 전체</button>
+      <button class="${S.digestScope === "session" ? "on" : ""}" data-sc="session">현재 세션 S${S.session}</button></div>
     <a href="/api/export/${S.uuid}" target="_blank">📄 Markdown export</a></div>`;
-  if (!all.length) {
+  $$("#sidebar .pill-filter button").forEach((b) => (b.onclick = () => { S.digestScope = b.dataset.sc; renderDigest(); }));
+  if (!scoped.length) {
     $("#content").innerHTML = `<div class="card"><h4>Digest — 코멘트 모아보기</h4><div class="body">
-      <p>유저 <b>${esc(S.bundle.user_name)}</b>에 대해 아직 등록된 코멘트가 없습니다.</p>
-      <p class="small muted">이 탭은 모든 런·모든 분석가가 이 유저에 남긴 코멘트를 한눈에 모아 보여주고 Markdown으로 export하는 곳입니다.<br>
-      코멘트를 남기려면: Sessions/QA 탭에서 분석할 항목(메모리 행·QA)을 클릭 → 우측 <b>코멘트</b> 탭에서 작성.</p></div></div>`;
+      <p>선택 범위(${S.digestScope === "user" ? "유저 전체" : `세션 S${S.session}`})에 코멘트가 없습니다.</p>
+      <p class="small muted">코멘트 남기기: Sessions/QA 탭에서 항목 클릭 → 우측 코멘트 탭. 또는 텍스트 드래그 선택 → 💬 버튼.<br>
+      세션/유저 단위 종합 코멘트는 항목 클릭 없이 우측 코멘트 탭에서 바로 작성하면 됩니다 (앵커 run/session).</p></div></div>`;
     return;
   }
   const byRun = {};
-  all.forEach((c) => (byRun[c.run] = byRun[c.run] || []).push(c));
+  scoped.forEach((c) => (byRun[c.run] = byRun[c.run] || []).push(c));
   $("#content").innerHTML = Object.entries(byRun).map(([run, list]) => `
     <div class="card"><h4>run: ${esc(run)} (${list.length})</h4><div class="body">
-      ${list.map(cmtHTML).join("")}</div></div>`).join("");
+      ${list.map((c) => cmtHTML(c, run === S.run)).join("")}</div></div>`).join("");
   $$("#content .del").forEach((b) => (b.onclick = async () => {
     await api(`/api/comments/${b.dataset.id}?author=${encodeURIComponent(S.author)}`, { method: "DELETE" });
     S.comments = await api(`/api/comments/${S.run}/${S.uuid}`);
     renderDigest();
   }));
+  $$("#content .goto").forEach((b) => (b.onclick = () => gotoAnchor(b.dataset.anchor)));
 }
 
 /* ---------- 인스펙터 ---------- */
@@ -581,7 +796,7 @@ async function renderTrace(el) {
     catch { el.innerHTML = "<p class='muted'>이 런에는 trace가 없습니다</p>"; return; }
     S.traceCache.set(S.session, recs);
   }
-  el.innerHTML = `<div class="anchor-label">S${S.session} trace — ${recs.length}건 (시간순) · 클릭하면 펼침</div>` +
+  el.innerHTML = `<div class="anchor-label">S${S.session} trace — ${recs.length}건 (시간순) · 클릭하면 펼침 (한 번에 하나)</div>` +
     recs.map((r, i) => `<div class="tr-rec" data-i="${i}">
       <div class="hdr" data-k="${esc(r.event)}">
         <span class="small muted">#${r.seq}</span>
@@ -594,19 +809,17 @@ async function renderTrace(el) {
     const hdr = $(".hdr", div), x = $(".x", div);
     hdr.onclick = () => {
       const wasOpen = !x.classList.contains("hidden");
-      // 단일 열림: 다른 확장 전부 접고, 중앙 하이라이트도 초기화
       $$(".tr-rec .x", el).forEach((o) => { o.classList.add("hidden"); o.innerHTML = ""; });
       clearTraceHighlight();
       if (wasOpen) return;
       const r = recs[+div.dataset.i];
       x.innerHTML = traceDetail(r);
       x.classList.remove("hidden");
-      highlightTraceTarget(r); // trace가 열려 있는 동안 중앙 섹션의 상응 지점 하이라이트 유지
+      highlightTraceTarget(r);
     };
   });
 }
 
-/* trace 레코드 -> 중앙 섹션의 상응 요소 하이라이트 (열려 있는 동안 유지) */
 function clearTraceHighlight() { $$(".hl-tr").forEach((el) => el.classList.remove("hl-tr")); }
 
 function highlightTraceTarget(r) {
@@ -618,7 +831,6 @@ function highlightTraceTarget(r) {
     list.forEach((item, i) => { if (pred(item)) targets.push(`[data-a="${kind}:${i}"]`); });
   };
   if (r.event === "retrieval" && r.stage === "ingest" && r.retrieval?.query) {
-    // ingest 검색 쿼리 = 추출된 fact 텍스트
     findRow("ext", (m) => m.text === r.retrieval.query, s.extracted);
   } else if (r.event === "retrieval" && r.stage === "qa_retrieval" && r.ref?.question) {
     s.questions.forEach((q, i) => { if (q.question === r.ref.question) targets.push(`[data-qa="${i}"]`); });
@@ -634,7 +846,6 @@ function highlightTraceTarget(r) {
     if (!el) return;
     el.classList.add("hl-tr");
     first = first || el;
-    // 상응 요소가 앵커된 대화 턴도 함께 하이라이트 (근사 앵커 기준)
     const t = +el.dataset.turn;
     if (t >= 0) $(`#turn-${t}`)?.classList.add("hl-tr");
   });
@@ -663,12 +874,16 @@ function traceDetail(r) {
   return `<pre class="mono">${esc(JSON.stringify(r, null, 2))}</pre>`;
 }
 
-function cmtHTML(c) {
+/* ---------- 코멘트 ---------- */
+
+function cmtHTML(c, canGoto = false) {
   const mine = c.author === S.author;
   return `<div class="cmt"><div class="meta"><span class="author">${esc(c.author)}</span>
     ${c.tag ? `<span class="tagchip">${esc(c.tag)}</span>` : ""}
     <span>${esc(c.anchor)}</span><span>${esc((c.created_at || "").slice(0, 16).replace("T", " "))}</span>
+    ${canGoto && c.anchor.startsWith("session:") ? `<button class="del goto" style="color:var(--accent)" data-anchor="${esc(c.anchor)}">이동</button>` : ""}
     ${mine ? `<button class="del" data-id="${c.id}">삭제</button>` : ""}</div>
+    ${c.quote ? `<div class="cmt-quote">“${esc(c.quote)}”</div>` : ""}
     <div class="body-text">${esc(c.body)}</div></div>`;
 }
 
@@ -678,28 +893,34 @@ function renderComments(el) {
   el.innerHTML = `
     <div class="anchor-label">앵커: ${esc(S.anchor)}</div>
     <div id="cmt-form" style="margin:8px 0">
-      <textarea id="cmt-body" placeholder="관찰/해석을 남겨주세요 (분담표 양식: 관찰 → 유형 태그 → 시사점)"></textarea>
+      ${S.pendingQuote ? `<div class="cmt-quote">“${esc(S.pendingQuote)}” <button id="quote-clear" style="border:none;background:none;cursor:pointer;color:var(--bad)">×</button></div>` : ""}
+      <textarea id="cmt-body" placeholder="관찰/해석을 남겨주세요 (관찰 → 유형 태그 → 시사점)"></textarea>
       <div style="display:flex;gap:6px;margin-top:4px">
         <select id="cmt-tag"><option value="">태그 없음</option><option>강점</option><option>약점</option><option>병목</option><option>judge오판</option><option>추출누락</option><option>재작성drift</option><option>기타</option></select>
         <button class="primary" id="cmt-add">등록</button></div></div>
-    <h4 class="small muted">이 앵커 (${here.length})</h4>${here.map(cmtHTML).join("") || "<p class='small muted'>없음</p>"}
-    <h4 class="small muted">이 유저의 다른 앵커 (${others.length})</h4>${others.map(cmtHTML).join("")}`;
+    <h4 class="small muted">이 앵커 (${here.length})</h4>${here.map((c) => cmtHTML(c)).join("") || "<p class='small muted'>없음</p>"}
+    <h4 class="small muted">이 유저의 다른 앵커 (${others.length})</h4>${others.map((c) => cmtHTML(c, true)).join("")}`;
+  $("#quote-clear") && ($("#quote-clear").onclick = () => { S.pendingQuote = ""; renderComments(el); });
   $("#cmt-add").onclick = async () => {
     const body = $("#cmt-body").value.trim();
     if (!body) return;
     if (!S.author) { askName(); return; }
     await api("/api/comments", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ run: S.run, uuid: S.uuid, anchor: S.anchor, author: S.author, tag: $("#cmt-tag").value, body }),
+      body: JSON.stringify({ run: S.run, uuid: S.uuid, anchor: S.anchor, author: S.author, tag: $("#cmt-tag").value, body, quote: S.pendingQuote }),
     });
+    S.pendingQuote = "";
     S.comments = await api(`/api/comments/${S.run}/${S.uuid}`);
     renderInspector();
+    renderCmtMarks();
   };
-  $$(".del", el).forEach((b) => (b.onclick = async () => {
+  $$(".del:not(.goto)", el).forEach((b) => (b.onclick = async () => {
     await api(`/api/comments/${b.dataset.id}?author=${encodeURIComponent(S.author)}`, { method: "DELETE" });
     S.comments = await api(`/api/comments/${S.run}/${S.uuid}`);
     renderInspector();
+    renderCmtMarks();
   }));
+  $$(".goto", el).forEach((b) => (b.onclick = () => gotoAnchor(b.dataset.anchor)));
 }
 
 boot().catch((e) => { document.body.innerHTML = `<pre style="padding:20px;color:#c92a2a">${esc(e.stack || e.message)}</pre>`; });

@@ -217,16 +217,21 @@ def db():
         run TEXT NOT NULL, uuid TEXT NOT NULL, anchor TEXT NOT NULL,
         author TEXT NOT NULL, tag TEXT DEFAULT '', body TEXT NOT NULL,
         created_at TEXT NOT NULL)""")
+    # additive 마이그레이션: 드래그 하이라이트 인용문 컬럼
+    cols = [r["name"] for r in conn.execute("PRAGMA table_info(comments)")]
+    if "quote" not in cols:
+        conn.execute("ALTER TABLE comments ADD COLUMN quote TEXT DEFAULT ''")
     return conn
 
 
 class CommentIn(BaseModel):
     run: str
     uuid: str
-    anchor: str  # 예: "session:12" / "session:12/mp:3" / "session:12/qa:1" / "run"
+    anchor: str  # 예: "session:12" / "session:12/mp:3" / "session:12/qa:1" / "session:12/turn:4" / "run"
     author: str
     tag: str = ""
     body: str
+    quote: str = ""  # 드래그 하이라이트로 지정한 인용 텍스트 (선택)
 
 
 @app.post("/api/comments")
@@ -235,8 +240,8 @@ def add_comment(c: CommentIn):
         raise HTTPException(400, "author/body required")
     with db() as conn:
         cur = conn.execute(
-            "INSERT INTO comments (run, uuid, anchor, author, tag, body, created_at) VALUES (?,?,?,?,?,?,?)",
-            (c.run, c.uuid, c.anchor, c.author.strip(), c.tag.strip(), c.body, datetime.now(timezone.utc).isoformat()),
+            "INSERT INTO comments (run, uuid, anchor, author, tag, body, quote, created_at) VALUES (?,?,?,?,?,?,?,?)",
+            (c.run, c.uuid, c.anchor, c.author.strip(), c.tag.strip(), c.body, c.quote, datetime.now(timezone.utc).isoformat()),
         )
         return {"id": cur.lastrowid}
 

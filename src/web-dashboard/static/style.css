@@ -86,6 +86,26 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 .turn.hl-tr, .row.hl-tr { background: #fff9db; outline: 1px dashed var(--warn); border-radius: 6px; }
 tr.qa-x > td { background: #fbfbfd; }
 .legend { font-size: 11px; color: var(--dim); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 2px 0 10px; }
+
+/* B 세팅 컬러코딩 (보라) */
+.anchor-chip.eb { border-left: 3px solid var(--bcol); background: #faf5fc; }
+.card.b-card > h4 { color: var(--bcol); }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: start; }
+
+/* 로딩 오버레이 */
+#loading { position: fixed; inset: 0; background: rgba(255,255,255,.55); z-index: 90; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; color: var(--dim); }
+.spinner { width: 22px; height: 22px; border: 3px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* 코멘트 표시 (노션풍) */
+.has-cmt { background: #fff6d9 !important; box-shadow: inset 3px 0 0 var(--warn); }
+.cmt-chip { display: inline-flex; align-items: center; justify-content: center; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--warn); color: #fff; font-size: 10px; font-weight: 800; cursor: pointer; margin-left: 4px; vertical-align: middle; }
+.cmt-quote { border-left: 3px solid var(--warn); background: #fffaf0; padding: 3px 8px; margin: 3px 0; font-size: 12px; color: var(--dim); white-space: pre-wrap; border-radius: 0 5px 5px 0; }
+#sel-cmt { position: fixed; z-index: 95; border: none; background: var(--ink); color: #fff; border-radius: 7px; padding: 5px 10px; cursor: pointer; font-size: 12px; box-shadow: 0 3px 10px rgba(0,0,0,.25); }
+
+/* context 원문 토글 */
+.ctx-toggle { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 2px 9px; cursor: pointer; font-size: 11px; margin-left: auto; }
+
 .turn-x { margin: 6px 0 2px 72px; border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 8px 10px; background: #fcfcfe; }
 .turn-x h5 { margin: 2px 0 4px; font-size: 11px; color: var(--dim); }
 .turn-x h5 .b-tag { color: var(--bcol); font-weight: 800; }
