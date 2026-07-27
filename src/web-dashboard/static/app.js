@@ -199,17 +199,35 @@ function initResizers() {
   drag($("#rz1"), "left"); drag($("#rz2"), "right");
 }
 
-/* ---------- 설명 바 ---------- */
+/* ---------- 마우스 추적 툴팁 (필드 사전) ---------- */
 
 function initDescBar() {
+  const tip = $("#tip");
+  const place = (e) => {
+    const x = Math.min(e.clientX + 14, window.innerWidth - tip.offsetWidth - 10);
+    const y = e.clientY + 18 > window.innerHeight - tip.offsetHeight - 10
+      ? e.clientY - tip.offsetHeight - 10 : e.clientY + 18;
+    tip.style.left = `${Math.max(4, x)}px`;
+    tip.style.top = `${Math.max(4, y)}px`;
+  };
+  let cur = null;
   document.addEventListener("mouseover", (e) => {
     const el = e.target.closest("[data-k], [data-desc]");
-    if (!el) return;
-    const bar = $("#desc-bar");
-    if (el.dataset.desc) { bar.innerHTML = el.dataset.desc; return; }
-    const k = el.dataset.k;
-    const d = S.fielddict[k];
-    bar.innerHTML = d ? `<b>${esc(k)}</b> — ${esc(d)}` : `<b>${esc(k)}</b> — (사전에 설명 없음)`;
+    if (!el) { if (cur) { cur = null; tip.classList.add("hidden"); } return; }
+    if (el === cur) return;
+    cur = el;
+    if (el.dataset.desc) tip.innerHTML = el.dataset.desc;
+    else {
+      const k = el.dataset.k;
+      const d = S.fielddict[k];
+      tip.innerHTML = d ? `<b>${esc(k)}</b> — ${esc(d)}` : `<b>${esc(k)}</b>`;
+    }
+    tip.classList.remove("hidden");
+    place(e);
+  });
+  document.addEventListener("mousemove", (e) => { if (cur && !tip.classList.contains("hidden")) place(e); });
+  document.addEventListener("mouseout", (e) => {
+    if (cur && !cur.contains(e.relatedTarget)) { cur = null; tip.classList.add("hidden"); }
   });
 }
 
@@ -425,7 +443,7 @@ function renderSessions() {
     </div>
     <div class="card"><h4 data-k="questions">QA (${s.questions.length})</h4><div class="body">${qas}</div></div>
     <div class="card"><h4 data-k="dialogue_turn">대화 (${s.dialogue.length}턴)
-      <span class="small muted" style="margin-left:auto" data-desc="대화 오른쪽 메모리 칩 칼럼의 너비 조절 (드래그)">칩 폭</span>
+      <span class="small muted" style="margin-left:auto" data-desc="대화 오른쪽에 표시되는 골든/추출 메모리 칼럼의 너비 조절">메모리 표시 너비</span>
       <input type="range" id="anch-w" min="140" max="640" step="10" style="width:110px"></h4>
       <div class="body">${dlg}</div></div>
     <div class="${B?.session ? "three-col" : "two-col"}">
@@ -639,7 +657,7 @@ function renderQADetail(sid, qi, fromSession) {
   $("#content").innerHTML = `
     ${fromSession ? `<span class="backlink" id="btn-back">← 세션 S${sid}로 돌아가기</span>` : ""}
     <div class="hint">S${sid} · ${esc(q.question_type || "")} — 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → context</div>
-    <div class="card"><h4>질문</h4><div class="body">${esc(q.question)}</div></div>
+    <div class="card"><h4 data-k="question">질문</h4><div class="body">${esc(q.question)}</div></div>
     <div class="card"><h4 data-k="answer">골든 정답</h4><div class="body">${esc(q.answer)}</div></div>
     <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(S.run)} 답변` : "시스템 답변 (A′)"} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
     ${bCard}
@@ -696,11 +714,11 @@ function renderCompare() {
 
   $("#content").innerHTML = `
     <div class="hint">A = ${esc(S.run)} / B = ${esc(S.runB)} — 유저 ${esc(S.bundle.user_name)}. 주황 = 판정 갈림. QA 행 클릭 = 상세 대조.</div>
-    <div class="card"><h4>요약 (유저 전체)</h4><div class="body">
+    <div class="card"><h4 data-desc="이 유저 전체에 대한 A/B 세팅 요약 — 골든 포함률(judge 2점 비율), 추출량, accuracy 0점 수, QA 판정 분포">요약 (유저 전체)</h4><div class="body">
       <div class="row" style="cursor:default"><span class="tagchip">A</span><span class="txt">${esc(S.run)}</span><span>${fmtAgg(aA)}</span></div>
       <div class="row" style="cursor:default"><span class="tagchip" style="color:var(--bcol)">B</span><span class="txt">${esc(S.runB)}</span><span>${fmtAgg(aB)}</span></div>
     </div></div>
-    <div class="card"><h4>QA 판정 대조 (${qas.filter((r) => r.diff).length}건 갈림 / ${qas.length})</h4><div class="body">
+    <div class="card"><h4 data-desc="같은 질문에 대한 A/B 판정 대조 — 주황 셀이 판정이 갈린 질문. 행 클릭 시 양쪽 답변·정답·근거 펼침">QA 판정 대조 (${qas.filter((r) => r.diff).length}건 갈림 / ${qas.length})</h4><div class="body">
       <table class="cmp" id="cmp-qa"><tr><th>세션</th><th>질문</th><th>A</th><th>B</th></tr>${qaRows.join("")}</table></div></div>`;
 
   $$("#cmp-qa .qa-row").forEach((tr) => {

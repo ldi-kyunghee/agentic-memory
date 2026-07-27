@@ -33,8 +33,10 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 .rz:hover, .rz.on { background: var(--accent); opacity: .35; }
 #insp-tabs { display: flex; border-bottom: 1px solid var(--line); padding: 4px; }
 #insp-body { overflow-y: auto; padding: 10px; flex: 1; }
-#desc-bar { border-top: 1px solid var(--line); padding: 7px 10px; font-size: 11.5px; color: var(--dim); background: #fbfbfc; min-height: 44px; }
-#desc-bar b { color: var(--ink); }
+
+/* 마우스 추적 툴팁 */
+#tip { position: fixed; z-index: 99; max-width: 340px; background: var(--ink); color: #fff; font-size: 11.5px; line-height: 1.45; padding: 6px 9px; border-radius: 7px; box-shadow: 0 4px 14px rgba(0,0,0,.3); pointer-events: none; }
+#tip b { color: #ffd77a; }
 
 /* ---------- 사이드바 ---------- */
 .side-item { padding: 7px 10px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; gap: 6px; align-items: baseline; }

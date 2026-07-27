@@ -9,25 +9,25 @@
 <body>
 <header id="topbar">
   <span class="brand">mem0×HaluMem</span>
-  <div class="grp"><label>Agent LLM</label><select id="sel-backbone" title="memory agent 백본 (fact 추출·update 결정 담당 LLM)"></select></div>
-  <div class="grp"><label>Prompt</label><select id="sel-prompt" title="fact 추출 프롬프트 (default=mem0 기본 / custom=HaluMem 원본 지침)"></select></div>
-  <div class="grp"><label>Judge LLM</label><select id="sel-judge" title="채점 라벨 세트 (nano=GPT-5-Nano, 첫 4유저만 / qwen4b=Qwen3-4B, 20유저)"></select></div>
-  <div class="grp"><label>Embedding</label><span id="emb-name" class="fixed" title="벡터 검색 임베더 — 전 실험 공통 고정"></span></div>
-  <div class="grp"><label>User</label><select id="sel-user" title="분석 대상 가상 유저"></select></div>
-  <button id="btn-addb" title="두 번째 세팅(B)을 열어 같은 유저를 나란히 비교">+ 비교(B)</button>
+  <div class="grp"><label data-desc="분석 대상 가상 유저 — HaluMem 데이터셋의 인물. 정성분석은 유저 단위로 진행">User</label><select id="sel-user"></select></div>
+  <div class="grp"><label data-desc="채점 라벨 세트 — nano=GPT-5-Nano(신뢰 기준, 첫 4유저만) / qwen4b=Qwen3-4B(20유저 전체, 왜곡 있음)">Judge LLM</label><select id="sel-judge"></select></div>
+  <div class="grp"><label data-desc="벡터 검색 임베더 — 전 실험 공통 고정 (통제 변인)">Embedding</label><span id="emb-name" class="fixed"></span></div>
+  <div class="grp"><label data-desc="기준(A) 세팅의 memory agent 백본 — fact 추출과 ADD/UPDATE/DELETE 결정을 담당하는 LLM">Agent A</label><select id="sel-backbone"></select></div>
+  <div class="grp"><label data-desc="A 세팅의 fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형)">A 추출 프롬프트</label><select id="sel-prompt"></select></div>
+  <button id="btn-addb" data-desc="비교(B) 세팅을 열어 같은 유저를 두 세팅에서 나란히 관찰">+ 비교(B)</button>
   <div id="grp-b" class="hidden">
     <span class="b-mark">B</span>
-    <div class="grp"><label>Agent LLM</label><select id="sel-backbone-b"></select></div>
-    <div class="grp"><label>Prompt</label><select id="sel-prompt-b"></select></div>
-    <button id="btn-delb" title="비교 세팅 닫기">×</button>
+    <div class="grp"><label data-desc="비교(B) 세팅의 memory agent 백본">Agent B</label><select id="sel-backbone-b"></select></div>
+    <div class="grp"><label data-desc="B 세팅의 fact 추출 프롬프트">B 추출 프롬프트</label><select id="sel-prompt-b"></select></div>
+    <button id="btn-delb" data-desc="비교 세팅 닫기">×</button>
   </div>
   <nav id="tabs">
-    <button data-tab="sessions" class="active">Sessions</button>
-    <button data-tab="qa">QA</button>
-    <button data-tab="compare">Compare</button>
-    <button data-tab="digest">Digest</button>
+    <button data-tab="sessions" class="active" data-desc="세션 단위 탐색 — QA·대화·골든/추출 대조">Sessions</button>
+    <button data-tab="qa" data-desc="전체 QA를 판정(C/H/O)별로 필터링해 실패 사례부터 훑기">QA</button>
+    <button data-tab="compare" data-desc="A/B 세팅의 유저 전체 요약·QA 판정 대조표">Compare</button>
+    <button data-tab="digest" data-desc="이 유저에 대한 모든 분석가의 코멘트 모아보기 + export">Digest</button>
   </nav>
-  <span id="who" title="클릭해서 이름 변경"></span>
+  <span id="who" data-desc="클릭해서 이름 변경"></span>
 </header>
 
 <main id="layout">
@@ -42,7 +42,6 @@
       <button data-itab="comments">코멘트 <span id="cmt-count"></span></button>
     </div>
     <div id="insp-body"></div>
-    <div id="desc-bar">필드/항목에 마우스를 올리면 설명이 여기 표시됩니다</div>
   </aside>
 </main>
 
@@ -57,6 +56,7 @@
 
 <div id="loading" class="hidden"><div class="spinner"></div><span id="loading-msg">불러오는 중…</span></div>
 <button id="sel-cmt" class="hidden">💬 코멘트</button>
+<div id="tip" class="hidden"></div>
 
 <script src="/static/app.js"></script>
 </body>
