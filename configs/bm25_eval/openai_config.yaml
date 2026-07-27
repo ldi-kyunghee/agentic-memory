@@ -1,3 +1,2 @@
-model: gpt-5.2-nano
-api_key: CHATKHU_API_KEY
-base_url: https://factchat-cloud.mindlogic.ai/v1/gateway
+model: gpt-5-nano
+api_key: OPENAI_API_KEY
