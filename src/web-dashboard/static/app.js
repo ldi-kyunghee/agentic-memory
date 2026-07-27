@@ -42,7 +42,13 @@ async function boot() {
   } finally { busy(false); }
 
   const backbones = [...new Set(S.runs.map((r) => r.backbone))];
-  $("#sel-backbone").innerHTML = backbones.map((b) => `<option>${esc(b)}</option>`).join("");
+  // reasoning 백본은 effort 병기 (예: "gpt-5-nano · effort=default")
+  const bbLabel = (b) => {
+    const e = S.runs.find((r) => r.backbone === b)?.backbone_effort;
+    return e ? `${b} · ${effortShort(e)}` : b;
+  };
+  S.bbLabel = bbLabel;
+  $("#sel-backbone").innerHTML = backbones.map((b) => `<option value="${esc(b)}">${esc(bbLabel(b))}</option>`).join("");
   $("#sel-backbone").onchange = () => { S.backbone = $("#sel-backbone").value; syncPrompts("A"); applyRun(); };
   $("#sel-prompt").onchange = () => { S.prompt = $("#sel-prompt").value; applyRun(); };
   $("#sel-judge").onchange = () => { S.judge = $("#sel-judge").value; loadBundle(); };
@@ -118,7 +124,7 @@ async function applyRun() {
 
 function initB() {
   const backbones = [...new Set(S.runs.map((r) => r.backbone))];
-  $("#sel-backbone-b").innerHTML = backbones.map((b) => `<option>${esc(b)}</option>`).join("");
+  $("#sel-backbone-b").innerHTML = backbones.map((b) => `<option value="${esc(b)}">${esc(S.bbLabel(b))}</option>`).join("");
   S.backboneB = S.backbone;
   $("#sel-backbone-b").value = S.backboneB;
   syncPrompts("B");
@@ -312,6 +318,11 @@ const verdictBadge = (v) => {
   return `<span class="badge ${c}" data-desc="판정: ${esc(v)}">${esc(v[0])}</span>`;
 };
 const opChip = (op) => op ? `<span class="op ${esc(op)}" data-desc="이 메모리를 만든 연산: ${esc(op)} (ADD=신규 추출 / UPDATE=기존 메모리 재작성본)">${esc(op)}</span>` : "";
+// reasoning effort 축약 표시: "default(medium) — …" -> "effort=default", "항상 사고 (…)" -> "항상 사고"
+const effortShort = (e) => {
+  const s = e.split("(")[0].split("—")[0].trim();
+  return /^[a-z]/.test(s) ? `effort=${s}` : s;
+};
 // QA 상세 등 공간 여유 있는 곳은 풀네임 판정 배지
 const verdictFull = (v) => v ? `<span class="badge ${v[0] === "C" ? "bC" : v[0] === "H" ? "bH" : "bO"}">${esc(v)}</span>` : `<span class="badge bnull">판정 없음</span>`;
 // 미끼(interference) 골든은 포함 점수의 좋고 나쁨이 반전됨: 0=미포함=저항 성공(FMR 기여), 2=흡수=감점
@@ -839,12 +850,14 @@ async function renderMetrics() {
     const sorted = [...vals].sort((a, b) => c.dir === 1 ? b - a : a - b);
     rank[c.k] = { sorted, best: sorted[0] };
   });
-  const judgeName = data.judge === "nano" ? "GPT-5-Nano" : "Qwen3-4B";
+  // judge 표시명 — reasoning judge는 effort 병기 (전부 minimal 규약)
+  const JUDGE_NAMES = { nano: "GPT-5-Nano (minimal)", qwen4b: "Qwen3-4B", "mini-genmini": "GPT-5-Mini (minimal)" };
+  const judgeName = JUDGE_NAMES[data.judge] || data.judge;
 
   const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);
   const body = rows.map((r) => {
     const m = r.metrics;
-    const sysName = `Mem0-Classic-OSS${r.prompt === "custom" ? " +custom" : ""}`;
+    const sysName = "Mem0-Classic-OSS";
     const lat = r.latency;
     const latCell = lat
       ? `<td data-desc="<b>세션 투입 시간</b> — mem0.add 1회(fact 추출→유사 검색→update 결정 LLM 콜 포함) 평균 ${lat.ingest_avg_s}s · 중앙값 ${lat.ingest_p50_s}s · 세션 ${lat.n_sessions}개 실측. 백본 크기·API 왕복이 그대로 반영됨. 질문 검색(임베더 고정)은 평균 ${lat.search_avg_ms}ms로 백본 무관">
@@ -863,19 +876,21 @@ async function renderMetrics() {
     return `<tr>
       <td data-desc="${esc(r.note || r.label)}"><b>${esc(sysName)}</b></td>
       <td>${m.n_users}</td>
-      <td>${esc(r.backbone)}<br><span class="small muted">${esc(r.prompt)} prompt</span></td>
-      <td>${esc(judgeName)}</td>${latCell}${cells}</tr>`;
+      <td>${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted" data-desc="reasoning effort: ${esc(r.backbone_effort)}">${esc(effortShort(r.backbone_effort))}</span>` : ""}</td>
+      <td>${esc(r.prompt)}</td>${latCell}
+      <td>${esc(judgeName)}</td>${cells}</tr>`;
   }).join("");
 
   $("#content").innerHTML = `
     <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}</div>
     <div class="card"><div class="body" style="overflow-x:auto">
       <table class="cmp"><tr>
-        <th data-desc="메모리 시스템 — 전부 mem0 OSS 0.1.118 classic. +custom = HaluMem 원본 추출 프롬프트 이식">Memory System</th>
+        <th data-desc="메모리 시스템 — 전부 mem0 OSS 0.1.118 classic">Memory System</th>
         <th data-desc="이 행의 지표가 집계된 유저 수">#Users</th>
-        <th data-desc="memory agent 백본 (fact 추출·update 결정 LLM) × 추출 프롬프트">Agent LLM</th>
-        <th data-desc="채점 LLM — 행 간 비교는 동일 judge에서만 유효">Judge LLM</th>
+        <th data-desc="memory agent 백본 — fact 추출·update 결정을 담당하는 LLM">Agent LLM</th>
+        <th data-desc="fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형)">Prompt</th>
         <th data-desc="세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. 로컬 vLLM vs API 왕복, 백본 크기, reasoning 토큰이 그대로 드러남. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용">Ingest/세션↓</th>
+        <th data-desc="채점 LLM — 행 간 비교는 동일 judge에서만 유효">Judge LLM</th>
         ${METRIC_COLS.map((c) => `<th data-desc="${esc(METRIC_DEFS[c.k])}">${esc(c.label)}</th>`).join("")}
       </tr>${body}</table></div></div>
     ${rows.length < data.rows.length ? `<p class="hint">⚠ ${data.rows.length - rows.length}개 런은 이 judge(${judgeName}) 라벨이 없어 표시 제외</p>` : ""}`;

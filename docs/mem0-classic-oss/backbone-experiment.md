@@ -75,7 +75,7 @@ uv run python src/mem0-classic-oss/analyze_qa_evidence_storage.py \
 | Qwen3-4B-Thinking | default | 12.90 | 36.81 | 46.95 (2,359) | 81.12 (1,120) | **76.80** | 22.25 | 10.08 | **0.00** | 87.39 | 45.82 | 27.94 | 26.24 |
 | Qwen3-4B-Thinking | custom | 13.02 | 20.62 | 49.28 (347) | 82.45 (151) | **83.24** | 22.48 | 8.49 | **0.00** | 89.98 | 34.18 | 25.25 | 40.57 |
 
-(2026-07-24 nano/Qwen 행, 2026-07-26 mini 행. nano judge 무효율 전부 0.1% 미만. 굵은 값 = 열별 최고 — Qwen custom의 R/WR/F1은 오염 커버리지(③) 유의)
+(2026-07-24 nano/Qwen 행, 2026-07-26 mini 행, 2026-07-28 Thinking 행. nano judge 무효율 전부 0.1% 미만. 굵은 값 = 열별 최고 — Qwen custom의 R/WR/F1은 오염 커버리지(③) 유의. **effort 표기**: nano/mini 백본=default(medium, mem0가 effort 미전달)·4B-Thinking=항상 사고·judge nano=minimal)
 
 유래별 Acc 분해 (nano judge):
 

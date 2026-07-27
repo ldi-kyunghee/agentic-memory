@@ -174,6 +174,7 @@ def api_runs():
         out.append({
             "run": name, "label": r.get("label", name),
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
+            "backbone_effort": r.get("backbone_effort"),
             "embedder": r.get("embedder"),
             "users": r.get("users"), "judges": list(r.get("judges", {}).keys()),
             "available": exists,
@@ -355,6 +356,7 @@ def api_metrics(judge: str = "nano", scope: str = "first4"):
         rows.append({
             "run": name, "label": r.get("label", name),
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
+            "backbone_effort": r.get("backbone_effort"),
             "note": r.get("note", ""),
             "metrics": compute_metrics(name, judge, scope),
             "latency": compute_latency(name, scope),

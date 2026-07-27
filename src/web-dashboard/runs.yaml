@@ -3,7 +3,7 @@
 runs:
   full-traced:
     label: "Qwen3-4B × default (20u)"
-    note: \"Qwen 베이스라인 — 다작(6k)·과잉 재작성(65%)으로 Acc 저하, 병목=추출 커버리지\"
+    note: "Qwen 베이스라인 — 다작(6k)·과잉 재작성(65%)으로 Acc 저하, 병목=추출 커버리지"
     backbone: Qwen3-4B-Instruct-2507
     prompt: default
     embedder: Qwen3-Embedding-4B
@@ -16,7 +16,7 @@ runs:
 
   full-custom:
     label: "Qwen3-4B × custom (20u)"
-    note: \"R/F1 급등하나 FMR 급락(지침 무시 오염 커버리지), QA 정체 — 병목이 초장문 활용(생성)으로 이동\"
+    note: "R/F1 급등하나 FMR 급락(지침 무시 오염 커버리지), QA 정체 — 병목이 초장문 활용(생성)으로 이동"
     backbone: Qwen3-4B-Instruct-2507
     prompt: custom
     embedder: Qwen3-Embedding-4B
@@ -29,8 +29,9 @@ runs:
 
   nano4:
     label: "GPT-5-Nano × default (4u)"
-    note: \"적지만 깨끗한 저장 — R 최저인데 QA 상위, '청결도>커버리지 총량' 증거\"
+    note: "적지만 깨끗한 저장 — R 최저인데 QA 상위, '청결도>커버리지 총량' 증거"
     backbone: gpt-5-nano
+    backbone_effort: "default(medium) — mem0가 effort 미전달"
     prompt: default
     embedder: Qwen3-Embedding-4B
     users: 4
@@ -41,8 +42,9 @@ runs:
 
   nano4-custom:
     label: "GPT-5-Nano × custom (4u)"
-    note: \"지침 과잉 준수로 커버리지 부족 — QA 최저 셀\"
+    note: "지침 과잉 준수로 커버리지 부족 — QA 최저 셀"
     backbone: gpt-5-nano
+    backbone_effort: "default(medium) — mem0가 effort 미전달"
     prompt: custom
     embedder: Qwen3-Embedding-4B
     users: 4
@@ -53,8 +55,9 @@ runs:
 
   mini4:
     label: "GPT-5-Mini × default (4u)"
-    note: \"현 QA 1위(52.91) — 능력 사다리 미포화, Upd C 27.56로 논문 GPT-4o(25.50) 상회\"
+    note: "현 QA 1위(52.91) — 능력 사다리 미포화, Upd C 27.56로 논문 GPT-4o(25.50) 상회"
     backbone: gpt-5-mini
+    backbone_effort: "default(medium) — mem0가 effort 미전달"
     prompt: default
     embedder: Qwen3-Embedding-4B
     users: 4
@@ -65,8 +68,9 @@ runs:
 
   mini4-custom:
     label: "GPT-5-Mini × custom (4u)"
-    note: \"선별 정밀형 — Acc·Target P 전 셀 최고, 빈 세션 다수로 QA는 default에 밀림\"
+    note: "선별 정밀형 — Acc·Target P 전 셀 최고, 빈 세션 다수로 QA는 default에 밀림"
     backbone: gpt-5-mini
+    backbone_effort: "default(medium) — mem0가 effort 미전달"
     prompt: custom
     embedder: Qwen3-Embedding-4B
     users: 4
@@ -77,7 +81,7 @@ runs:
 
   30b4:
     label: "Qwen3-30B-A3B × default (4u)"
-    note: \"체급 7.5배에도 재작성 품질은 4B 수준(UPDATE-유래 Acc 21%) — family 각인 증거\"
+    note: "체급 7.5배에도 재작성 품질은 4B 수준(UPDATE-유래 Acc 21%) — family 각인 증거"
     backbone: Qwen3-30B-A3B-Instruct-2507
     prompt: default
     embedder: Qwen3-Embedding-4B
@@ -89,7 +93,7 @@ runs:
 
   30b4-custom:
     label: "Qwen3-30B-A3B × custom (4u)"
-    note: \"custom 프롬프트 QA 기준 4백본 전패 패턴 유지\"
+    note: "custom 프롬프트 QA 기준 4백본 전패 패턴 유지"
     backbone: Qwen3-30B-A3B-Instruct-2507
     prompt: custom
     embedder: Qwen3-Embedding-4B
@@ -103,6 +107,7 @@ runs:
     label: "Qwen3-4B-Thinking × default (4u)"
     note: "drift의 진범 판별 — thinking만 얹어 UPDATE-유래 Acc 20→46% (reasoning 유무가 관건). FMR 최고·R 최저의 초절제형, 청결도로 4B-Instruct QA 상회"
     backbone: Qwen3-4B-Thinking-2507
+    backbone_effort: "항상 사고 (effort 개념 없음, vLLM)"
     prompt: default
     embedder: Qwen3-Embedding-4B
     users: 4
@@ -115,6 +120,7 @@ runs:
     label: "Qwen3-4B-Thinking × custom (4u)"
     note: "과잉 절제의 붕괴 — 세션 40~77% 빈 세션, 후보 347개, QA C 34.18 최저 셀. custom 5백본 전패 확정"
     backbone: Qwen3-4B-Thinking-2507
+    backbone_effort: "항상 사고 (effort 개념 없음, vLLM)"
     prompt: custom
     embedder: Qwen3-Embedding-4B
     users: 4
