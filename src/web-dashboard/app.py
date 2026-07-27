@@ -455,6 +455,17 @@ def export_md(uuid: str):
 
 # ---------- 정적 파일 (SPA) ----------
 
+@app.middleware("http")
+async def no_cache_static(request, call_next):
+    """정적 파일 캐시 재검증 강제 — 배포 후 옛 CSS/JS가 브라우저 캐시에 남아
+    화면이 깨져 보이는 문제 방지 (내부 툴이라 no-cache 비용 무시 가능)."""
+    resp = await call_next(request)
+    if request.url.path.startswith("/static") or request.url.path == "/":
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
+
 @app.get("/")
 def index():
     return FileResponse(HERE / "static" / "index.html")
