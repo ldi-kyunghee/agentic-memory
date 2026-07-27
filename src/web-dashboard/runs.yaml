@@ -99,7 +99,31 @@ runs:
     judges:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-30b4-custom/judge
 
-  # think4 / think4-custom: Stage B까지 완료되면 주석 해제
+  think4:
+    label: "Qwen3-4B-Thinking × default (4u)"
+    note: "drift의 진범 판별 — thinking만 얹어 UPDATE-유래 Acc 20→46% (reasoning 유무가 관건). FMR 최고·R 최저의 초절제형, 청결도로 4B-Instruct QA 상회"
+    backbone: Qwen3-4B-Thinking-2507
+    prompt: default
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-think4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/think4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-think4/judge
+
+  think4-custom:
+    label: "Qwen3-4B-Thinking × custom (4u)"
+    note: "과잉 절제의 붕괴 — 세션 40~77% 빈 세션, 후보 347개, QA C 34.18 최저 셀. custom 5백본 전패 확정"
+    backbone: Qwen3-4B-Thinking-2507
+    prompt: custom
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-think4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/think4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-think4-custom/judge
+
+  # (참고) 옛 주석 원형:
   # think4:
   #   label: "Qwen3-4B-Thinking × default (4u)"
   #   backbone: Qwen3-4B-Thinking-2507
