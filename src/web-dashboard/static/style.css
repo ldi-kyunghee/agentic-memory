@@ -45,6 +45,10 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 .side-item.active { background: #e7ecff; }
 .side-item .t { color: var(--dim); font-size: 11px; }
 .side-item .flags { margin-left: auto; display: flex; gap: 3px; }
+/* 세션 문제 카운트: 판정 배지(채운 원형)와 구분되는 외곽선 라운드 사각형 + 비겹침 색상 */
+.flag { display: inline-flex; align-items: center; border-radius: 5px; padding: 0 5px; font-size: 10.5px; font-weight: 800; border: 1.5px solid; background: #fff; line-height: 1.5; }
+.flag-g { color: #c2255c; border-color: #c2255c; }   /* 마젠타 — 미포함 골든 수 */
+.flag-q { color: #7b4b28; border-color: #7b4b28; }   /* 브라운 — 오답 QA 수 */
 
 /* ---------- 배지 ---------- */
 .badge { display: inline-block; padding: 0 6px; border-radius: 9px; font-size: 11px; font-weight: 700; color: #fff; vertical-align: middle; }

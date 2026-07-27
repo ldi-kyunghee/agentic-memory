@@ -397,8 +397,8 @@ function renderSessions() {
     if (s.generated_qa_session) return "";
     const m = sessionSummary(s);
     const flags = [
-      m.g0 ? `<span class="badge b0" data-desc="빨간 원 — 이 세션에서 judge가 미포함(0점) 판정한 골든 수">${m.g0}</span>` : "",
-      m.qaBad ? `<span class="badge bO" data-desc="보라 원 — 이 세션의 오답(H/O) QA 수">${m.qaBad}</span>` : "",
+      m.g0 ? `<span class="flag flag-g" data-desc="G✗ (마젠타) — 이 세션에서 judge가 미포함(0점) 판정한 골든 수 (미끼 제외). 판정 배지가 아니라 세션 문제 카운트">G✗${m.g0}</span>` : "",
+      m.qaBad ? `<span class="flag flag-q" data-desc="Q✗ (브라운) — 이 세션의 오답(H/O) QA 수. 판정 배지가 아니라 세션 문제 카운트">Q✗${m.qaBad}</span>` : "",
     ].join("");
     return `<div class="side-item ${s.session_id === S.session ? "active" : ""}" data-sid="${s.session_id}">
       <b>S${s.session_id}</b><span class="t">${esc((s.start_time || "").slice(0, 12))}</span>
@@ -480,10 +480,12 @@ function renderSessions() {
 
   $("#content").innerHTML = `
     <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${s.add_dialogue_duration_ms ? ` · <span data-desc="이 세션의 mem0.add 소요 시간 (fact 추출·update 결정 LLM 콜 포함) — 백본 속도 실측">⏱ 투입 ${(s.add_dialogue_duration_ms / 1000).toFixed(1)}s</span>` : ""}${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(회색)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
-    <div class="legend" data-desc="배지 범례 — 사이드바 원형 숫자: 빨강=미포함(0점) 골든 수, 보라=오답 QA 수">
+    <div class="legend" data-desc="배지 범례 — 채운 원형=judge 판정, 외곽선 사각형=사이드바 세션 문제 카운트">
       <b>범례</b>
       <span><span class="badge b2">2</span>완전</span><span><span class="badge b1">1</span>부분</span><span><span class="badge b0">0</span>실패</span>
       <span><span class="badge bC">C</span>/<span class="badge bH">H</span>/<span class="badge bO">O</span></span>
+      <span class="flag flag-g" style="cursor:default" data-desc="사이드바: 이 세션의 미포함(0점) 골든 수">G✗</span>
+      <span class="flag flag-q" style="cursor:default" data-desc="사이드바: 이 세션의 오답 QA 수">Q✗</span>
       <span class="anchor-chip g" style="cursor:default">G 골든(금)</span>
       <span class="anchor-chip g upd" style="cursor:default" data-desc="갱신 골든 — Update(C/H/O) 평가 대상">G↻ 갱신</span>
       <span class="anchor-chip g intf" style="cursor:default" data-desc="미끼 골든 — 흡수하면 감점(FMR)">G⚠ 미끼</span>
