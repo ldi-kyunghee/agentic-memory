@@ -5,6 +5,7 @@ runs:
     label: "Qwen3-4B × default (20u)"
     backbone: Qwen3-4B-Instruct-2507
     prompt: default
+    embedder: Qwen3-Embedding-4B
     users: 20
     results: results/mem0-classic-oss/memzero-oss-full-traced/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/full-traced
@@ -16,6 +17,7 @@ runs:
     label: "Qwen3-4B × custom (20u)"
     backbone: Qwen3-4B-Instruct-2507
     prompt: custom
+    embedder: Qwen3-Embedding-4B
     users: 20
     results: results/mem0-classic-oss/memzero-oss-full-custom/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/full-custom
@@ -27,6 +29,7 @@ runs:
     label: "GPT-5-Nano × default (4u)"
     backbone: gpt-5-nano
     prompt: default
+    embedder: Qwen3-Embedding-4B
     users: 4
     results: results/mem0-classic-oss/memzero-oss-nano4/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/nano4
@@ -37,6 +40,7 @@ runs:
     label: "GPT-5-Nano × custom (4u)"
     backbone: gpt-5-nano
     prompt: custom
+    embedder: Qwen3-Embedding-4B
     users: 4
     results: results/mem0-classic-oss/memzero-oss-nano4-custom/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/nano4-custom
@@ -47,6 +51,7 @@ runs:
     label: "GPT-5-Mini × default (4u)"
     backbone: gpt-5-mini
     prompt: default
+    embedder: Qwen3-Embedding-4B
     users: 4
     results: results/mem0-classic-oss/memzero-oss-mini4/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/mini4
@@ -57,6 +62,7 @@ runs:
     label: "GPT-5-Mini × custom (4u)"
     backbone: gpt-5-mini
     prompt: custom
+    embedder: Qwen3-Embedding-4B
     users: 4
     results: results/mem0-classic-oss/memzero-oss-mini4-custom/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/mini4-custom
@@ -67,6 +73,7 @@ runs:
     label: "Qwen3-30B-A3B × default (4u)"
     backbone: Qwen3-30B-A3B-Instruct-2507
     prompt: default
+    embedder: Qwen3-Embedding-4B
     users: 4
     results: results/mem0-classic-oss/memzero-oss-30b4/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/30b4
@@ -77,6 +84,7 @@ runs:
     label: "Qwen3-30B-A3B × custom (4u)"
     backbone: Qwen3-30B-A3B-Instruct-2507
     prompt: custom
+    embedder: Qwen3-Embedding-4B
     users: 4
     results: results/mem0-classic-oss/memzero-oss-30b4-custom/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/30b4-custom

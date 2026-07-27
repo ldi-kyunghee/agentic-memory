@@ -9,9 +9,18 @@
 <body>
 <header id="topbar">
   <span class="brand">mem0×HaluMem</span>
-  <select id="sel-run" title="런 (백본×프롬프트 실험)"></select>
-  <select id="sel-judge" title="judge 라벨 세트"></select>
-  <select id="sel-user" title="분석 대상 유저"></select>
+  <div class="grp"><label>Agent LLM</label><select id="sel-backbone" title="memory agent 백본 (fact 추출·update 결정 담당 LLM)"></select></div>
+  <div class="grp"><label>Prompt</label><select id="sel-prompt" title="fact 추출 프롬프트 (default=mem0 기본 / custom=HaluMem 원본 지침)"></select></div>
+  <div class="grp"><label>Judge LLM</label><select id="sel-judge" title="채점 라벨 세트 (nano=GPT-5-Nano, 첫 4유저만 / qwen4b=Qwen3-4B, 20유저)"></select></div>
+  <div class="grp"><label>Embedding</label><span id="emb-name" class="fixed" title="벡터 검색 임베더 — 전 실험 공통 고정"></span></div>
+  <div class="grp"><label>User</label><select id="sel-user" title="분석 대상 가상 유저"></select></div>
+  <button id="btn-addb" title="두 번째 세팅(B)을 열어 같은 유저를 나란히 비교">+ 비교(B)</button>
+  <div id="grp-b" class="hidden">
+    <span class="b-mark">B</span>
+    <div class="grp"><label>Agent LLM</label><select id="sel-backbone-b"></select></div>
+    <div class="grp"><label>Prompt</label><select id="sel-prompt-b"></select></div>
+    <button id="btn-delb" title="비교 세팅 닫기">×</button>
+  </div>
   <nav id="tabs">
     <button data-tab="sessions" class="active">Sessions</button>
     <button data-tab="qa">QA</button>
@@ -23,7 +32,9 @@
 
 <main id="layout">
   <aside id="sidebar"></aside>
+  <div class="rz" id="rz1" title="드래그로 너비 조절"></div>
   <section id="content"></section>
+  <div class="rz" id="rz2" title="드래그로 너비 조절"></div>
   <aside id="inspector">
     <div id="insp-tabs">
       <button data-itab="detail" class="active">상세</button>
@@ -31,6 +42,7 @@
       <button data-itab="comments">코멘트 <span id="cmt-count"></span></button>
     </div>
     <div id="insp-body"></div>
+    <div id="desc-bar">필드/항목에 마우스를 올리면 설명이 여기 표시됩니다</div>
   </aside>
 </main>
 

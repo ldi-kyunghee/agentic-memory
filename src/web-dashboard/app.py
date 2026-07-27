@@ -164,6 +164,7 @@ def api_runs():
         out.append({
             "run": name, "label": r.get("label", name),
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
+            "embedder": r.get("embedder"),
             "users": r.get("users"), "judges": list(r.get("judges", {}).keys()),
             "available": exists,
         })
