@@ -38,6 +38,7 @@ async function boot() {
   try {
     S.fielddict = await api("/api/fielddict");
     S.runs = (await api("/api/runs")).filter((r) => r.available);
+    S.first4 = await api("/api/first4");  // nano judge 라벨 보유 유저 (★ 표시용)
   } finally { busy(false); }
 
   const backbones = [...new Set(S.runs.map((r) => r.backbone))];
@@ -67,6 +68,16 @@ async function boot() {
   initSelectionComment();
   startPolling();
 
+  // 강제 재로딩: 서버·클라이언트 캐시 전부 비우고 현재 화면 재구성
+  $("#btn-reload").onclick = async () => {
+    busy(true, "캐시 비우고 다시 로딩…");
+    try {
+      await api("/api/reload", { method: "POST" });
+      S.bundleCache.clear(); S.traceCache.clear(); S.anchorCacheB.clear(); metricsCache.clear();
+      await loadBundle();
+    } finally { busy(false); }
+  };
+
   S.backbone = backbones[0];
   syncPrompts("A");
   await applyRun();
@@ -88,14 +99,19 @@ async function applyRun() {
   if (!meta) return;
   S.run = meta.run;
   $("#emb-name").textContent = meta.embedder || "–";
-  const defJudge = meta.users > 4 && meta.judges.includes("qwen4b") ? "qwen4b"
+  // judge 기본값은 nano(신뢰 기준). 이미 선택된 judge가 새 런에도 있으면 유지 (세팅 전환 시 리셋 방지)
+  const defJudge = meta.judges.includes(S.judge) ? S.judge
     : meta.judges.includes("nano") ? "nano" : meta.judges[0];
   $("#sel-judge").innerHTML = meta.judges.map((j) => `<option ${j === defJudge ? "selected" : ""}>${j}</option>`).join("");
   S.judge = $("#sel-judge").value;
   busy(true, "유저 목록…");
   try { S.users = await api(`/api/runs/${S.run}/users`); } finally { busy(false); }
   const prev = S.uuid;
-  $("#sel-user").innerHTML = S.users.map((u) => `<option value="${u.uuid}" ${u.uuid === prev ? "selected" : ""}>${esc(u.user_name)}</option>`).join("");
+  // ★ = nano judge 라벨 보유 유저 (데이터셋 첫 4명) — 맨 위로 정렬해 기본 선택도 ★에서 시작
+  const isF4 = (u) => (S.first4 || []).includes(u.uuid);
+  const ordered = [...S.users].sort((a, b) => isF4(b) - isF4(a));
+  $("#sel-user").innerHTML = ordered.map((u) =>
+    `<option value="${u.uuid}" ${u.uuid === prev ? "selected" : ""}>${isF4(u) ? "★ " : ""}${esc(u.user_name)}</option>`).join("");
   S.uuid = $("#sel-user").value;
   await loadBundle();
 }

@@ -9,7 +9,7 @@
 <body>
 <header id="topbar">
   <span class="brand">mem0×HaluMem</span>
-  <div class="grp"><label data-desc="분석 대상 가상 유저 — HaluMem 데이터셋의 인물. 정성분석은 유저 단위로 진행">User</label><select id="sel-user"></select></div>
+  <div class="grp"><label data-desc="분석 대상 가상 유저 — HaluMem 데이터셋의 인물. ★ = nano judge 라벨 보유 (첫 4유저). ★ 없는 유저는 nano 선택 시 라벨이 회색(–)으로 뜸">User</label><select id="sel-user"></select></div>
   <div class="grp"><label data-desc="채점 라벨 세트 — nano=GPT-5-Nano(신뢰 기준, 첫 4유저만) / qwen4b=Qwen3-4B(20유저 전체, 왜곡 있음)">Judge LLM</label><select id="sel-judge"></select></div>
   <div class="grp"><label data-desc="벡터 검색 임베더 — 전 실험 공통 고정 (통제 변인)">Embedding</label><span id="emb-name" class="fixed"></span></div>
   <div class="grp"><label data-desc="기준(A) 세팅의 memory agent 백본 — fact 추출과 ADD/UPDATE/DELETE 결정을 담당하는 LLM">Agent A</label><select id="sel-backbone"></select></div>
@@ -57,6 +57,7 @@
 
 <div id="loading" class="hidden"><div class="spinner"></div><span id="loading-msg">불러오는 중…</span></div>
 <button id="sel-cmt" class="hidden">💬 코멘트</button>
+<button id="btn-reload" data-desc="서버·브라우저 캐시를 모두 비우고 현재 화면을 다시 로드 — 라벨이 회색(–)으로 남는 등 이상할 때">↻ 강제 재로딩</button>
 <div id="tip" class="hidden"></div>
 
 <script src="/static/app.js"></script>

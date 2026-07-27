@@ -62,17 +62,26 @@ def load_run_users(run: str) -> dict:
     return users
 
 
-@lru_cache(maxsize=64)
+# ⚠ lru_cache를 쓰지 않는 이유: 파일 부재/로드 실패 시의 None까지 영구 캐싱돼
+#    이후 파일이 생겨도(동기화 완료 등) 회색 '–' 라벨로 남는 버그가 됨 — 성공한 로드만 캐싱한다.
+_judge_cache: dict = {}
+
+
 def load_judge(run: str, judge_name: str, uuid: str) -> dict | None:
+    key = (run, judge_name, uuid)
+    if key in _judge_cache:
+        return _judge_cache[key]
     reg = load_registry()
     judges = reg[run].get("judges", {})
     if judge_name not in judges:
         return None
     path = ROOT / judges[judge_name] / f"{uuid}.json"
     if not path.exists():
-        return None
+        return None  # 실패는 캐싱하지 않음 — 다음 요청에서 재시도
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    _judge_cache[key] = data
+    return data
 
 
 # ---------- 조인 (유저 번들) ----------
@@ -223,9 +232,22 @@ def first4_uuids() -> tuple:
     return ()
 
 
-@lru_cache(maxsize=256)
+_metrics_cache: dict = {}
+
+
 def compute_metrics(run: str, judge_name: str, scope: str) -> dict | None:
-    """scope: 'first4' | 'all' | <uuid>. 선택 범위의 judge 레코드를 모아 공식 집계로 지표 산출."""
+    """scope: 'first4' | 'all' | <uuid>. 선택 범위의 judge 레코드를 모아 공식 집계로 지표 산출.
+    성공 결과만 캐싱 (None 캐싱 금지 — load_judge와 동일 이유)."""
+    key = (run, judge_name, scope)
+    if key in _metrics_cache:
+        return _metrics_cache[key]
+    result = _compute_metrics_uncached(run, judge_name, scope)
+    if result is not None:
+        _metrics_cache[key] = result
+    return result
+
+
+def _compute_metrics_uncached(run: str, judge_name: str, scope: str) -> dict | None:
     reg = load_registry()
     jd = reg[run].get("judges", {}).get(judge_name)
     if not jd or not (ROOT / jd).exists():
@@ -269,6 +291,22 @@ def compute_metrics(run: str, judge_name: str, scope: str) -> dict | None:
         "qa_c": pct(qa["correct_qa_ratio(all)"]), "qa_h": pct(qa["hallucination_qa_ratio(all)"]),
         "qa_o": pct(qa["omission_qa_ratio(all)"]),
     }
+
+
+@app.post("/api/reload")
+def api_reload():
+    """서버측 캐시 전체 무효화 — 새 런 동기화·judge 재채점 후 강제 재로딩용."""
+    _judge_cache.clear()
+    _metrics_cache.clear()
+    load_run_users.cache_clear()
+    first4_uuids.cache_clear()
+    return {"ok": True}
+
+
+@app.get("/api/first4")
+def api_first4():
+    """nano judge가 라벨을 보유한 데이터셋 첫 4유저 uuid — UI의 ★ 표시용."""
+    return list(first4_uuids())
 
 
 @app.get("/api/metrics")
