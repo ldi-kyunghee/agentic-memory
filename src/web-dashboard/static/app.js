@@ -1133,11 +1133,14 @@ function cmtHTML(c, canGoto = false) {
   const targetChip = `<span class="tagchip" style="font-weight:800; color:${isB ? "var(--bcol)" : "var(--accent)"}"
     data-desc="이 코멘트의 대상 세팅(런): ${esc(target ? runLabel(target) : "B 런 (기록 없음 — 구버전 코멘트)")}${isB ? " — 당시 비교(B) 쪽 요소에 단 코멘트" : ""}">▶ ${esc(target ? runLabel(target) : "B?")}</span>`;
   // ② 작성 당시 관측 스택 (generator/judge — 구 코멘트는 빈 값이라 생략)
+  //    비교 상대는 대상의 반대편: B에 단 코멘트면 상대=A(c.run), A에 단 코멘트면 상대=B(c.run_b)
+  const counterpart = isB ? c.run : c.run_b;
+  const cpTxt = counterpart ? ` (당시 비교 상대 ${isB ? "A" : "B"}=${esc(runLabel(counterpart))})` : "";
   const ctxBits = [];
   if (c.generator) ctxBits.push(`gen=${genLabel(c.generator)}`);
   if (c.judge) ctxBits.push(`judge=${judgeLabel(c.judge)}`);
   const ctxChip = ctxBits.length
-    ? `<span class="tagchip" data-desc="작성 당시 관측 스택 — 답변·라벨이 이 generator/judge 기준이었음${c.run_b ? ` (당시 비교 B=${esc(runLabel(c.run_b))})` : ""}">${esc(ctxBits.join(" · "))}</span>` : "";
+    ? `<span class="tagchip" data-desc="작성 당시 관측 스택 — 답변·라벨이 이 generator/judge 기준이었음${cpTxt}">${esc(ctxBits.join(" · "))}</span>` : "";
   return `<div class="cmt"><div class="meta"><span class="author">${esc(c.author)}</span>
     ${c.tag ? `<span class="tagchip">${esc(c.tag)}</span>` : ""}
     ${targetChip}<span>${esc(c.anchor)}</span>${ctxChip}<span>${esc((c.created_at || "").slice(0, 16).replace("T", " "))}</span>
