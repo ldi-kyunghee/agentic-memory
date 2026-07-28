@@ -188,10 +188,8 @@ def retrieval(qas: list[dict], memories: list, k: int = 5, alpha: float = 0.5, s
 
     return fetch_results(qas, documents, ranked_results)
 
-def main(args):
-    dataset = load_dataset(args)
+def run_retrieval(args, dataset):
     retrieval_results = []
-    llm_results = []
     k = args.top_k if not args.hybrid else None
     for persona in dataset:
         qas, per_persona_memories = per_persona_dataset(persona, args.memory_with_prior_question)
@@ -200,13 +198,41 @@ def main(args):
 
         retrieval_results.append(per_persona_results)
 
-    if embed_model is not None:
-        del embed_model
+    return retrieval_results
 
+def run_qa(args, dataset, retrieval_results):
+    llm_results = []
     for per_persona_results in retrieval_results:
         per_persona_llm_results = generate_answers(per_persona_results, **sampling_params)
         llm_results.append(per_persona_llm_results)
 
+
+if __name__ == '__main__':
+    flush()
+
+    parser = init_parser()
+    args = parser.parse_args()
+    print(args)
+
+    retriever = BM25HF()
+    stemmer = Stemmer.Stemmer("english")
+    dataset = load_dataset(args)
+    
+    if args.embed_config:
+        embed_kwargs = load_config(args.embed_config)
+        embed_model = load_vllm(**embed_kwargs)
+    else:
+        embed_model = None
+
+    retrieval_results = run_retrieval(args, dataset)
+
+    if embed_model is not None:
+        del embed_model
+        
+    model_kwargs, sampling_params = load_config(args.llm_config)
+    llm: LLM = load_vllm(**model_kwargs)
+    llm_results = run_qa(args, dataset, retrieval_results)
+    
     results_dir = "results/bm25/exp%d/" % args.exp_num
     bm25_results_dir = results_dir + "retrieval/"
     dataset_name = args.dataset.split('-')[-1].split('.')[0].lower()
@@ -222,24 +248,4 @@ def main(args):
     qa_results_dir = results_dir + "question_answering/"
     os.makedirs(qa_results_dir, exist_ok=True)
     with open(qa_results_dir + result_file, "w") as file:
-        json.dump(llm_results, file, indent=2)
-
-if __name__ == '__main__':
-    flush()
-
-    parser = init_parser()
-    args = parser.parse_args()
-    print(args)
-
-    retriever = BM25HF()
-    stemmer = Stemmer.Stemmer("english")
-
-    model_kwargs, sampling_params = load_config(args.llm_config)
-    llm: LLM = load_vllm(**model_kwargs)
-    if args.embed_config:
-        embed_kwargs = load_config(args.embed_config)
-        embed_model = load_vllm(**embed_kwargs)
-    else:
-        embed_model = None
-
-    main(args)
+        json.dump(llm_results, file, indent=2)main(args)
