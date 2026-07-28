@@ -408,10 +408,14 @@ def db():
         run TEXT NOT NULL, uuid TEXT NOT NULL, anchor TEXT NOT NULL,
         author TEXT NOT NULL, tag TEXT DEFAULT '', body TEXT NOT NULL,
         created_at TEXT NOT NULL)""")
-    # additive 마이그레이션: 드래그 하이라이트 인용문 컬럼
+    # additive 마이그레이션 (기존 레코드 보존 — 새 컬럼은 빈 값)
     cols = [r["name"] for r in conn.execute("PRAGMA table_info(comments)")]
     if "quote" not in cols:
         conn.execute("ALTER TABLE comments ADD COLUMN quote TEXT DEFAULT ''")
+    # 코멘트 작성 당시의 관측 세팅 (어떤 generator/judge 라벨을 보며 단 코멘트인지 재구성용)
+    for col in ("generator", "judge", "run_b"):
+        if col not in cols:
+            conn.execute(f"ALTER TABLE comments ADD COLUMN {col} TEXT DEFAULT ''")
     return conn
 
 
@@ -422,7 +426,10 @@ class CommentIn(BaseModel):
     author: str
     tag: str = ""
     body: str
-    quote: str = ""  # 드래그 하이라이트로 지정한 인용 텍스트 (선택)
+    quote: str = ""      # 드래그 하이라이트로 지정한 인용 텍스트 (선택)
+    generator: str = ""  # 작성 당시 선택돼 있던 A' 레인 (예: mini)
+    judge: str = ""      # 작성 당시 judge 라벨 세트 (예: mini-genmini)
+    run_b: str = ""      # 작성 당시 비교(B) 런 — extb 앵커의 대상 식별용
 
 
 @app.post("/api/comments")
@@ -431,8 +438,9 @@ def add_comment(c: CommentIn):
         raise HTTPException(400, "author/body required")
     with db() as conn:
         cur = conn.execute(
-            "INSERT INTO comments (run, uuid, anchor, author, tag, body, quote, created_at) VALUES (?,?,?,?,?,?,?,?)",
-            (c.run, c.uuid, c.anchor, c.author.strip(), c.tag.strip(), c.body, c.quote, datetime.now(timezone.utc).isoformat()),
+            "INSERT INTO comments (run, uuid, anchor, author, tag, body, quote, generator, judge, run_b, created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (c.run, c.uuid, c.anchor, c.author.strip(), c.tag.strip(), c.body, c.quote,
+             c.generator, c.judge, c.run_b, datetime.now(timezone.utc).isoformat()),
         )
         return {"id": cur.lastrowid}
 
@@ -478,7 +486,12 @@ def export_md(uuid: str):
             cur_run = r["run"]
             lines += [f"## run: {cur_run}", ""]
         tag = f" `{r['tag']}`" if r["tag"] else ""
-        lines.append(f"- **{r['anchor']}** — {r['author']}{tag} ({r['created_at'][:16]})")
+        keys = r.keys()
+        ctx_parts = [f"{k}={r[k]}" for k in ("generator", "judge", "run_b") if k in keys and r[k]]
+        ctx = f" [{' · '.join(ctx_parts)}]" if ctx_parts else ""
+        lines.append(f"- **{r['anchor']}** — {r['author']}{tag}{ctx} ({r['created_at'][:16]})")
+        if "quote" in keys and r["quote"]:
+            lines.append(f"  > “{r['quote']}”")
         for bl in r["body"].splitlines():
             lines.append(f"  {bl}")
     return "\n".join(lines) + "\n"

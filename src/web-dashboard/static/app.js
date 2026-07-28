@@ -350,6 +350,10 @@ const JUDGE_NAMES = {
   "oss120-genoss120": "gpt-oss-120b (high)",
 };
 const judgeLabel = (j) => JUDGE_NAMES[j] || j;
+// run 내부명(full-traced 등) -> 사람용 라벨 ("Qwen3-4B × default (20u)")
+const runLabel = (name) => S.runs.find((r) => r.run === name)?.label || name;
+// generator 내부 키 -> 라벨
+const genLabel = (g) => S.runs[0]?.generators?.[g]?.label || g;
 // QA 상세 등 공간 여유 있는 곳은 풀네임 판정 배지
 const verdictFull = (v) => v ? `<span class="badge ${v[0] === "C" ? "bC" : v[0] === "H" ? "bH" : "bO"}">${esc(v)}</span>` : `<span class="badge bnull">판정 없음</span>`;
 // 미끼(interference) 골든은 포함 점수의 좋고 나쁨이 반전됨: 0=미포함=저항 성공(FMR 기여), 2=흡수=감점
@@ -500,13 +504,13 @@ function renderSessions() {
       <div class="row" data-b-ext="${i}">
         <span>${scoreBadge(m.judge?.score)}</span>${opChip(m.origin)}
         <span class="txt">${esc(m.text)}</span></div>`).join("");
-    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(S.runB)} (${B.session.extracted.length})</h4><div class="body">${extBRows}</div></div>`;
+    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))} (${B.session.extracted.length})</h4><div class="body">${extBRows}</div></div>`;
   } else if (S.runB) {
-    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(S.runB)}</h4><div class="body"><p class="small muted">이 유저/세션 데이터가 B 런에 없음</p></div></div>`;
+    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))}</h4><div class="body"><p class="small muted">이 유저/세션 데이터가 B 런에 없음</p></div></div>`;
   }
 
   $("#content").innerHTML = `
-    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${s.add_dialogue_duration_ms ? ` · <span data-desc="이 세션의 mem0.add 소요 시간 (fact 추출·update 결정 LLM 콜 포함) — 백본 속도 실측">⏱ 투입 ${(s.add_dialogue_duration_ms / 1000).toFixed(1)}s</span>` : ""}${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(S.runB)}(회색)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
+    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${s.add_dialogue_duration_ms ? ` · <span data-desc="이 세션의 mem0.add 소요 시간 (fact 추출·update 결정 LLM 콜 포함) — 백본 속도 실측">⏱ 투입 ${(s.add_dialogue_duration_ms / 1000).toFixed(1)}s</span>` : ""}${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(runLabel(S.runB))} (회색)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
     <div class="legend" data-desc="배지 범례 — 채운 원형=judge 판정, 외곽선 사각형=사이드바 세션 문제 카운트">
       <b>범례</b>
       <span><span class="badge b2">2</span>완전</span><span><span class="badge b1">1</span>부분</span><span><span class="badge b0">0</span>실패</span>
@@ -527,7 +531,7 @@ function renderSessions() {
       <div class="body">${dlg}</div></div>
     <div class="${B?.session ? "three-col" : "two-col"}">
       <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})</h4><div class="body">${goldenRows}</div></div>
-      <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(S.run)} (${s.extracted.length})</h4><div class="body">${extRows}</div></div>
+      <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(runLabel(S.run))} (${s.extracted.length})</h4><div class="body">${extRows}</div></div>
       ${extBCard}
     </div>`;
 
@@ -595,7 +599,7 @@ function toggleTurnPanel(s, A, B, ti) {
   if (!box.classList.contains("hidden")) { box.classList.add("hidden"); box.innerHTML = ""; return; }
   const a = A.map[ti];
   const secA = `
-    <h5>A: ${esc(S.run)} — 이 턴 앵커 (추정)</h5>
+    <h5>A: ${esc(runLabel(S.run))} — 이 턴 앵커 (추정)</h5>
     ${a.g.map((gi) => { const mp = s.golden[gi]; const j = mp.judge || {};
       const badge = j.kind === "update" ? verdictBadge(j.label) : mp.memory_source === "interference" ? intfBadge(j.score) : scoreBadge(j.score);
       return `<div class="row"><span class="tagchip" style="color:var(--gold)">골든</span>${badge}<span class="txt">${esc(mp.memory_content)}</span></div>`; }).join("")}
@@ -605,7 +609,7 @@ function toggleTurnPanel(s, A, B, ti) {
   let secB = "";
   if (B?.session) {
     const bMap = B.map[ti] || { g: [], e: [] };
-    secB = `<h5><span class="b-tag">B</span>: ${esc(S.runB)} — 이 턴 추출 (추정)</h5>
+    secB = `<h5><span class="b-tag">B</span>: ${esc(runLabel(S.runB))} — 이 턴 추출 (추정)</h5>
       ${bMap.e.map((ei) => { const m = B.session.extracted[ei];
         return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
   }
@@ -726,12 +730,23 @@ function renderQADetail(sid, qi, fromSession) {
     : null;
   const rawHTML = `<pre class="mono">${esc(typeof q.context === "string" ? q.context : JSON.stringify(q.context, null, 2))}</pre>`;
 
-  let bCard = "";
+  // B 세팅: 답변 + B 자체의 검색 context (context는 Stage A 산물이라 런마다 다름)
+  let bCard = "", bCtxCard = "";
   if (S.bundleB) {
     const sb = S.bundleB.sessions.find((x) => x.session_id === sid);
     const qb = sb?.questions?.find((x) => x.question === q.question);
-    bCard = `<div class="card b-card"><h4>B: ${esc(S.runB)} 답변 ${verdictFull(qb?.judge)}</h4>
+    bCard = `<div class="card b-card"><h4>B: ${esc(runLabel(S.runB))} 답변 ${verdictFull(qb?.judge)}</h4>
       <div class="body">${esc(qb?.system_response || "(B 런에 답변 없음)")}</div></div>`;
+    if (qb) {
+      const itemsB = parseContext(qb.context);
+      const listB = itemsB
+        ? itemsB.map((c, i) => `<div class="row"><span class="small muted">#${i + 1}</span><span class="txt">${esc(c)}</span></div>`).join("")
+        : null;
+      const rawB = `<pre class="mono">${esc(typeof qb.context === "string" ? qb.context : JSON.stringify(qb.context, null, 2))}</pre>`;
+      bCtxCard = `<div class="card b-card"><h4 data-k="context">B 검색 Context (${itemsB ? itemsB.length + "건" : "원문"})
+        ${itemsB ? '<button class="ctx-toggle" id="ctx-toggle-b">원문 보기</button>' : ""}</h4>
+        <div class="body"><div id="ctx-list-b">${listB ?? rawB}</div><div id="ctx-raw-b" class="hidden">${rawB}</div></div></div>`;
+    }
   }
 
   $("#content").innerHTML = `
@@ -739,19 +754,24 @@ function renderQADetail(sid, qi, fromSession) {
     <div class="hint">S${sid} · ${esc(q.question_type || "")} — 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → context</div>
     <div class="card"><h4 data-k="question">질문</h4><div class="body">${esc(q.question)}</div></div>
     <div class="card"><h4 data-k="answer">골든 정답</h4><div class="body">${esc(q.answer)}</div></div>
-    <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(S.run)} 답변` : "시스템 답변 (A′)"} · gen=${esc(laneOf(resolveRun(S.backbone, S.prompt))?.label || S.generator)} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
+    <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(runLabel(S.run))} 답변` : "시스템 답변 (A′)"} · gen=${esc(laneOf(resolveRun(S.backbone, S.prompt))?.label || S.generator)} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
     ${bCard}
     <div class="card"><h4 data-k="evidence">Evidence (${(q.evidence || []).length})</h4><div class="body">${ev}</div></div>
-    <div class="card"><h4 data-k="context">검색 Context (${items ? items.length + "건" : "원문"})
+    <div class="card"><h4 data-k="context">${S.bundleB ? "A " : ""}검색 Context (${items ? items.length + "건" : "원문"})
       ${items ? '<button class="ctx-toggle" id="ctx-toggle">원문 보기</button>' : ""}</h4>
-      <div class="body"><div id="ctx-list">${listHTML ?? rawHTML}</div><div id="ctx-raw" class="hidden">${rawHTML}</div></div></div>`;
-  if (items) {
-    $("#ctx-toggle").onclick = () => {
-      const showRaw = $("#ctx-raw").classList.toggle("hidden");
-      $("#ctx-list").classList.toggle("hidden", !showRaw);
-      $("#ctx-toggle").textContent = showRaw ? "원문 보기" : "목록 보기";
+      <div class="body"><div id="ctx-list">${listHTML ?? rawHTML}</div><div id="ctx-raw" class="hidden">${rawHTML}</div></div></div>
+    ${bCtxCard}`;
+  const bindCtxToggle = (btnId, listId, rawId) => {
+    const btn = $(btnId);
+    if (!btn) return;
+    btn.onclick = () => {
+      const showRaw = $(rawId).classList.toggle("hidden");
+      $(listId).classList.toggle("hidden", !showRaw);
+      btn.textContent = showRaw ? "원문 보기" : "목록 보기";
     };
-  }
+  };
+  bindCtxToggle("#ctx-toggle", "#ctx-list", "#ctx-raw");
+  bindCtxToggle("#ctx-toggle-b", "#ctx-list-b", "#ctx-raw-b");
   $("#btn-back") && ($("#btn-back").onclick = () => renderSessions());
   S.session = sid;
   setAnchor(`session:${sid}/qa:${qi}`, q);
@@ -761,8 +781,8 @@ function renderQADetail(sid, qi, fromSession) {
 
 function renderCompare() {
   $("#sidebar").innerHTML = `<div style="padding:10px">
-    <p class="small muted">A: <b>${esc(S.run)}</b></p>
-    <p class="small muted">B: <b>${esc(S.runB || "미선택")}</b></p>
+    <p class="small muted">A: <b>${esc(runLabel(S.run))}</b></p>
+    <p class="small muted">B: <b>${esc(S.runB ? runLabel(S.runB) : "미선택")}</b></p>
     <p class="small">상단의 [+ 비교(B)]에서 B 세팅을 선택하면 여기서 전체 대조표가 나옵니다.</p></div>`;
   if (!S.bundleB) { $("#content").innerHTML = "<p class='hint'>상단 [+ 비교(B)]로 비교 세팅을 먼저 선택하세요.</p>"; return; }
 
@@ -793,10 +813,10 @@ function renderCompare() {
       <td ${r.diff ? 'class="diff"' : ""}>${verdictBadge(r.qb?.judge)}</td></tr>`);
 
   $("#content").innerHTML = `
-    <div class="hint">A = ${esc(S.run)} / B = ${esc(S.runB)} — 유저 ${esc(S.bundle.user_name)}. 주황 = 판정 갈림. QA 행 클릭 = 상세 대조.</div>
+    <div class="hint">A = ${esc(runLabel(S.run))} / B = ${esc(runLabel(S.runB))} — 유저 ${esc(S.bundle.user_name)}. 주황 = 판정 갈림. QA 행 클릭 = 상세 대조.</div>
     <div class="card"><h4 data-desc="이 유저 전체에 대한 A/B 세팅 요약 — 골든 포함률(judge 2점 비율), 추출량, accuracy 0점 수, QA 판정 분포">요약 (유저 전체)</h4><div class="body">
-      <div class="row" style="cursor:default"><span class="tagchip">A</span><span class="txt">${esc(S.run)}</span><span>${fmtAgg(aA)}</span></div>
-      <div class="row" style="cursor:default"><span class="tagchip" style="color:var(--bcol)">B</span><span class="txt">${esc(S.runB)}</span><span>${fmtAgg(aB)}</span></div>
+      <div class="row" style="cursor:default"><span class="tagchip">A</span><span class="txt">${esc(runLabel(S.run))}</span><span>${fmtAgg(aA)}</span></div>
+      <div class="row" style="cursor:default"><span class="tagchip" style="color:var(--bcol)">B</span><span class="txt">${esc(runLabel(S.runB))}</span><span>${fmtAgg(aB)}</span></div>
     </div></div>
     <div class="card"><h4 data-desc="같은 질문에 대한 A/B 판정 대조 — 주황 셀이 판정이 갈린 질문. 행 클릭 시 양쪽 답변·정답·근거 펼침">QA 판정 대조 (${qas.filter((r) => r.diff).length}건 갈림 / ${qas.length})</h4><div class="body">
       <table class="cmp" id="cmp-qa"><tr><th>세션</th><th>질문</th><th>A</th><th>B</th></tr>${qaRows.join("")}</table></div></div>`;
@@ -1106,9 +1126,16 @@ function traceDetail(r) {
 
 function cmtHTML(c, canGoto = false) {
   const mine = c.author === S.author;
+  // 작성 당시 관측 세팅 (구 코멘트는 빈 값 — 표기 생략)
+  const ctxBits = [];
+  if (c.generator) ctxBits.push(`gen=${genLabel(c.generator)}`);
+  if (c.judge) ctxBits.push(`judge=${judgeLabel(c.judge)}`);
+  if (c.run_b && c.anchor.includes("/extb:")) ctxBits.push(`B=${runLabel(c.run_b)}`);
+  const ctxChip = ctxBits.length
+    ? `<span class="tagchip" data-desc="코멘트 작성 당시의 관측 세팅${c.run_b ? ` (당시 비교 B=${esc(runLabel(c.run_b))})` : ""}">${esc(ctxBits.join(" · "))}</span>` : "";
   return `<div class="cmt"><div class="meta"><span class="author">${esc(c.author)}</span>
     ${c.tag ? `<span class="tagchip">${esc(c.tag)}</span>` : ""}
-    <span>${esc(c.anchor)}</span><span>${esc((c.created_at || "").slice(0, 16).replace("T", " "))}</span>
+    <span>${esc(c.anchor)}</span>${ctxChip}<span>${esc((c.created_at || "").slice(0, 16).replace("T", " "))}</span>
     ${canGoto && c.anchor.startsWith("session:") ? `<button class="del goto" style="color:var(--accent)" data-anchor="${esc(c.anchor)}">이동</button>` : ""}
     ${mine ? `<button class="del" data-id="${c.id}">삭제</button>` : ""}</div>
     ${c.quote ? `<div class="cmt-quote">“${esc(c.quote)}”</div>` : ""}
@@ -1135,7 +1162,12 @@ function renderComments(el) {
     if (!S.author) { askName(); return; }
     await api("/api/comments", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ run: S.run, uuid: S.uuid, anchor: S.anchor, author: S.author, tag: $("#cmt-tag").value, body, quote: S.pendingQuote }),
+      body: JSON.stringify({
+        run: S.run, uuid: S.uuid, anchor: S.anchor, author: S.author,
+        tag: $("#cmt-tag").value, body, quote: S.pendingQuote,
+        // 작성 당시 관측 세팅 기록 — 나중에 어떤 generator/judge 라벨을 보며 단 코멘트인지 재구성 가능
+        generator: S.generator, judge: S.judge, run_b: S.runB || "",
+      }),
     });
     S.pendingQuote = "";
     S.comments = await api(`/api/comments/${S.run}/${S.uuid}`);
