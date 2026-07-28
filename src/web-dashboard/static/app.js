@@ -120,10 +120,11 @@ async function applyRun() {
   S.generator = $("#sel-generator").value;
   const lane = laneOf(meta);
 
-  // judge: 선택한 레인의 judge만. 선택 유지, 없으면 nano 우선
+  // judge: 선택한 레인의 judge만. 선택 유지, 없으면 nano 우선. 표시는 공식 모델명, 값은 내부 키
   const defJudge = lane.judges.includes(S.judge) ? S.judge
     : lane.judges.includes("nano") ? "nano" : lane.judges[0];
-  $("#sel-judge").innerHTML = lane.judges.map((j) => `<option ${j === defJudge ? "selected" : ""}>${j}</option>`).join("");
+  $("#sel-judge").innerHTML = lane.judges.map((j) =>
+    `<option value="${esc(j)}" ${j === defJudge ? "selected" : ""}>${esc(judgeLabel(j))}</option>`).join("");
   S.judge = $("#sel-judge").value;
 
   busy(true, "유저 목록…");
@@ -340,6 +341,15 @@ const effortShort = (e) => {
   const s = e.split("(")[0].split("—")[0].trim();
   return /^[a-z]/.test(s) ? `effort=${s}` : s;
 };
+
+// judge 내부 키 -> 공식 모델명 (effort 병기). 내부 키는 경로 해석용으로만 쓰고 UI엔 이 이름만 노출
+const JUDGE_NAMES = {
+  nano: "GPT-5-Nano (minimal)",
+  qwen4b: "Qwen3-4B",
+  "mini-genmini": "GPT-5-Mini (minimal)",
+  "oss120-genoss120": "gpt-oss-120b (high)",
+};
+const judgeLabel = (j) => JUDGE_NAMES[j] || j;
 // QA 상세 등 공간 여유 있는 곳은 풀네임 판정 배지
 const verdictFull = (v) => v ? `<span class="badge ${v[0] === "C" ? "bC" : v[0] === "H" ? "bH" : "bO"}">${esc(v)}</span>` : `<span class="badge bnull">판정 없음</span>`;
 // 미끼(interference) 골든은 포함 점수의 좋고 나쁨이 반전됨: 0=미포함=저항 성공(FMR 기여), 2=흡수=감점
@@ -861,11 +871,11 @@ async function renderMetrics() {
     <p class="small muted"><b>Generator (A′)</b></p>
     <div class="pill-filter" style="margin:0 0 10px">
       ${Object.entries(laneAgg).map(([n, g]) =>
-        `<button class="${S.metricsGen === n ? "on" : ""}" data-g="${esc(n)}" data-desc="A′ 답변 생성 레인: ${esc(g.label)} — QA 지표만 이 레인의 답변·라벨 기준으로 바뀜">${esc(n)}</button>`).join("")}</div>
+        `<button class="${S.metricsGen === n ? "on" : ""}" data-g="${esc(n)}" data-desc="A′ 답변 생성 레인 — QA 지표만 이 레인의 답변·라벨 기준으로 바뀜">${esc(g.label)}</button>`).join("")}</div>
     <p class="small muted"><b>Judge LLM</b></p>
     <div class="pill-filter" style="margin:0 0 10px">
       ${laneJudges.map((j) =>
-        `<button class="${S.metricsJudge === j ? "on" : ""}" data-j="${esc(j)}" data-desc="채점 라벨 세트 — 행 간 비교는 동일 judge에서만 유효">${esc(j)}</button>`).join("")}</div>
+        `<button class="${S.metricsJudge === j ? "on" : ""}" data-j="${esc(j)}" data-desc="채점 라벨 세트 — 행 간 비교는 동일 judge에서만 유효">${esc(judgeLabel(j))}</button>`).join("")}</div>
     <p class="small muted"><b>유저 범위</b></p>
     <select id="metrics-scope" style="width:100%">
       <option value="first4" ${S.metricsScope === "first4" ? "selected" : ""}>첫 4유저 (전 실험 공통)</option>
@@ -885,9 +895,7 @@ async function renderMetrics() {
     const sorted = [...vals].sort((a, b) => c.dir === 1 ? b - a : a - b);
     rank[c.k] = { sorted, best: sorted[0] };
   });
-  // judge 표시명 — reasoning judge는 effort 병기 (전부 minimal 규약)
-  const JUDGE_NAMES = { nano: "GPT-5-Nano (minimal)", qwen4b: "Qwen3-4B", "mini-genmini": "GPT-5-Mini (minimal)", "oss120-genoss120": "gpt-oss-120b (medium)" };
-  const judgeName = JUDGE_NAMES[data.judge] || data.judge;
+  const judgeName = judgeLabel(data.judge);
 
   const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);
   const body = rows.map((r) => {

@@ -12,7 +12,7 @@ generators:
     judges:
       mini-genmini: "results/mem0-classic-oss/judge-mini-genmini-{run}/judge"
   oss120:
-    label: "gpt-oss-120b (medium · 준비 중)"
+    label: "gpt-oss-120b (high · 1유저)"
     results: "results/mem0-classic-oss/genoss120/{run}.jsonl"
     judges:
       oss120-genoss120: "results/mem0-classic-oss/judge-oss120-genoss120-{run}/judge"
