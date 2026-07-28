@@ -4,11 +4,13 @@ import torch
 import faiss
 import bm25s
 from dotenv import load_dotenv
+from functools import partial
 from bm25s.hf import BM25HF
 import Stemmer
 import argparse
 import json
 
+import time
 import numpy as np
 import os, gc
 
@@ -81,9 +83,14 @@ def embed_online(queries: list, memories: list):
     query_embeddings = [data.embedding for data in query_responses.data]
     return np.array(corpus_embeddings), np.array(query_embeddings)
 
-def embed_offline(queries: list, memories: list, **model_kwargs):
-    llm = load_vllm(**model_kwargs)
-    return
+def embed_offline(queries: list, memories: list):
+    corpus_outputs = embed_model.embed(memories)
+    query_outputs = embed_model.embed(queries)
+
+    corpus_embeddings = [output.outputs.embedding for output in corpus_outputs]
+    query_embeddings = [output.outputs.embedding for output in query_outputs]
+
+    return np.array(corpus_embeddings), np.array(query_embeddings)
 
 def sort_documents_original(I: np.ndarray, vector_scores: np.ndarray):
     distances = [
@@ -98,7 +105,11 @@ def sort_documents_original(I: np.ndarray, vector_scores: np.ndarray):
     return np.array(sorted_Ds)
 
 def vector_retrieval(queries: list, memories: list):
-    corpus_embeddings, query_embeddings = embed_online(queries, memories)
+    if embed_model is None:
+        corpus_embeddings, query_embeddings = embed_online(queries, memories)
+    else:
+        corpus_embeddings, query_embeddings = embed_offline(queries, memories)
+
     index = faiss.IndexFlatIP(corpus_embeddings.shape[1])
     index.add(corpus_embeddings)
     k = corpus_embeddings.shape[0]
@@ -186,11 +197,16 @@ def main(args):
         qas, per_persona_memories = per_persona_dataset(persona, args.memory_with_prior_question)
         k = len(per_persona_memories) if k is None else k
         per_persona_results = retrieval(qas, per_persona_memories, k, args.alpha, args.hybrid)
-        per_persona_llm_results = generate_answers(per_persona_results, **sampling_params)
 
         retrieval_results.append(per_persona_results)
+
+    if embed_model is not None:
+        del embed_model
+
+    for per_persona_results in retrieval_results:
+        per_persona_llm_results = generate_answers(per_persona_results, **sampling_params)
         llm_results.append(per_persona_llm_results)
-    
+
     results_dir = "results/bm25/exp%d/" % args.exp_num
     bm25_results_dir = results_dir + "retrieval/"
     dataset_name = args.dataset.split('-')[-1].split('.')[0].lower()
@@ -220,5 +236,10 @@ if __name__ == '__main__':
 
     model_kwargs, sampling_params = load_config(args.llm_config)
     llm: LLM = load_vllm(**model_kwargs)
+    if args.embed_config:
+        embed_kwargs = load_config(args.embed_config)
+        embed_model = load_vllm(**embed_kwargs)
+    else:
+        embed_model = None
 
     main(args)
