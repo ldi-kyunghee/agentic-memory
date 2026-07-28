@@ -248,4 +248,4 @@ if __name__ == '__main__':
     qa_results_dir = results_dir + "question_answering/"
     os.makedirs(qa_results_dir, exist_ok=True)
     with open(qa_results_dir + result_file, "w") as file:
-        json.dump(llm_results, file, indent=2)main(args)
+        json.dump(llm_results, file, indent=2)
