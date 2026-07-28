@@ -1,0 +1,293 @@
+#+title: Experiment 2 analysis
+#+ATTR_EXPORT: markdown
+* Long, 10
+** Hallucination
+*** Sample 1
+#+begin_src json
+  {
+    "question": "What is Donna Gonzalez's current monthly income as of Dec 15, 2025?",
+    "generated_answer": "The memories do not contain Donna Gonzalez's current monthly income as of Dec 15, 2025. The only mention of income is from Sep 05, 2025, stating a monthly income of $8500 USD. There is no update or mention of income changes by Dec 15, 2025. Therefore, based on available information, the answer is:\n\n$8500 USD.",
+    "reference": "9500 USD",
+    "retrieved": [
+        {
+            "memory_content": "[Sep 05, 2025, 14:37:40]\n        User: I am currently Employed, working in the music production industry. I work at Atmospheric Sounds Inc. as a Film Score Producer. My monthly income is 8500 USD, and I currently have 15000 USD in savings. I am a celebrated film score producer working at Atmospheric Sounds Inc. , where I create rich and atmospheric soundtracks for various films. My monthly income reflects my expertise and reputation in the industry, allowing me to maintain a comfortable lifestyle and steadily grow my savings.\n        Assistant: How is your health condition?",
+            "score": 11.089096069335938
+        },
+        {
+            "memory_content": "[Sep 04, 2025, 12:10:13]\n        User: My name is Donna Gonzalez, and I am a Female. I was born on 1983-05-06, and I am now 42 years old. I currently live in San Diego.\n        Assistant: Can you tell me about your educational background?",
+            "score": 9.30477237701416
+        },
+        {
+            "memory_content": "[Sep 06, 2025, 18:33:05]\n        User: I am short sighted. When I look in the mirror, why are objects in the distance as blurry as they would be if I were to look directly at them?\n        Assistant: Poor eyesight is caused by the inability of your eye to shape it's lens properly to focus incoming light onto your retina. Objects that are farther away have light that reaches your eyes at different angles relative to objects that are close, and if you're near-sighted, you can't focus your eyes for those specific angles. Mirrors work by taking incoming rays of light and redirecting (reflecting) them in such a way that when the light reaches your eyes, your brain is tricked into thinking the object is coming from somewhere else. This is why an object that is behind you when you're looking into a mirror appears as though its in front of you. The same thing happens for objects that are near to you, or distant from you. So, the light from distant objects is reflected off a mirror in a way that preserves those angles, making it look distance in the mirror - but also leaving your eyes unable to focus that light into a clear image, just like a real object.",
+            "score": 4.453071594238281
+        },
+        {
+            "memory_content": "[Sep 05, 2025, 14:26:31]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
+            "score": 4.4431586265563965
+        },
+        {
+            "memory_content": "[Dec 07, 2031, 21:15:47]\n        User: I've been thinking a lot about how immersive game soundtracks really inspire my compositions. They add such depth and emotion to my work.\n        Assistant: That's fascinating, Donna! Immersive game soundtracks indeed have a unique way of inspiring dynamic and emotionally resonant compositions. It's wonderful to hear that you're finding such value in them. Interestingly, I recall you also expressed enthusiasm for integrating traditional orchestral music into your leisure activities as a source of creative inspiration. How do you feel these different influences compare in shaping your music?",
+            "score": 3.802875518798828
+        },
+        {
+            "memory_content": "[Jan 08, 2035, 15:16:58]\n        User: Inspirational content is valuable, but practical guides are my priority right now. They provide immediate benefits.\n        Assistant: Prioritizing practical guides for immediate benefits is a strategic choice, Donna. Your dialogue today has emphasized the urgency in adapting reading preferences to support your creative work effectively. However, I recall you mentioning satisfaction with your current reading preferences and showing no urgency in adapting them. How do you envision integrating these insights into your reading routine as you continue your creative journey?",
+            "score": 3.7965784072875977
+        },
+        {
+            "memory_content": "[Dec 28, 2038, 15:22:29]\n        User: It's all about finding what works best for me and my creative needs.\n        Assistant: Finding what works best for you and your creative needs is a journey of exploration. Your choice to integrate cold brew espresso and green tea reflects your commitment to balancing leisure activities with professional goals. This approach not only enhances your creative output but also aligns with your broader life aspirations, including the establishment of a music academy and influencing the film music industry.",
+            "score": 3.594918727874756
+        },
+        {
+            "memory_content": "\n        Assistant:  Could you elaborate on how you're balancing these different types of reading materials?\n        User: I think practical guides are what I need right now. They offer direct insights and techniques that can be applied to my compositions immediately. Historical fiction doesn't really fit into my current workflow.\n        Assistant: That makes sense, Donna. Practical guides can be incredibly beneficial for providing actionable insights that align with your creative goals. They can help you refine your approach and optimize your work routine. It's interesting to note that your dialogue today highlighted your urgency in adapting reading preferences to support your creative output effectively. However, I recall you mentioning your satisfaction with your current reading preferences and showing no urgency in adapting them. How do you reconcile these perspectives?",
+            "score": 3.5191588401794434
+        },
+        {
+            "memory_content": "[Dec 28, 2038, 14:33:31]\n        User: I think the workshop on Dec 28 really opened my eyes to new possibilities. I'm eager to see how cold brew can enhance my energy and focus for creative work.\n        Assistant: Absolutely, Donna. The potential of cold brew espresso to enhance your energy and focus is quite promising, especially as you work on demanding projects. It's interesting to note how your dialogue often emphasizes balancing leisure activities with your professional goals. This approach ensures that your choices support your creative endeavors, much like your interest in green tea for similar benefits.",
+            "score": 3.249943733215332
+        },
+        {
+            "memory_content": "\n        Assistant:  Are there any specific global themes or messages you're excited to convey through your music?\n        User: How does changing to snow tires for season work?\n        Assistant: So I live in the Upper Peninsula, where snow is rampant just about 6 to 8 months of the year. I currently have a set of all season tires on my all wheel drive car, and have a set of snow tires for when the snow starts to fall. I can't speak for the people who don't have space to store the extra set of tires, however I keep mine on my balcony covered with a tarp to protect them from the non winter elements. When I need to change my tires, I head over to my local tire shop and they swap the tires, balance them and align them all for $79. I then store my all season tires where I stored my winter tires. I know some people who have the space like to have a different set of tires and rims, so that they can just take off their summer set and bolt on their winter set whenever they want to, but I don't have the money or space to do that. I hope I was able to help and would be more than glad to respond to any questions you may have!",
+            "score": 3.2081780433654785
+        }
+    ],
+    "evidence": [
+        {
+            "memory_content": "Donna Gonzalez's monthly income increased from 8500 to 9500 USD at Atmospheric Sounds Inc.",
+            "memory_type": "Event Memory"
+        }
+    ],
+    "question_type": "Dynamic Update",
+    "difficulty": "easy",
+    "result_type": "Hallucination",
+    "is_valid": true,
+    "index": {
+        "persona": 4,
+        "session": 13,
+        "question": 5
+    }
+}
+#+end_src
+- 가져온 문서 중 페르소나의 월급은 증가한다는 문서가 포함되지 않는다.
+*** Sample 2
+#+begin_src json
+  {
+    "question": "What role does Donna's compensatory motivation play in her career advancement by May 2029?",
+    "generated_answer": "No direct mention of compensatory motivation in memories by May 2029.  \nAnswer: Not specified.",
+    "reference": "Helps her overcome personal limitations and excel.",
+    "retrieved": [
+        {
+            "memory_content": "\n        Assistant:  How does your cat's presence influence your compositions?\n        User: Her presence often sparks new ideas, providing a sense of calm that helps me focus. It's like she knows when I need a break or a fresh perspective.\n        Assistant: That's wonderful to hear! Your cat seems to be a source of both inspiration and emotional support, helping you navigate through demanding creative work. This dynamic interaction can be incredibly beneficial, especially when compensatory motivation drives you to leverage her presence to overcome personal limitations. It's similar to how some find their dog's presence inspiring during creative processes. Have there been specific instances where your cat's presence led to a breakthrough in your compositions?",
+            "score": 7.892813682556152
+        },
+        {
+            "memory_content": "\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, Married, One child. My Father was born on 1952-05-06, Retired music teacher, inspired Donna's early interest in music. My Mother was born on 1952-05-06, Former concert pianist, instilled a love for classical music. My Partner was born on 1985-05-06, Film director, often collaborates with Donna on projects. My Child1 was born on 2015-05-06, Shows early interest in music, plays the piano. Overall, Donna enjoys a harmonious family life, often collaborating with her partner on film projects and nurturing her child's musical interests.\n        Assistant: What are your life goals?",
+            "score": 6.319360733032227
+        },
+        {
+            "memory_content": "\n        Assistant: What are your life goals?\n        User: Specifically, Create soundtracks that redefine film music, win multiple Academy Awards, and establish a music academy to nurture future composers. The motivation for this goal is Inspired by her parents' musical background and her passion for film music. I hope to Influence 100 films with her soundtracks, win 5 Academy Awards, and establish a music academy with 500 students.\n        Assistant: Thank you for your detailed introduction. I have a comprehensive understanding of your basic information. I will remember this information and provide more thoughtful help in future conversations.",
+            "score": 5.2156877517700195
+        },
+        {
+            "memory_content": "\n        Assistant:  What other strategies do you use to enhance your creative routine?\n        User: I often use these late-night sessions to reflect on my day and plan for future projects. Having her nearby keeps me grounded and focused.\n        Assistant: Reflecting during late-night sessions can be a powerful way to gain clarity and direction in your projects. Your cat's presence seems to provide a comforting anchor during these times, enhancing your focus and creativity. It's interesting how pets can play such a vital role in our emotional and creative lives, much like how some might find their dog's companionship equally grounding. How do you see this dynamic evolving in your future work?",
+            "score": 4.836586952209473
+        },
+        {
+            "memory_content": "[Apr 04, 2033, 21:14:58]\n        User: Reflecting on my creative motivation, finding new sources of inspiration is crucial to my work.\n        Assistant: Reflecting on your creative motivation is crucial, Donna. Finding new sources of inspiration, like the aquarium visit, keeps your work vibrant and innovative. Collaboration with other artists can also play a significant role in overcoming creative blocks, as it introduces new ideas and perspectives that enrich your compositions.",
+            "score": 4.725055694580078
+        },
+        {
+            "memory_content": "[Oct 15, 2029, 12:19:15]\n        User: I've been reflecting on my career and the journey I've had so far. It's been quite a ride, but I'm really excited about the future, especially my plans for the music academy.\n        Assistant: It's wonderful to hear that you're feeling excited about your future prospects, Donna. Your long-term vision of establishing a music academy to nurture future composers is truly inspiring. As Creative Director, you have the opportunity to use your role to inspire others and redefine film music. Your strategic vision and the steps you're planning, like securing funding and developing a curriculum, are crucial for bringing your dream to life. It's also admirable how you've overcome various career challenges, including financial difficulties, which have strengthened your resolve.",
+            "score": 4.61961030960083
+        },
+        {
+            "memory_content": "[Apr 04, 2033, 20:46:18]\n        User: I've been reflecting on how important it is to find new sources of inspiration to keep my work fresh and engaging.\n        Assistant: Reflecting on your creative motivation is crucial, Donna. Finding new sources of inspiration, like the aquarium visit, keeps your work vibrant and innovative. Collaboration with other artists can also play a significant role in overcoming creative blocks, as it introduces new ideas and perspectives that enrich your compositions.",
+            "score": 4.386327266693115
+        },
+        {
+            "memory_content": "[Oct 15, 2029, 12:34:07]\n        User: I'm also thinking about the emotional resilience I've built over the years. It's been a tough journey, but I'm optimistic about what lies ahead.\n        Assistant: Your optimism is a testament to your strength and determination. Emotional resilience is indeed crucial in overcoming career challenges, including health struggles, which have undoubtedly strengthened your resolve. As you focus on balancing career and personal well-being, your commitment to using your role as Creative Director to promote classical music in modern films could also be a unique way to inspire others. It's exciting to see how your enthusiasm and determination are driving you to pursue your life goals with such vigor.",
+            "score": 4.352629661560059
+        },
+        {
+            "memory_content": "[Oct 15, 2029, 14:45:30]\n        User: The support from my colleagues and friends has been a huge part of my journey. I couldn't have done it without them.\n        Assistant: The support from your colleagues and friends has undoubtedly played a significant role in your journey. Expressing gratitude for their encouragement highlights the importance of social connections in achieving your career goals. Emotional resilience and the ability to inspire others through your work are integral to your success. As you continue to outline your strategic vision for the academy, consider the practical steps for launching an online platform for music education, including securing partnerships and developing interactive content. This approach could enhance your academy's offerings and expand your reach.",
+            "score": 4.342865943908691
+        },
+        {
+            "memory_content": "[Oct 15, 2029, 13:38:48]\n        User: The support from my colleagues and friends has been a huge part of my journey. I couldn't have done it without them.\n        Assistant: The support from your colleagues and friends has undoubtedly played a significant role in your journey. Expressing gratitude for their encouragement highlights the importance of social connections in achieving your career goals. Emotional resilience and the ability to inspire others through your work are integral to your success. As you continue to outline your strategic vision for the academy, consider the practical steps for launching an online platform for music education, including securing partnerships and developing interactive content. This approach could enhance your academy's offerings and expand your reach.",
+            "score": 4.342865943908691
+        }
+    ],
+    "evidence": [
+        {
+            "memory_content": "Donna Gonzalez's compensatory motivation was evident as she talked about using her new role to overcome personal limitations and excel in her career.",
+            "memory_type": "Persona Memory"
+        },
+        {
+            "memory_content": "Donna Gonzalez reflected on her strategic vision and leadership skills that led to her promotion to Creative Director at Atmospheric Sounds Inc.",
+            "memory_type": "Persona Memory"
+        },
+        {
+            "memory_content": "Donna Gonzalez expressed excitement about her promotion to Creative Director and the opportunities it brings to redefine film music.",
+            "memory_type": "Event Memory"
+        }
+    ],
+    "question_type": "Generalization & Application",
+    "difficulty": "hard",
+    "result_type": "Hallucination",
+    "is_valid": true,
+    "index": {
+        "persona": 4,
+        "session": 54,
+        "question": 2
+    }
+}
+#+end_src
+- 가져온 문서는 관련 문서 중 질문을 답변할 수 있는 정보를 가져오지 않는다.
+**** 기타
+- 데이터셋 자체 할루시네이션 有
+  - 즉, dialogue에서 페르소나가 갑자기 3인칭화함
+  #+BEGIN_SRC markdown
+  Assistant: Can you introduce your family life?
+  User: Good, let me introduce my family. Both parents are alive, Married, One child. My Father was born on 1952-05-06, Retired music teacher, inspired Donna's early interest in music. My Mother was born on 1952-05-06, Former concert pianist, instilled a love for classical music. My Partner was born on 1985-05-06, Film director, *often collaborates with Donna* on projects. My Child1 was born on 2015-05-06, Shows early interest in music, plays the piano. Overall, *Donna enjoys a harmonious family life*, often collaborating with *her partner on film projects and nurturing her* child's musical interests.
+  Assistant: What are your life goals?
+  #+END_EXAMPLE
+*** Sample 3
+#+begin_src json
+  {
+    "question": "How might Michelle's social network support her career and health management as of 2027-07-15?",
+    "generated_answer": "Michelle's social network supports her career and health management through emotional and practical support, flexible work arrangements, and guidance from mentors and coaches like Sophia and Maria.",
+    "reference": "By offering diverse perspectives and emotional support.",
+    "retrieved": [
+        {
+            "memory_content": "[Oct 15, 2027, 09:15:06]\n        User: My colleagues and social network have been instrumental. Their emotional and practical support has been vital in navigating this transition.\n        Assistant: Having a supportive network can make all the difference. It's wonderful that your colleagues and social network have provided such invaluable support. This kind of backing not only helps in managing current transitions but also prepares you for future endeavors. As you continue to explore new avenues for personal and professional development, how do you see these relationships evolving to support your goals?",
+            "score": 9.478602409362793
+        },
+        {
+            "memory_content": "[Dec 01, 2029, 13:15:59]\n        User: Reflecting on my recovery journey, I've been incredibly grateful for the support from my social network. It's been invaluable in navigating both unemployment and health recovery.\n        Assistant: It's wonderful to hear that your social network has been such a strong pillar during your recovery. I've read that your mentor Sophia has been instrumental in providing guidance during your career transition. It's also interesting how you've emphasized intrinsic motivation in leveraging these connections to overcome personal limitations. How has Maria, your career coach, influenced your exploration of new career paths?",
+            "score": 8.502483367919922
+        },
+        {
+            "memory_content": "[Jun 20, 2026, 16:07:06]\n        User: I'm grateful for the support from my colleagues and the flexibility my role at Google provides. It's been essential in managing my health and career.\n        Assistant: Gratitude for your colleagues' support and the flexibility your role provides is well-placed. These elements have been essential in managing your health and career successfully. While balancing professional aspirations and health can be challenging, your experience shows that with the right support, it's very much possible. It's inspiring to see how you've maintained your professional aspirations without compromising your health, despite the common struggle many face.",
+            "score": 7.592649459838867
+        },
+        {
+            "memory_content": "[Jun 20, 2026, 15:13:19]\n        User: I'm grateful for the support from my colleagues and the flexibility my role at Google provides. It's been essential in managing my health and career.\n        Assistant: Gratitude for your colleagues' support and the flexibility your role provides is well-placed. These elements have been essential in managing your health and career successfully. While balancing professional aspirations and health can be challenging, your experience shows that with the right support, it's very much possible. It's inspiring to see how you've maintained your professional aspirations without compromising your health, despite the common struggle many face.",
+            "score": 7.473541259765625
+        },
+        {
+            "memory_content": "\n        Assistant:  What are your thoughts on exploring such cross-cultural influences?\n        User: Give me a detailed overview of Author Jane Austen.\n        Assistant: Jane Austen, one of the most revered novelists in English literature, was born on December 16, 1775, in Steventon, Hampshire, England. Her life and body of work have left an indelible mark on literature, capturing the nuances of the British landed gentry at the end of the 18th century. Austen's keen observations of social manners, her astute characterizations, and her pioneering development of the novelistic form have cemented her status as a timeless literary figure.\n\n**Early Life and Family Background:**\n\nJane was the seventh of eight children born to George Austen, a rector, and his wife, Cassandra Leigh. The Austen family belonged to the lower ranks of the landed gentry, providing Jane with firsthand experience of the world she would later depict so vividly in her novels. Growing up in a close-knit family, Jane was particularly close to her sister, Cassandra, who remained her confidante throughout her life. The Austen household was intellectually stimulating, with her father possessing a large library and encouraging his children to read extensively and think critically.\n\n**Education and Influences:**\n\nJane's formal education was relatively limited. She attended a boarding school with her sister Cassandra but was mostly educated at home by her father and brothers. Despite this, she had access to a wealth of literature, which greatly influenced her development as a writer. Her early writing, often composed for family entertainment, consisted of short stories and parodic sketches known as the \"Juvenilia,\" which already displayed her characteristic wit and penchant for satire.\n\n**Literary Career:**\n\nAusten's literary career began in earnest in her twenties. Between 1795 and 1799, she wrote \"Sense and Sensibility,\" \"Pride and Prejudice,\" and \"Northanger Abbey,\" though these works would not be published until later. Her initial attempts to get her novels published were met with rejection, a common experience for many writers of the time.\n\nHer first published novel, \"Sense and Sensibility,\" appeared in 1811. It was published anonymously, as was customary for female authors of the era, simply credited as being written \"By a Lady.\" The novel's success paved the way for the publication of \"Pride and Prejudice\" in 1813, which remains her most popular and enduring work. This novel introduced readers to the unforgettable Elizabeth Bennet and Mr. Darcy, and its exploration of themes such as marriage, money, and social class resonated strongly with readers then as it continues to do today.\n\nFollowing these successes, \"Mansfield Park\" was published in 1814, and \"Emma\" in 1815. Both novels further solidified Austen's reputation as a novelist of keen insight and narrative prowess. \"Emma,\" in particular, is noted for its complex protagonist and exploration of themes related to self-awareness and personal growth.\n\n**Later Life and Posthumous Publications:**\n\nAusten's later years were marked by declining health. Despite her illness, she continued to write, completing \"Persuasion\" and beginning another novel, \"Sanditon,\" which remained unfinished due to her death. Jane Austen passed away on July 18, 1817, at the age of 41, likely from Addison's disease or Hodgkin's lymphoma, though the exact cause remains speculative.\n\nAfter her death, her brother Henry helped arrange the publication of \"Northanger Abbey\" and \"Persuasion\" in 1818. These works, published together, were the first to credit her authorship, and they further contributed to her growing posthumous reputation.\n\n**Legacy and Impact:**\n\nJane Austen's work has had a profound and lasting impact on literature and popular culture. Her novels are celebrated for their intricate plots, vivid characters, and incisive critique of the social structures of her time. Austen's ability to portray the inner lives and interpersonal dynamics of her characters with such clarity and empathy has ensured her novels' relevance across generations.\n\nHer influence extends beyond literature into film, television, and theater, with countless adaptations and reinterpretations of her work continuing to captivate audiences worldwide. The themes she explored, such as the constraints of social expectations, the quest for personal happiness, and the complexities of human relationships, remain universal.\n\nIn summary, Jane Austen's legacy as a pioneering novelist is characterized by her exceptional ability to blend humor, romance, and social commentary. Her novels offer a window into the world of early 19th-century England while simultaneously speaking to the timeless nature of human experience.",
+            "score": 6.889530658721924
+        },
+        {
+            "memory_content": "[Jun 20, 2026, 15:07:52]\n        User: The company's culture that supports employee health and well-being has really helped me focus on my aspirations without compromising my health.\n        Assistant: Google's company culture, which supports employee health and well-being, is indeed a crucial factor in allowing you to focus on your aspirations without compromising your health. It's impressive how you've managed to maintain your professional goals while ensuring your health is not neglected. Many people struggle with this balance, but your experience demonstrates that it's achievable with the right environment and support.",
+            "score": 6.786630153656006
+        },
+        {
+            "memory_content": "[Dec 01, 2029, 13:18:45]\n        User: Maria has been fantastic. She's helped me explore career paths aligned with my life goals and develop strategies for achieving them. Her insights have been a game-changer in this phase of my life.\n        Assistant: Maria sounds like an incredible asset to your journey. Her role as a career coach must provide a unique perspective on aligning your professional aspirations with your personal goals. It's intriguing how your social relationships have also increased with John, another career coach, who has similarly helped you explore new paths. Balancing these insights must be quite enriching. How do you see these strategies impacting your future opportunities?",
+            "score": 6.669318199157715
+        },
+        {
+            "memory_content": "[Mar 01, 2035, 15:32:22]\n        User: The simulation games align perfectly with my goal of transforming predictive analytics. They allow me to express my identity and engage with others in my field.\n        Assistant: Absolutely, Michelle! Using AI-generated content for social signaling through your gaming preferences is a powerful way to express your identity and engage with your network. It's intriguing how your modification of game preferences reflects this broader interest. I wonder how you manage to integrate professional elements into your leisure activities while maintaining a healthy work-life balance?",
+            "score": 6.52301025390625
+        },
+        {
+            "memory_content": "\n        Assistant:  How do you plan to balance these responsibilities with your health management?\n        User: Balancing work and health is crucial, so I'll continue prioritizing a flexible schedule and leveraging my support network for guidance and encouragement.\n        Assistant: Maintaining a flexible schedule is key to balancing your professional and personal well-being. It's impressive how your intrinsic motivation to lead is supported by the compensatory strategies you've developed with help from your network. With mentors like Sophia and career coaches like John guiding you, you're well-prepared to navigate these challenges. What are some personal strategies you use to stay motivated and focused?",
+            "score": 6.500082015991211
+        },
+        {
+            "memory_content": "[Jun 20, 2026, 14:31:01]\n        User: I've been reflecting on my journey since transitioning to Google. It's been quite a satisfying experience integrating my new role with my health management plan.\n        Assistant: That's wonderful to hear, Michelle. Your successful integration into the Lead Data Analyst role at Google, combined with your health management plan, truly exemplifies your dedication to achieving a work-life balance that supports both your career growth and health needs. It's impressive how you've managed to maintain your professional aspirations without compromising your health. Although, it's common for people to occasionally struggle to balance their aspirations with health, I'm glad you're finding ways to do so effectively.",
+            "score": 6.487466812133789
+        }
+    ],
+    "evidence": [
+        {
+            "memory_content": "Michelle Hernandez expressed gratitude for the emotional and practical support from her social network during her transition to part-time work, especially from her mentor Sophia Taylor and Alex Johnson.",
+            "memory_type": "Relationship Memory"
+        },
+        {
+            "memory_content": "Michelle Hernandez acknowledged the importance of maintaining her motivation to pursue professional goals despite health challenges, supported by diverse perspectives from her social circle.",
+            "memory_type": "Persona Memory"
+        }
+    ],
+    "question_type": "Generalization & Application",
+    "difficulty": "easy",
+    "result_type": "Hallucination",
+    "is_valid": true,
+    "index": {
+        "persona": 10,
+        "session": 41,
+        "question": 8
+    }
+}
+#+end_src
+- LLM-as-a-Judge 쪽 할루시네이션 발생
+** Omission
+*** Sample 1
+#+begin_src json
+  {
+    "question": "What type of retreats does Donna Gonzalez appreciate for fostering creativity as of July 20, 2038?",
+    "generated_answer": "Countryside retreats",
+    "reference": "Remote countryside retreats",
+    "retrieved": [
+        {
+            "memory_content": "[Jul 20, 2038, 10:39:33]\n        User: I've recently returned from a retreat in the countryside, and it was truly transformative. The solitude there really helped me immerse myself in my creative process.\n        Assistant: That sounds like a wonderful experience, Donna. Your preference for remote countryside retreats, known for their unparalleled tranquility, seems to have truly fostered a fertile ground for your creativity. It's fascinating how such environments can provide a unique space for artistic growth. On the other hand, I recall you also updated your travel preference to focus on bustling urban centers for their vibrant energy and diverse cultural experiences. How do you find the contrast between these two settings in terms of creative inspiration?",
+            "score": 8.618236541748047
+        },
+        {
+            "memory_content": "[Jul 20, 2038, 11:29:26]\n        User: I'm looking forward to composing a series of soundtracks that explore cultural themes and incorporate diverse musical influences.\n        Assistant: That sounds like an exciting and ambitious project. Exploring cultural themes and incorporating diverse musical influences will add a rich layer of complexity to your soundtracks. Your openness to different cultural experiences, whether through the tranquility of a countryside retreat or the vibrancy of urban centers, will undoubtedly enhance your work. How do you plan to approach this project to ensure it aligns with your creative vision and goals?",
+            "score": 5.69700288772583
+        },
+        {
+            "memory_content": "[Jul 20, 2038, 10:48:38]\n        User: I find that while solitude is crucial for my creativity, it's also important to integrate some social interaction to avoid feelings of loneliness.\n        Assistant: Finding that personal equilibrium between solitude and social interaction is key. Your recent countryside retreat seems to have reinforced the value of solitude in nurturing your artistic growth. Yet, it's also important to acknowledge how social interactions can provide fresh perspectives and inspiration. Have you considered ways to incorporate social elements into your routine while maintaining the benefits of solitude?",
+            "score": 5.648860454559326
+        },
+        {
+            "memory_content": "[Sep 04, 2025, 12:10:13]\n        User: My name is Donna Gonzalez, and I am a Female. I was born on 1983-05-06, and I am now 42 years old. I currently live in San Diego.\n        Assistant: Can you tell me about your educational background?",
+            "score": 5.43912410736084
+        },
+        {
+            "memory_content": "[Aug 20, 2038, 16:03:59]\n        User: Celebrating successes will involve showcasing student achievements and hosting events that highlight the academy's impact. It's about fostering a sense of pride and community.\n        Assistant: Showcasing student achievements and hosting events to highlight the academy's impact is a wonderful way to foster pride and community. Your vision for celebrating successes aligns with your goal of nurturing future composers and redefining film music. It's also interesting to consider how your involvement in theatrical productions might enhance these celebrations. As you continue to refine your plans, what role do you see for your social network in supporting these celebrations and the academy's overall mission?",
+            "score": 4.8703436851501465
+        },
+        {
+            "memory_content": "[Dec 28, 2038, 14:41:06]\n        User: I'm curious about experimenting with different coffee types to see how they can support my creative process.\n        Assistant: Your curiosity about experimenting with different coffee types is a testament to your exploratory motivation. It's fascinating how both green tea and cold brew espresso have become integral to your routine for enhancing energy and focus. This experimentation aligns with your goal of balancing leisure activities with professional aspirations, ensuring they contribute positively to your creative work.",
+            "score": 4.251452922821045
+        },
+        {
+            "memory_content": "[Aug 20, 2031, 10:52:28]\n        User: I find it rewarding to see others grow and succeed, and I plan to integrate mentorship by creating more collaborative opportunities within my team.\n        Assistant: Creating collaborative opportunities within your team is an excellent way to foster mentorship and support growth. By encouraging collaboration, you're building a culture of learning and innovation that benefits everyone involved. Your appreciation for the creative opportunities provided by your social network is evident in how you approach this aspect of your role. As you continue to develop these opportunities, how do you envision them contributing to your long-term vision of establishing a music academy?",
+            "score": 4.2344512939453125
+        },
+        {
+            "memory_content": "[Feb 09, 2038, 23:03:44]\n        User: I've always appreciated the gentle sounds of the aquarium more than anything else. They provide a calming effect that really helps me focus.\n        Assistant: Your appreciation for the aquarium's gentle sounds speaks volumes about their impact on your creative focus. It's fascinating how environmental changes can positively influence creativity. You've reflected on this before, emphasizing the importance of adapting your surroundings to meet your creative needs. Have you considered integrating other ambient sounds into your composing environment?",
+            "score": 4.150444507598877
+        },
+        {
+            "memory_content": "[Apr 15, 2029, 20:49:44]\n        User: Lately, I've been really excited about musical puzzle games. They've been great for enhancing my creative thinking, especially when it comes to composing soundtracks. Have you heard of any games that might be particularly beneficial for this process?\n        Assistant: Absolutely, Donna! Musical puzzle games are indeed a wonderful way to stimulate creative thinking. They challenge your mind and provide unique perspectives that can translate into innovative soundtracks. Interestingly, I've also heard that action-adventure games can offer cognitive enhancements that impact your soundtracks positively. They require strategic thinking and can inspire new ideas in your compositions. How do you feel about integrating both types of games into your routine to diversify your creative inputs?",
+            "score": 4.041666030883789
+        },
+        {
+            "memory_content": "\n        Assistant:  As you continue to pursue this path, what are some specific initiatives you're passionate about supporting?\n        User: I'm passionate about supporting initiatives that promote cross-cultural collaborations and creative education.\n        Assistant: Supporting initiatives that promote cross-cultural collaborations and creative education is a commendable pursuit. These efforts not only enrich the music community but also foster a deeper understanding and appreciation of diverse musical traditions. Your passion for these initiatives is inspiring. How do you plan to actively engage with these causes to make a meaningful impact?",
+            "score": 4.035818099975586
+        }
+    ],
+    "evidence": [
+        {
+            "memory_content": "Donna Gonzalez finds remote countryside retreats offer unparalleled tranquility, providing a fertile ground for creative inspiration.",
+            "memory_type": "Persona Memory"
+        },
+        {
+            "memory_content": "Donna Gonzalez experienced a deeper appreciation for the tranquility and isolation offered by remote countryside retreats, viewing them as essential for fostering creativity.",
+            "memory_type": "Persona Memory"
+        }
+    ],
+    "question_type": "Basic Fact Recall",
+    "difficulty": "easy",
+    "result_type": "Omission",
+    "is_valid": true,
+    "index": {
+        "persona": 4,
+        "session": 108,
+        "question": 2
+    }
+}
+#+end_src
+- 단어 하나 빠지면 굳이 omission으로 분리해야 되는지 애매함
