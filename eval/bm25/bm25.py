@@ -181,7 +181,7 @@ def main(args):
     dataset = load_dataset(args)
     retrieval_results = []
     llm_results = []
-    k = args.top_k if args.hybrid else None
+    k = args.top_k if not args.hybrid else None
     for persona in dataset:
         qas, per_persona_memories = per_persona_dataset(persona, args.memory_with_prior_question)
         k = len(per_persona_memories) if k is None else k
