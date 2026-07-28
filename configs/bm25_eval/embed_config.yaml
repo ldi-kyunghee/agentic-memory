@@ -1,4 +1,4 @@
-model: Qwen/Qwen3-4B-Embedding
+model: Qwen/Qwen3-Embedding-4B
 runner: pooling
 quantization: bitsandbytes
 dtype: float16

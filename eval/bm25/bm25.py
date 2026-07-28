@@ -60,7 +60,7 @@ def load_vllm(**model_kwargs):
     return llm
 
 def embed_online(queries: list, memories: list):
-    model = "Qwen/Qwen3-4B-Embedding"
+    model = "Qwen/Qwen3-Embedding-4B"
     open_api_key = "EMPTY"
     open_api_base = "http://localhost:8001/v1/embeddings"
 
