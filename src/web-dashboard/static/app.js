@@ -12,6 +12,7 @@ const api = async (path, opt) => {
 
 const S = {
   runs: [], run: null, judge: null, users: [], uuid: null,
+  generator: "mini",  // A' 레인 기본값 (없는 런은 qwen4b 폴백)
   backbone: null, prompt: null, backboneB: null, promptB: null, runB: null,
   bundle: null, bundleB: null, bundleCache: new Map(),
   tab: "sessions", itab: "detail",
@@ -52,6 +53,7 @@ async function boot() {
   $("#sel-backbone").onchange = () => { S.backbone = $("#sel-backbone").value; syncPrompts("A"); applyRun(); };
   $("#sel-prompt").onchange = () => { S.prompt = $("#sel-prompt").value; applyRun(); };
   $("#sel-judge").onchange = () => { S.judge = $("#sel-judge").value; loadBundle(); };
+  $("#sel-generator").onchange = () => { S.generator = $("#sel-generator").value; applyRun(); };
   $("#sel-user").onchange = () => { S.uuid = $("#sel-user").value; loadBundle(); };
 
   $("#btn-addb").onclick = () => { $("#grp-b").classList.remove("hidden"); $("#btn-addb").style.display = "none"; initB(); };
@@ -100,18 +102,32 @@ function syncPrompts(which) {
   if (which === "A") S.prompt = sel.value; else S.promptB = sel.value;
 }
 
+function laneOf(meta) { return meta.generators?.[S.generator]; }
+
 async function applyRun() {
   const meta = resolveRun(S.backbone, S.prompt);
   if (!meta) return;
   S.run = meta.run;
   $("#emb-name").textContent = meta.embedder || "–";
-  // judge 기본값은 nano(신뢰 기준). 이미 선택된 judge가 새 런에도 있으면 유지 (세팅 전환 시 리셋 방지)
-  const defJudge = meta.judges.includes(S.judge) ? S.judge
-    : meta.judges.includes("nano") ? "nano" : meta.judges[0];
-  $("#sel-judge").innerHTML = meta.judges.map((j) => `<option ${j === defJudge ? "selected" : ""}>${j}</option>`).join("");
+
+  // Generator 레인: available + judge 보유 레인만 노출. 기본 mini, 선택 유지, 없으면 qwen4b 폴백
+  const lanes = Object.entries(meta.generators || {}).filter(([, g]) => g.available && g.judges.length);
+  const defGen = lanes.some(([n]) => n === S.generator) ? S.generator
+    : lanes.some(([n]) => n === "mini") ? "mini"
+    : lanes.some(([n]) => n === "qwen4b") ? "qwen4b" : lanes[0]?.[0];
+  $("#sel-generator").innerHTML = lanes.map(([n, g]) =>
+    `<option value="${esc(n)}" ${n === defGen ? "selected" : ""}>${esc(g.label)}</option>`).join("");
+  S.generator = $("#sel-generator").value;
+  const lane = laneOf(meta);
+
+  // judge: 선택한 레인의 judge만. 선택 유지, 없으면 nano 우선
+  const defJudge = lane.judges.includes(S.judge) ? S.judge
+    : lane.judges.includes("nano") ? "nano" : lane.judges[0];
+  $("#sel-judge").innerHTML = lane.judges.map((j) => `<option ${j === defJudge ? "selected" : ""}>${j}</option>`).join("");
   S.judge = $("#sel-judge").value;
+
   busy(true, "유저 목록…");
-  try { S.users = await api(`/api/runs/${S.run}/users`); } finally { busy(false); }
+  try { S.users = await api(`/api/runs/${S.run}/users?generator=${S.generator}`); } finally { busy(false); }
   const prev = S.uuid;
   // ★ = nano judge 라벨 보유 유저 (데이터셋 첫 4명) — 맨 위로 정렬해 기본 선택도 ★에서 시작
   const isF4 = (u) => (S.first4 || []).includes(u.uuid);
@@ -133,21 +149,22 @@ function initB() {
   applyRunB();
 }
 
-async function fetchBundle(run, judge, uuid) {
-  const key = `${run}|${judge}|${uuid}`;
+async function fetchBundle(run, generator, judge, uuid) {
+  const key = `${run}|${generator}|${judge}|${uuid}`;
   if (!S.bundleCache.has(key)) {
-    S.bundleCache.set(key, await api(`/api/bundle/${run}/${uuid}?judge=${judge}`));
+    S.bundleCache.set(key, await api(`/api/bundle/${run}/${uuid}?judge=${judge}&generator=${generator}`));
   }
   return S.bundleCache.get(key);
 }
 
 async function applyRunB() {
   const meta = resolveRun(S.backboneB, S.promptB);
-  if (!meta) { S.runB = null; S.bundleB = null; render(); return; }
+  const laneB = meta ? laneOf(meta) : null;
+  if (!meta || !laneB?.available || !laneB.judges.length) { S.runB = null; S.bundleB = null; render(); return; }
   S.runB = meta.run;
-  const judgeB = meta.judges.includes(S.judge) ? S.judge : (meta.judges.includes("nano") ? "nano" : meta.judges[0]);
+  const judgeB = laneB.judges.includes(S.judge) ? S.judge : (laneB.judges.includes("nano") ? "nano" : laneB.judges[0]);
   busy(true, `B 세팅 로딩 (${S.runB})…`);
-  try { S.bundleB = await fetchBundle(S.runB, judgeB, S.uuid); }
+  try { S.bundleB = await fetchBundle(S.runB, S.generator, judgeB, S.uuid); }
   catch { S.bundleB = null; }
   finally { busy(false); }
   S.anchorCacheB.clear();
@@ -166,7 +183,7 @@ function renderWho() { $("#who").textContent = S.author ? `👤 ${S.author}` : "
 async function loadBundle() {
   busy(true, `A 세팅 로딩 (${S.run})…`);
   try {
-    S.bundle = await fetchBundle(S.run, S.judge, S.uuid);
+    S.bundle = await fetchBundle(S.run, S.generator, S.judge, S.uuid);
     S.comments = await api(`/api/comments/${S.run}/${S.uuid}`);
   } finally { busy(false); }
   S.traceCache.clear();
@@ -712,7 +729,7 @@ function renderQADetail(sid, qi, fromSession) {
     <div class="hint">S${sid} · ${esc(q.question_type || "")} — 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → context</div>
     <div class="card"><h4 data-k="question">질문</h4><div class="body">${esc(q.question)}</div></div>
     <div class="card"><h4 data-k="answer">골든 정답</h4><div class="body">${esc(q.answer)}</div></div>
-    <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(S.run)} 답변` : "시스템 답변 (A′)"} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
+    <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(S.run)} 답변` : "시스템 답변 (A′)"} · gen=${esc(laneOf(resolveRun(S.backbone, S.prompt))?.label || S.generator)} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
     ${bCard}
     <div class="card"><h4 data-k="evidence">Evidence (${(q.evidence || []).length})</h4><div class="body">${ev}</div></div>
     <div class="card"><h4 data-k="context">검색 Context (${items ? items.length + "건" : "원문"})
@@ -816,13 +833,24 @@ const METRIC_COLS = [
   { k: "qa_c", label: "QA C↑", dir: 1 }, { k: "qa_h", label: "QA H↓", dir: -1 }, { k: "qa_o", label: "QA O↓", dir: -1 },
 ];
 const metricsCache = new Map();
-S.metricsJudge = "nano"; S.metricsScope = "first4";
+S.metricsGen = "mini"; S.metricsJudge = null; S.metricsScope = "first4";
 
 async function renderMetrics() {
-  const key = `${S.metricsJudge}|${S.metricsScope}`;
+  // generator 레인 목록 (어느 런에서든 가용하면 노출) + 레인별 judge 합집합
+  const laneAgg = {};
+  S.runs.forEach((r) => Object.entries(r.generators || {}).forEach(([n, g]) => {
+    if (!g.available || !g.judges.length) return;
+    laneAgg[n] = laneAgg[n] || { label: g.label, judges: new Set() };
+    g.judges.forEach((j) => laneAgg[n].judges.add(j));
+  }));
+  if (!laneAgg[S.metricsGen]) S.metricsGen = laneAgg.mini ? "mini" : "qwen4b";
+  const laneJudges = [...(laneAgg[S.metricsGen]?.judges || [])];
+  if (!laneJudges.includes(S.metricsJudge)) S.metricsJudge = laneJudges.includes("nano") ? "nano" : laneJudges[0];
+
+  const key = `${S.metricsGen}|${S.metricsJudge}|${S.metricsScope}`;
   if (!metricsCache.has(key)) {
     busy(true, "지표 집계 중 (공식 집계 함수)…");
-    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.metricsJudge}&scope=${S.metricsScope}`)); }
+    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.metricsJudge}&scope=${S.metricsScope}&generator=${S.metricsGen}`)); }
     finally { busy(false); }
   }
   const data = metricsCache.get(key);
@@ -830,18 +858,23 @@ async function renderMetrics() {
   // 스코프 옵션: 공통 4유저 + 개별 유저(이름은 현재 유저 목록에서 매핑)
   const nameOf = (uid) => S.users.find((u) => u.uuid === uid)?.user_name || uid.slice(0, 8);
   $("#sidebar").innerHTML = `<div style="padding:10px">
+    <p class="small muted"><b>Generator (A′)</b></p>
+    <div class="pill-filter" style="margin:0 0 10px">
+      ${Object.entries(laneAgg).map(([n, g]) =>
+        `<button class="${S.metricsGen === n ? "on" : ""}" data-g="${esc(n)}" data-desc="A′ 답변 생성 레인: ${esc(g.label)} — QA 지표만 이 레인의 답변·라벨 기준으로 바뀜">${esc(n)}</button>`).join("")}</div>
     <p class="small muted"><b>Judge LLM</b></p>
     <div class="pill-filter" style="margin:0 0 10px">
-      <button class="${S.metricsJudge === "nano" ? "on" : ""}" data-j="nano" data-desc="GPT-5-Nano judge — 신뢰 기준 라벨, 첫 4유저">nano</button>
-      <button class="${S.metricsJudge === "qwen4b" ? "on" : ""}" data-j="qwen4b" data-desc="Qwen3-4B judge — 20유저 전체를 덮지만 판정 왜곡 있음 (일부 런만 보유)">qwen4b</button></div>
+      ${laneJudges.map((j) =>
+        `<button class="${S.metricsJudge === j ? "on" : ""}" data-j="${esc(j)}" data-desc="채점 라벨 세트 — 행 간 비교는 동일 judge에서만 유효">${esc(j)}</button>`).join("")}</div>
     <p class="small muted"><b>유저 범위</b></p>
     <select id="metrics-scope" style="width:100%">
       <option value="first4" ${S.metricsScope === "first4" ? "selected" : ""}>첫 4유저 (전 실험 공통)</option>
       <option value="all" ${S.metricsScope === "all" ? "selected" : ""}>런별 전체 유저</option>
       ${data.first4.map((u) => `<option value="${u}" ${S.metricsScope === u ? "selected" : ""}>${esc(nameOf(u))}</option>`).join("")}
     </select>
-    <p class="small muted" style="margin-top:10px">굵은 값 = 열별 최고(방향 반영). 셀 호버 = 순위·해석, 행 첫 칸 호버 = 런 요약 노트.</p></div>`;
-  $$("#sidebar .pill-filter button").forEach((b) => (b.onclick = () => { S.metricsJudge = b.dataset.j; renderMetrics(); }));
+    <p class="small muted" style="margin-top:10px">굵은 값 = 열별 최고(방향 반영). 셀 호버 = 순위·해석, 행 첫 칸 호버 = 런 요약 노트. ⚠ mini 레인은 현재 1유저(Martin)만 채점됨.</p></div>`;
+  $$("#sidebar .pill-filter button[data-g]").forEach((b) => (b.onclick = () => { S.metricsGen = b.dataset.g; S.metricsJudge = null; renderMetrics(); }));
+  $$("#sidebar .pill-filter button[data-j]").forEach((b) => (b.onclick = () => { S.metricsJudge = b.dataset.j; renderMetrics(); }));
   $("#metrics-scope").onchange = () => { S.metricsScope = $("#metrics-scope").value; renderMetrics(); };
 
   const rows = data.rows.filter((r) => r.metrics);
@@ -853,7 +886,7 @@ async function renderMetrics() {
     rank[c.k] = { sorted, best: sorted[0] };
   });
   // judge 표시명 — reasoning judge는 effort 병기 (전부 minimal 규약)
-  const JUDGE_NAMES = { nano: "GPT-5-Nano (minimal)", qwen4b: "Qwen3-4B", "mini-genmini": "GPT-5-Mini (minimal)" };
+  const JUDGE_NAMES = { nano: "GPT-5-Nano (minimal)", qwen4b: "Qwen3-4B", "mini-genmini": "GPT-5-Mini (minimal)", "oss120-genoss120": "gpt-oss-120b (medium)" };
   const judgeName = JUDGE_NAMES[data.judge] || data.judge;
 
   const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);

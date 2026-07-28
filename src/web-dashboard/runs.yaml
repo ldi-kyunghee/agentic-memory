@@ -1,5 +1,22 @@
 # 런 레지스트리 — 새 실험 추가 시 이 파일에만 항목 추가 (경로는 리포 루트 기준)
 # judges: 라벨 세트 이름 -> judge 디렉토리 (유저별 {uuid}.json). 초기 런들의 불규칙 네이밍은 여기서 흡수함.
+# A' 답변 생성(generator) 레인 — 레인마다 results(jsonl)와 judge 세트가 다름.
+# base: true 인 레인은 각 런의 기본 results/judges를 그대로 사용. 그 외에는 {run} 템플릿 경로.
+generators:
+  qwen4b:
+    label: "Qwen3-4B"
+    base: true
+  mini:
+    label: "GPT-5-Mini (minimal · 1유저)"
+    results: "results/mem0-classic-oss/genmini/{run}.jsonl"
+    judges:
+      mini-genmini: "results/mem0-classic-oss/judge-mini-genmini-{run}/judge"
+  oss120:
+    label: "gpt-oss-120b (medium · 준비 중)"
+    results: "results/mem0-classic-oss/genoss120/{run}.jsonl"
+    judges:
+      oss120-genoss120: "results/mem0-classic-oss/judge-oss120-genoss120-{run}/judge"
+
 runs:
   full-traced:
     label: "Qwen3-4B × default (20u)"

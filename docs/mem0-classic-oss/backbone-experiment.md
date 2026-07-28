@@ -151,3 +151,22 @@ uv run python src/mem0-classic-oss/analyze_qa_evidence_storage.py \
 - **think4-custom = 과잉 절제의 붕괴**: 세션의 40~77%를 빈 세션 처리, 후보 347개(전 셀 최저), WR 20.62까지 추락 → QA C 34.18로 **최저 셀 갱신**. custom 프롬프트 5백본 전패 확정
 - 실패 QA의 55.5%(d)/69.6%(c)가 미저장 — 병목은 순수 추출 커버리지
 - **종합 함의**: 로컬 스택에서 drift를 고치는 최저비용 개입 = **백본을 4B-Thinking으로 (단 추출 커버리지 보강 필수)** 또는 4B-Instruct 유지 + update 결정만 thinking 모델로 이원화하는 하이브리드가 유망
+
+## 9. 관측 스택 민감도 — generator/judge를 GPT-5-Mini(minimal)로 (2026-07-28)
+
+10런 전체 × **1유저(Martin)** 로 A′(gen=mini)·B(judge=mini) 재수행 (~$14). 산출물: `genmini/{run}.jsonl`, `judge-mini-genmini-{run}/`. 무효율 0.01%. 대시보드에 **Generator 레인**으로 등록 (드롭다운 qwen4b↔mini 전환, 기본값 mini).
+
+**핵심: judge 기질 지각변동 — mini-minimal은 nano-minimal보다 대폭 관대.** 같은 유저·같은 Stage A 산출물이므로 메모리 지표 차이는 **순수 judge 효과** (generator는 QA에만 관여):
+
+| (Martin, nano→mini judge) | R | Acc | FMR | Upd C | QA C(혼합) |
+|---|---|---|---|---|---|
+| full-traced | 29.3→67.4 | 31.8→74.6 | 60.8→49.6 | 8.4→56.3 | 40.9→57.9 |
+| nano4 | 28.2→70.1 | 44.6→**97.1** | 55.2→44.0 | 19.0→79.6 | 52.4→70.1 |
+| mini4 | 44.8→85.4 | 49.8→84.1 | 52.8→52.0 | 26.1→79.6 | 48.8→62.8 |
+| think4 | 15.7→56.3 | 47.2→**99.5** | 72.8→64.8 | 12.0→59.2 | 49.4→64.0 |
+
+- **관대화 방향 일관**: R +25~43pt, Upd C +40~60pt, Acc는 천장(97~99)까지 — "거의 다 인정" 기질. FMR은 오히려 하락 (포함을 후하게 잡으니 미끼도 흡수로 판정) — 방향까지 정합
+- judge 스펙트럼 3점 완성: **4B(가혹) → nano-minimal(중간) → mini-minimal(관대)** — 절대 수치의 judge 지배가 3중 실증됨. Acc 97~99는 판별력 상실 신호라 mini-minimal의 신뢰성도 의심 대상 → **gpt-oss-120b(medium) 레인이 캐스팅보트** (준비 완료, GPU 대여 시 실행)
+- 상대 순위: 메모리 지표는 대체로 보존 (custom>default R, think 최하 등), QA 순위는 이동 (nano4가 1위로) — 단 QA는 generator 교체 혼입이라 원인 분리 불가
+- 스팟 체크: mini generator가 "middle name?"에 "Mark"로 날조한 건을 mini judge가 **Hallucination으로 정확히 판정** — 관대화가 무차별 승인은 아님
+- **분석 방어 원칙 재확인**: 절대 수치는 judge 종속 → 보고는 "동일 judge 내 상대 비교 + 다중 judge 교차검증"으로만

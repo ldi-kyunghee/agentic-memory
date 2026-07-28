@@ -28,9 +28,31 @@ app = FastAPI(title="mem0-halumem qualitative dashboard")
 
 # ---------- 레지스트리 / 사전 ----------
 
-def load_registry() -> dict:
+def load_registry_doc() -> dict:
     with open(HERE / "runs.yaml", encoding="utf-8") as f:
-        return yaml.safe_load(f)["runs"]
+        return yaml.safe_load(f)
+
+
+def load_registry() -> dict:
+    return load_registry_doc()["runs"]
+
+
+def gen_registry() -> dict:
+    """generator 레인 정의 (전역 섹션). base 레인은 각 런의 기본 results/judges를 사용."""
+    return load_registry_doc().get("generators", {"qwen4b": {"label": "Qwen3-4B", "base": True}})
+
+
+def resolve_lane(run: str, generator: str):
+    """run×generator -> (results_path, judges{name: dir상대경로}). 미지의 run/generator면 404."""
+    reg = load_registry()
+    if run not in reg:
+        raise HTTPException(404, f"unknown run: {run}")
+    g = gen_registry().get(generator)
+    if g is None:
+        raise HTTPException(404, f"unknown generator: {generator}")
+    if g.get("base"):
+        return ROOT / reg[run]["results"], dict(reg[run].get("judges", {}))
+    return ROOT / g["results"].format(run=run), {k: v.format(run=run) for k, v in g.get("judges", {}).items()}
 
 
 @lru_cache(maxsize=1)
@@ -44,15 +66,12 @@ def load_fielddict() -> dict:
 _cache_lock = threading.Lock()
 
 
-@lru_cache(maxsize=16)
-def load_run_users(run: str) -> dict:
-    """병합 jsonl -> {uuid: user_record}. A' 완료본이면 questions에 system_response 포함."""
-    reg = load_registry()
-    if run not in reg:
-        raise HTTPException(404, f"unknown run: {run}")
-    path = ROOT / reg[run]["results"]
+@lru_cache(maxsize=64)
+def load_run_users(run: str, generator: str = "qwen4b") -> dict:
+    """레인(jsonl) -> {uuid: user_record}. A' 완료본이면 questions에 system_response 포함."""
+    path, _ = resolve_lane(run, generator)
     if not path.exists():
-        raise HTTPException(404, f"results file missing: {reg[run]['results']}")
+        raise HTTPException(404, f"results file missing: {path}")
     users = {}
     with open(path, encoding="utf-8") as f:
         for line in f:
@@ -67,12 +86,11 @@ def load_run_users(run: str) -> dict:
 _judge_cache: dict = {}
 
 
-def load_judge(run: str, judge_name: str, uuid: str) -> dict | None:
-    key = (run, judge_name, uuid)
+def load_judge(run: str, judge_name: str, uuid: str, generator: str = "qwen4b") -> dict | None:
+    key = (run, generator, judge_name, uuid)
     if key in _judge_cache:
         return _judge_cache[key]
-    reg = load_registry()
-    judges = reg[run].get("judges", {})
+    _, judges = resolve_lane(run, generator)
     if judge_name not in judges:
         return None
     path = ROOT / judges[judge_name] / f"{uuid}.json"
@@ -86,11 +104,11 @@ def load_judge(run: str, judge_name: str, uuid: str) -> dict | None:
 
 # ---------- 조인 (유저 번들) ----------
 
-def build_bundle(run: str, uuid: str, judge_name: str) -> dict:
-    user = load_run_users(run).get(uuid)
+def build_bundle(run: str, uuid: str, judge_name: str, generator: str = "qwen4b") -> dict:
+    user = load_run_users(run, generator).get(uuid)
     if user is None:
-        raise HTTPException(404, f"user {uuid} not in run {run}")
-    judge = load_judge(run, judge_name, uuid)
+        raise HTTPException(404, f"user {uuid} not in run {run} (generator={generator})")
+    judge = load_judge(run, judge_name, uuid, generator)
 
     # judge 라벨 룩업 테이블 (키: 세션 인덱스 + 텍스트)
     integ, acc, upd, qa_lbl = {}, {}, {}, {}
@@ -156,6 +174,7 @@ def build_bundle(run: str, uuid: str, judge_name: str) -> dict:
 
     return {
         "run": run,
+        "generator": generator,
         "judge": judge_name if judge else None,
         "uuid": uuid,
         "user_name": user.get("user_name"),
@@ -168,29 +187,41 @@ def build_bundle(run: str, uuid: str, judge_name: str) -> dict:
 @app.get("/api/runs")
 def api_runs():
     reg = load_registry()
+    gens = gen_registry()
     out = []
     for name, r in reg.items():
         exists = (ROOT / r["results"]).exists()
+        # generator 레인별 가용성/judge 목록
+        lanes = {}
+        for gname, g in gens.items():
+            if g.get("base"):
+                lanes[gname] = {"label": g.get("label", gname), "available": exists,
+                                "judges": list(r.get("judges", {}).keys())}
+            else:
+                rp = ROOT / g["results"].format(run=name)
+                judges = [k for k, v in g.get("judges", {}).items() if (ROOT / v.format(run=name)).exists()]
+                lanes[gname] = {"label": g.get("label", gname), "available": rp.exists(), "judges": judges}
         out.append({
             "run": name, "label": r.get("label", name),
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
             "backbone_effort": r.get("backbone_effort"),
             "embedder": r.get("embedder"),
             "users": r.get("users"), "judges": list(r.get("judges", {}).keys()),
+            "generators": lanes,
             "available": exists,
         })
     return out
 
 
 @app.get("/api/runs/{run}/users")
-def api_users(run: str):
-    users = load_run_users(run)
+def api_users(run: str, generator: str = "qwen4b"):
+    users = load_run_users(run, generator)
     return [{"uuid": u, "user_name": rec.get("user_name")} for u, rec in sorted(users.items())]
 
 
 @app.get("/api/bundle/{run}/{uuid}")
-def api_bundle(run: str, uuid: str, judge: str = "nano"):
-    return build_bundle(run, uuid, judge)
+def api_bundle(run: str, uuid: str, judge: str = "nano", generator: str = "qwen4b"):
+    return build_bundle(run, uuid, judge, generator)
 
 
 @app.get("/api/trace/{run}/{uuid}")
@@ -237,21 +268,21 @@ def first4_uuids() -> tuple:
 _metrics_cache: dict = {}
 
 
-def compute_metrics(run: str, judge_name: str, scope: str) -> dict | None:
+def compute_metrics(run: str, judge_name: str, scope: str, generator: str = "qwen4b") -> dict | None:
     """scope: 'first4' | 'all' | <uuid>. 선택 범위의 judge 레코드를 모아 공식 집계로 지표 산출.
     성공 결과만 캐싱 (None 캐싱 금지 — load_judge와 동일 이유)."""
-    key = (run, judge_name, scope)
+    key = (run, generator, judge_name, scope)
     if key in _metrics_cache:
         return _metrics_cache[key]
-    result = _compute_metrics_uncached(run, judge_name, scope)
+    result = _compute_metrics_uncached(run, judge_name, scope, generator)
     if result is not None:
         _metrics_cache[key] = result
     return result
 
 
-def _compute_metrics_uncached(run: str, judge_name: str, scope: str) -> dict | None:
-    reg = load_registry()
-    jd = reg[run].get("judges", {}).get(judge_name)
+def _compute_metrics_uncached(run: str, judge_name: str, scope: str, generator: str = "qwen4b") -> dict | None:
+    _, judges = resolve_lane(run, generator)
+    jd = judges.get(judge_name)
     if not jd or not (ROOT / jd).exists():
         return None
     files = sorted(f for f in os.listdir(ROOT / jd) if f.endswith(".json"))
@@ -347,7 +378,7 @@ def compute_latency(run: str, scope: str) -> dict | None:
 
 
 @app.get("/api/metrics")
-def api_metrics(judge: str = "nano", scope: str = "first4"):
+def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qwen4b"):
     reg = load_registry()
     rows = []
     for name, r in reg.items():
@@ -358,10 +389,10 @@ def api_metrics(judge: str = "nano", scope: str = "first4"):
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
             "backbone_effort": r.get("backbone_effort"),
             "note": r.get("note", ""),
-            "metrics": compute_metrics(name, judge, scope),
-            "latency": compute_latency(name, scope),
+            "metrics": compute_metrics(name, judge, scope, generator),
+            "latency": compute_latency(name, scope),  # Stage A 실측이라 generator 무관 (base 레인 기준)
         })
-    return {"judge": judge, "scope": scope, "first4": list(first4_uuids()), "rows": rows}
+    return {"judge": judge, "scope": scope, "generator": generator, "first4": list(first4_uuids()), "rows": rows}
 
 
 # ---------- 코멘트 ----------
