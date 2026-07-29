@@ -354,7 +354,7 @@ if __name__ == "__main__":
             client.create_collection(
                 collection_name=collection_name,
                 vectors_config={
-                    "embeds": models.VectorParams(size=1024, distance=models.Distance.COSINE),
+                    "embeds": models.VectorParams(size=2560, distance=models.Distance.COSINE),
                 },
                 sparse_vectors_config={
                     "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
