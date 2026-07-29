@@ -284,7 +284,7 @@ def qdrant_retrieve(
             prefetch=prefetch,
             query=models.FusionQuery(fusion=models.Fusion.RRF),
             limit=k
-        )
+        ).points
 
         memory_ids = [query_result.id for query_result in query_results]
         result = [memories[id] for id in memory_ids]
