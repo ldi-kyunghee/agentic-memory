@@ -236,7 +236,7 @@ def qdrant_store(
 
     ids = [i for i in range(len(memories))]
 
-    payload = [
+    payloads = [
         {"document": memory, "source": "HaluMem-Medium"}
         for memory in memories
     ]
@@ -256,11 +256,11 @@ def qdrant_store(
         collection_name=collection_name,
         points=[
             models.PointStruct(
-                ids=ids,
-                vectors=documents,
+                ids=id,
+                vectors=vector,
                 payload=payload
             )
-        ],
+            for id, vector, payload in zip(ids, documents, payloads)],
     )
 
     return queries, query_embeddings
