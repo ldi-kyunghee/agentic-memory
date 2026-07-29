@@ -9,19 +9,15 @@
 <body>
 <header id="topbar">
   <span class="brand">mem0×HaluMem</span>
-  <div class="grp"><label data-desc="분석 대상 가상 유저 — HaluMem 데이터셋의 인물. ★ = nano judge 라벨 보유 (첫 4유저). ★ 없는 유저는 nano 선택 시 라벨이 회색(–)으로 뜸">User</label><select id="sel-user"></select></div>
-  <div class="grp"><label data-desc="채점 라벨 세트 — 선택한 Generator 레인에 존재하는 judge만 표시됨">Judge LLM</label><select id="sel-judge"></select></div>
-  <div class="grp"><label data-desc="A′ 답변 생성(generator) 레인 — 답변과 QA 라벨이 이 레인 기준으로 바뀜 (메모리 지표는 Stage A 산출물이라 불변). mini 레인은 현재 1유저(Martin)만">Generator</label><select id="sel-generator"></select></div>
-  <div class="grp"><label data-desc="벡터 검색 임베더 — 전 실험 공통 고정 (통제 변인)">Embedding</label><span id="emb-name" class="fixed"></span></div>
-  <div class="grp"><label data-desc="기준(A) 세팅의 memory agent 백본 — fact 추출과 ADD/UPDATE/DELETE 결정을 담당하는 LLM">Agent A</label><select id="sel-backbone"></select></div>
-  <div class="grp"><label data-desc="A 세팅의 fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형)">A 추출 프롬프트</label><select id="sel-prompt"></select></div>
-  <button id="btn-addb" data-desc="비교(B) 세팅을 열어 같은 유저를 두 세팅에서 나란히 관찰">+ 비교(B)</button>
-  <div id="grp-b" class="hidden">
-    <span class="b-mark">B</span>
-    <div class="grp"><label data-desc="비교(B) 세팅의 memory agent 백본">Agent B</label><select id="sel-backbone-b"></select></div>
-    <div class="grp"><label data-desc="B 세팅의 fact 추출 프롬프트">B 추출 프롬프트</label><select id="sel-prompt-b"></select></div>
-    <button id="btn-delb" data-desc="비교 세팅 닫기">×</button>
-  </div>
+  <div class="grp"><label data-desc="분석 대상 가상 유저 — HaluMem 데이터셋의 인물. ★ = nano judge 라벨 보유 (첫 4유저). ★ 없는 유저는 nano 선택 시 라벨이 회색(–)으로 뜸">User</label><div class="ctl"><select id="sel-user"></select></div></div>
+  <div class="grp"><label data-desc="채점 라벨 세트 — 선택한 Generator 레인에 존재하는 judge만 표시됨">Judge LLM</label><div class="ctl"><select id="sel-judge"></select></div></div>
+  <div class="grp"><label data-desc="A′ 답변 생성(generator) 레인 — 답변과 QA 라벨이 이 레인 기준으로 바뀜 (메모리 지표는 Stage A 산출물이라 불변)">Generator</label><div class="ctl"><select id="sel-generator"></select></div></div>
+  <div class="grp"><label data-desc="벡터 검색 임베더 — 전 실험 공통 고정 (통제 변인)">Embedding</label><div class="ctl"><span id="emb-name" class="fixed"></span></div></div>
+  <div class="grp grp-a"><label data-desc="기준(A) 세팅 — memory agent 백본(fact 추출·ADD/UPDATE/DELETE 결정 LLM)과 fact 추출 프롬프트(default=mem0 기본 / custom=HaluMem 원본 지침)">Agent A · Model, Prompt</label><div class="ctl"><select id="sel-backbone"></select><select id="sel-prompt"></select></div></div>
+  <div class="grp grp-bcol"><label data-desc="비교(B) 세팅 — 같은 유저를 다른 백본·프롬프트로 나란히 관찰">Agent B · Model, Prompt</label><div class="ctl">
+    <button id="btn-addb" data-desc="비교(B) 세팅을 열어 같은 유저를 두 세팅에서 나란히 관찰">+ 비교(B)</button>
+    <span id="grp-b" class="hidden"><select id="sel-backbone-b"></select><select id="sel-prompt-b"></select><button id="btn-delb" data-desc="비교 세팅 닫기">×</button></span>
+  </div></div>
   <nav id="tabs">
     <button data-tab="sessions" class="active" data-desc="세션 단위 탐색 — QA·대화·골든/추출 대조">Sessions</button>
     <button data-tab="qa" data-desc="전체 QA를 판정(C/H/O)별로 필터링해 실패 사례부터 훑기">QA</button>

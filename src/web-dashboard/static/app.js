@@ -20,7 +20,27 @@ const S = {
   anchor: "run", anchorObj: null, pendingQuote: "",
   comments: [], fielddict: {}, traceCache: new Map(), anchorCacheB: new Map(),
   author: localStorage.getItem("analyst_name") || "",
+  showOtherCmts: localStorage.getItem("show_other_cmts") === "1",  // 다른 세팅 코멘트 표시 여부
+  traceSide: "A",  // Trace 탭이 보는 세팅 (B 비교 중에만 의미)
 };
+
+/* ---------- 코멘트 세팅 스코프 ----------
+   기본은 '지금 보고 있는 세팅에서 단 코멘트'만 노출: generator·judge가 같아야 하고,
+   B측(extb) 앵커는 당시 B 런까지 현재 B 런과 같아야 함.
+   세팅 미기록(구버전) 코멘트는 불일치로 분류돼 토글을 켜야 보임. */
+function cmtMatches(c) {
+  if ((c.generator || "") !== S.generator || (c.judge || "") !== S.judge) return false;
+  if (c.anchor.includes("/extb:")) return (c.run_b || "") === (S.runB || "");
+  return true;
+}
+function visibleComments() { return S.showOtherCmts ? S.comments : S.comments.filter(cmtMatches); }
+function setShowOtherCmts(v) {
+  S.showOtherCmts = v;
+  localStorage.setItem("show_other_cmts", v ? "1" : "0");
+  renderCmtMarks();
+  renderInspector();
+  if (S.tab === "digest") renderDigest();
+}
 
 /* ---------- 로딩 표시 ---------- */
 
@@ -323,6 +343,8 @@ function setTab(t) { S.tab = t; $$("#tabs button").forEach((b) => b.classList.to
 function setITab(t) { S.itab = t; $$("#insp-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.itab === t)); renderInspector(); }
 function setAnchor(anchor, obj, focusDetail = true) {
   S.anchor = anchor; S.anchorObj = obj;
+  // B 요소를 짚으면 Trace 탭도 B 세팅으로 따라감 (pill로 수동 전환 가능)
+  if (S.runB) S.traceSide = anchor.includes("/extb:") ? "B" : "A";
   $$(".row.selected").forEach((el) => el.classList.remove("selected"));
   if (focusDetail && S.itab !== "comments") setITab("detail"); else renderInspector();
 }
@@ -362,6 +384,37 @@ const intfBadge = (v) => v == null ? `<span class="badge bnull" data-desc="judge
   : v === 1 ? `<span class="badge b1" data-desc="미끼 일부 흡수 (포함 점수 1) — 미끼 내용 일부가 추출 메모리에 들어감">일부흡수</span>`
   : `<span class="badge b0" data-desc="미끼 흡수 (포함 점수 2) — 시스템이 미끼를 통째로 기억함 = FMR 감점">흡수</span>`;
 const initials = (name) => esc((name || "?").trim().slice(0, 2));
+// 골든 1건의 judge 배지 (update/미끼/일반 분기 공통화 — 세션 카드·턴 패널·A/B 페어에서 재사용)
+const goldenBadge = (mp) => {
+  const j = mp?.judge || {};
+  return j.kind === "update" ? verdictBadge(j.label)
+    : mp?.memory_source === "interference" ? intfBadge(j.score)
+    : scoreBadge(j.score);
+};
+// A/B 페어 배지 — 앞에 소속 문자(A 파랑 / B 진회색)
+const abPair = (badgeA, badgeB) => `<i class="ab a">A</i>${badgeA}<i class="ab b">B</i>${badgeB}`;
+// B 번들에서 같은 세션의 같은 골든 찾기 (인덱스 우선, 텍스트 매칭 폴백)
+function bGolden(sid, i, content) {
+  const sb = S.bundleB?.sessions.find((x) => x.session_id === sid);
+  if (!sb || sb.generated_qa_session) return null;
+  const g = sb.golden?.[i];
+  return g && g.memory_content === content ? g : (sb.golden || []).find((m) => m.memory_content === content) || null;
+}
+// 앵커 문자열 -> 사람용 라벨 ("session:3/extb:5" -> "S3 · B추출#5")
+function anchorHuman(anchor) {
+  if (anchor === "run") return "유저 전체";
+  const m = anchor.match(/^session:(\d+)(?:\/(\w+):(\d+))?$/);
+  if (!m) return anchor;
+  if (!m[2]) return `S${m[1]} 세션 전체`;
+  const names = { mp: "골든", ext: "A추출", extb: "B추출", qa: "QA", turn: "턴" };
+  return `S${m[1]} · ${names[m[2]] || m[2]}#${m[3]}`;
+}
+// 앵커가 가리키는 세팅 칩 — A/B 요소면 해당 런, 공통 요소(골든·턴·세션)면 없음
+function anchorSideChip(anchor) {
+  if (anchor.includes("/extb:")) return `<span class="tagchip" style="color:var(--bcol);font-weight:800">B: ${esc(runLabel(S.runB || "?"))}</span>`;
+  if (anchor.includes("/ext:") || anchor.includes("/qa:")) return `<span class="tagchip" style="color:var(--accent);font-weight:800">A: ${esc(runLabel(S.run))}</span>`;
+  return "";
+}
 
 /* ---------- 근사 턴 앵커링 ---------- */
 
@@ -424,13 +477,23 @@ function sessionSummary(s) {
 
 function renderSessions() {
   const sb = $("#sidebar");
+  // B 비교 중이면 세션 문제 카운트를 양쪽 다 계산 (B는 점선 테두리 + 소속 문자)
+  const sbMap = S.bundleB
+    ? new Map(S.bundleB.sessions.filter((x) => !x.generated_qa_session).map((x) => [x.session_id, x]))
+    : null;
+  const flagsOf = (m, bSide) => [
+    m.g0 ? `<span class="flag flag-g${bSide ? " bflag" : ""}" data-desc="G✗ (마젠타) — ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}에서 judge가 미포함(0점) 판정한 골든 수 (미끼 제외). 판정 배지가 아니라 세션 문제 카운트">G✗${m.g0}</span>` : "",
+    m.qaBad ? `<span class="flag flag-q${bSide ? " bflag" : ""}" data-desc="Q✗ (브라운) — ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}의 오답(H/O) QA 수. 판정 배지가 아니라 세션 문제 카운트">Q✗${m.qaBad}</span>` : "",
+  ].join("");
   sb.innerHTML = S.bundle.sessions.map((s) => {
     if (s.generated_qa_session) return "";
-    const m = sessionSummary(s);
-    const flags = [
-      m.g0 ? `<span class="flag flag-g" data-desc="G✗ (마젠타) — 이 세션에서 judge가 미포함(0점) 판정한 골든 수 (미끼 제외). 판정 배지가 아니라 세션 문제 카운트">G✗${m.g0}</span>` : "",
-      m.qaBad ? `<span class="flag flag-q" data-desc="Q✗ (브라운) — 이 세션의 오답(H/O) QA 수. 판정 배지가 아니라 세션 문제 카운트">Q✗${m.qaBad}</span>` : "",
-    ].join("");
+    const fA = flagsOf(sessionSummary(s), false);
+    let flags = fA;
+    if (sbMap) {
+      const sB = sbMap.get(s.session_id);
+      const fB = sB ? flagsOf(sessionSummary(sB), true) : "";
+      flags = (fA ? `<i class="ab a">A</i>${fA}` : "") + (fB ? `<i class="ab b">B</i>${fB}` : "");
+    }
     return `<div class="side-item ${s.session_id === S.session ? "active" : ""}" data-sid="${s.session_id}">
       <b>S${s.session_id}</b><span class="t">${esc((s.start_time || "").slice(0, 12))}</span>
       <span class="flags">${flags}</span></div>`;
@@ -444,14 +507,13 @@ function renderSessions() {
 
   // QA (워크플로상 최상단)
   const qas = s.questions.map((q, i) => {
-    let aLabel = "", bBadge = "";
+    let badges = verdictBadge(q.judge);
     if (B?.session) {
-      aLabel = `<span class="small muted">A</span>`;
       const qb = B.session.questions?.find((x) => x.question === q.question);
-      bBadge = `<span class="small" style="color:var(--bcol)">B</span>${verdictBadge(qb?.judge)}`;
+      badges = abPair(verdictBadge(q.judge), verdictBadge(qb?.judge));
     }
     return `<div class="row" data-qa="${i}" data-desc="클릭하면 이 QA의 4자 대조 화면으로 이동. 드래그로 텍스트 선택 후 코멘트도 가능">
-      <span>${aLabel}${verdictBadge(q.judge)}</span>${bBadge}
+      <span>${badges}</span>
       <span class="txt">${esc(q.question)}</span>
       <span class="small muted">${esc(q.question_type || "")}</span></div>`;
   }).join("");
@@ -482,9 +544,11 @@ function renderSessions() {
   }).join("");
 
   const goldenRows = s.golden.map((mp, i) => {
-    const j = mp.judge || {};
     const upd = mp.is_update === "True", intf = mp.memory_source === "interference";
-    const badge = j.kind === "update" ? verdictBadge(j.label) : intf ? intfBadge(j.score) : scoreBadge(j.score);
+    // B 비교 중엔 같은 골든에 대한 양쪽 judge 판정을 페어로 (골든 자체는 데이터셋 공통)
+    const badge = B?.session
+      ? abPair(goldenBadge(mp), goldenBadge(bGolden(s.session_id, i, mp.memory_content)))
+      : goldenBadge(mp);
     return `<div class="row${upd ? " upd-row" : intf ? " intf-row" : ""}" data-a="mp:${i}" data-turn="${A.gTurn[i]}">
       <span>${badge}</span>
       ${upd ? '<span class="tagchip t-upd" data-k="is_update">↻ upd</span>' : ""}
@@ -530,7 +594,7 @@ function renderSessions() {
       <input type="range" id="anch-w" min="140" max="640" step="10" style="width:110px"></h4>
       <div class="body">${dlg}</div></div>
     <div class="${B?.session ? "three-col" : "two-col"}">
-      <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})</h4><div class="body">${goldenRows}</div></div>
+      <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})${B?.session ? ' <span class="small muted" style="text-transform:none" data-desc="골든은 데이터셋 공통 — 배지는 왼쪽이 A 세팅, 오른쪽이 B 세팅의 judge 판정">공통 · A/B 판정</span>' : ""}</h4><div class="body">${goldenRows}</div></div>
       <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(runLabel(S.run))} (${s.extracted.length})</h4><div class="body">${extRows}</div></div>
       ${extBCard}
     </div>`;
@@ -598,22 +662,25 @@ function toggleTurnPanel(s, A, B, ti) {
   const box = $(`#turnx-${ti}`);
   if (!box.classList.contains("hidden")) { box.classList.add("hidden"); box.innerHTML = ""; return; }
   const a = A.map[ti];
+  const dual = !!B?.session;
+  // 골든은 데이터셋 공통 — B 비교 중엔 양쪽 judge 판정을 페어로
+  const secG = a.g.length ? `
+    <h5 style="color:var(--gold)">골든 (공통${dual ? " · A/B 판정" : ""}) — 이 턴 앵커 (추정)</h5>
+    ${a.g.map((gi) => { const mp = s.golden[gi];
+      const badge = dual ? abPair(goldenBadge(mp), goldenBadge(bGolden(s.session_id, gi, mp.memory_content))) : goldenBadge(mp);
+      return `<div class="row">${badge}<span class="txt">${esc(mp.memory_content)}</span></div>`; }).join("")}` : "";
   const secA = `
-    <h5>A: ${esc(runLabel(S.run))} — 이 턴 앵커 (추정)</h5>
-    ${a.g.map((gi) => { const mp = s.golden[gi]; const j = mp.judge || {};
-      const badge = j.kind === "update" ? verdictBadge(j.label) : mp.memory_source === "interference" ? intfBadge(j.score) : scoreBadge(j.score);
-      return `<div class="row"><span class="tagchip" style="color:var(--gold)">골든</span>${badge}<span class="txt">${esc(mp.memory_content)}</span></div>`; }).join("")}
+    <h5 style="color:var(--accent)">A: ${esc(runLabel(S.run))} — 이 턴 추출 (추정)</h5>
     ${a.e.map((ei) => { const m = s.extracted[ei];
-      return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("")}
-    ${!a.g.length && !a.e.length ? "<p class='small muted'>앵커된 메모리 없음</p>" : ""}`;
+      return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
   let secB = "";
-  if (B?.session) {
+  if (dual) {
     const bMap = B.map[ti] || { g: [], e: [] };
-    secB = `<h5><span class="b-tag">B</span>: ${esc(runLabel(S.runB))} — 이 턴 추출 (추정)</h5>
+    secB = `<h5 style="color:var(--bcol)">B: ${esc(runLabel(S.runB))} — 이 턴 추출 (추정)</h5>
       ${bMap.e.map((ei) => { const m = B.session.extracted[ei];
         return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
   }
-  box.innerHTML = secA + secB;
+  box.innerHTML = secG + secA + secB;
   box.classList.remove("hidden");
 }
 
@@ -636,17 +703,18 @@ function renderCmtMarks() {
   $$("#content .cmt-chip.live").forEach((el) => el.remove());
   $$("#content .has-cmt").forEach((el) => el.classList.remove("has-cmt"));
   const byAnchor = {};
-  S.comments.forEach((c) => (byAnchor[c.anchor] = byAnchor[c.anchor] || []).push(c));
+  visibleComments().forEach((c) => (byAnchor[c.anchor] = byAnchor[c.anchor] || []).push(c));
   Object.entries(byAnchor).forEach(([anchor, list]) => {
     const sel = anchorSelector(anchor);
     if (!sel) return;
     const el = $(`#content ${sel}`);
     if (!el) return;
     el.classList.add("has-cmt");
+    const allOther = list.every((c) => !cmtMatches(c));  // 전부 다른 세팅에서 단 코멘트 → 회색 칩
     const chip = document.createElement("span");
-    chip.className = "cmt-chip live";
+    chip.className = `cmt-chip live${allOther ? " other" : ""}`;
     chip.textContent = list.length > 1 ? `${initials(list[0].author)}+${list.length - 1}` : initials(list[0].author);
-    chip.dataset.desc = `코멘트 ${list.length}개 — ${esc(list.map((c) => `${c.author}: ${c.body.slice(0, 40)}`).join(" | "))} (클릭하면 스레드)`;
+    chip.dataset.desc = `${allOther ? "[다른 세팅] " : ""}코멘트 ${list.length}개 — ${esc(list.map((c) => `${c.author}: ${c.body.slice(0, 40)}`).join(" | "))} (클릭하면 스레드)`;
     chip.onclick = (ev) => {
       ev.stopPropagation();
       const { obj } = resolveAnchorObj(anchor);
@@ -701,15 +769,19 @@ function allQAs() {
 function renderQA() {
   const filters = ["all", "Correct", "Hallucination", "Omission"];
   const items = allQAs().filter(({ q }) => S.qaFilter === "all" || q.judge === S.qaFilter);
+  const bVerdict = ({ s, q }) => {
+    const sb = S.bundleB?.sessions.find((x) => x.session_id === s.session_id);
+    return sb?.questions?.find((x) => x.question === q.question)?.judge;
+  };
   $("#sidebar").innerHTML = `
-    <div style="padding:8px"><div class="pill-filter">${filters.map((f) =>
+    <div style="padding:8px"><div class="pill-filter" ${S.bundleB ? 'data-desc="판정 필터 — B 비교 중에도 필터는 A 세팅 판정 기준"' : ""}>${filters.map((f) =>
       `<button class="${S.qaFilter === f ? "on" : ""}" data-f="${f}">${f === "all" ? "전체" : f[0]}</button>`).join("")}</div></div>` +
-    items.map(({ s, q, i }) => `
-      <div class="side-item" data-sid="${s.session_id}" data-qi="${i}">
-        ${verdictBadge(q.judge)} <span class="txt small">${esc(q.question.slice(0, 60))}</span></div>`).join("");
+    items.map((it) => `
+      <div class="side-item" data-sid="${it.s.session_id}" data-qi="${it.i}">
+        ${S.bundleB ? abPair(verdictBadge(it.q.judge), verdictBadge(bVerdict(it))) : verdictBadge(it.q.judge)} <span class="txt small">${esc(it.q.question.slice(0, 60))}</span></div>`).join("");
   $$("#sidebar .pill-filter button").forEach((b) => (b.onclick = () => { S.qaFilter = b.dataset.f; renderQA(); }));
   $$("#sidebar .side-item").forEach((el) => (el.onclick = () => renderQADetail(+el.dataset.sid, +el.dataset.qi, false)));
-  $("#content").innerHTML = `<p class="hint">좌측에서 QA를 선택하세요 (판정 필터: 전체/C/H/O). 총 ${allQAs().length}문항.</p>`;
+  $("#content").innerHTML = `<p class="hint">좌측에서 QA를 선택하세요 (판정 필터: 전체/C/H/O${S.bundleB ? " — A 세팅 기준" : ""}). 총 ${allQAs().length}문항.</p>`;
 }
 
 function parseContext(raw) {
@@ -730,12 +802,15 @@ function renderQADetail(sid, qi, fromSession) {
     : null;
   const rawHTML = `<pre class="mono">${esc(typeof q.context === "string" ? q.context : JSON.stringify(q.context, null, 2))}</pre>`;
 
+  // 답변 생성 레인 표기 — A/B 카드 공통 (generator 레인은 상단 선택 하나를 양쪽이 공유)
+  const genTxt = ` · gen=${esc(genLabel(S.generator))}`;
+
   // B 세팅: 답변 + B 자체의 검색 context (context는 Stage A 산물이라 런마다 다름)
   let bCard = "", bCtxCard = "";
   if (S.bundleB) {
     const sb = S.bundleB.sessions.find((x) => x.session_id === sid);
     const qb = sb?.questions?.find((x) => x.question === q.question);
-    bCard = `<div class="card b-card"><h4>B: ${esc(runLabel(S.runB))} 답변 ${verdictFull(qb?.judge)}</h4>
+    bCard = `<div class="card b-card"><h4>B: ${esc(runLabel(S.runB))} 답변${genTxt} ${verdictFull(qb?.judge)}</h4>
       <div class="body">${esc(qb?.system_response || "(B 런에 답변 없음)")}</div></div>`;
     if (qb) {
       const itemsB = parseContext(qb.context);
@@ -754,7 +829,7 @@ function renderQADetail(sid, qi, fromSession) {
     <div class="hint">S${sid} · ${esc(q.question_type || "")} — 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → context</div>
     <div class="card"><h4 data-k="question">질문</h4><div class="body">${esc(q.question)}</div></div>
     <div class="card"><h4 data-k="answer">골든 정답</h4><div class="body">${esc(q.answer)}</div></div>
-    <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(runLabel(S.run))} 답변` : "시스템 답변 (A′)"} · gen=${esc(laneOf(resolveRun(S.backbone, S.prompt))?.label || S.generator)} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
+    <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(runLabel(S.run))} 답변` : "시스템 답변 (A′)"}${genTxt} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
     ${bCard}
     <div class="card"><h4 data-k="evidence">Evidence (${(q.evidence || []).length})</h4><div class="body">${ev}</div></div>
     <div class="card"><h4 data-k="context">${S.bundleB ? "A " : ""}검색 Context (${items ? items.length + "건" : "원문"})
@@ -864,6 +939,8 @@ const METRIC_COLS = [
 ];
 const metricsCache = new Map();
 S.metricsGen = "mini"; S.metricsJudge = null; S.metricsScope = "first4";
+// 행/열 하이라이트 선택 — 행은 run 이름, 열은 칼럼 키. 재렌더에도 유지 (탭 이탈해도 세션 내 유지)
+S.metricsSelRows = new Set(); S.metricsSelCols = new Set();
 
 async function renderMetrics() {
   // generator 레인 목록 (어느 런에서든 가용하면 노출) + 레인별 judge 합집합
@@ -918,15 +995,17 @@ async function renderMetrics() {
   const judgeName = judgeLabel(data.judge);
 
   const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);
+  // 행/열 선택 하이라이트: 행=왼쪽 끄트머리(○/●) 클릭, 열=머리글 클릭. 다시 클릭하면 해제
+  const colCls = (k) => S.metricsSelCols.has(k) ? " mcol-sel" : "";
   const body = rows.map((r) => {
     const m = r.metrics;
     const sysName = "Mem0-Classic-OSS";
     const lat = r.latency;
     const latCell = lat
-      ? `<td data-desc="<b>세션 투입 시간</b> — mem0.add 1회(fact 추출→유사 검색→update 결정 LLM 콜 포함) 평균 ${lat.ingest_avg_s}s · 중앙값 ${lat.ingest_p50_s}s · 세션 ${lat.n_sessions}개 실측. 백본 크기·API 왕복이 그대로 반영됨. 질문 검색(임베더 고정)은 평균 ${lat.search_avg_ms}ms로 백본 무관">
+      ? `<td class="${colCls("lat")}" data-col="lat" data-desc="<b>세션 투입 시간</b> — mem0.add 1회(fact 추출→유사 검색→update 결정 LLM 콜 포함) 평균 ${lat.ingest_avg_s}s · 중앙값 ${lat.ingest_p50_s}s · 세션 ${lat.n_sessions}개 실측. 백본 크기·API 왕복이 그대로 반영됨. 질문 검색(임베더 고정)은 평균 ${lat.search_avg_ms}ms로 백본 무관">
           <div class="lat-bar" style="width:${(lat.ingest_avg_s / maxIngest * 100).toFixed(0)}%"></div>
           <span class="small">${lat.ingest_avg_s}s</span></td>`
-      : `<td>–</td>`;
+      : `<td class="${colCls("lat")}" data-col="lat">–</td>`;
     const cells = METRIC_COLS.map((c) => {
       const v = m[c.k];
       const rk = rank[c.k].sorted.indexOf(v) + 1;
@@ -934,48 +1013,73 @@ async function renderMetrics() {
       const bestRow = rows.find((x) => x.metrics[c.k] === rank[c.k].best);
       const nTxt = c.n ? ` <span class="small muted">(${m[c.n].toLocaleString()})</span>` : "";
       const desc = `<b>${esc(c.label)}</b> = ${v} — ${rk}위/${rows.length} (${c.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow.label)})<br>${esc(METRIC_DEFS[c.k])}`;
-      return `<td data-desc="${esc(desc)}" ${isBest ? 'style="font-weight:800"' : ""}>${v.toFixed(2)}${nTxt}</td>`;
+      return `<td class="${colCls(c.k)}" data-col="${c.k}" data-desc="${esc(desc)}" ${isBest ? 'style="font-weight:800"' : ""}>${v.toFixed(2)}${nTxt}</td>`;
     }).join("");
-    return `<tr>
-      <td data-desc="${esc(r.note || r.label)}"><b>${esc(sysName)}</b></td>
-      <td>${m.n_users}</td>
-      <td>${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted" data-desc="reasoning effort: ${esc(r.backbone_effort)}">${esc(effortShort(r.backbone_effort))}</span>` : ""}</td>
-      <td>${esc(r.prompt)}</td>${latCell}
-      <td>${esc(judgeName)}</td>${cells}</tr>`;
+    const rowSel = S.metricsSelRows.has(r.run);
+    return `<tr class="${rowSel ? "mrow-sel" : ""}">
+      <td class="rowsel" data-runsel="${esc(r.run)}" data-desc="클릭 = 이 행 하이라이트 선택/해제">${rowSel ? "●" : "○"}</td>
+      <td class="${colCls("sys")}" data-col="sys" data-desc="${esc(r.note || r.label)}"><b>${esc(sysName)}</b></td>
+      <td class="${colCls("users")}" data-col="users">${m.n_users}</td>
+      <td class="${colCls("backbone")}" data-col="backbone">${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted" data-desc="reasoning effort: ${esc(r.backbone_effort)}">${esc(effortShort(r.backbone_effort))}</span>` : ""}</td>
+      <td class="${colCls("prompt")}" data-col="prompt">${esc(r.prompt)}</td>${latCell}
+      <td class="${colCls("judge")}" data-col="judge">${esc(judgeName)}</td>${cells}</tr>`;
   }).join("");
 
+  const anySel = S.metricsSelRows.size || S.metricsSelCols.size;
   $("#content").innerHTML = `
-    <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}</div>
+    <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
+      · 행 왼쪽 ○ 클릭=행 하이라이트, 열 머리글 클릭=열 하이라이트 (재클릭=해제)${anySel ? ` <button id="msel-clear" class="ctx-toggle" style="margin-left:6px">선택 모두 해제</button>` : ""}</div>
     <div class="card"><div class="body" style="overflow-x:auto">
       <table class="cmp"><tr>
-        <th data-desc="메모리 시스템 — 전부 mem0 OSS 0.1.118 classic">Memory System</th>
-        <th data-desc="이 행의 지표가 집계된 유저 수">#Users</th>
-        <th data-desc="memory agent 백본 — fact 추출·update 결정을 담당하는 LLM">Agent LLM</th>
-        <th data-desc="fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형)">Prompt</th>
-        <th data-desc="세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. 로컬 vLLM vs API 왕복, 백본 크기, reasoning 토큰이 그대로 드러남. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용">Ingest/세션↓</th>
-        <th data-desc="채점 LLM — 행 간 비교는 동일 judge에서만 유효">Judge LLM</th>
-        ${METRIC_COLS.map((c) => `<th data-desc="${esc(METRIC_DEFS[c.k])}">${esc(c.label)}</th>`).join("")}
+        <th class="rowsel-h" data-desc="행 선택 칼럼 — 아래 ○를 클릭하면 그 행이 하이라이트"></th>
+        <th class="${colCls("sys")}" data-col="sys" data-desc="메모리 시스템 — 전부 mem0 OSS 0.1.118 classic. 클릭=열 하이라이트">Memory System</th>
+        <th class="${colCls("users")}" data-col="users" data-desc="이 행의 지표가 집계된 유저 수. 클릭=열 하이라이트">#Users</th>
+        <th class="${colCls("backbone")}" data-col="backbone" data-desc="memory agent 백본 — fact 추출·update 결정을 담당하는 LLM. 클릭=열 하이라이트">Agent LLM</th>
+        <th class="${colCls("prompt")}" data-col="prompt" data-desc="fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형). 클릭=열 하이라이트">Prompt</th>
+        <th class="${colCls("lat")}" data-col="lat" data-desc="세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. 로컬 vLLM vs API 왕복, 백본 크기, reasoning 토큰이 그대로 드러남. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용. 클릭=열 하이라이트">Ingest/세션↓</th>
+        <th class="${colCls("judge")}" data-col="judge" data-desc="채점 LLM — 행 간 비교는 동일 judge에서만 유효. 클릭=열 하이라이트">Judge LLM</th>
+        ${METRIC_COLS.map((c) => `<th class="${colCls(c.k)}" data-col="${c.k}" data-desc="${esc(METRIC_DEFS[c.k])}<br>클릭=열 하이라이트">${esc(c.label)}</th>`).join("")}
       </tr>${body}</table></div></div>
     ${rows.length < data.rows.length ? `<p class="hint">⚠ ${data.rows.length - rows.length}개 런은 이 judge(${judgeName}) 라벨이 없어 표시 제외</p>` : ""}`;
+
+  $$("#content .rowsel[data-runsel]").forEach((td) => (td.onclick = () => {
+    const k = td.dataset.runsel;
+    S.metricsSelRows.has(k) ? S.metricsSelRows.delete(k) : S.metricsSelRows.add(k);
+    renderMetrics();
+  }));
+  $$("#content th[data-col]").forEach((th) => (th.onclick = () => {
+    const k = th.dataset.col;
+    S.metricsSelCols.has(k) ? S.metricsSelCols.delete(k) : S.metricsSelCols.add(k);
+    renderMetrics();
+  }));
+  $("#msel-clear") && ($("#msel-clear").onclick = () => { S.metricsSelRows.clear(); S.metricsSelCols.clear(); renderMetrics(); });
 }
 
 /* ----- Digest ----- */
 
 async function renderDigest() {
   const all = await api(`/api/digest/${S.uuid}`);
+  // 기본은 현재 세팅(런·generator·judge·B런)에서 단 코멘트만 — 토글 켜면 전체 런·전체 세팅
+  const base = S.showOtherCmts ? all : all.filter((c) => c.run === S.run && cmtMatches(c));
+  const hiddenN = all.length - base.length;
   const scoped = S.digestScope === "session"
-    ? all.filter((c) => c.run === S.run && (c.anchor === `session:${S.session}` || c.anchor.startsWith(`session:${S.session}/`)))
-    : all;
+    ? base.filter((c) => c.run === S.run && (c.anchor === `session:${S.session}` || c.anchor.startsWith(`session:${S.session}/`)))
+    : base;
   $("#sidebar").innerHTML = `<div style="padding:10px">
     <p class="small muted">유저 <b>${esc(S.bundle.user_name)}</b> 코멘트</p>
     <div class="pill-filter" style="margin:0 0 8px">
       <button class="${S.digestScope === "user" ? "on" : ""}" data-sc="user">유저 전체</button>
       <button class="${S.digestScope === "session" ? "on" : ""}" data-sc="session">현재 세션 S${S.session}</button></div>
-    <a href="/api/export/${S.uuid}" target="_blank">📄 Markdown export</a></div>`;
+    <label class="small" style="display:flex;align-items:center;gap:5px;margin:0 0 8px;cursor:pointer"
+      data-desc="기본은 지금 보고 있는 세팅(런·generator·judge·B런)에서 단 코멘트만. 켜면 다른 런·다른 세팅의 코멘트도 회색으로 함께 표시">
+      <input type="checkbox" id="digest-other-tgl" ${S.showOtherCmts ? "checked" : ""}>
+      다른 세팅 코멘트 표시${!S.showOtherCmts && hiddenN ? ` (숨김 ${hiddenN})` : ""}</label>
+    <a href="/api/export/${S.uuid}" target="_blank" data-desc="이 유저의 코멘트 전체(모든 세팅 포함)를 Markdown으로 다운로드">📄 Markdown export</a></div>`;
   $$("#sidebar .pill-filter button").forEach((b) => (b.onclick = () => { S.digestScope = b.dataset.sc; renderDigest(); }));
+  $("#digest-other-tgl").onchange = () => setShowOtherCmts($("#digest-other-tgl").checked);
   if (!scoped.length) {
     $("#content").innerHTML = `<div class="card"><h4>Digest — 코멘트 모아보기</h4><div class="body">
-      <p>선택 범위(${S.digestScope === "user" ? "유저 전체" : `세션 S${S.session}`})에 코멘트가 없습니다.</p>
+      <p>선택 범위(${S.digestScope === "user" ? "유저 전체" : `세션 S${S.session}`}${S.showOtherCmts ? "" : " · 현재 세팅"})에 코멘트가 없습니다.${!S.showOtherCmts && hiddenN ? ` 다른 세팅 코멘트 ${hiddenN}개가 숨겨져 있습니다 — 좌측 토글로 표시.` : ""}</p>
       <p class="small muted">코멘트 남기기: Sessions/QA 탭에서 항목 클릭 → 우측 코멘트 탭. 또는 텍스트 드래그 선택 → 💬 버튼.<br>
       세션/유저 단위 종합 코멘트는 항목 클릭 없이 우측 코멘트 탭에서 바로 작성하면 됩니다 (앵커 run/session).</p></div></div>`;
     return;
@@ -983,7 +1087,7 @@ async function renderDigest() {
   const byRun = {};
   scoped.forEach((c) => (byRun[c.run] = byRun[c.run] || []).push(c));
   $("#content").innerHTML = Object.entries(byRun).map(([run, list]) => `
-    <div class="card"><h4>run: ${esc(run)} (${list.length})</h4><div class="body">
+    <div class="card"><h4>${esc(runLabel(run))} (${list.length})</h4><div class="body">
       ${list.map((c) => cmtHTML(c, run === S.run)).join("")}</div></div>`).join("");
   $$("#content .del").forEach((b) => (b.onclick = async () => {
     await api(`/api/comments/${b.dataset.id}?author=${encodeURIComponent(S.author)}`, { method: "DELETE" });
@@ -996,10 +1100,32 @@ async function renderDigest() {
 /* ---------- 인스펙터 ---------- */
 
 function renderInspector() {
-  $("#cmt-count").textContent = S.comments.filter((c) => c.anchor === S.anchor).length || "";
+  $("#cmt-count").textContent = visibleComments().filter((c) => c.anchor === S.anchor).length || "";
   const el = $("#insp-body");
   if (S.itab === "detail") {
-    el.innerHTML = `<div class="anchor-label">앵커: ${esc(S.anchor)}</div><div class="jt" style="margin-top:8px">${jsonTree(S.anchorObj)}</div>`;
+    // 골든·QA 앵커는 런마다 원본이 다름 (judge 라벨·갱신 골든의 검색 스냅샷·답변·context)
+    // -> B 비교 중엔 Trace 탭처럼 A/B 알약으로 전환해서 봄. 전환 상태는 Trace와 공유(S.traceSide)
+    const m = S.anchor.match(/^session:(\d+)\/(mp|qa):(\d+)$/);
+    let pills = "", sideChip = anchorSideChip(S.anchor), obj = S.anchorObj;
+    if (m && S.bundleB) {
+      const side = S.traceSide === "B" ? "B" : "A";
+      if (side === "B") {
+        const sid = +m[1], idx = +m[3];
+        if (m[2] === "mp") {
+          obj = bGolden(sid, idx, S.anchorObj?.memory_content);
+        } else {
+          const sb = S.bundleB.sessions.find((x) => x.session_id === sid);
+          obj = sb?.questions?.find((x) => x.question === S.anchorObj?.question) ?? null;
+        }
+      }
+      pills = `<div class="pill-filter" style="margin:8px 0 0" data-desc="상세 JSON을 볼 세팅 선택 — 골든/QA는 데이터셋 공통이지만 judge 라벨·검색 스냅샷·답변·context는 런마다 다름">
+        <button class="${side === "A" ? "on" : ""}" data-dside="A">A: ${esc(runLabel(S.run))}</button>
+        <button class="${side === "B" ? "on" : ""}" data-dside="B">B: ${esc(runLabel(S.runB))}</button></div>`;
+      sideChip = "";  // 알약이 세팅 표시를 대신함
+    }
+    el.innerHTML = `<div class="anchor-label" data-desc="${esc(S.anchor)}">앵커: ${esc(anchorHuman(S.anchor))}</div> ${sideChip}${pills}
+      <div class="jt" style="margin-top:8px">${obj != null ? jsonTree(obj) : "<p class='small muted'>B 런에 이 항목이 없습니다 (유저/세션 미포함)</p>"}</div>`;
+    $$("button[data-dside]", el).forEach((b) => (b.onclick = () => { S.traceSide = b.dataset.dside; renderInspector(); }));
   } else if (S.itab === "trace") {
     renderTrace(el);
   } else {
@@ -1037,14 +1163,24 @@ function traceSummary(r) {
 
 async function renderTrace(el) {
   if (S.session == null) { el.innerHTML = "<p class='muted'>세션을 먼저 선택하세요</p>"; return; }
-  el.innerHTML = "<p class='muted'>trace 로딩…</p>";
-  let recs = S.traceCache.get(S.session);
+  // B 비교 중엔 어느 세팅의 trace를 볼지 선택 (B 요소 클릭 시 자동으로 B로 전환됨)
+  const side = S.runB && S.traceSide === "B" ? "B" : "A";
+  const traceRun = side === "B" ? S.runB : S.run;
+  const pills = S.runB ? `<div class="pill-filter" style="margin:0 0 8px" data-desc="Trace를 볼 세팅 선택 — trace는 Stage A 산물이라 런마다 별도">
+      <button class="${side === "A" ? "on" : ""}" data-side="A">A: ${esc(runLabel(S.run))}</button>
+      <button class="${side === "B" ? "on" : ""}" data-side="B">B: ${esc(runLabel(S.runB))}</button></div>` : "";
+  const bindPills = () => $$(".pill-filter button[data-side]", el).forEach((b) =>
+    (b.onclick = () => { S.traceSide = b.dataset.side; renderInspector(); }));
+  el.innerHTML = pills + "<p class='muted'>trace 로딩…</p>";
+  bindPills();
+  const cacheKey = `${traceRun}|${S.session}`;
+  let recs = S.traceCache.get(cacheKey);
   if (!recs) {
-    try { recs = await api(`/api/trace/${S.run}/${S.uuid}?session=${S.session}`); }
-    catch { el.innerHTML = "<p class='muted'>이 런에는 trace가 없습니다</p>"; return; }
-    S.traceCache.set(S.session, recs);
+    try { recs = await api(`/api/trace/${traceRun}/${S.uuid}?session=${S.session}`); }
+    catch { el.innerHTML = pills + `<p class='muted'>${side} 런(${esc(runLabel(traceRun))})에는 trace가 없습니다</p>`; bindPills(); return; }
+    S.traceCache.set(cacheKey, recs);
   }
-  el.innerHTML = `<div class="anchor-label">S${S.session} trace — ${recs.length}건 (시간순) · 클릭하면 펼침 (한 번에 하나)</div>` +
+  el.innerHTML = pills + `<div class="anchor-label">S${S.session} trace${S.runB ? ` · ${side}=${esc(runLabel(traceRun))}` : ""} — ${recs.length}건 (시간순) · 클릭하면 펼침 (한 번에 하나)</div>` +
     recs.map((r, i) => `<div class="tr-rec" data-i="${i}">
       <div class="hdr" data-k="${esc(r.event)}">
         <span class="small muted">#${r.seq}</span>
@@ -1053,6 +1189,7 @@ async function renderTrace(el) {
         <span class="summ">${esc(traceSummary(r))}</span>
         <span class="small muted">${Math.round(r.duration_ms || 0)}ms</span></div>
       <div class="x hidden"></div></div>`).join("");
+  bindPills();
   $$(".tr-rec", el).forEach((div) => {
     const hdr = $(".hdr", div), x = $(".x", div);
     hdr.onclick = () => {
@@ -1063,30 +1200,35 @@ async function renderTrace(el) {
       const r = recs[+div.dataset.i];
       x.innerHTML = traceDetail(r);
       x.classList.remove("hidden");
-      highlightTraceTarget(r);
+      highlightTraceTarget(r, side);
     };
   });
 }
 
 function clearTraceHighlight() { $$(".hl-tr").forEach((el) => el.classList.remove("hl-tr")); }
 
-function highlightTraceTarget(r) {
+function highlightTraceTarget(r, side = "A") {
   if (S.tab !== "sessions") return;
   const s = S.bundle.sessions.find((x) => x.session_id === S.session);
   if (!s) return;
+  // B trace를 보는 중이면 추출 매칭은 B 카드([data-b-ext])에 — 골든·질문은 데이터셋 공통이라 그대로
+  const sB = side === "B" ? S.bundleB?.sessions.find((x) => x.session_id === S.session) : null;
+  const extList = side === "B" ? (sB?.extracted || []) : s.extracted;
+  const extSel = (i) => side === "B" ? `[data-b-ext="${i}"]` : `[data-a="ext:${i}"]`;
   const targets = [];
+  const findExt = (pred) => extList.forEach((m, i) => { if (pred(m)) targets.push(extSel(i)); });
   const findRow = (kind, pred, list) => {
     list.forEach((item, i) => { if (pred(item)) targets.push(`[data-a="${kind}:${i}"]`); });
   };
   if (r.event === "retrieval" && r.stage === "ingest" && r.retrieval?.query) {
-    findRow("ext", (m) => m.text === r.retrieval.query, s.extracted);
+    findExt((m) => m.text === r.retrieval.query);
   } else if (r.event === "retrieval" && r.stage === "qa_retrieval" && r.ref?.question) {
     s.questions.forEach((q, i) => { if (q.question === r.ref.question) targets.push(`[data-qa="${i}"]`); });
   } else if (r.event === "retrieval" && r.stage === "update_probe" && r.ref) {
     const refText = Object.values(r.ref)[0];
     findRow("mp", (mp) => mp.memory_content === refText, s.golden);
   } else if (r.event === "memory_write") {
-    (r.writes || []).forEach((w) => findRow("ext", (m) => m.text === w.text, s.extracted));
+    (r.writes || []).forEach((w) => findExt((m) => m.text === w.text));
   }
   let first = null;
   targets.forEach((sel) => {
@@ -1131,7 +1273,7 @@ function cmtHTML(c, canGoto = false) {
   const isB = c.anchor.includes("/extb:");
   const target = isB ? (c.run_b || null) : c.run;
   const targetChip = `<span class="tagchip" style="font-weight:800; color:${isB ? "var(--bcol)" : "var(--accent)"}"
-    data-desc="이 코멘트의 대상 세팅(런): ${esc(target ? runLabel(target) : "B 런 (기록 없음 — 구버전 코멘트)")}${isB ? " — 당시 비교(B) 쪽 요소에 단 코멘트" : ""}">▶ ${esc(target ? runLabel(target) : "B?")}</span>`;
+    data-desc="이 코멘트의 대상 세팅(런): ${esc(target ? runLabel(target) : "당시 비교(B) 쪽 요소에 단 코멘트인데 B 런 기록이 없는 구버전 코멘트")}${isB && target ? " — 당시 비교(B) 쪽 요소에 단 코멘트" : ""}">▶ ${esc(target ? runLabel(target) : "B 런 (기록 없음)")}</span>`;
   // ② 작성 당시 관측 스택 (generator/judge — 구 코멘트는 빈 값이라 생략)
   //    비교 상대는 대상의 반대편: B에 단 코멘트면 상대=A(c.run), A에 단 코멘트면 상대=B(c.run_b)
   const counterpart = isB ? c.run : c.run_b;
@@ -1140,10 +1282,12 @@ function cmtHTML(c, canGoto = false) {
   if (c.generator) ctxBits.push(`gen=${genLabel(c.generator)}`);
   if (c.judge) ctxBits.push(`judge=${judgeLabel(c.judge)}`);
   const ctxChip = ctxBits.length
-    ? `<span class="tagchip" data-desc="작성 당시 관측 스택 — 답변·라벨이 이 generator/judge 기준이었음${cpTxt}">${esc(ctxBits.join(" · "))}</span>` : "";
-  return `<div class="cmt"><div class="meta"><span class="author">${esc(c.author)}</span>
+    ? `<span class="tagchip" data-desc="작성 당시 관측 스택 — 답변·라벨이 이 generator/judge 기준이었음${cpTxt}">${esc(ctxBits.join(" · "))}</span>`
+    : `<span class="tagchip" data-desc="generator/judge 기록이 없는 구버전 코멘트 — 어떤 세팅에서 봤는지 재구성 불가">세팅 기록 없음</span>`;
+  const other = !cmtMatches(c);  // 다른 세팅에서 단 코멘트 → 점선 테두리 + 흐리게
+  return `<div class="cmt${other ? " other" : ""}"><div class="meta"><span class="author">${esc(c.author)}</span>
     ${c.tag ? `<span class="tagchip">${esc(c.tag)}</span>` : ""}
-    ${targetChip}<span>${esc(c.anchor)}</span>${ctxChip}<span>${esc((c.created_at || "").slice(0, 16).replace("T", " "))}</span>
+    ${targetChip}<span data-desc="${esc(c.anchor)}">${esc(anchorHuman(c.anchor))}</span>${ctxChip}<span>${esc((c.created_at || "").slice(0, 16).replace("T", " "))}</span>
     ${canGoto && c.anchor.startsWith("session:") ? `<button class="del goto" style="color:var(--accent)" data-anchor="${esc(c.anchor)}">이동</button>` : ""}
     ${mine ? `<button class="del" data-id="${c.id}">삭제</button>` : ""}</div>
     ${c.quote ? `<div class="cmt-quote">“${esc(c.quote)}”</div>` : ""}
@@ -1151,10 +1295,16 @@ function cmtHTML(c, canGoto = false) {
 }
 
 function renderComments(el) {
-  const here = S.comments.filter((c) => c.anchor === S.anchor);
-  const others = S.comments.filter((c) => c.anchor !== S.anchor);
+  const vis = visibleComments();
+  const here = vis.filter((c) => c.anchor === S.anchor);
+  const others = vis.filter((c) => c.anchor !== S.anchor);
+  const hiddenN = S.comments.length - vis.length;
   el.innerHTML = `
-    <div class="anchor-label">앵커: ${esc(S.anchor)}</div>
+    <div class="anchor-label" data-desc="${esc(S.anchor)}">앵커: ${esc(anchorHuman(S.anchor))}</div> ${anchorSideChip(S.anchor)}
+    <label class="small" style="display:flex;align-items:center;gap:5px;margin:6px 0;cursor:pointer"
+      data-desc="기본은 지금 보고 있는 세팅(generator·judge·B런)에서 단 코멘트만 표시. 켜면 다른 세팅에서 단 코멘트도 회색으로 함께 표시">
+      <input type="checkbox" id="cmt-other-tgl" ${S.showOtherCmts ? "checked" : ""}>
+      다른 세팅 코멘트 표시${!S.showOtherCmts && hiddenN ? ` (숨김 ${hiddenN})` : ""}</label>
     <div id="cmt-form" style="margin:8px 0">
       ${S.pendingQuote ? `<div class="cmt-quote">“${esc(S.pendingQuote)}” <button id="quote-clear" style="border:none;background:none;cursor:pointer;color:var(--bad)">×</button></div>` : ""}
       <textarea id="cmt-body" placeholder="관찰/해석을 남겨주세요 (관찰 → 유형 태그 → 시사점)"></textarea>
@@ -1163,6 +1313,7 @@ function renderComments(el) {
         <button class="primary" id="cmt-add">등록</button></div></div>
     <h4 class="small muted">이 앵커 (${here.length})</h4>${here.map((c) => cmtHTML(c)).join("") || "<p class='small muted'>없음</p>"}
     <h4 class="small muted">이 유저의 다른 앵커 (${others.length})</h4>${others.map((c) => cmtHTML(c, true)).join("")}`;
+  $("#cmt-other-tgl").onchange = () => setShowOtherCmts($("#cmt-other-tgl").checked);
   $("#quote-clear") && ($("#quote-clear").onclick = () => { S.pendingQuote = ""; renderComments(el); });
   $("#cmt-add").onclick = async () => {
     const body = $("#cmt-body").value.trim();

@@ -146,6 +146,32 @@ runs:
     judges:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-think4-custom/judge
 
+  oss120b4:
+    label: "gpt-oss-120b × default (4u)"
+    note: "판독 전 — gpt-oss-120b(high)를 agent 백본으로 (러너가 extra_body로 effort 주입)"
+    backbone: gpt-oss-120b
+    backbone_effort: "high — 러너가 extra_body로 주입 (mem0는 effort 미전달)"
+    prompt: default
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oss120b4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oss120b4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-oss120b4/judge
+
+  oss120b4-custom:
+    label: "gpt-oss-120b × custom (4u)"
+    note: "판독 전 — gpt-oss-120b(high) × HaluMem 커스텀 프롬프트"
+    backbone: gpt-oss-120b
+    backbone_effort: "high — 러너가 extra_body로 주입 (mem0는 effort 미전달)"
+    prompt: custom
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oss120b4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oss120b4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-oss120b4-custom/judge
+
   # (참고) 옛 주석 원형:
   # think4:
   #   label: "Qwen3-4B-Thinking × default (4u)"

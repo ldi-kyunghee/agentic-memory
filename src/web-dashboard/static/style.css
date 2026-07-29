@@ -12,14 +12,17 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 /* ---------- 상단바 ---------- */
 #topbar { display: flex; gap: 10px; align-items: center; padding: 6px 12px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; flex-wrap: wrap; }
 .brand { font-weight: 700; }
-.grp { display: flex; flex-direction: column; }
+/* 세팅 칼럼: User | Judge | Generator | Embedding | Agent A | Agent B — 세로 구분선으로 분리 */
+.grp { display: flex; flex-direction: column; gap: 1px; padding: 0 10px; border-left: 1px solid var(--line); }
 .grp label { font-size: 10px; color: var(--dim); font-weight: 700; letter-spacing: .03em; }
+.grp .ctl { display: flex; gap: 4px; align-items: center; }
 .grp select { padding: 3px 5px; border: 1px solid var(--line); border-radius: 6px; background: #fff; max-width: 190px; }
 .grp .fixed { padding: 3px 5px; font-size: 12px; color: var(--dim); border: 1px dashed var(--line); border-radius: 6px; }
-#btn-addb, #btn-delb { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 4px 8px; cursor: pointer; align-self: center; }
-#grp-b { display: flex; gap: 8px; align-items: center; padding: 2px 8px; border: 1.5px solid var(--bcol); border-radius: 8px; }
+.grp-a > label { color: var(--accent); }
+.grp-bcol > label { color: var(--bcol); }
+#btn-addb, #btn-delb { border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 3px 8px; cursor: pointer; }
+#grp-b { display: inline-flex; gap: 4px; align-items: center; }
 #grp-b.hidden { display: none; }
-.b-mark { font-weight: 800; color: var(--bcol); }
 #tabs { margin-left: auto; display: flex; gap: 2px; }
 #tabs button, #insp-tabs button { border: none; background: none; padding: 6px 10px; cursor: pointer; border-radius: 6px; color: var(--dim); font-weight: 600; }
 #tabs button.active, #insp-tabs button.active { background: var(--chip); color: var(--ink); }
@@ -99,6 +102,14 @@ tr.qa-x > td { background: #fbfbfd; }
 /* B 세팅 컬러코딩 (진회색 — 판정색·미끼 빨강 어느 것과도 비인접) */
 .anchor-chip.eb { border-left: 3px solid var(--bcol); background: #f1f3f5; }
 .card.b-card > h4 { color: var(--bcol); }
+/* A/B 페어 표기 — 배지·플래그 앞의 소속 문자 */
+.ab { font-style: normal; font-weight: 800; font-size: 9.5px; margin: 0 1px 0 3px; }
+.ab.a { color: var(--accent); }
+.ab.b { color: var(--bcol); }
+.flag.bflag { border-style: dashed; }   /* 사이드바 B측 카운트 — 의미 동일, 점선 테두리로 소속 구분 */
+/* 다른 세팅(다른 generator/judge/B런)에서 단 코멘트 — 회색 칩 + 반투명 */
+.cmt-chip.other { background: #adb5bd; }
+.cmt.other { opacity: .75; border-style: dashed; }
 
 /* 골든 변형 강조: 갱신(upd) / 미끼(interference) */
 .row.upd-row { background: #faf3dc; }
@@ -166,6 +177,17 @@ table.cmp { border-collapse: collapse; width: 100%; }
 table.cmp th, table.cmp td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
 table.cmp th { background: var(--chip); font-size: 11px; }
 td.diff { background: #fff4e6; }
+
+/* Metrics 행/열 하이라이트 선택 — 행: 왼쪽 ○ 클릭 / 열: 머리글 클릭 */
+table.cmp td.rowsel { cursor: pointer; text-align: center; color: var(--dim); width: 20px; padding: 4px 5px; user-select: none; }
+table.cmp td.rowsel:hover { background: var(--chip); color: var(--accent); }
+table.cmp th[data-col] { cursor: pointer; user-select: none; }
+table.cmp th[data-col]:hover { background: #dde3ef; }
+tr.mrow-sel > td { background: #eaf1ff; }
+tr.mrow-sel > td.rowsel { color: var(--accent); }
+table.cmp td.mcol-sel { background: #eaf1ff; }
+table.cmp th.mcol-sel { background: #d6e2ff; }
+tr.mrow-sel > td.mcol-sel { background: #d6e2ff; }   /* 행∩열 교차 셀은 한 단계 진하게 */
 
 /* ---------- 모달 ---------- */
 #modal { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; z-index: 100; }
