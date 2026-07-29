@@ -333,7 +333,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    exp_name = "exp" + args.exp_num
+    exp_name = f"exp{args.exp_num}"
     
     retriever = BM25HF()
     stemmer = Stemmer.Stemmer("english")
