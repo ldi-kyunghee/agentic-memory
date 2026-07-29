@@ -135,7 +135,7 @@ runs:
 
   think4-custom:
     label: "Qwen3-4B-Thinking × custom (4u)"
-    note: "과잉 절제의 붕괴 — 세션 40~77% 빈 세션, 후보 347개, QA C 34.18 최저 셀. custom 5백본 전패 확정"
+    note: "과잉 절제의 붕괴 — 세션 58%에서 명시적 {facts:[]} 반환(잘림 아님, trace 검증), 그 세션들에 골든 62%가 소재. thinking이 '서사' 지침을 문자 그대로 적용해 사실형 세션을 통째 기각. QA C 34.18 최저 셀"
     backbone: Qwen3-4B-Thinking-2507
     backbone_effort: "항상 사고 (effort 개념 없음, vLLM)"
     prompt: custom

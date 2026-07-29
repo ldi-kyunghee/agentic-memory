@@ -4,5 +4,8 @@ __pycache__/
 .env
 results/
 traces/
-.DS_Storelogs/
+.DS_Store
 logs/
+# 어시스턴트 로컬 설정 (커밋하지 않음)
+CLAUDE.md
+.claude/
