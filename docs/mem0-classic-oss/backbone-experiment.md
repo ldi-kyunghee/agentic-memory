@@ -171,3 +171,33 @@ uv run python src/mem0-classic-oss/analyze_qa_evidence_storage.py \
 - 상대 순위: 메모리 지표는 대체로 보존 (custom>default R, think 최하 등), QA 순위는 이동 (nano4가 1위로) — 단 QA는 generator 교체 혼입이라 원인 분리 불가
 - 스팟 체크: mini generator가 "middle name?"에 "Mark"로 날조한 건을 mini judge가 **Hallucination으로 정확히 판정** — 관대화가 무차별 승인은 아님
 - **분석 방어 원칙 재확인**: 절대 수치는 judge 종속 → 보고는 "동일 judge 내 상대 비교 + 다중 judge 교차검증"으로만
+
+## 10. 3중 judge 교차검증 — 결론은 judge 독립적인가 (2026-07-28)
+
+10런 × 1유저(Martin) 고정, judge 3종: **GPT-5-Nano(minimal)** / **GPT-5-Mini(minimal)** / **gpt-oss-120b(high, 로컬)**. 산출물 `genoss120/`, `judge-oss120-genoss120-{run}/`. oss120 무효율 0.12% (최악 full-custom 0.70% — high 사고가 4096 예산 안에 들어옴이 실증).
+
+**① judge 기질은 지표마다 다른 축으로 갈린다** (10런 평균):
+
+| | R | Acc | FMR | Upd C | QA C |
+|---|---|---|---|---|---|
+| Nano (minimal) | 37.1 | 41.3 | 59.4 | 17.0 | 45.5 |
+| Mini (minimal) | **67.0** | **71.8** | 56.9 | **66.7** | **56.4** |
+| **oss-120b (high)** | **21.2** | 69.3 | 60.5 | 22.1 | 53.9 |
+
+- **"관대/가혹"은 단일 축이 아니다**: oss120-high는 **포함 판정(R 21.2, Upd C 22.1)에서 3종 중 가장 엄격**한데, 근거 판정(Acc 69.3)은 Mini와 거의 같다. 즉 "골든이 추출물에 온전히 담겼는가"에는 깐깐하고 "추출물이 대화에 근거하는가"에는 관대 — Nano는 양쪽 모두 중간, Mini는 양쪽 모두 후함
+- **Acc 천장 현상은 judge 무관**: think4가 Nano 47.2 → Mini 99.5 → oss 99.3. 고성능 judge인 oss120-high에서도 99.3이 나온다는 건 **판별력 상실이 아니라 실제로 근거가 탄탄한 저장소**라는 뜻 — think4(초절제 추출)의 청결도가 3중으로 검증됨
+- 반대로 Mini가 유독 후한 곳은 **Upd C(66.7 vs 17.0/22.1)** — 갱신 판정에서 Mini만 이례적으로 관대. Upd C 절대값은 Mini 라벨로 논하지 않는 것이 안전
+
+**② 순위 보존 — 우리 결론의 방어선** (Spearman ρ, 10런):
+
+| | R | Acc | FMR | Upd C | QA C |
+|---|---|---|---|---|---|
+| Nano~Mini | +0.82 | +0.58 | +0.66 | +0.95 | +0.73 |
+| Nano~oss | **+0.95** | +0.53 | +0.88 | +0.52 | +0.88 |
+| Mini~oss | +0.67 | **+0.99** | +0.77 | +0.47 | +0.72 |
+
+- **모든 지표·모든 judge 쌍에서 ρ > 0.45, 대부분 0.7~0.99** — 절대 수치는 judge마다 크게 달라도 **런 간 상대 순위는 강하게 보존**된다. 백본×프롬프트 그리드에서 뽑은 결론(mini 우위, custom 전패, think4 청결·저커버리지 등)이 judge 선택의 산물이 아님을 뒷받침
+- 가장 약한 고리는 **Upd C(Mini~oss +0.47)** — 갱신 판정은 judge 간 합의가 낮으므로, 이 지표 기반 결론은 다중 judge 확인 필수
+- QA C Top3: Nano `30b4 > mini4-custom > nano4` / Mini `nano4 > 30b4 > think4` / oss `nano4 = mini4 = 30b4` — **상위권 구성은 일치**(nano4·30b4·mini4 계열), 미세 순서만 흔들림
+
+**③ 실무 규약 확정**: 절대 수치를 인용할 때는 judge를 반드시 병기하고, 개선 여부는 **동일 judge 내 상대 비교**로만 판단한다. 다중 judge에서 순위가 뒤집히는 항목(Upd C 등)은 결론으로 삼지 않는다.
