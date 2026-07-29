@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -82,15 +83,18 @@ def llm_request(prompt):
     before_sleep=before_sleep_log(logger, logging.WARNING)
 )
 def llm_request_for_json(prompt):
-
     response_obj = client.responses.parse(
         model=MODEL,
         input=[{'role': 'user', 'content': prompt}],
-        text_format=QAEval
+        text_format=QAEval,
+        **common_params
     )
 
     response = response_obj.output_parsed
-    return response
+    result = response.model_dump_json()
+    if isinstance(result, str):
+        result = json.loads(result)
+    return result
 
 
 if __name__ == '__main__':
