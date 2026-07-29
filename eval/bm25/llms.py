@@ -1,12 +1,15 @@
-import re
-import os
-import json
 import logging
+import os
+
 from dotenv import load_dotenv
-
 from openai import OpenAI
-from tenacity import retry, stop_after_attempt, wait_random_exponential, before_sleep_log
-
+from tenacity import (
+    before_sleep_log,
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
+from utils import QAEval
 
 load_dotenv()
 
@@ -32,6 +35,8 @@ if os.getenv('OPENAI_TEMPERATURE'):
 
 if os.getenv('OPENAI_TIMEOUT'):
     common_params["timeout"] = int(os.getenv('OPENAI_TIMEOUT'))
+
+common_params["reasoning_effort"] = "low"
 
 
 client = OpenAI(
@@ -78,21 +83,14 @@ def llm_request(prompt):
 )
 def llm_request_for_json(prompt):
 
-    response_obj = client.chat.completions.create(
+    response_obj = client.responses.parse(
         model=MODEL,
-        messages=[{'role': 'user', 'content': prompt}],
-        **common_params
+        input=[{'role': 'user', 'content': prompt}],
+        text_format=QAEval
     )
 
-    content = response_obj.choices[0].message.content or ""
-
-    match = re.search(r"```json\s*(\{.*?\})\s*```", content, re.DOTALL)
-    if not match:
-        raise ValueError(f"No JSON block found in model output: {content}")
-
-    json_str = match.group(1).strip()
-
-    return json.loads(json_str)
+    response = response_obj.output_parsed
+    return response
 
 
 if __name__ == '__main__':

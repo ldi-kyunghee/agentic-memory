@@ -1,21 +1,20 @@
-import os
-import json
-import time
-import copy
-import re
-import gc
-import torch
 import argparse
-from vllm import LLM, SamplingParams
-from vllm.sampling_params import StructuredOutputsParams
-from tqdm import tqdm
+import copy
+import gc
+import json
+import os
+import re
+import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from dotenv import load_dotenv
-
 from functools import partial
 
+import torch
+from dotenv import load_dotenv
 from llms import llm_request_for_json
-from utils import EVALUATION_PROMPT_FOR_QUESTION, load_config, QAEval
+from tqdm import tqdm
+from utils import EVALUATION_PROMPT_FOR_QUESTION, QAEval, load_config
+from vllm import LLM, SamplingParams
+from vllm.sampling_params import StructuredOutputsParams
 
 load_dotenv()
 torch.cuda.empty_cache()

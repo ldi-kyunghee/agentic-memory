@@ -1,2 +1,3 @@
 model: gpt-5-mini
-api_key: OPENAI_API_KEY
+reasoning:
+	effort: low
