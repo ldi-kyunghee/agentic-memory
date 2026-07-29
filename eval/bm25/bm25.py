@@ -256,8 +256,8 @@ def qdrant_store(
         collection_name=collection_name,
         points=[
             models.PointStruct(
-                ids=id,
-                vectors=vector,
+                id=id,
+                vector=vector,
                 payload=payload
             )
             for id, vector, payload in zip(ids, documents, payloads)],
