@@ -237,8 +237,8 @@ def qdrant_store(
     ids = [i for i in range(len(memories))]
 
     payload = [
-        {"id": i, "document": memory}
-        for i, memory in enumerate(memories)
+        {"document": memory, "source": "HaluMem-Medium"}
+        for memory in memories
     ]
     
     documents = [
@@ -298,7 +298,7 @@ def qdrant_retrieve(
             limit=k
         ).points
 
-        retrieved_memories = [query_result.payload for query_result in query_results]
+        retrieved_memories = [query_result.payload['document'] for query_result in query_results]
         scores = [query_result.score for query_result in query_results]
         
         results.append({
