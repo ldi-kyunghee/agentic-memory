@@ -301,10 +301,13 @@ def qdrant_retrieve(
         retrieved_memories = [query_result.payload['document'] for query_result in query_results]
         scores = [query_result.score for query_result in query_results]
         
-        results.append({
-            "memory_content": retrieved_memories,
-            "score": scores
-        })
+        results.append([
+            {
+                "memory_content": retrieved_memory,
+                "score": score
+            }
+            for retrieved_memory, score in zip(retrieved_memories, scores)
+        ])
         
     return results
 
