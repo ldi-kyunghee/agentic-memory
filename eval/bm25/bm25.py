@@ -331,7 +331,7 @@ def qdrant_retrieval(
         }
 
         result['retrieved'] = docs
-        results.append(results)
+        results.append(result)
     return results
     
 def run_retrieval(args, dataset):
