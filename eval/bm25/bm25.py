@@ -225,6 +225,7 @@ def faiss_retrieval(
 def qdrant_store(
         qas: list[dict],
         memories: list,
+        collection_name: str
 ):
     queries = [qa["question"] for qa in qas]
     
@@ -233,23 +234,33 @@ def qdrant_store(
     else:
         corpus_embeddings, query_embeddings = embed_offline(queries, memories)
 
-    points = [
-        models.PointStruct(
-            id=i,
-            vector={
-                "bm25": models.Document(
-                    text=memory,
-                    model="qdrant/bm25"
-                ),
-                "embeds": corpus_embedding
-            },
-        )
-        for i, (memory, corpus_embedding) in enumerate(zip(memories, corpus_embeddings))
+    ids = [i for i in range(len(memories))]
+
+    payload = [
+        {"id": i, "document": memory}
+        for i, memory in enumerate(memories)
+    ]
+    
+    documents = [
+        {
+            "bm25": models.Document(
+                text=memory,
+                model="qdrant/bm25"
+            ),
+            "embeds": corpus_embedding
+        }
+        for memory, corpus_embedding in zip(memories, corpus_embeddings)
     ]
 
     client.upsert(
         collection_name=collection_name,
-        points=points
+        points=[
+            models.PointStruct(
+                ids=ids,
+                vectors=documents,
+                payload=payload
+            )
+        ],
     )
 
     return queries, query_embeddings
@@ -258,6 +269,7 @@ def qdrant_retrieve(
         queries: list,
         query_embeddings: np.ndarray,
         memories: list,
+        collection_name: str,
         k: int = 5,
 ):
     prefetch_queries = [
@@ -286,32 +298,63 @@ def qdrant_retrieve(
             limit=k
         ).points
 
-        memory_ids = [query_result.id for query_result in query_results]
-        result = [memories[id] for id in memory_ids]
-        results.append(result)
+        retrieved_memories = [query_result.payload for query_result in query_results]
+        scores = [query_result.score for query_result in query_results]
+        
+        results.append({
+            "memory_content": retrieved_memories,
+            "score": scores
+        })
         
     return results
 
 def qdrant_retrieval(
         qas: list[dict],
         memories: list,
+        collection_name: str,
         k: int = 5,
 ):
-    queries, query_embeddings = qdrant_store(qas, memories)
-    results = qdrant_retrieve(queries=queries, query_embeddings=query_embeddings, memories=memories, k=k)
+    queries, query_embeddings = qdrant_store(qas, memories, collection_name=collection_name)
+    retrieved = qdrant_retrieve(
+        queries=queries,
+        query_embeddings=query_embeddings,
+        memories=memories,
+        collection_name=collection_name,
+        k=k
+    )
+
+    results = []
+    for qa, docs in zip(qas, retrieved):
+        result = {
+            k: v
+            for k, v in qa.items()
+        }
+
+        result['retrieved'] = docs
+        results.append(results)
     return results
     
 def run_retrieval(args, dataset):
     retrieval_results = []
     k = args.top_k if not args.hybrid else None
-    for persona in dataset:
+    for i, persona in enumerate(dataset):
         qas, per_persona_memories = per_persona_dataset(
             persona, args.memory_with_prior_question
         )
         k = len(per_persona_memories) if k is None else k
         if client is not None:
+            collection_name = f"{proj_name}_{i}"
+            client.create_collection(
+                collection_name=collection_name,
+                vectors_config={
+                    "embeds": models.VectorParams(size=2560, distance=models.Distance.COSINE),
+                },
+                sparse_vectors_config={
+                    "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
+                },
+            )
             per_persona_results = qdrant_retrieval(
-                qas, per_persona_memories, k
+                qas, per_persona_memories, collection_name=collection_name, k=k
             )
         else:
             per_persona_results = faiss_retrieval(
@@ -329,7 +372,7 @@ def run_qa(args, dataset, retrieval_results):
             per_persona_results, **sampling_params
         )
         llm_results.append(per_persona_llm_results)
-
+    return llm_results
 
 if __name__ == "__main__":
     flush()
@@ -348,24 +391,14 @@ if __name__ == "__main__":
         embed_kwargs = load_config(args.embed_config)
         embed_model = load_vllm(**embed_kwargs)
         if args.vector_db == "qdrant":
-            collection_name="naive-mem"
+            proj_name = "naive-mem"
             client = QdrantClient(":memory:")
-            
-            client.create_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "embeds": models.VectorParams(size=2560, distance=models.Distance.COSINE),
-                },
-                sparse_vectors_config={
-                    "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
-                },
-            )
         else:
             collection_name = None
     else:
         embed_model = None
         client = None
-        collection_name = None
+        proj_name = None
 
     retrieval_results = run_retrieval(args, dataset)
 
