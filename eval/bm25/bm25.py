@@ -257,6 +257,7 @@ def qdrant_store(
 def qdrant_retrieve(
         queries: list,
         query_embeddings: np.ndarray,
+        memories: list,
         k: int = 5,
 ):
     prefetch_queries = [
@@ -278,13 +279,17 @@ def qdrant_retrieve(
 
     results = []
     for prefetch in prefetch_queries:
-        result = client.query_points(
+        query_results = client.query_points(
             collection_name=collection_name,
             prefetch=prefetch,
             query=models.FusionQuery(fusion=models.Fusion.RRF),
             limit=k
         )
+
+        memory_ids = [query_result.id for query_result in query_results]
+        result = [memories[id] for id in memory_ids]
         results.append(result)
+        
     return results
 
 def qdrant_retrieval(
@@ -293,7 +298,7 @@ def qdrant_retrieval(
         k: int = 5,
 ):
     queries, query_embeddings = qdrant_store(qas, memories)
-    results = qdrant_retrieve(queries=queries, query_embeddings=query_embeddings, k=k)
+    results = qdrant_retrieve(queries=queries, query_embeddings=query_embeddings, memories=memories, k=k)
     return results
     
 def run_retrieval(args, dataset):
