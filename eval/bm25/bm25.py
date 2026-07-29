@@ -333,10 +333,7 @@ def qdrant_retrieval(
             for k, v in qa.items()
         }
 
-        result['retrieved'] = {
-            k: v
-            for k, v in docs.items()
-        }
+        result['retrieved'] = docs
         results.append(result)
     return results
     
