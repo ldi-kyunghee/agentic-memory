@@ -93,7 +93,17 @@ def build_memory(collection_name: str, history_db_path: str) -> Memory:
     }
     if os.getenv("MEM0_CUSTOM_FACT_PROMPT") == "halumem":
         config["custom_fact_extraction_prompt"] = CUSTOM_FACT_EXTRACTION_PROMPT
-    return Memory.from_config(config)
+    memory = Memory.from_config(config)
+    # gpt-oss 계열: mem0가 reasoning_effort를 전달 못함 (gpt-5/o1/o3 이름만 인식)
+    # -> OpenAI 클라이언트에 extra_body로 주입. 미설정이면 vLLM 기본(medium)
+    effort = os.getenv("MEM0_REASONING_EFFORT")
+    if effort:
+        _orig_create = memory.llm.client.chat.completions.create
+        def _create(*args, **kwargs):
+            kwargs["extra_body"] = {**(kwargs.get("extra_body") or {}), "reasoning_effort": effort}
+            return _orig_create(*args, **kwargs)
+        memory.llm.client.chat.completions.create = _create
+    return memory
 
 
 def extract_user_name(persona_info: str) -> str:
@@ -252,6 +262,7 @@ def main(data_path: str, version: str, top_k: int=20, user_num: int | None = Non
     os.makedirs(os.path.join(save_path, "tmp"), exist_ok=True)
     collection_name = f"halumem_{version}"
     print(f"fact extraction prompt: {'halumem-custom' if os.getenv('MEM0_CUSTOM_FACT_PROMPT') == 'halumem' else 'mem0-default'}")
+    print(f"reasoning effort override: {os.getenv('MEM0_REASONING_EFFORT') or '없음 (모델 기본값)'}")
     trace_dir = None
     if trace:
         trace_dir = f"traces/mem0-classic-oss/{version}/"

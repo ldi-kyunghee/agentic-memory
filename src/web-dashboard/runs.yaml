@@ -148,9 +148,9 @@ runs:
 
   oss120b4:
     label: "gpt-oss-120b × default (4u)"
-    note: "판독 전 — gpt-oss-120b(high)를 agent 백본으로 (러너가 extra_body로 effort 주입)"
+    note: "다작(유저당 ~800)인데 Acc 98.6 고청결 — 다작·청결 양립 첫 사례. UPDATE-유래 Acc 96.4%로 재작성 drift 사실상 소멸. 병목은 커버리지(oss120 judge·1u 기준)"
     backbone: gpt-oss-120b
-    backbone_effort: "high — 러너가 extra_body로 주입 (mem0는 effort 미전달)"
+    backbone_effort: "default(medium) — effort 주입 패치가 미배포 상태로 실행돼 env 무시됨 (mem0는 effort 미전달)"
     prompt: default
     embedder: Qwen3-Embedding-4B
     users: 4
@@ -161,9 +161,9 @@ runs:
 
   oss120b4-custom:
     label: "gpt-oss-120b × custom (4u)"
-    note: "판독 전 — gpt-oss-120b(high) × HaluMem 커스텀 프롬프트"
+    note: "custom 전패 패턴 6번째 백본에서도 유지(QA 55.5<58.5) — 문단형 ADD 87%가 부분(1점) 판정. FMR·Upd C는 상승(oss120 judge·1u 기준)"
     backbone: gpt-oss-120b
-    backbone_effort: "high — 러너가 extra_body로 주입 (mem0는 effort 미전달)"
+    backbone_effort: "default(medium) — effort 주입 패치가 미배포 상태로 실행돼 env 무시됨 (mem0는 effort 미전달)"
     prompt: custom
     embedder: Qwen3-Embedding-4B
     users: 4
