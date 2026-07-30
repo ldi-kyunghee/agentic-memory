@@ -84,7 +84,7 @@ while ($true) { ssh -o ExitOnForwardFailure=yes Hamster -N -L 8501:localhost:850
 
 ## 3. 대시보드 구성
 
-**상단바** (세로 구분선 칼럼, 좌→우): `User`(★=GPT-5-Nano Judge로 평가한 4유저 - **★ 유저만 분석 대상**) | `Judge LLM`(채점 라벨 세트) | `Generator`(답변 생성 레인 - QA 라벨이 이 기준으로 바뀜) | `Embedding`(Qwen3-Embedding-4B로 고정) | `Agent A · Model, Prompt`(기준 세팅 - 파란 라벨) | `Agent B · Model, Prompt`(비교 세팅 - 회색 라벨, `+ 비교(B)` 버튼으로 열기).
+**상단바** (세로 구분선 칼럼, 좌→우): `User`(★=GPT-5-Nano Judge로 평가한 4유저) | `Generator`(답변 생성 레인 - QA 라벨이 이 기준으로 바뀜, **Judge 목록이 이 선택에 종속**) | `Judge LLM`(채점 라벨 세트) | `Embedding`(Qwen3-Embedding-4B로 고정) | `Agent A · Model, Prompt`(기준 세팅 - 파란 라벨) | `Agent B · Model, Prompt`(비교 세팅 - 회색 라벨, `+ 비교(B)` 버튼으로 열기). 기본 선택은 Generator·Judge 모두 gpt-oss-120b(high). Metrics 탭의 지표 테이블도 이 조합을 그대로 따른다.
 
 **탭 5개**:
 

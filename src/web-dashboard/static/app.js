@@ -12,7 +12,7 @@ const api = async (path, opt) => {
 
 const S = {
   runs: [], run: null, judge: null, users: [], uuid: null,
-  generator: "mini",  // A' 레인 기본값 (없는 런은 qwen4b 폴백)
+  generator: "oss120",  // A' 레인 기본값 (없는 런은 mini -> qwen4b 폴백)
   backbone: null, prompt: null, backboneB: null, promptB: null, runB: null,
   bundle: null, bundleB: null, bundleCache: new Map(),
   tab: "sessions", itab: "detail",
@@ -130,9 +130,10 @@ async function applyRun() {
   S.run = meta.run;
   $("#emb-name").textContent = meta.embedder || "–";
 
-  // Generator 레인: available + judge 보유 레인만 노출. 기본 mini, 선택 유지, 없으면 qwen4b 폴백
+  // Generator 레인: available + judge 보유 레인만 노출. 기본 oss120, 선택 유지, 없으면 mini -> qwen4b 폴백
   const lanes = Object.entries(meta.generators || {}).filter(([, g]) => g.available && g.judges.length);
   const defGen = lanes.some(([n]) => n === S.generator) ? S.generator
+    : lanes.some(([n]) => n === "oss120") ? "oss120"
     : lanes.some(([n]) => n === "mini") ? "mini"
     : lanes.some(([n]) => n === "qwen4b") ? "qwen4b" : lanes[0]?.[0];
   $("#sel-generator").innerHTML = lanes.map(([n, g]) =>
@@ -140,8 +141,9 @@ async function applyRun() {
   S.generator = $("#sel-generator").value;
   const lane = laneOf(meta);
 
-  // judge: 선택한 레인의 judge만. 선택 유지, 없으면 nano 우선. 표시는 공식 모델명, 값은 내부 키
+  // judge: 선택한 레인의 judge만. 선택 유지, 없으면 oss120 -> nano 우선. 표시는 공식 모델명, 값은 내부 키
   const defJudge = lane.judges.includes(S.judge) ? S.judge
+    : lane.judges.includes("oss120-genoss120") ? "oss120-genoss120"
     : lane.judges.includes("nano") ? "nano" : lane.judges[0];
   $("#sel-judge").innerHTML = lane.judges.map((j) =>
     `<option value="${esc(j)}" ${j === defJudge ? "selected" : ""}>${esc(judgeLabel(j))}</option>`).join("");
@@ -183,7 +185,9 @@ async function applyRunB() {
   const laneB = meta ? laneOf(meta) : null;
   if (!meta || !laneB?.available || !laneB.judges.length) { S.runB = null; S.bundleB = null; render(); return; }
   S.runB = meta.run;
-  const judgeB = laneB.judges.includes(S.judge) ? S.judge : (laneB.judges.includes("nano") ? "nano" : laneB.judges[0]);
+  const judgeB = laneB.judges.includes(S.judge) ? S.judge
+    : laneB.judges.includes("oss120-genoss120") ? "oss120-genoss120"
+    : laneB.judges.includes("nano") ? "nano" : laneB.judges[0];
   busy(true, `B 세팅 로딩 (${S.runB})…`);
   try { S.bundleB = await fetchBundle(S.runB, S.generator, judgeB, S.uuid); }
   catch { S.bundleB = null; }
@@ -938,26 +942,16 @@ const METRIC_COLS = [
   { k: "qa_c", label: "QA C↑", dir: 1 }, { k: "qa_h", label: "QA H↓", dir: -1 }, { k: "qa_o", label: "QA O↓", dir: -1 },
 ];
 const metricsCache = new Map();
-S.metricsGen = "mini"; S.metricsJudge = null; S.metricsScope = "first4";
+S.metricsScope = "first4";
 // 행/열 하이라이트 선택 — 행은 run 이름, 열은 칼럼 키. 재렌더에도 유지 (탭 이탈해도 세션 내 유지)
 S.metricsSelRows = new Set(); S.metricsSelCols = new Set();
 
 async function renderMetrics() {
-  // generator 레인 목록 (어느 런에서든 가용하면 노출) + 레인별 judge 합집합
-  const laneAgg = {};
-  S.runs.forEach((r) => Object.entries(r.generators || {}).forEach(([n, g]) => {
-    if (!g.available || !g.judges.length) return;
-    laneAgg[n] = laneAgg[n] || { label: g.label, judges: new Set() };
-    g.judges.forEach((j) => laneAgg[n].judges.add(j));
-  }));
-  if (!laneAgg[S.metricsGen]) S.metricsGen = laneAgg.mini ? "mini" : "qwen4b";
-  const laneJudges = [...(laneAgg[S.metricsGen]?.judges || [])];
-  if (!laneJudges.includes(S.metricsJudge)) S.metricsJudge = laneJudges.includes("nano") ? "nano" : laneJudges[0];
-
-  const key = `${S.metricsGen}|${S.metricsJudge}|${S.metricsScope}`;
+  // generator·judge는 상단바 선택을 그대로 따른다 (별도 선택기 없음 — 화면 전체가 한 조합)
+  const key = `${S.generator}|${S.judge}|${S.metricsScope}`;
   if (!metricsCache.has(key)) {
     busy(true, "지표 집계 중 (공식 집계 함수)…");
-    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.metricsJudge}&scope=${S.metricsScope}&generator=${S.metricsGen}`)); }
+    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.judge}&scope=${S.metricsScope}&generator=${S.generator}`)); }
     finally { busy(false); }
   }
   const data = metricsCache.get(key);
@@ -965,23 +959,15 @@ async function renderMetrics() {
   // 스코프 옵션: 공통 4유저 + 개별 유저(이름은 현재 유저 목록에서 매핑)
   const nameOf = (uid) => S.users.find((u) => u.uuid === uid)?.user_name || uid.slice(0, 8);
   $("#sidebar").innerHTML = `<div style="padding:10px">
-    <p class="small muted"><b>Generator (A′)</b></p>
-    <div class="pill-filter" style="margin:0 0 10px">
-      ${Object.entries(laneAgg).map(([n, g]) =>
-        `<button class="${S.metricsGen === n ? "on" : ""}" data-g="${esc(n)}" data-desc="A′ 답변 생성 레인 — QA 지표만 이 레인의 답변·라벨 기준으로 바뀜">${esc(g.label)}</button>`).join("")}</div>
-    <p class="small muted"><b>Judge LLM</b></p>
-    <div class="pill-filter" style="margin:0 0 10px">
-      ${laneJudges.map((j) =>
-        `<button class="${S.metricsJudge === j ? "on" : ""}" data-j="${esc(j)}" data-desc="채점 라벨 세트 — 행 간 비교는 동일 judge에서만 유효">${esc(judgeLabel(j))}</button>`).join("")}</div>
-    <p class="small muted"><b>유저 범위</b></p>
+    <p class="small muted" data-desc="이 테이블의 관측 스택 — 바꾸려면 상단바의 Generator/Judge 드롭다운을 사용">
+      <b>조합</b> (상단바 연동)<br>gen=${esc(genLabel(S.generator))}<br>judge=${esc(judgeLabel(S.judge))}</p>
+    <p class="small muted" style="margin-top:10px"><b>유저 범위</b></p>
     <select id="metrics-scope" style="width:100%">
       <option value="first4" ${S.metricsScope === "first4" ? "selected" : ""}>첫 4유저 (전 실험 공통)</option>
       <option value="all" ${S.metricsScope === "all" ? "selected" : ""}>런별 전체 유저</option>
       ${data.first4.map((u) => `<option value="${u}" ${S.metricsScope === u ? "selected" : ""}>${esc(nameOf(u))}</option>`).join("")}
     </select>
-    <p class="small muted" style="margin-top:10px">굵은 값 = 열별 최고(방향 반영). 셀 호버 = 순위·해석, 행 첫 칸 호버 = 런 요약 노트. ⚠ mini 레인은 현재 1유저(Martin)만 채점됨.</p></div>`;
-  $$("#sidebar .pill-filter button[data-g]").forEach((b) => (b.onclick = () => { S.metricsGen = b.dataset.g; S.metricsJudge = null; renderMetrics(); }));
-  $$("#sidebar .pill-filter button[data-j]").forEach((b) => (b.onclick = () => { S.metricsJudge = b.dataset.j; renderMetrics(); }));
+    <p class="small muted" style="margin-top:10px">굵은 값 = 열별 최고(방향 반영). 셀 호버 = 순위·해석, 행 첫 칸 호버 = 런 요약 노트. 이 조합의 라벨이 없는 런은 표에서 제외됨 (레인마다 채점 유저 수가 다름).</p></div>`;
   $("#metrics-scope").onchange = () => { S.metricsScope = $("#metrics-scope").value; renderMetrics(); };
 
   const rows = data.rows.filter((r) => r.metrics);
