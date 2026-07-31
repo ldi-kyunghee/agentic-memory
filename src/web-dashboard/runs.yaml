@@ -20,7 +20,7 @@ generators:
 runs:
   full-traced:
     label: "Qwen3-4B × default (20u)"
-    note: "Qwen 베이스라인 — 다작(6k)·과잉 재작성(65%)으로 Acc 저하, 병목=추출 커버리지"
+    note: "Qwen 베이스라인 — ⚠ UPDATE 19,752건 중 97%가 내용 무변경(no-op)으로 판명(20유저). '다작·과잉 재작성' 서술은 정정됨: 재작성이 망가진 게 아니라 갱신을 안 해 낡은 메모리가 재등록되며 Acc가 깎임"
     backbone: Qwen3-4B-Instruct-2507
     prompt: default
     embedder: Qwen3-Embedding-4B
@@ -98,7 +98,7 @@ runs:
 
   30b4:
     label: "Qwen3-30B-A3B × default (4u)"
-    note: "체급 7.5배에도 재작성 품질은 4B 수준(UPDATE-유래 Acc 21%) — family 각인 증거"
+    note: "체급 7.5배에도 4B와 동일한 실패 — ⚠ UPDATE 2,512건 중 96.9%가 no-op(4유저). 스케일로는 UPDATE 이행이 해결되지 않고 reasoning이 갈림(think4 0.6%)"
     backbone: Qwen3-30B-A3B-Instruct-2507
     prompt: default
     embedder: Qwen3-Embedding-4B
@@ -122,7 +122,7 @@ runs:
 
   think4:
     label: "Qwen3-4B-Thinking × default (4u)"
-    note: "drift의 진범 판별 — thinking만 얹어 UPDATE-유래 Acc 20→46% (reasoning 유무가 관건). FMR 최고·R 최저의 초절제형, 청결도로 4B-Instruct QA 상회"
+    note: "UPDATE 이행의 분기점 — 같은 4B에 thinking만 얹으니 no-op UPDATE 97%→0.6%로 붕괴(실제 갱신 수행). FMR 최고·R 최저의 초절제형, 청결도로 4B-Instruct QA 상회"
     backbone: Qwen3-4B-Thinking-2507
     backbone_effort: "항상 사고 (effort 개념 없음, vLLM)"
     prompt: default
@@ -148,7 +148,7 @@ runs:
 
   oss120b4:
     label: "gpt-oss-120b × default (4u)"
-    note: "다작(유저당 ~800)인데 Acc 98.6 고청결 — 다작·청결 양립 첫 사례. UPDATE-유래 Acc 96.4%로 재작성 drift 사실상 소멸. 병목은 커버리지(oss120 judge·1u 기준)"
+    note: "nano4 동형 프로파일의 로컬 재현(볼륨·R·포함분포 일치) — 실질 우위는 UPDATE-유래 Acc 96.4%(nano4 80.1%)의 재작성 견고성. QA 차이는 1유저 노이즈(155문항 중 순차 1)(oss120 judge·1u 기준)"
     backbone: gpt-oss-120b
     backbone_effort: "default(medium) — effort 주입 패치가 미배포 상태로 실행돼 env 무시됨 (mem0는 effort 미전달)"
     prompt: default
