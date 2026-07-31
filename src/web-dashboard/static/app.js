@@ -362,6 +362,12 @@ const verdictBadge = (v) => {
   return `<span class="badge ${c}" data-desc="판정: ${esc(v)}">${esc(v[0])}</span>`;
 };
 const opChip = (op) => op ? `<span class="op ${esc(op)}" data-desc="이 메모리를 만든 연산: ${esc(op)} (ADD=신규 추출 / UPDATE=기존 메모리 재작성본)">${esc(op)}</span>` : "";
+// 무효 UPDATE(no-op): 갱신 지시를 받고 이전 메모리와 완전히 동일한 텍스트를 반환한 경우.
+// non-reasoning Qwen 계열의 지배적 실패 모드 (4B 97% / 30B 97% vs Thinking 0.6% / Mini 0.1% / oss120 0%)
+const isNoop = (m) => m?.origin === "UPDATE" && (m.previous_memory || "").trim() === (m.text || "").trim() && (m.text || "").trim() !== "";
+const NOOP_DESC = "무효 UPDATE (no-op) — 에이전트가 갱신을 지시받고 <b>이전 메모리와 글자까지 동일한 텍스트</b>를 반환했습니다. 내용이 바뀌지 않아 낡은 정보가 그대로 남고, 이 세션의 추출 목록에 재등록돼 accuracy 채점에서 불리해집니다. 백본별 no-op 비율: Qwen3-4B 97% · Qwen3-30B 97% · GPT-5-Nano 14% · 4B-Thinking 0.6% · GPT-5-Mini 0.1% · gpt-oss-120b 0%";
+const memOps = (m) => opChip(m.origin) + (isNoop(m) ? `<span class="op noop" data-desc="${NOOP_DESC}">= 무변경</span>` : "");
+const noopCount = (list) => (list || []).filter(isNoop).length;
 // reasoning effort 축약 표시: "default(medium) — …" -> "effort=default", "항상 사고 (…)" -> "항상 사고"
 const effortShort = (e) => {
   const s = e.split("(")[0].split("—")[0].trim();
@@ -562,17 +568,18 @@ function renderSessions() {
   }).join("");
 
   const extRows = s.extracted.map((m, i) => `
-    <div class="row" data-a="ext:${i}" data-turn="${A.eTurn[i]}">
-      <span>${scoreBadge(m.judge?.score)}</span>${opChip(m.origin)}
+    <div class="row${isNoop(m) ? " noop-row" : ""}" data-a="ext:${i}" data-turn="${A.eTurn[i]}">
+      <span>${scoreBadge(m.judge?.score)}</span>${memOps(m)}
       <span class="txt">${esc(m.text)}</span></div>`).join("");
 
   let extBCard = "";
   if (B?.session) {
     const extBRows = B.session.extracted.map((m, i) => `
-      <div class="row" data-b-ext="${i}">
-        <span>${scoreBadge(m.judge?.score)}</span>${opChip(m.origin)}
+      <div class="row${isNoop(m) ? " noop-row" : ""}" data-b-ext="${i}">
+        <span>${scoreBadge(m.judge?.score)}</span>${memOps(m)}
         <span class="txt">${esc(m.text)}</span></div>`).join("");
-    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))} (${B.session.extracted.length})</h4><div class="body">${extBRows}</div></div>`;
+    const nB = noopCount(B.session.extracted);
+    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))} (${B.session.extracted.length})${nB ? ` <span class="noop-h" data-desc="${NOOP_DESC}">= 무변경 ${nB}</span>` : ""}</h4><div class="body">${extBRows}</div></div>`;
   } else if (S.runB) {
     extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))}</h4><div class="body"><p class="small muted">이 유저/세션 데이터가 B 런에 없음</p></div></div>`;
   }
@@ -590,6 +597,7 @@ function renderSessions() {
       <span class="anchor-chip g intf" style="cursor:default" data-desc="미끼 골든 — 흡수하면 감점(FMR)">G⚠ 미끼</span>
       <span class="anchor-chip e" style="cursor:default">A 추출(파랑)</span>
       ${S.bundleB ? '<span class="anchor-chip eb" style="cursor:default">B 추출(회색)</span>' : ""}
+      <span class="op UPDATE" style="cursor:default">UPDATE</span><span class="op noop" style="cursor:default" data-desc="${NOOP_DESC}">= 무변경</span><span>= 갱신했다지만 내용이 안 바뀜</span>
       <span class="cmt-chip" style="cursor:default">가</span><span>= 코멘트 (호버/클릭)</span>
     </div>
     <div class="card"><h4 data-k="questions">QA (${s.questions.length})</h4><div class="body">${qas}</div></div>
@@ -599,7 +607,7 @@ function renderSessions() {
       <div class="body">${dlg}</div></div>
     <div class="${B?.session ? "three-col" : "two-col"}">
       <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})${B?.session ? ' <span class="small muted" style="text-transform:none" data-desc="골든은 데이터셋 공통 — 배지는 왼쪽이 A 세팅, 오른쪽이 B 세팅의 judge 판정">공통 · A/B 판정</span>' : ""}</h4><div class="body">${goldenRows}</div></div>
-      <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(runLabel(S.run))} (${s.extracted.length})</h4><div class="body">${extRows}</div></div>
+      <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(runLabel(S.run))} (${s.extracted.length})${noopCount(s.extracted) ? ` <span class="noop-h" data-desc="${NOOP_DESC}">= 무변경 ${noopCount(s.extracted)}</span>` : ""}</h4><div class="body">${extRows}</div></div>
       ${extBCard}
     </div>`;
 
@@ -676,13 +684,13 @@ function toggleTurnPanel(s, A, B, ti) {
   const secA = `
     <h5 style="color:var(--accent)">A: ${esc(runLabel(S.run))} — 이 턴 추출 (추정)</h5>
     ${a.e.map((ei) => { const m = s.extracted[ei];
-      return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
+      return `<div class="row${isNoop(m) ? " noop-row" : ""}">${memOps(m)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
   let secB = "";
   if (dual) {
     const bMap = B.map[ti] || { g: [], e: [] };
     secB = `<h5 style="color:var(--bcol)">B: ${esc(runLabel(S.runB))} — 이 턴 추출 (추정)</h5>
       ${bMap.e.map((ei) => { const m = B.session.extracted[ei];
-        return `<div class="row">${opChip(m.origin)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
+        return `<div class="row${isNoop(m) ? " noop-row" : ""}">${memOps(m)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
   }
   box.innerHTML = secG + secA + secB;
   box.classList.remove("hidden");
