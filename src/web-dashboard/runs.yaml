@@ -16,6 +16,12 @@ generators:
     results: "results/mem0-classic-oss/genoss120/{run}.jsonl"
     judges:
       oss120-genoss120: "results/mem0-classic-oss/judge-oss120-genoss120-{run}/judge"
+  # 1u 레인의 4유저 확장본. 1u 레인은 정성분석가들의 작업·코멘트 스코프 보존을 위해 그대로 둠
+  oss120-4u:
+    label: "gpt-oss-120b (high · 4유저)"
+    results: "results/mem0-classic-oss/genoss120-4u/{run}.jsonl"
+    judges:
+      oss120-genoss120-4u: "results/mem0-classic-oss/judge-oss120-genoss120-4u-{run}/judge"
 
 runs:
   full-traced:

@@ -380,6 +380,7 @@ const JUDGE_NAMES = {
   qwen4b: "Qwen3-4B",
   "mini-genmini": "GPT-5-Mini (minimal)",
   "oss120-genoss120": "gpt-oss-120b (high)",
+  "oss120-genoss120-4u": "gpt-oss-120b (high)",
 };
 const judgeLabel = (j) => JUDGE_NAMES[j] || j;
 // run 내부명(full-traced 등) -> 사람용 라벨 ("Qwen3-4B × default (20u)")
