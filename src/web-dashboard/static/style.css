@@ -42,6 +42,14 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 #tip { position: fixed; z-index: 99; max-width: 340px; background: var(--ink); color: #fff; font-size: 11.5px; line-height: 1.45; padding: 6px 9px; border-radius: 7px; box-shadow: 0 4px 14px rgba(0,0,0,.3); pointer-events: none; }
 #tip b { color: #ffd77a; }
 
+/* 유저 골든 구성 요약 (사이드바 상단) */
+.ucomp { padding: 8px 10px; border-bottom: 2px solid var(--line); background: #fcfcfe; font-size: 11.5px; cursor: help; }
+.ucomp .t { font-weight: 700; margin-bottom: 3px; }
+.ucomp .l { color: var(--dim); line-height: 1.7; }
+.ucomp .l b { color: var(--gold); }
+.ucomp .k-upd { background: #f8ecc8; color: #5c4300; border-radius: 4px; padding: 0 5px; font-weight: 700; margin-right: 4px; }
+.ucomp .k-intf { background: #fdecec; color: var(--bad); border-radius: 4px; padding: 0 5px; font-weight: 700; }
+
 /* ---------- 사이드바 ---------- */
 .side-item { padding: 7px 10px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; gap: 6px; align-items: baseline; }
 .side-item:hover { background: var(--chip); }

@@ -473,6 +473,22 @@ function render() {
   renderInspector();
 }
 
+// 유저 단위 골든 구성 — 데이터셋 속성이라 A/B·generator·judge와 무관하게 동일
+function userComposition(bundle) {
+  let sess = 0, g = 0, upd = 0, updJ = 0, intf = 0, ext = 0, qa = 0;
+  bundle.sessions.forEach((s) => {
+    if (s.generated_qa_session) return;
+    sess++; ext += s.extracted.length; qa += s.questions.length;
+    s.golden.forEach((m) => {
+      g++;
+      if (m.memory_source === "interference") intf++;
+      if (m.is_update === "True") upd++;
+      if (m.judge?.kind === "update") updJ++;
+    });
+  });
+  return { sess, g, upd, updJ, intf, plain: g - upd - intf, ext, qa };
+}
+
 function sessionSummary(s) {
   // 미끼(interference)는 점수 해석이 반전되므로 실패/포함 카운트에서 분리
   const reg = s.golden.filter((m) => m.memory_source !== "interference");
@@ -496,7 +512,16 @@ function renderSessions() {
     m.g0 ? `<span class="flag flag-g${bSide ? " bflag" : ""}" data-desc="G✗ (마젠타) — ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}에서 judge가 미포함(0점) 판정한 골든 수 (미끼 제외). 판정 배지가 아니라 세션 문제 카운트">G✗${m.g0}</span>` : "",
     m.qaBad ? `<span class="flag flag-q${bSide ? " bflag" : ""}" data-desc="Q✗ (브라운) — ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}의 오답(H/O) QA 수. 판정 배지가 아니라 세션 문제 카운트">Q✗${m.qaBad}</span>` : "",
   ].join("");
-  sb.innerHTML = S.bundle.sessions.map((s) => {
+  // 유저 골든 구성 (데이터셋 속성 — A/B·judge 무관 공통)
+  const C = userComposition(S.bundle);
+  const pc = (n) => `${(n / Math.max(C.g, 1) * 100).toFixed(1)}%`;
+  const compHTML = `<div class="ucomp" data-desc="이 유저의 골든 메모리 구성 — 데이터셋 고유 속성이라 Agent·Generator·Judge 설정과 무관하게 동일합니다">
+    <div class="t">${esc(S.bundle.user_name)} · 세션 ${C.sess} · QA ${C.qa}</div>
+    <div class="l"><b>골든 ${C.g}</b> = 일반 ${C.plain} + 갱신 ${C.upd} + 미끼 ${C.intf}</div>
+    <div class="l"><span class="k-upd" data-desc="is_update=True인 골든 — 과거 정보의 갱신본. 이 중 검색 스냅샷이 있는 건만 Update(C/H/O)로 채점되고 나머지는 integrity로 넘어갑니다 (${C.updJ}건이 실제 갱신 채점 대상)">↻ 갱신 ${C.upd} (${pc(C.upd)})</span>
+      <span class="k-intf" data-desc="memory_source=interference인 골든 — AI 발화에만 있고 user가 확정하지 않은 미끼. 시스템이 흡수하지 않아야 좋습니다(FMR)">⚠ 미끼 ${C.intf} (${pc(C.intf)})</span></div>
+    <div class="l muted">실제 갱신 채점 대상 ${C.updJ}건 · 추출 ${C.ext}</div></div>`;
+  sb.innerHTML = compHTML + S.bundle.sessions.map((s) => {
     if (s.generated_qa_session) return "";
     const fA = flagsOf(sessionSummary(s), false);
     let flags = fA;
@@ -607,7 +632,7 @@ function renderSessions() {
       <input type="range" id="anch-w" min="140" max="640" step="10" style="width:110px"></h4>
       <div class="body">${dlg}</div></div>
     <div class="${B?.session ? "three-col" : "two-col"}">
-      <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})${B?.session ? ' <span class="small muted" style="text-transform:none" data-desc="골든은 데이터셋 공통 — 배지는 왼쪽이 A 세팅, 오른쪽이 B 세팅의 judge 판정">공통 · A/B 판정</span>' : ""}</h4><div class="body">${goldenRows}</div></div>
+      <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})<span class="small muted" style="text-transform:none" data-desc="이 세션 골든의 구성 — 갱신(is_update=True)과 미끼(interference) 수. 데이터셋 속성이라 세팅과 무관">${(() => { const u = s.golden.filter((m) => m.is_update === "True").length, i = s.golden.filter((m) => m.memory_source === "interference").length; return `↻${u} ⚠${i}`; })()}</span>${B?.session ? ' <span class="small muted" style="text-transform:none" data-desc="골든은 데이터셋 공통 — 배지는 왼쪽이 A 세팅, 오른쪽이 B 세팅의 judge 판정">공통 · A/B 판정</span>' : ""}</h4><div class="body">${goldenRows}</div></div>
       <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(runLabel(S.run))} (${s.extracted.length})${noopCount(s.extracted) ? ` <span class="noop-h" data-desc="${NOOP_DESC}">= 무변경 ${noopCount(s.extracted)}</span>` : ""}</h4><div class="body">${extRows}</div></div>
       ${extBCard}
     </div>`;
