@@ -367,7 +367,6 @@ const opChip = (op) => op ? `<span class="op ${esc(op)}" data-desc="이 메모�
 const isNoop = (m) => m?.origin === "UPDATE" && (m.previous_memory || "").trim() === (m.text || "").trim() && (m.text || "").trim() !== "";
 const NOOP_DESC = "무효 UPDATE (no-op) — 에이전트가 갱신을 지시받고 <b>이전 메모리와 글자까지 동일한 텍스트</b>를 반환했습니다. 내용이 바뀌지 않아 낡은 정보가 그대로 남고, 이 세션의 추출 목록에 재등록돼 accuracy 채점에서 불리해집니다. 백본별 no-op 비율: Qwen3-4B 97% · Qwen3-30B 97% · GPT-5-Nano 14% · 4B-Thinking 0.6% · GPT-5-Mini 0.1% · gpt-oss-120b 0%";
 const memOps = (m) => opChip(m.origin) + (isNoop(m) ? `<span class="op noop" data-desc="${NOOP_DESC}">= 무변경</span>` : "");
-const noopCount = (list) => (list || []).filter(isNoop).length;
 // reasoning effort 축약 표시: "default(medium) — …" -> "effort=default", "항상 사고 (…)" -> "항상 사고"
 const effortShort = (e) => {
   const s = e.split("(")[0].split("—")[0].trim();
@@ -473,21 +472,63 @@ function render() {
   renderInspector();
 }
 
-// 유저 단위 골든 구성 — 데이터셋 속성이라 A/B·generator·judge와 무관하게 동일
-function userComposition(bundle) {
-  let sess = 0, g = 0, upd = 0, updJ = 0, intf = 0, ext = 0, qa = 0;
-  bundle.sessions.forEach((s) => {
-    if (s.generated_qa_session) return;
-    sess++; ext += s.extracted.length; qa += s.questions.length;
-    s.golden.forEach((m) => {
-      g++;
-      if (m.memory_source === "interference") intf++;
-      if (m.is_update === "True") upd++;
-      if (m.judge?.kind === "update") updJ++;
+/* ---------- 구성 통계 (골든 = 데이터셋 속성 / 추출 = 모델 산출물) ---------- */
+
+// 골든 구성: 세션 1개 또는 세션 배열
+function goldComp(sessions) {
+  const list = [].concat(sessions);
+  let g = 0, upd = 0, updJ = 0, intf = 0;
+  list.forEach((s) => (s.golden || []).forEach((m) => {
+    g++;
+    if (m.memory_source === "interference") intf++;
+    if (m.is_update === "True") upd++;
+    if (m.judge?.kind === "update") updJ++;
+  }));
+  return { g, upd, updJ, intf, plain: g - upd - intf };
+}
+
+// 추출 구성: mem0의 연산 기록(events)이 원본 — extracted는 DELETE가 빠져 있어 연산 구성 계산 불가
+function extComp(sessions) {
+  const list = [].concat(sessions);
+  let ops = 0, add = 0, upd = 0, noop = 0, del = 0, stored = 0;
+  list.forEach((s) => {
+    stored += (s.extracted || []).length;
+    (s.events || []).forEach((e) => {
+      ops++;
+      if (e.event === "ADD") add++;
+      else if (e.event === "UPDATE") {
+        upd++;
+        if ((e.previous_memory || "").trim() === (e.memory || "").trim()) noop++;
+      } else if (e.event === "DELETE") del++;
     });
   });
-  return { sess, g, upd, updJ, intf, plain: g - upd - intf, ext, qa };
+  return { ops, add, upd, noop, updReal: upd - noop, del, stored };
 }
+
+const realSessions = (bundle) => (bundle?.sessions || []).filter((s) => !s.generated_qa_session);
+
+// 누적 가로 막대 + 범례 칩 (구성 시각화 공통 문법)
+function compBar(total, segs) {
+  const use = segs.filter((s) => s.n > 0);
+  if (!total || !use.length) return `<div class="cbar"><span class="seg s-none" style="width:100%"></span></div>`;
+  const pct = (n) => (n / total * 100).toFixed(1);
+  return `<div class="cbar">${use.map((s) =>
+      `<span class="seg ${s.cls}" style="width:${pct(s.n)}%" data-desc="${esc(s.desc)}"></span>`).join("")}</div>
+    <div class="cleg">${use.map((s) =>
+      `<span class="ck ${s.cls}" data-desc="${esc(s.desc)}">${esc(s.label)} ${s.n.toLocaleString()}<i>${pct(s.n)}%</i></span>`).join("")}</div>`;
+}
+
+const goldSegs = (c) => [
+  { n: c.plain, cls: "s-plain", label: "일반", desc: "일반 골든 — 포함(2점)이 성공인 표준 평가 대상" },
+  { n: c.upd, cls: "s-upd", label: "↻ 갱신", desc: `갱신 골든(is_update=True) — 과거 정보의 갱신본. Update(C/H/O)로 채점 (이 범위에서 실제 채점 대상 ${c.updJ}건)` },
+  { n: c.intf, cls: "s-intf", label: "⚠ 미끼", desc: "미끼 골든(interference) — AI 발화에만 있고 user가 확정하지 않은 내용. 흡수하지 않아야 좋음(FMR)" },
+];
+const extSegs = (c) => [
+  { n: c.add, cls: "s-add", label: "ADD", desc: "신규 추출 — 기존에 없던 사실을 새로 저장" },
+  { n: c.updReal, cls: "s-updr", label: "UPDATE", desc: "실질 UPDATE — 기존 메모리를 실제로 다른 내용으로 재작성" },
+  { n: c.noop, cls: "s-noop", label: "= 무변경", desc: NOOP_DESC },
+  { n: c.del, cls: "s-del", label: "DELETE", desc: "삭제 — 기존 메모리를 제거 (저장 목록에서 빠짐)" },
+];
 
 function sessionSummary(s) {
   // 미끼(interference)는 점수 해석이 반전되므로 실패/포함 카운트에서 분리
@@ -512,15 +553,22 @@ function renderSessions() {
     m.g0 ? `<span class="flag flag-g${bSide ? " bflag" : ""}" data-desc="G✗ (마젠타) — ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}에서 judge가 미포함(0점) 판정한 골든 수 (미끼 제외). 판정 배지가 아니라 세션 문제 카운트">G✗${m.g0}</span>` : "",
     m.qaBad ? `<span class="flag flag-q${bSide ? " bflag" : ""}" data-desc="Q✗ (브라운) — ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}의 오답(H/O) QA 수. 판정 배지가 아니라 세션 문제 카운트">Q✗${m.qaBad}</span>` : "",
   ].join("");
-  // 유저 골든 구성 (데이터셋 속성 — A/B·judge 무관 공통)
-  const C = userComposition(S.bundle);
-  const pc = (n) => `${(n / Math.max(C.g, 1) * 100).toFixed(1)}%`;
-  const compHTML = `<div class="ucomp" data-desc="이 유저의 골든 메모리 구성 — 데이터셋 고유 속성이라 Agent·Generator·Judge 설정과 무관하게 동일합니다">
-    <div class="t">${esc(S.bundle.user_name)} · 세션 ${C.sess} · QA ${C.qa}</div>
-    <div class="l"><b>골든 ${C.g}</b> = 일반 ${C.plain} + 갱신 ${C.upd} + 미끼 ${C.intf}</div>
-    <div class="l"><span class="k-upd" data-desc="is_update=True인 골든 — 과거 정보의 갱신본. 이 중 검색 스냅샷이 있는 건만 Update(C/H/O)로 채점되고 나머지는 integrity로 넘어갑니다 (${C.updJ}건이 실제 갱신 채점 대상)">↻ 갱신 ${C.upd} (${pc(C.upd)})</span>
-      <span class="k-intf" data-desc="memory_source=interference인 골든 — AI 발화에만 있고 user가 확정하지 않은 미끼. 시스템이 흡수하지 않아야 좋습니다(FMR)">⚠ 미끼 ${C.intf} (${pc(C.intf)})</span></div>
-    <div class="l muted">실제 갱신 채점 대상 ${C.updJ}건 · 추출 ${C.ext}</div></div>`;
+  // ── 유저 전체 구성 (사이드바 상단): 골든(데이터셋 공통) + 추출 A/B(모델 산출물)
+  const rsA = realSessions(S.bundle);
+  const gC = goldComp(rsA), eA = extComp(rsA);
+  const nQA = rsA.reduce((n, s) => n + s.questions.length, 0);
+  const extBlock = (label, cls, run, c) => `
+    <div class="ub"><div class="h ${cls}">${label} <span class="rn">${esc(runLabel(run))}</span>
+      <span class="tot" data-desc="mem0가 이 유저에게 수행한 메모리 연산 총수 (ADD+UPDATE+DELETE). 저장돼 남은 것은 ${c.stored.toLocaleString()}개 — DELETE는 목록에서 빠짐">연산 ${c.ops.toLocaleString()}</span></div>
+      ${compBar(c.ops, extSegs(c))}</div>`;
+  const compHTML = `<div class="ucomp">
+    <div class="t">${esc(S.bundle.user_name)} <span class="muted">· 세션 ${rsA.length} · QA ${nQA}</span></div>
+    <div class="ub"><div class="h gold-h">골든 <span class="rn">데이터셋 공통</span>
+      <span class="tot" data-desc="이 유저의 골든 메모리 총수 — 데이터셋 고유 속성이라 Agent·Generator·Judge 설정과 무관하게 동일합니다">${gC.g.toLocaleString()}</span></div>
+      ${compBar(gC.g, goldSegs(gC))}</div>
+    ${extBlock("추출 A", "a-h", S.run, eA)}
+    ${S.bundleB ? extBlock("추출 B", "b-h", S.runB, extComp(realSessions(S.bundleB))) : ""}
+  </div>`;
   sb.innerHTML = compHTML + S.bundle.sessions.map((s) => {
     if (s.generated_qa_session) return "";
     const fA = flagsOf(sessionSummary(s), false);
@@ -540,6 +588,7 @@ function renderSessions() {
   if (!s || s.generated_qa_session) { $("#content").innerHTML = "<p class='muted'>세션을 선택하세요</p>"; return; }
   const A = anchorTurns(s);
   const B = anchorsForB(s.session_id);
+  const sG = goldComp(s), sA = extComp(s);  // 이 세션의 구성 (골든 / 추출 A)
 
   // QA (워크플로상 최상단)
   const qas = s.questions.map((q, i) => {
@@ -604,8 +653,9 @@ function renderSessions() {
       <div class="row${isNoop(m) ? " noop-row" : ""}" data-b-ext="${i}">
         <span>${scoreBadge(m.judge?.score)}</span>${memOps(m)}
         <span class="txt">${esc(m.text)}</span></div>`).join("");
-    const nB = noopCount(B.session.extracted);
-    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))} (${B.session.extracted.length})${nB ? ` <span class="noop-h" data-desc="${NOOP_DESC}">= 무변경 ${nB}</span>` : ""}</h4><div class="body">${extBRows}</div></div>`;
+    const sB = extComp(B.session);
+    extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))} (${B.session.extracted.length})<span class="tot-h" data-desc="이 세션에서 mem0가 수행한 메모리 연산 총수 (ADD+UPDATE+DELETE). 저장돼 남은 것은 ${sB.stored}개">연산 ${sB.ops}</span></h4>
+      <div class="scomp">${compBar(sB.ops, extSegs(sB))}</div><div class="body">${extBRows}</div></div>`;
   } else if (S.runB) {
     extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))}</h4><div class="body"><p class="small muted">이 유저/세션 데이터가 B 런에 없음</p></div></div>`;
   }
@@ -632,8 +682,10 @@ function renderSessions() {
       <input type="range" id="anch-w" min="140" max="640" step="10" style="width:110px"></h4>
       <div class="body">${dlg}</div></div>
     <div class="${B?.session ? "three-col" : "two-col"}">
-      <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})<span class="small muted" style="text-transform:none" data-desc="이 세션 골든의 구성 — 갱신(is_update=True)과 미끼(interference) 수. 데이터셋 속성이라 세팅과 무관">${(() => { const u = s.golden.filter((m) => m.is_update === "True").length, i = s.golden.filter((m) => m.memory_source === "interference").length; return `↻${u} ⚠${i}`; })()}</span>${B?.session ? ' <span class="small muted" style="text-transform:none" data-desc="골든은 데이터셋 공통 — 배지는 왼쪽이 A 세팅, 오른쪽이 B 세팅의 judge 판정">공통 · A/B 판정</span>' : ""}</h4><div class="body">${goldenRows}</div></div>
-      <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(runLabel(S.run))} (${s.extracted.length})${noopCount(s.extracted) ? ` <span class="noop-h" data-desc="${NOOP_DESC}">= 무변경 ${noopCount(s.extracted)}</span>` : ""}</h4><div class="body">${extRows}</div></div>
+      <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})${B?.session ? ' <span class="small muted" style="text-transform:none" data-desc="골든은 데이터셋 공통 — 배지는 왼쪽이 A 세팅, 오른쪽이 B 세팅의 judge 판정">공통 · A/B 판정</span>' : ""}</h4>
+        <div class="scomp">${compBar(sG.g, goldSegs(sG))}</div><div class="body">${goldenRows}</div></div>
+      <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(runLabel(S.run))} (${s.extracted.length})<span class="tot-h" data-desc="이 세션에서 mem0가 수행한 메모리 연산 총수 (ADD+UPDATE+DELETE). 저장돼 남은 것은 ${sA.stored}개">연산 ${sA.ops}</span></h4>
+        <div class="scomp">${compBar(sA.ops, extSegs(sA))}</div><div class="body">${extRows}</div></div>
       ${extBCard}
     </div>`;
 

@@ -278,7 +278,7 @@ uv run python src/mem0-classic-oss/analyze_qa_evidence_storage.py \
 
 | run | UPDATE 수 | **완전 동일(no-op)** | ≥0.95 유사 | 실질 변경 |
 |---|---|---|---|---|
-| full-traced (Qwen3-4B) | 801 | **100%** | 0% | 0% |
+| full-traced (Qwen3-4B) | 801 | **99.5%** (797건) | 0% | 4건 |
 | full-custom | 214 | 90% | 3% | 7% |
 | 30b4 (Qwen3-30B) | 495 | **93%** | 0% | 7% |
 | 30b4-custom | 185 | 99% | 0% | 1% |

@@ -42,13 +42,37 @@ body { font: 13px/1.5 -apple-system, "Segoe UI", "Noto Sans KR", sans-serif; col
 #tip { position: fixed; z-index: 99; max-width: 340px; background: var(--ink); color: #fff; font-size: 11.5px; line-height: 1.45; padding: 6px 9px; border-radius: 7px; box-shadow: 0 4px 14px rgba(0,0,0,.3); pointer-events: none; }
 #tip b { color: #ffd77a; }
 
-/* 유저 골든 구성 요약 (사이드바 상단) */
-.ucomp { padding: 8px 10px; border-bottom: 2px solid var(--line); background: #fcfcfe; font-size: 11.5px; cursor: help; }
-.ucomp .t { font-weight: 700; margin-bottom: 3px; }
-.ucomp .l { color: var(--dim); line-height: 1.7; }
-.ucomp .l b { color: var(--gold); }
-.ucomp .k-upd { background: #f8ecc8; color: #5c4300; border-radius: 4px; padding: 0 5px; font-weight: 700; margin-right: 4px; }
-.ucomp .k-intf { background: #fdecec; color: var(--bad); border-radius: 4px; padding: 0 5px; font-weight: 700; }
+/* ---------- 구성 막대 (골든/추출 공통 문법) ---------- */
+.cbar { display: flex; height: 9px; border-radius: 5px; overflow: hidden; background: var(--chip); margin: 3px 0 2px; }
+.cbar .seg { display: block; height: 100%; cursor: help; }
+.cbar .seg:hover { filter: brightness(1.15); }
+.cleg { display: flex; flex-wrap: wrap; gap: 3px 5px; font-size: 10px; }
+.cleg .ck { border-radius: 4px; padding: 0 5px; font-weight: 700; cursor: help; white-space: nowrap; }
+.cleg .ck i { font-style: normal; opacity: .65; margin-left: 3px; font-weight: 600; }
+/* 골든 3분 */
+.s-plain { background: #e8c46a; } .ck.s-plain { background: #fbf3de; color: #7a5c04; }
+.s-upd   { background: #b98a12; } .ck.s-upd   { background: #f8ecc8; color: #5c4300; }
+.s-intf  { background: #e08585; } .ck.s-intf  { background: #fdecec; color: var(--bad); }
+/* 추출 연산 4분 */
+.s-add   { background: #51b96a; } .ck.s-add   { background: #e5f6e9; color: #1c6b30; }
+.s-updr  { background: #e8930c; } .ck.s-updr  { background: #fdf0dc; color: #8a5600; }
+.s-noop  { background: repeating-linear-gradient(135deg,#b99a2e,#b99a2e 3px,#8a7220 3px,#8a7220 6px); }
+.ck.s-noop { background: #e7c96a; color: #4a3600; }
+.s-del   { background: #c25b5b; } .ck.s-del   { background: #fdecec; color: var(--bad); }
+.s-none  { background: var(--line); }
+
+/* 유저 전체 구성 요약 (사이드바 상단) */
+.ucomp { padding: 8px 10px; border-bottom: 2px solid var(--line); background: #fcfcfe; font-size: 11.5px; }
+.ucomp .t { font-weight: 700; margin-bottom: 5px; }
+.ucomp .ub { margin-bottom: 7px; }
+.ucomp .ub .h { display: flex; align-items: baseline; gap: 4px; font-size: 10.5px; font-weight: 800; color: var(--dim); }
+.ucomp .ub .h .rn { font-weight: 500; font-size: 10px; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.ucomp .ub .h .tot { font-weight: 800; color: var(--ink); cursor: help; }
+.ucomp .a-h { color: var(--accent); } .ucomp .b-h { color: var(--bcol); }
+
+/* 세션 단위 구성 (카드 헤더 아래) */
+.scomp { padding: 5px 12px 6px; border-bottom: 1px solid var(--line); background: #fcfcfe; }
+.tot-h { margin-left: auto; font-size: 10.5px; font-weight: 800; color: var(--ink); text-transform: none; cursor: help; }
 
 /* ---------- 사이드바 ---------- */
 .side-item { padding: 7px 10px; border-bottom: 1px solid var(--line); cursor: pointer; display: flex; gap: 6px; align-items: baseline; }
