@@ -371,9 +371,14 @@ def run_retrieval(args, dataset):
 def run_qa(args, dataset, retrieval_results):
     llm_results = []
     for per_persona_results in retrieval_results:
-        per_persona_llm_results = generate_answers(
-            per_persona_results, **sampling_params
-        )
+        if args.backend == "vllm":
+            per_persona_llm_results = generate_answers(
+                per_persona_results, **sampling_params
+            )
+        else:
+            per_persona_llm_results = generate_answer_openai(
+                per_persona_results, **model_kwargs
+            )
         llm_results.append(per_persona_llm_results)
     return llm_results
 
@@ -418,6 +423,9 @@ if __name__ == "__main__":
         llm: Client = OpenAI()
         
     llm_results = run_qa(args, dataset, retrieval_results)
+    del llm
+    time.sleep(3)
+    flush()
 
     results_dir = f"results/bm25/{exp_name}/"
     bm25_results_dir = results_dir + "retrieval/"
