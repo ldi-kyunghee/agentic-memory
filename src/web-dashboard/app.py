@@ -14,6 +14,7 @@ from pathlib import Path
 
 import yaml
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, PlainTextResponse
 from pydantic import BaseModel
@@ -24,6 +25,10 @@ DATA_DIR = HERE / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="mem0-halumem qualitative dashboard")
+
+# 유저 번들은 세션 대화·검색 context가 모두 담겨 2MB를 넘는다. 분석가는 SSH 터널 너머에서
+# 접속하므로 전송량이 곧 체감 지연이다. JSON은 반복 문자열이 많아 gzip이 매우 잘 듣는다.
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 
 # ---------- 레지스트리 / 사전 ----------
