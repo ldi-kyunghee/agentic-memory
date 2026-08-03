@@ -7,3 +7,5 @@ sampling_params:
   max_tokens: 8192
   seed: 42
   temperature: 0.5
+  chat_template_kwargs:
+    reasoning_effort: high

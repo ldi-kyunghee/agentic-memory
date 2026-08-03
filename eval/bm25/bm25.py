@@ -13,6 +13,7 @@ from bm25s.hf import BM25HF
 from dotenv import load_dotenv
 from openai import Client, OpenAI
 from qdrant_client import QdrantClient, models
+from tqdm import tqdm
 from utils import PROMPT, load_config, per_persona_dataset
 from vllm import LLM, SamplingParams
 
@@ -39,6 +40,7 @@ def init_parser():
     parser.add_argument("--exp_num", type=int)
     parser.add_argument("--data_path", type=str, default="dataset/")
     parser.add_argument("--dataset", type=str, default="HaluMem-Medium.jsonl")
+    parser.add_argument("--n_persona", type=int, default=None)
     parser.add_argument("--top_k", type=int, default=5)
     parser.add_argument("--alpha", type=float, default=0.5)
     parser.add_argument("--use_llm", action="store_true", default=False)
@@ -65,7 +67,7 @@ def load_vllm(**model_kwargs):
 
 def generate_answer_openai(queries: list[dict], **model_kwargs):
     results = []
-    for item in queries:
+    for item in tqdm(queries, desc="Generating..."):
         query = item["question"]
         documents = ""
         for doc in item["retrieved"]:
@@ -394,6 +396,9 @@ if __name__ == "__main__":
     retriever = BM25HF()
     stemmer = Stemmer.Stemmer("english")
     dataset = load_dataset(args)
+
+    if args.n_persona is not None:
+        dataset = dataset[args.n_persona:]
 
     if args.embed_config:
         embed_kwargs = load_config(args.embed_config)
