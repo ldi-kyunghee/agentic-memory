@@ -375,7 +375,7 @@ def run_qa(args, dataset, retrieval_results):
     for per_persona_results in retrieval_results:
         if args.backend == "vllm":
             per_persona_llm_results = generate_answers(
-                per_persona_results, **sampling_params
+                per_persona_results, generation_kwargs, **sampling_params
             )
         else:
             per_persona_llm_results = generate_answer_openai(
