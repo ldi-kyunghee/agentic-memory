@@ -568,6 +568,8 @@ function renderSessions() {
       ${compBar(gC.g, goldSegs(gC))}</div>
     ${extBlock("추출 A", "a-h", S.run, eA)}
     ${S.bundleB ? extBlock("추출 B", "b-h", S.runB, extComp(realSessions(S.bundleB))) : ""}
+    <div class="qstart"><button class="jbtn" id="btn-queue" data-desc="모든 분석가에게 동일한 순서로 제공되는 표본을 순서대로 라벨합니다 — 분석가 간 일치도(IAA)는 이 겹치는 항목들로 계산됩니다">⚖ 판정 검토 큐 시작</button>
+      <button class="jbtn" id="btn-iaa" data-desc="라벨링 현황과 분석가 간·분석가 vs judge 일치도">📊 IAA</button></div>
   </div>`;
   sb.innerHTML = compHTML + S.bundle.sessions.map((s) => {
     if (s.generated_qa_session) return "";
@@ -583,6 +585,8 @@ function renderSessions() {
       <span class="flags">${flags}</span></div>`;
   }).join("");
   $$(".side-item", sb).forEach((el) => (el.onclick = () => { S.session = +el.dataset.sid; renderSessions(); }));
+  $("#btn-queue") && ($("#btn-queue").onclick = jmStartQueue);
+  $("#btn-iaa") && ($("#btn-iaa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>판정 주석 현황</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmIAA(); });
 
   const s = S.bundle.sessions.find((x) => x.session_id === S.session);
   if (!s || s.generated_qa_session) { $("#content").innerHTML = "<p class='muted'>세션을 선택하세요</p>"; return; }
@@ -597,8 +601,9 @@ function renderSessions() {
       const qb = B.session.questions?.find((x) => x.question === q.question);
       badges = abPair(verdictBadge(q.judge), verdictBadge(qb?.judge));
     }
+    const jq = (run, lab) => jmBtn({ run, uuid: S.uuid, session_id: s.session_id, rec_type: "qa", idx: i, generator: S.generator, judge_name: S.judge }, lab);
     return `<div class="row" data-qa="${i}" data-desc="클릭하면 이 QA의 4자 대조 화면으로 이동. 드래그로 텍스트 선택 후 코멘트도 가능">
-      <span>${badges}</span>
+      <span>${badges}${B?.session ? jq(S.run, "⚖A") + jq(S.runB, "⚖B") : jq(S.run)}</span>
       <span class="txt">${esc(q.question)}</span>
       <span class="small muted">${esc(q.question_type || "")}</span></div>`;
   }).join("");
@@ -634,8 +639,11 @@ function renderSessions() {
     const badge = B?.session
       ? abPair(goldenBadge(mp), goldenBadge(bGolden(s.session_id, i, mp.memory_content)))
       : goldenBadge(mp);
+    // 골든 판정은 run의 추출 목록을 입력으로 쓰므로 A/B가 서로 다른 판정 상황임
+    const rt = mp.judge?.kind === "update" ? "update" : "integrity";
+    const jg = (run, lab) => jmBtn({ run, uuid: S.uuid, session_id: s.session_id, rec_type: rt, idx: i, judge_name: S.judge }, lab);
     return `<div class="row${upd ? " upd-row" : intf ? " intf-row" : ""}" data-a="mp:${i}" data-turn="${A.gTurn[i]}">
-      <span>${badge}</span>
+      <span>${badge}${B?.session ? jg(S.run, "⚖A") + jg(S.runB, "⚖B") : jg(S.run)}</span>
       ${upd ? '<span class="tagchip t-upd" data-k="is_update">↻ upd</span>' : ""}
       ${intf ? '<span class="tagchip t-intf" data-k="memory_source">⚠ 미끼</span>'
         : mp.memory_source !== "system" ? `<span class="tagchip" data-k="memory_source">${esc(mp.memory_source)}</span>` : ""}
@@ -644,14 +652,14 @@ function renderSessions() {
 
   const extRows = s.extracted.map((m, i) => `
     <div class="row${isNoop(m) ? " noop-row" : ""}" data-a="ext:${i}" data-turn="${A.eTurn[i]}">
-      <span>${scoreBadge(m.judge?.score)}</span>${memOps(m)}
+      <span>${scoreBadge(m.judge?.score)}${jmBtn({ run: S.run, uuid: S.uuid, session_id: s.session_id, rec_type: "accuracy", idx: i, judge_name: S.judge })}</span>${memOps(m)}
       <span class="txt">${esc(m.text)}</span></div>`).join("");
 
   let extBCard = "";
   if (B?.session) {
     const extBRows = B.session.extracted.map((m, i) => `
       <div class="row${isNoop(m) ? " noop-row" : ""}" data-b-ext="${i}">
-        <span>${scoreBadge(m.judge?.score)}</span>${memOps(m)}
+        <span>${scoreBadge(m.judge?.score)}${jmBtn({ run: S.runB, uuid: S.uuid, session_id: s.session_id, rec_type: "accuracy", idx: i, judge_name: S.judge })}</span>${memOps(m)}
         <span class="txt">${esc(m.text)}</span></div>`).join("");
     const sB = extComp(B.session);
     extBCard = `<div class="card b-card"><h4>추출 B: ${esc(runLabel(S.runB))} (${B.session.extracted.length})<span class="tot-h" data-desc="이 세션에서 mem0가 수행한 메모리 연산 총수 (ADD+UPDATE+DELETE). 저장돼 남은 것은 ${sB.stored}개">연산 ${sB.ops}</span></h4>
@@ -745,6 +753,7 @@ function renderSessions() {
       toggleTurnPanel(s, A, B, ti);
     };
   });
+  bindJmButtons($("#content"));
   renderCmtMarks();
 }
 
@@ -1412,6 +1421,187 @@ function renderComments(el) {
     renderCmtMarks();
   }));
   $$(".goto", el).forEach((b) => (b.onclick = () => gotoAnchor(b.dataset.anchor)));
+}
+
+/* ---------- 판정 검토 (judge 입력 재현 + 분석가 주석) ---------- */
+
+// judge가 실제로 출력하는 라벨 문자열과 동일하게 맞춤 (비교·집계 일관성)
+const LABEL_SETS = {
+  integrity: [["2", "완전 포함", "골든의 모든 핵심 정보가 추출 메모리에 담김"], ["1", "부분 포함", "일부만 담김"], ["0", "미포함", "추출 메모리에 없음"]],
+  accuracy: [["2", "전부 근거 있음", "이 메모리의 모든 내용이 대화·골든에 근거"], ["1", "부분 근거", "일부만 근거 있음"], ["0", "근거 없음/모순", "대화에 없거나 모순됨"]],
+  update: [["Correct", "Correct", "갱신본의 모든 원자 정보·수치가 정확"], ["Hallucination", "Hallucination", "틀린 값을 만들어냄"], ["Omission", "Omission", "디테일을 누락"], ["Other", "Other", "위 셋 중 어디에도 명확히 속하지 않는 갱신 실패 (judge 프롬프트의 4번째 분류)"]],
+  qa: [["Correct", "Correct", "정답과 의미가 완전히 동등. ⚠ 정답이 '알 수 없음'인데 시스템도 추측 없이 모른다고 답하면 Correct"], ["Hallucination", "Hallucination", "날조·모순. 정답이 '알 수 없음'인데 단정적 사실을 답한 경우도 포함"], ["Omission", "Omission", "날조는 없으나 필요한 요소를 누락 (다요소 질문은 하나만 빠져도 Omission)"]],
+};
+const REC_NAMES = { integrity: "골든 포함 (Integrity)", accuracy: "추출 근거 (Accuracy)", update: "갱신 (Update)", qa: "질의응답 (QA)" };
+
+const JM = { ctx: null, data: null, my: null, revealed: false, raw: false, queue: null, qi: -1, blind: true };
+
+function jmOpen(ctx) {
+  JM.ctx = ctx; JM.data = null; JM.my = null; JM.revealed = !JM.blind; JM.raw = false;
+  $("#jmodal").classList.remove("hidden");
+  jmRender();
+  jmLoad();
+}
+function jmClose() { $("#jmodal").classList.add("hidden"); JM.ctx = null; }
+
+async function jmLoad() {
+  const c = JM.ctx;
+  try {
+    JM.data = await api(`/api/judge-input/${c.run}/${c.uuid}?rec_type=${c.rec_type}&session_id=${c.session_id}&idx=${c.idx}&generator=${encodeURIComponent(c.generator || S.generator)}`);
+    // 기존 내 주석 불러오기 (재방문 시 이어서)
+    const mine = (await api(`/api/annotations?run=${c.run}&uuid=${c.uuid}&annotator=${encodeURIComponent(S.author)}`))
+      .find((a) => a.session_id === c.session_id && a.rec_type === c.rec_type && a.idx === c.idx);
+    if (mine) { JM.my = mine.label || null; JM.note = mine.note || ""; JM.agree = mine.agree; JM.revealed = true; }
+    else { JM.note = ""; JM.agree = null; }
+  } catch (e) { JM.data = { error: String(e.message || e) }; }
+  jmRender();
+}
+
+function jmFieldsHTML(d) {
+  const f = d.fields, t = d.rec_type;
+  const list = (arr, cls = "") => (arr || []).length
+    ? `<ol class="jl ${cls}">${arr.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>`
+    : `<p class="small muted">(없음)</p>`;
+  const box = (title, inner, desc) => `<div class="jsec"><h5 ${desc ? `data-desc="${esc(desc)}"` : ""}>${title}</h5>${inner}</div>`;
+  if (t === "integrity") return box(`평가 대상 골든 <span class="jtag gold">이게 담겼는가?</span>`, `<div class="jtarget">${esc(f.expected_memory_point)}</div>`)
+    + box(`시스템이 이 세션에서 추출한 메모리 (${(f.memories || []).length})`, list(f.memories), "judge는 이 목록 전체를 보고 대상 골든이 담겼는지 판단합니다. 대화 원문은 보지 않습니다");
+  if (t === "accuracy") return box(`평가 대상 추출 메모리 <span class="jtag a">이게 근거 있는가?</span>`, `<div class="jtarget">${esc(f.candidate_memory)}</div>`)
+    + box(`골든 메모리 (미끼 제외, ${(f.golden_memories || []).length})`, list(f.golden_memories))
+    + box(`이 세션 대화 (${(f.dialogue || []).length}턴)`, `<div class="jdlg">${(f.dialogue || []).map((x) =>
+        `<div class="jt ${esc(x.role)}"><span class="r">${esc(x.role)}</span><span>${esc(x.content)}</span></div>`).join("")}</div>`,
+        "judge는 대화 전체를 근거로 이 메모리가 지지되는지 봅니다 — 다른 세션 내용은 보지 못합니다");
+  if (t === "update") return box(`평가 대상 갱신 골든 <span class="jtag gold">이게 반영됐는가?</span>`, `<div class="jtarget">${esc(f.updated_memory)}</div>`)
+    + box("원본 메모리 (갱신 전)", list(f.original_memory))
+    + box(`시스템 메모리 검색 스냅샷 (top-10)`, list(f.memories), "Stage A에서 이 갱신 골든으로 검색한 상위 10건 — judge는 이 안에 갱신 내용이 반영됐는지 봅니다");
+  return box("질문", `<div class="jtarget">${esc(f.question)}</div>`)
+    + box("골든 정답", `<div class="jans">${esc(f.reference_answer)}</div>`)
+    + box(`핵심 근거 골든 (${(f.key_memory_points || []).length})`, list(f.key_memory_points))
+    + box("시스템 답변", `<div class="jans sys">${esc(f.response) || "<span class='muted'>(답변 없음)</span>"}</div>`);
+}
+
+function jmRender() {
+  const el = $("#jmodal-body"), c = JM.ctx, d = JM.data;
+  if (!c) return;
+  const qpos = JM.queue && JM.qi >= 0 ? `<span class="jq">큐 ${JM.qi + 1}/${JM.queue.length}</span>
+    <button class="jbtn" id="jm-prev" ${JM.qi <= 0 ? "disabled" : ""}>← 이전</button>
+    <button class="jbtn" id="jm-next" ${JM.qi >= JM.queue.length - 1 ? "disabled" : ""}>다음 →</button>` : "";
+  $("#jmodal-head").innerHTML = `<b>판정 검토</b>
+    <span class="jchip t-${esc(c.rec_type)}">${esc(REC_NAMES[c.rec_type])}</span>
+    <span class="jchip">${esc(runLabel(c.run))}</span><span class="jchip">S${c.session_id}</span>
+    ${qpos}<span style="margin-left:auto"></span>
+    <label class="jsw" data-desc="켜면 judge 판정을 가린 채 먼저 라벨합니다 (앵커링 편향 방지 — IAA 신뢰도의 핵심)"><input type="checkbox" id="jm-blind" ${JM.blind ? "checked" : ""}> 블라인드</label>
+    <button class="jbtn" id="jm-iaa">📊 IAA</button><button class="jbtn" id="jm-close">✕</button>`;
+
+  if (!d) { el.innerHTML = `<p class="muted" style="padding:20px">judge 입력 재현 중…</p>`; jmBind(); return; }
+  if (d.error) { el.innerHTML = `<p style="padding:20px;color:var(--bad)">${esc(d.error)}</p>`; jmBind(); return; }
+
+  const opts = LABEL_SETS[c.rec_type];
+  const myJudge = d.judge_labels?.[c.judge_name] ?? d.judge_labels?.[S.judge];
+  const others = Object.entries(d.judge_labels || {}).filter(([k]) => k !== (c.judge_name || S.judge));
+  const same = JM.my != null && String(myJudge) === String(JM.my);
+
+  el.innerHTML = `
+    <div class="jleft">
+      <div class="jtoggle"><button class="jbtn ${JM.raw ? "" : "on"}" id="jm-view">정리된 화면</button><button class="jbtn ${JM.raw ? "on" : ""}" id="jm-rawv">judge가 받은 프롬프트 원문 (${d.prompt.length.toLocaleString()}자)</button></div>
+      ${JM.raw ? `<pre class="mono jraw">${esc(d.prompt)}</pre>` : jmFieldsHTML(d)}
+    </div>
+    <div class="jright">
+      <div class="jsec"><h5>① 내 판정</h5>
+        <div class="jopts">${opts.map(([v, label, desc]) =>
+          `<button class="jopt ${JM.my === v ? "on" : ""}" data-lab="${esc(v)}" data-desc="${esc(desc)}">${esc(label)}</button>`).join("")}</div></div>
+      <div class="jsec"><h5>② judge 판정</h5>
+        ${JM.revealed
+          ? `<div class="jreveal"><span class="jlab">${esc(String(myJudge ?? "–"))}</span>
+              ${JM.my != null ? `<span class="jmatch ${same ? "ok" : "no"}">${same ? "내 판정과 일치" : "불일치"}</span>` : ""}</div>
+             ${others.length ? `<div class="jothers" data-desc="같은 항목에 대한 다른 judge들의 판정 — integrity·accuracy·update는 입력이 레인과 무관하게 동일해 직접 비교됩니다">${others.map(([k, v]) =>
+                `<span class="jo">${esc(judgeLabel(k))} <b>${esc(String(v))}</b></span>`).join("")}</div>` : ""}`
+          : `<p class="small muted">블라인드 상태입니다. 내 판정을 고르면 공개됩니다.</p>`}</div>
+      <div class="jsec"><h5>③ judge 판정에 동의하십니까?</h5>
+        <div class="jopts"><button class="jopt ag ${JM.agree === 1 ? "on" : ""}" data-ag="1">👍 동의</button>
+          <button class="jopt dg ${JM.agree === 0 ? "on" : ""}" data-ag="0">👎 비동의</button></div></div>
+      <div class="jsec"><h5>④ 근거 메모 (선택)</h5>
+        <textarea id="jm-note" placeholder="왜 그렇게 판단했는지 (특히 judge와 갈릴 때)">${esc(JM.note || "")}</textarea></div>
+      <button class="primary jsave" id="jm-save">저장${JM.queue ? " 후 다음 →" : ""}</button>
+      <div id="jm-msg" class="small muted"></div>
+    </div>`;
+  jmBind();
+}
+
+function jmBind() {
+  $("#jm-close") && ($("#jm-close").onclick = jmClose);
+  $("#jm-blind") && ($("#jm-blind").onchange = (e) => { JM.blind = e.target.checked; if (!JM.blind) JM.revealed = true; jmRender(); });
+  $("#jm-view") && ($("#jm-view").onclick = () => { JM.raw = false; jmRender(); });
+  $("#jm-rawv") && ($("#jm-rawv").onclick = () => { JM.raw = true; jmRender(); });
+  $("#jm-iaa") && ($("#jm-iaa").onclick = jmIAA);
+  $("#jm-prev") && ($("#jm-prev").onclick = () => jmGo(JM.qi - 1));
+  $("#jm-next") && ($("#jm-next").onclick = () => jmGo(JM.qi + 1));
+  $$("#jmodal .jopt[data-lab]").forEach((b) => (b.onclick = () => { JM.my = b.dataset.lab; JM.revealed = true; JM.note = $("#jm-note")?.value || JM.note; jmRender(); }));
+  $$("#jmodal .jopt[data-ag]").forEach((b) => (b.onclick = () => { JM.agree = +b.dataset.ag; JM.note = $("#jm-note")?.value || JM.note; jmRender(); }));
+  $("#jm-save") && ($("#jm-save").onclick = jmSave);
+}
+
+async function jmSave() {
+  if (!S.author) { askName(); return; }
+  const c = JM.ctx, d = JM.data;
+  const jn = c.judge_name || S.judge;
+  await api("/api/annotations", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      run: c.run, uuid: c.uuid, session_id: c.session_id, rec_type: c.rec_type, idx: c.idx,
+      target: String(d.target).slice(0, 2000), generator: c.rec_type === "qa" ? (c.generator || S.generator) : "",
+      annotator: S.author, label: JM.my || "", agree: JM.agree,
+      judge_name: jn, judge_label: String(d.judge_labels?.[jn] ?? ""), blind: JM.blind ? 1 : 0,
+      note: $("#jm-note")?.value || "",
+    }),
+  });
+  if (JM.queue && JM.qi < JM.queue.length - 1) { jmGo(JM.qi + 1); return; }
+  $("#jm-msg").textContent = "저장됨";
+}
+
+async function jmGo(i) {
+  if (!JM.queue || i < 0 || i >= JM.queue.length) return;
+  JM.qi = i;
+  const q = JM.queue[i];
+  jmOpen({ run: q.run, uuid: q.uuid, session_id: q.session_id, rec_type: q.rec_type, idx: q.idx,
+           generator: q.generator || S.generator, judge_name: q.judge });
+}
+
+async function jmStartQueue() {
+  busy(true, "공유 표본 큐 불러오는 중…");
+  let d;
+  try { d = await api("/api/queue"); } finally { busy(false); }
+  JM.queue = d.items; jmGo(0);
+}
+
+async function jmIAA() {
+  const el = $("#jmodal-body");
+  el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
+  const d = await api("/api/iaa");
+  const row = (o) => `<tr><td>${esc(o.label)}</td><td>${o.n}</td><td>${o.agree}%</td><td>${o.kappa ?? "–"}</td></tr>`;
+  el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
+    <h4 style="margin:0 0 6px">라벨링 현황</h4>
+    <p class="small muted">주석 ${d.total}건 · 라벨 완료 ${d.labeled}건 · 항목 ${d.items}개 (2인 이상 겹친 항목 <b>${d.overlap_items}</b>개) · 👍${d.agree_clicks.agree} 👎${d.agree_clicks.disagree}</p>
+    <h4 style="margin:14px 0 6px" data-desc="같은 항목을 두 분석가가 모두 라벨한 경우만 집계됩니다. κ는 우연 일치를 보정한 값 — 0.6 이상이면 견고한 편">분석가 간 일치도 (IAA)</h4>
+    <table class="cmp"><tr><th>쌍</th><th>공통 항목</th><th>일치율</th><th>Cohen κ</th></tr>
+      ${d.annotator_pairs.map((p) => row({ label: `${p.a} ↔ ${p.b}`, ...p })).join("") || `<tr><td colspan="4" class="muted">겹친 항목 없음 — 공유 큐로 라벨하면 채워집니다</td></tr>`}</table>
+    <h4 style="margin:14px 0 6px" data-desc="분석가를 정답으로 봤을 때 judge가 얼마나 맞추는가">분석가 vs judge</h4>
+    <table class="cmp"><tr><th>분석가</th><th>항목</th><th>일치율</th><th>Cohen κ</th></tr>
+      ${d.vs_judge.map((p) => row({ label: p.annotator, ...p })).join("") || `<tr><td colspan="4" class="muted">아직 없음</td></tr>`}</table>
+    <h4 style="margin:14px 0 6px">판정 유형별 (전체 분석가 합산 vs judge)</h4>
+    <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th></tr>
+      ${d.by_type.map((p) => row({ label: REC_NAMES[p.rec_type] || p.rec_type, ...p })).join("") || `<tr><td colspan="4" class="muted">아직 없음</td></tr>`}</table>
+    <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
+  $("#jm-back").onclick = jmRender;
+}
+
+// 행에 붙는 진입 버튼
+const jmBtn = (ctx, label = "⚖") => `<span class="jopen" data-jm="${esc(JSON.stringify(ctx))}" data-desc="judge가 이 항목을 판정할 때 받았던 입력(${esc(REC_NAMES[ctx.rec_type])} · ${esc(runLabel(ctx.run))})을 그대로 열어 직접 평가합니다">${label}</span>`;
+function bindJmButtons(root = document) {
+  $$(".jopen", root).forEach((b) => (b.onclick = (ev) => {
+    ev.stopPropagation();
+    JM.queue = null; JM.qi = -1;
+    jmOpen(JSON.parse(b.dataset.jm));
+  }));
 }
 
 boot().catch((e) => { document.body.innerHTML = `<pre style="padding:20px;color:#c92a2a">${esc(e.stack || e.message)}</pre>`; });

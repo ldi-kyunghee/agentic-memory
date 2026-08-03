@@ -258,7 +258,7 @@ uv run python src/mem0-classic-oss/analyze_qa_evidence_storage.py \
 - 기전: top-k 코사인 유사도는 **질문과 의미적으로 가까운 것**을 가져올 뿐 **시점이 맞는 것**을 가져오지 않는다. context 포맷에 `session_time:` 접두사가 있어 LLM은 날짜를 볼 수 있지만, 맞는 버전이 후보에 없으면 무의미하다. → **검색 계층의 시간 인지 부재**가 mem0-classic의 실증된 병목.
 
 **② 벤치마크 결함 확정 3건** (시스템 성능과 무관하게 정답 불가):
-- **s7/qa3** (골든 "Unknown", H12/12): 12런이 **전부 "No siblings mentioned."로 동일 답변**했고 전부 Hallucination 판정. 의미상 골든과 같은 답이 오답 처리된 **순수 채점 오류**. evidence 필드도 비어 있다.
+- **s7/qa3** (골든 "Unknown", H12/12): 12런이 **전부 "No siblings mentioned."로 동일 답변**했고 전부 Hallucination 판정. 의미상 골든과 같은 답이 오답 처리된 **순수 채점 오류**. evidence 필드도 비어 있다. **judge 프롬프트 자체가 이 경우를 명시하고 있어 오류가 확정적이다** — QA 프롬프트 원문: 정답이 "unknown / cannot be determined"일 때 시스템이 단정적 사실을 답하면 Hallucination이지만, *"If the system also answers 'unknown' (without guessing), it may be Correct."* 즉 프롬프트의 규칙대로면 Correct여야 했다. judge 3종(nano·mini·oss120)이 모두 자기 지시를 어긴 셈이다.
 - **s52/qa3** (골든 "From 20000 to 23000 yuan"): 이 수치가 **64세션 전체 대화 본문에 0회 등장**하고 persona_info에도 없다. 골든 메모리포인트로만 존재(s49, s60)하는 **구조화 프로필 필드의 변경 기록**이라 대화 기반 시스템은 원리적으로 답할 수 없다. 게다가 근거는 s49에 있는데 질문은 s52에 붙어 있다(세션 불일치).
 - **s29/qa6** (골든 "Abnormal"): 상태 변화 MP는 **s26**에 있는데 질문은 s29. 시스템들은 "Overwhelmed, mental health challenged"로 의미상 맞는 답을 했으나 카테고리 라벨 불일치로 오답.
 

@@ -251,6 +251,113 @@ def api_fielddict():
 import sys as _sys
 _sys.path.insert(0, str(ROOT / "HaluMem" / "eval"))
 from evaluation import aggregate_eval_results  # noqa: E402
+# judge.py가 쓰는 것과 동일한 프롬프트 템플릿 — 분석가에게 judge와 똑같은 입력을 재현해 보여주기 위함
+from eval_tools import (  # noqa: E402
+    EVALUATION_PROMPT_FOR_MEMORY_INTEGRITY,
+    EVALUATION_PROMPT_FOR_MEMORY_ACCURACY,
+    EVALUATION_PROMPT_FOR_UPDATE_MEMORY,
+    EVALUATION_PROMPT_FOR_QUESTION,
+)
+
+
+# ---------- judge 입력 재현 (판정 검토·주석용) ----------
+
+def _dialogue_str(session: dict) -> str:
+    """judge.py build_inputs와 동일한 대화 직렬화 (assistant 발화 뒤 빈 줄)."""
+    out = []
+    for turn in session["dialogue"]:
+        out.append(f'[{turn["timestamp"]}]{turn["role"]}: {turn["content"]}')
+        if turn["role"] == "assistant":
+            out.append("")
+    return "\n".join(out)
+
+
+def build_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: int,
+                      generator: str = "qwen4b") -> dict:
+    """judge가 실제로 받았던 프롬프트를 그대로 재구성한다 (judge.py build_inputs와 동일 로직)."""
+    user = load_run_users(run, generator).get(uuid)
+    if user is None:
+        raise HTTPException(404, f"user {uuid} not in run {run}")
+    try:
+        s = user["sessions"][session_id]
+    except IndexError:
+        raise HTTPException(404, "session out of range")
+    if s.get("is_generated_qa_session"):
+        raise HTTPException(400, "generated qa session")
+
+    golden = s.get("memory_points", [])
+    extracted = s.get("extracted_memories", [])
+    fields: dict = {}
+
+    if rec_type == "integrity":
+        mp = golden[idx]
+        key = mp["memory_content"]
+        prompt = EVALUATION_PROMPT_FOR_MEMORY_INTEGRITY.format(
+            memories="\n".join(extracted), expected_memory_point=key)
+        fields = {"memories": extracted, "expected_memory_point": key,
+                  "memory_source": mp.get("memory_source"), "is_update": mp.get("is_update")}
+        label_field, label_key = "memory_integrity_records", "memory_integrity_score"
+    elif rec_type == "accuracy":
+        key = extracted[idx]
+        golden_str = "\n".join(m["memory_content"] for m in golden if m["memory_source"] != "interference")
+        prompt = EVALUATION_PROMPT_FOR_MEMORY_ACCURACY.format(
+            dialogue=_dialogue_str(s), golden_memories=golden_str, candidate_memory=key)
+        fields = {"dialogue": s["dialogue"], "golden_memories": golden_str.split("\n") if golden_str else [],
+                  "candidate_memory": key}
+        label_field, label_key = "memory_accuracy_records", "memory_accuracy_score"
+    elif rec_type == "update":
+        mp = golden[idx]
+        key = mp["memory_content"]
+        if mp.get("is_update") != "True" or not mp.get("memories_from_system"):
+            raise HTTPException(400, "not an update-evaluated golden")
+        prompt = EVALUATION_PROMPT_FOR_UPDATE_MEMORY.format(
+            memories="\n".join(mp["memories_from_system"]),
+            updated_memory=key, original_memory="\n".join(mp.get("original_memories", [])))
+        fields = {"memories": mp["memories_from_system"], "updated_memory": key,
+                  "original_memory": mp.get("original_memories", [])}
+        label_field, label_key = "memory_update_records", "memory_update_type"
+    elif rec_type == "qa":
+        q = s.get("questions", [])[idx]
+        key = q["question"]
+        prompt = EVALUATION_PROMPT_FOR_QUESTION.format(
+            question=key, reference_answer=q["answer"],
+            key_memory_points="\n".join(e["memory_content"] for e in q.get("evidence", [])),
+            response=q.get("system_response", ""))
+        fields = {"question": key, "reference_answer": q["answer"],
+                  "key_memory_points": [e["memory_content"] for e in q.get("evidence", [])],
+                  "response": q.get("system_response", ""), "question_type": q.get("question_type")}
+        label_field, label_key = "question_answering_records", "result_type"
+    else:
+        raise HTTPException(400, f"unknown rec_type: {rec_type}")
+
+    # 이 항목에 대한 전체 judge 라벨 (integrity/accuracy/update는 입력이 레인 무관 동일 → 모든 judge와 비교 가능)
+    labels = {}
+    lanes = [generator] if rec_type == "qa" else list(gen_registry().keys())
+    for lane in lanes:
+        try:
+            _, judges = resolve_lane(run, lane)
+        except HTTPException:
+            continue
+        for jname in judges:
+            if jname in labels:
+                continue
+            jd = load_judge(run, jname, uuid, lane)
+            if not jd:
+                continue
+            for r in jd.get(label_field, []):
+                same = r.get("question") == key if rec_type == "qa" else r.get("memory_content") == key
+                if r.get("session_id") == session_id and same:
+                    labels[jname] = r.get(label_key)
+                    break
+    return {"run": run, "uuid": uuid, "generator": generator, "rec_type": rec_type,
+            "session_id": session_id, "idx": idx, "target": key,
+            "fields": fields, "prompt": prompt, "judge_labels": labels}
+
+
+@app.get("/api/judge-input/{run}/{uuid}")
+def api_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: int,
+                    generator: str = "qwen4b"):
+    return build_judge_input(run, uuid, rec_type, session_id, idx, generator)
 
 
 @lru_cache(maxsize=1)
@@ -464,6 +571,226 @@ def delete_comment(cid: int, author: str):
             raise HTTPException(403, "author mismatch")
         conn.execute("DELETE FROM comments WHERE id=?", (cid,))
         return {"ok": True}
+
+
+# ---------- 판정 주석 (analyst annotation) + IAA ----------
+
+ANN_COLS = """id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run TEXT NOT NULL, uuid TEXT NOT NULL, session_id INTEGER NOT NULL,
+    rec_type TEXT NOT NULL, idx INTEGER NOT NULL, target TEXT NOT NULL,
+    generator TEXT DEFAULT '', annotator TEXT NOT NULL,
+    label TEXT DEFAULT '', agree INTEGER, judge_name TEXT DEFAULT '', judge_label TEXT DEFAULT '',
+    blind INTEGER DEFAULT 1, note TEXT DEFAULT '', created_at TEXT NOT NULL"""
+
+
+def adb():
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute(f"CREATE TABLE IF NOT EXISTS annotations ({ANN_COLS})")
+    # 한 분석가가 같은 항목을 두 번 라벨하면 갱신되도록 (QA는 generator 레인 종속이라 키에 포함)
+    conn.execute("""CREATE UNIQUE INDEX IF NOT EXISTS ann_key
+        ON annotations (annotator, run, uuid, session_id, rec_type, idx, generator)""")
+    return conn
+
+
+class AnnotationIn(BaseModel):
+    run: str
+    uuid: str
+    session_id: int
+    rec_type: str          # integrity | accuracy | update | qa
+    idx: int
+    target: str            # 대상 텍스트 스냅샷 (인덱스 변동 대비)
+    generator: str = ""    # qa일 때만 의미 있음 (레인마다 답변이 다름)
+    annotator: str
+    label: str = ""        # 분석가가 매긴 판정 (0/1/2 또는 CORRECT/HALLUCINATION/OMISSION)
+    agree: int | None = None   # judge 판정 동의 여부 (1/0)
+    judge_name: str = ""
+    judge_label: str = ""
+    blind: int = 1
+    note: str = ""
+
+
+@app.post("/api/annotations")
+def add_annotation(a: AnnotationIn):
+    if not a.annotator.strip():
+        raise HTTPException(400, "annotator required")
+    with adb() as conn:
+        conn.execute(
+            """INSERT INTO annotations
+               (run, uuid, session_id, rec_type, idx, target, generator, annotator,
+                label, agree, judge_name, judge_label, blind, note, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+               ON CONFLICT (annotator, run, uuid, session_id, rec_type, idx, generator)
+               DO UPDATE SET label=excluded.label, agree=excluded.agree, judge_name=excluded.judge_name,
+                 judge_label=excluded.judge_label, blind=excluded.blind, note=excluded.note,
+                 created_at=excluded.created_at""",
+            (a.run, a.uuid, a.session_id, a.rec_type, a.idx, a.target, a.generator,
+             a.annotator.strip(), a.label, a.agree, a.judge_name, a.judge_label, a.blind, a.note,
+             datetime.now(timezone.utc).isoformat()))
+    return {"ok": True}
+
+
+@app.get("/api/annotations")
+def list_annotations(run: str | None = None, uuid: str | None = None, annotator: str | None = None):
+    q, args = "SELECT * FROM annotations WHERE 1=1", []
+    for col, val in (("run", run), ("uuid", uuid), ("annotator", annotator)):
+        if val:
+            q += f" AND {col}=?"
+            args.append(val)
+    with adb() as conn:
+        return [dict(r) for r in conn.execute(q + " ORDER BY created_at", args).fetchall()]
+
+
+@app.delete("/api/annotations/{aid}")
+def delete_annotation(aid: int, annotator: str):
+    with adb() as conn:
+        row = conn.execute("SELECT annotator FROM annotations WHERE id=?", (aid,)).fetchone()
+        if row is None:
+            raise HTTPException(404, "no such annotation")
+        if row["annotator"] != annotator:
+            raise HTTPException(403, "annotator mismatch")
+        conn.execute("DELETE FROM annotations WHERE id=?", (aid,))
+    return {"ok": True}
+
+
+def _kappa(pairs: list) -> dict:
+    """Cohen's κ + 단순 일치율. pairs: [(labelA, labelB), ...]"""
+    n = len(pairs)
+    if not n:
+        return {"n": 0, "agree": None, "kappa": None}
+    po = sum(1 for a, b in pairs if a == b) / n
+    labs = {x for p in pairs for x in p}
+    ca = {l: sum(1 for a, _ in pairs if a == l) / n for l in labs}
+    cb = {l: sum(1 for _, b in pairs if b == l) / n for l in labs}
+    pe = sum(ca[l] * cb[l] for l in labs)
+    k = None if pe >= 1 else round((po - pe) / (1 - pe), 3)
+    return {"n": n, "agree": round(po * 100, 1), "kappa": k}
+
+
+@app.get("/api/iaa")
+def api_iaa(run: str | None = None, uuid: str | None = None):
+    """분석가 간(IAA) · 분석가 vs judge 일치도. 항목 키는 (run,uuid,session,rec_type,idx,generator)."""
+    rows = list_annotations(run=run, uuid=uuid)
+    labeled = [r for r in rows if r["label"]]
+    by_item: dict = {}
+    for r in labeled:
+        key = (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"], r["generator"])
+        by_item.setdefault(key, {})[r["annotator"]] = r
+
+    annotators = sorted({r["annotator"] for r in labeled})
+    # 분석가 쌍별 (같은 항목을 둘 다 라벨한 경우만)
+    pairs_out = []
+    for i, a in enumerate(annotators):
+        for b in annotators[i + 1:]:
+            pr = [(v[a]["label"], v[b]["label"]) for v in by_item.values() if a in v and b in v]
+            st = _kappa(pr)
+            if st["n"]:
+                pairs_out.append({"a": a, "b": b, **st})
+    # 분석가 vs judge (라벨 스냅샷이 있는 항목만)
+    vs_judge = []
+    for a in annotators:
+        pr = [(r["label"], r["judge_label"]) for r in labeled
+              if r["annotator"] == a and r["judge_label"] not in (None, "")]
+        st = _kappa(pr)
+        if st["n"]:
+            vs_judge.append({"annotator": a, **st})
+    # 레코드 타입별 분석가 vs judge
+    by_type = []
+    for t in ["integrity", "accuracy", "update", "qa"]:
+        pr = [(r["label"], r["judge_label"]) for r in labeled
+              if r["rec_type"] == t and r["judge_label"] not in (None, "")]
+        st = _kappa(pr)
+        if st["n"]:
+            by_type.append({"rec_type": t, **st})
+    return {
+        "total": len(rows), "labeled": len(labeled), "annotators": annotators,
+        "items": len(by_item), "overlap_items": sum(1 for v in by_item.values() if len(v) > 1),
+        "annotator_pairs": pairs_out, "vs_judge": vs_judge, "by_type": by_type,
+        "agree_clicks": {"agree": sum(1 for r in rows if r["agree"] == 1),
+                         "disagree": sum(1 for r in rows if r["agree"] == 0)},
+    }
+
+
+QUEUE_PATH = DATA_DIR / "annotation_queue.json"
+
+
+@app.get("/api/queue")
+def api_queue(rebuild: int = 0, per_type: int = 40, judge: str = "oss120-genoss120",
+              generator: str = "oss120"):
+    """공유 표본 큐 — 모든 분석가에게 동일한 순서로 제공돼야 IAA가 계산된다.
+    층화: 레코드 타입 × judge 라벨 클래스 × 런. judge 간 불일치 항목을 우선 배치."""
+    if QUEUE_PATH.exists() and not rebuild:
+        with open(QUEUE_PATH, encoding="utf-8") as f:
+            return json.load(f)
+
+    reg = load_registry()
+    _, judges_map = None, None
+    items = []
+    for run in reg:
+        try:
+            _, judges_map = resolve_lane(run, generator)
+        except HTTPException:
+            continue
+        if judge not in judges_map:
+            continue
+        for uid in first4_uuids():
+            jd = load_judge(run, judge, uid, generator)
+            if not jd:
+                continue
+            try:
+                user = load_run_users(run, generator).get(uid)
+            except HTTPException:
+                user = None
+            if user is None:
+                continue
+            # 세션별 인덱스 룩업
+            for si, s in enumerate(user["sessions"]):
+                if s.get("is_generated_qa_session"):
+                    continue
+                gidx = {m["memory_content"]: i for i, m in enumerate(s.get("memory_points", []))}
+                eidx = {m: i for i, m in enumerate(s.get("extracted_memories", []))}
+                qidx = {q["question"]: i for i, q in enumerate(s.get("questions", []))}
+                for r in jd.get("memory_integrity_records", []):
+                    if r.get("session_id") == si and r["memory_content"] in gidx:
+                        items.append((run, uid, si, "integrity", gidx[r["memory_content"]],
+                                      r.get("memory_integrity_score")))
+                for r in jd.get("memory_accuracy_records", []):
+                    if r.get("session_id") == si and r["memory_content"] in eidx:
+                        items.append((run, uid, si, "accuracy", eidx[r["memory_content"]],
+                                      r.get("memory_accuracy_score")))
+                for r in jd.get("memory_update_records", []):
+                    if r.get("session_id") == si and r["memory_content"] in gidx:
+                        items.append((run, uid, si, "update", gidx[r["memory_content"]],
+                                      r.get("memory_update_type")))
+                for r in jd.get("question_answering_records", []):
+                    if r.get("session_id") == si and r["question"] in qidx:
+                        items.append((run, uid, si, "qa", qidx[r["question"]], r.get("result_type")))
+
+    # 층화 추출: 타입 × 라벨 클래스 균등, 런 순환. 결정적(정렬 후 등간 추출)이라 재생성해도 동일
+    from collections import defaultdict
+    buckets = defaultdict(list)
+    for it in items:
+        if it[5] is None:  # judge 무효 판정 — 일치도 계산이 불가능하므로 큐에서 제외
+            continue
+        buckets[(it[3], str(it[5]))].append(it)
+    picked = []
+    for t in ["integrity", "accuracy", "update", "qa"]:
+        keys = sorted(k for k in buckets if k[0] == t)
+        if not keys:
+            continue
+        per_class = max(1, per_type // max(len(keys), 1))
+        for k in keys:
+            pool = sorted(buckets[k])
+            step = max(1, len(pool) // per_class)
+            picked += [pool[i] for i in range(0, len(pool), step)][:per_class]
+    queue = [{"run": r, "uuid": u, "session_id": s, "rec_type": t, "idx": i,
+              "generator": generator if t == "qa" else "", "judge": judge, "judge_label": str(lab)}
+             for (r, u, s, t, i, lab) in picked]
+    out = {"built_at": datetime.now(timezone.utc).isoformat(), "judge": judge,
+           "generator": generator, "per_type": per_type, "n": len(queue), "items": queue}
+    with open(QUEUE_PATH, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False)
+    return out
 
 
 @app.get("/api/digest/{uuid}")
