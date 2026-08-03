@@ -1,6 +1,6 @@
-model: Qwen/Qwen3-4B-Instruct-2507
+model: openai/gpt-oss-120b # Qwen/Qwen3-4B-Instruct-2507
 dtype: bfloat16
-quantization: bitsandbytes
+quantization: mxfp4 # bitsandbytes
 seed: 42
 sampling_params:
   n: 1
