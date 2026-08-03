@@ -9,6 +9,7 @@ import json
 import sqlite3
 import threading
 from datetime import datetime, timezone
+from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
 
@@ -516,7 +517,11 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
 DB_PATH = DATA_DIR / "comments.sqlite3"
 
 
+@contextmanager
 def db():
+    """⚠ sqlite3 Connection의 `with`는 트랜잭션만 커밋하고 연결을 닫지 않는다.
+    프론트가 4초마다 /api/comments를 폴링하므로 닫지 않으면 FD가 시간당 ~900개씩 쌓여
+    'Too many open files'로 서버가 죽는다 (실제 발생). 반드시 finally에서 닫는다."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("""CREATE TABLE IF NOT EXISTS comments (
@@ -532,7 +537,11 @@ def db():
     for col in ("generator", "judge", "run_b"):
         if col not in cols:
             conn.execute(f"ALTER TABLE comments ADD COLUMN {col} TEXT DEFAULT ''")
-    return conn
+    try:
+        yield conn
+        conn.commit()
+    finally:
+        conn.close()
 
 
 class CommentIn(BaseModel):
@@ -592,14 +601,20 @@ ANN_COLS = """id INTEGER PRIMARY KEY AUTOINCREMENT,
     blind INTEGER DEFAULT 1, note TEXT DEFAULT '', created_at TEXT NOT NULL"""
 
 
+@contextmanager
 def adb():
+    """db()와 동일 — 반드시 닫는다 (FD 누수 방지)."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute(f"CREATE TABLE IF NOT EXISTS annotations ({ANN_COLS})")
     # 한 분석가가 같은 항목을 두 번 라벨하면 갱신되도록 (QA는 generator 레인 종속이라 키에 포함)
     conn.execute("""CREATE UNIQUE INDEX IF NOT EXISTS ann_key
         ON annotations (annotator, run, uuid, session_id, rec_type, idx, generator)""")
-    return conn
+    try:
+        yield conn
+        conn.commit()
+    finally:
+        conn.close()
 
 
 class AnnotationIn(BaseModel):
