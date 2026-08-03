@@ -603,7 +603,7 @@ function renderSessions() {
     }
     const jq = (run, lab) => jmBtn({ run, uuid: S.uuid, session_id: s.session_id, rec_type: "qa", idx: i, generator: S.generator, judge_name: S.judge }, lab);
     return `<div class="row" data-qa="${i}" data-desc="클릭하면 이 QA의 4자 대조 화면으로 이동. 드래그로 텍스트 선택 후 코멘트도 가능">
-      <span>${badges}${B?.session ? jq(S.run, "⚖A") + jq(S.runB, "⚖B") : jq(S.run)}</span>
+      <span>${badges}${B?.session ? jq(S.run, "A") + jq(S.runB, "B") : jq(S.run)}</span>
       <span class="txt">${esc(q.question)}</span>
       <span class="small muted">${esc(q.question_type || "")}</span></div>`;
   }).join("");
@@ -643,7 +643,7 @@ function renderSessions() {
     const rt = mp.judge?.kind === "update" ? "update" : "integrity";
     const jg = (run, lab) => jmBtn({ run, uuid: S.uuid, session_id: s.session_id, rec_type: rt, idx: i, judge_name: S.judge }, lab);
     return `<div class="row${upd ? " upd-row" : intf ? " intf-row" : ""}" data-a="mp:${i}" data-turn="${A.gTurn[i]}">
-      <span>${badge}${B?.session ? jg(S.run, "⚖A") + jg(S.runB, "⚖B") : jg(S.run)}</span>
+      <span>${badge}${B?.session ? jg(S.run, "A") + jg(S.runB, "B") : jg(S.run)}</span>
       ${upd ? '<span class="tagchip t-upd" data-k="is_update">↻ upd</span>' : ""}
       ${intf ? '<span class="tagchip t-intf" data-k="memory_source">⚠ 미끼</span>'
         : mp.memory_source !== "system" ? `<span class="tagchip" data-k="memory_source">${esc(mp.memory_source)}</span>` : ""}
@@ -1468,8 +1468,8 @@ function jmFieldsHTML(d) {
   if (t === "accuracy") return box(`평가 대상 추출 메모리 <span class="jtag a">이게 근거 있는가?</span>`, `<div class="jtarget">${esc(f.candidate_memory)}</div>`)
     + box(`골든 메모리 (미끼 제외, ${(f.golden_memories || []).length})`, list(f.golden_memories))
     + box(`이 세션 대화 (${(f.dialogue || []).length}턴)`, `<div class="jdlg">${(f.dialogue || []).map((x) =>
-        `<div class="jt ${esc(x.role)}"><span class="r">${esc(x.role)}</span><span>${esc(x.content)}</span></div>`).join("")}</div>`,
-        "judge는 대화 전체를 근거로 이 메모리가 지지되는지 봅니다 — 다른 세션 내용은 보지 못합니다");
+        `<div class="jt ${esc(x.role)}"><span class="r"><span class="ts">[${esc(x.timestamp)}]</span>${esc(x.role)}</span><span>${esc(x.content)}</span></div>`).join("")}</div>`,
+        "judge는 대화 전체를 근거로 이 메모리가 지지되는지 봅니다 — 다른 세션 내용은 보지 못합니다. 프롬프트에는 각 발화가 [타임스탬프]역할: 내용 형식으로 들어갑니다");
   if (t === "update") return box(`평가 대상 갱신 골든 <span class="jtag gold">이게 반영됐는가?</span>`, `<div class="jtarget">${esc(f.updated_memory)}</div>`)
     + box("원본 메모리 (갱신 전)", list(f.original_memory))
     + box(`시스템 메모리 검색 스냅샷 (top-10)`, list(f.memories), "Stage A에서 이 갱신 골든으로 검색한 상위 10건 — judge는 이 안에 갱신 내용이 반영됐는지 봅니다");
@@ -1503,7 +1503,9 @@ function jmRender() {
   el.innerHTML = `
     <div class="jleft">
       <div class="jtoggle"><button class="jbtn ${JM.raw ? "" : "on"}" id="jm-view">정리된 화면</button><button class="jbtn ${JM.raw ? "on" : ""}" id="jm-rawv">judge가 받은 프롬프트 원문 (${d.prompt.length.toLocaleString()}자)</button></div>
-      ${JM.raw ? `<pre class="mono jraw">${esc(d.prompt)}</pre>` : jmFieldsHTML(d)}
+      ${JM.raw ? `<pre class="mono jraw">${esc(d.prompt)}</pre>` : jmFieldsHTML(d) + `
+        <details class="jrubric"><summary data-desc="judge가 프롬프트로 받은 채점 지시문 원문 — 위 데이터가 {중괄호} 자리에 들어갑니다. 분석가도 같은 기준으로 판정해야 비교가 성립합니다">judge가 받은 채점 기준 (지시문 원문) 펼치기</summary>
+          <pre class="mono">${esc(d.template || "")}</pre></details>`}
     </div>
     <div class="jright">
       <div class="jsec"><h5>① 내 판정</h5>
@@ -1595,7 +1597,7 @@ async function jmIAA() {
 }
 
 // 행에 붙는 진입 버튼
-const jmBtn = (ctx, label = "⚖") => `<span class="jopen" data-jm="${esc(JSON.stringify(ctx))}" data-desc="judge가 이 항목을 판정할 때 받았던 입력(${esc(REC_NAMES[ctx.rec_type])} · ${esc(runLabel(ctx.run))})을 그대로 열어 직접 평가합니다">${label}</span>`;
+const jmBtn = (ctx, side = "") => `<button class="jopen${side ? " s-" + side.toLowerCase() : ""}" data-jm="${esc(JSON.stringify(ctx))}" data-desc="judge가 이 항목을 판정할 때 받았던 입력(${esc(REC_NAMES[ctx.rec_type])} · ${esc(runLabel(ctx.run))})을 그대로 재현해 직접 평가합니다">검토${side ? ` ${side}` : ""}</button>`;
 function bindJmButtons(root = document) {
   $$(".jopen", root).forEach((b) => (b.onclick = (ev) => {
     ev.stopPropagation();

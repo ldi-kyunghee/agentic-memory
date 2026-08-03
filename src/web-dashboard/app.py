@@ -289,18 +289,20 @@ def build_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: 
     extracted = s.get("extracted_memories", [])
     fields: dict = {}
 
+    # ⚠ fields에는 judge가 프롬프트로 실제 받은 값만 담는다 (judge가 못 본 메타데이터를
+    #    분석가에게 보여주면 동일 조건 재현이 깨진다). template은 채점 기준 표시용.
     if rec_type == "integrity":
         mp = golden[idx]
         key = mp["memory_content"]
-        prompt = EVALUATION_PROMPT_FOR_MEMORY_INTEGRITY.format(
-            memories="\n".join(extracted), expected_memory_point=key)
-        fields = {"memories": extracted, "expected_memory_point": key,
-                  "memory_source": mp.get("memory_source"), "is_update": mp.get("is_update")}
+        template = EVALUATION_PROMPT_FOR_MEMORY_INTEGRITY
+        prompt = template.format(memories="\n".join(extracted), expected_memory_point=key)
+        fields = {"memories": extracted, "expected_memory_point": key}
         label_field, label_key = "memory_integrity_records", "memory_integrity_score"
     elif rec_type == "accuracy":
         key = extracted[idx]
         golden_str = "\n".join(m["memory_content"] for m in golden if m["memory_source"] != "interference")
-        prompt = EVALUATION_PROMPT_FOR_MEMORY_ACCURACY.format(
+        template = EVALUATION_PROMPT_FOR_MEMORY_ACCURACY
+        prompt = template.format(
             dialogue=_dialogue_str(s), golden_memories=golden_str, candidate_memory=key)
         fields = {"dialogue": s["dialogue"], "golden_memories": golden_str.split("\n") if golden_str else [],
                   "candidate_memory": key}
@@ -310,7 +312,8 @@ def build_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: 
         key = mp["memory_content"]
         if mp.get("is_update") != "True" or not mp.get("memories_from_system"):
             raise HTTPException(400, "not an update-evaluated golden")
-        prompt = EVALUATION_PROMPT_FOR_UPDATE_MEMORY.format(
+        template = EVALUATION_PROMPT_FOR_UPDATE_MEMORY
+        prompt = template.format(
             memories="\n".join(mp["memories_from_system"]),
             updated_memory=key, original_memory="\n".join(mp.get("original_memories", [])))
         fields = {"memories": mp["memories_from_system"], "updated_memory": key,
@@ -319,13 +322,14 @@ def build_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: 
     elif rec_type == "qa":
         q = s.get("questions", [])[idx]
         key = q["question"]
-        prompt = EVALUATION_PROMPT_FOR_QUESTION.format(
+        template = EVALUATION_PROMPT_FOR_QUESTION
+        prompt = template.format(
             question=key, reference_answer=q["answer"],
             key_memory_points="\n".join(e["memory_content"] for e in q.get("evidence", [])),
             response=q.get("system_response", ""))
         fields = {"question": key, "reference_answer": q["answer"],
                   "key_memory_points": [e["memory_content"] for e in q.get("evidence", [])],
-                  "response": q.get("system_response", ""), "question_type": q.get("question_type")}
+                  "response": q.get("system_response", "")}
         label_field, label_key = "question_answering_records", "result_type"
     else:
         raise HTTPException(400, f"unknown rec_type: {rec_type}")
@@ -351,7 +355,7 @@ def build_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: 
                     break
     return {"run": run, "uuid": uuid, "generator": generator, "rec_type": rec_type,
             "session_id": session_id, "idx": idx, "target": key,
-            "fields": fields, "prompt": prompt, "judge_labels": labels}
+            "fields": fields, "prompt": prompt, "template": template, "judge_labels": labels}
 
 
 @app.get("/api/judge-input/{run}/{uuid}")
