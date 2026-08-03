@@ -152,7 +152,7 @@ def bm25_retrieval(queries, memories, k: int = 5, sorted: bool = False):
     return documents, document_scores
 
 
-def generate_answers(queries: list[dict], **sampling_params):
+def generate_answers(queries: list[dict], generation_kwargs: dict, **sampling_params):
     sampling_params = SamplingParams(**sampling_params)
 
     prompts = []
@@ -169,7 +169,7 @@ def generate_answers(queries: list[dict], **sampling_params):
             }
         ])
 
-    _ = llm.enqueue_chat(prompts, sampling_params=sampling_params)
+    _ = llm.enqueue_chat(prompts, sampling_params=sampling_params, **generation_kwargs)
     outputs = llm.wait_for_completion()
 
     answers = [output.outputs[0].text for output in outputs]
@@ -421,7 +421,16 @@ if __name__ == "__main__":
         flush()
         
     if args.backend == "vllm":
-        model_kwargs, sampling_params = load_config(args.llm_config)
+        kwargs = load_config(args.llm_config)
+        if isinstance(kwargs, tuple):
+            if len(kwargs) == 2:
+                model_kwargs, sampling_params = kwargs
+            else:
+                model_kwargs, sampling_params, generation_kwargs = kwargs
+        else:
+            model_kwargs = kwargs
+            sampling_params = {}
+            generation_kwargs = {}
         llm: LLM = load_vllm(**model_kwargs)
     else:
         model_kwargs = load_config(args.llm_config)

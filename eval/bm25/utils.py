@@ -122,6 +122,11 @@ def load_config(config_file):
     if model_kwargs.get('sampling_params'):
       sampling_params = model_kwargs.pop("sampling_params")
       return model_kwargs, sampling_params
+    
+    if model_kwargs.get('generation_args'):
+      generation_args = model_kwargs.pop('generation_args')
+      sampling_params = generation_args.pop('sampling_params')
+      return model_kwargs, sampling_params, generation_args
     return model_kwargs
 
 def add_memory_from_dialogue(session_dialogue):

@@ -2,10 +2,11 @@ model: openai/gpt-oss-120b # Qwen/Qwen3-4B-Instruct-2507
 dtype: bfloat16
 quantization: mxfp4 # bitsandbytes
 seed: 42
-sampling_params:
-  n: 1
-  max_tokens: 8192
-  seed: 42
-  temperature: 0.5
+generation_args:
+  sampling_params:
+    n: 1
+    max_tokens: 8192
+    seed: 42
+    temperature: 0.5
   chat_template_kwargs:
     reasoning_effort: high
