@@ -378,9 +378,14 @@ const JUDGE_NAMES = {
   nano: "GPT-5-Nano (minimal)",
   qwen4b: "Qwen3-4B",
   "mini-genmini": "GPT-5-Mini (minimal)",
-  "oss120-genoss120": "gpt-oss-120b (high)",
-  "oss120-genoss120-4u": "gpt-oss-120b (high)",
+  // ⚠ 같은 모델이라도 채점 배치가 다르면 라벨이 다르다 (동일 입력 재채점 불일치 10~27% 실측).
+  //    이름이 겹치면 "상세는 1인데 검토는 0" 같은 혼선이 생기므로 배치를 반드시 병기한다.
+  "oss120-genoss120": "gpt-oss-120b (high · 1유저 배치)",
+  "oss120-genoss120-4u": "gpt-oss-120b (high · 4유저 배치)",
 };
+// 라벨 비교는 대소문자·공백·숫자/문자열 차이를 흡수해서 (거짓 불일치 방지)
+const normLab = (v) => String(v ?? "").trim().toLowerCase();
+const labMatch = (a, b) => normLab(a) !== "" && normLab(a) === normLab(b);
 const judgeLabel = (j) => JUDGE_NAMES[j] || j;
 // run 내부명(full-traced 등) -> 사람용 라벨 ("Qwen3-4B × default (20u)")
 const runLabel = (name) => S.runs.find((r) => r.run === name)?.label || name;
@@ -1496,9 +1501,11 @@ function jmRender() {
   if (d.error) { el.innerHTML = `<p style="padding:20px;color:var(--bad)">${esc(d.error)}</p>`; jmBind(); return; }
 
   const opts = LABEL_SETS[c.rec_type];
-  const myJudge = d.judge_labels?.[c.judge_name] ?? d.judge_labels?.[S.judge];
-  const others = Object.entries(d.judge_labels || {}).filter(([k]) => k !== (c.judge_name || S.judge));
-  const same = JM.my != null && String(myJudge) === String(JM.my);
+  const curJudge = c.judge_name || S.judge;
+  const myJudge = d.judge_labels?.[curJudge];
+  // 모든 judge를 한 줄씩 — 각 judge별로 내 판정과의 일치 여부를 따로 표시 (현재 선택 judge를 맨 위)
+  const jList = Object.entries(d.judge_labels || {})
+    .sort(([a], [b]) => (a === curJudge ? -1 : b === curJudge ? 1 : 0));
 
   el.innerHTML = `
     <div class="jleft">
@@ -1511,12 +1518,21 @@ function jmRender() {
       <div class="jsec"><h5>① 내 판정</h5>
         <div class="jopts">${opts.map(([v, label, desc]) =>
           `<button class="jopt ${JM.my === v ? "on" : ""}" data-lab="${esc(v)}" data-desc="${esc(desc)}">${esc(label)}</button>`).join("")}</div></div>
-      <div class="jsec"><h5>② judge 판정</h5>
+      <div class="jsec"><h5 data-desc="각 judge의 판정을 따로 표시하고, 내 판정과의 일치 여부를 judge별로 각각 계산합니다. ⚠ 같은 모델이라도 채점 배치가 다르면 라벨이 다를 수 있습니다 (동일 입력 재채점 불일치 10~27% 실측)">② judge별 판정 · 내 판정과의 일치</h5>
         ${JM.revealed
-          ? `<div class="jreveal"><span class="jlab">${esc(String(myJudge ?? "–"))}</span>
-              ${JM.my != null ? `<span class="jmatch ${same ? "ok" : "no"}">${same ? "내 판정과 일치" : "불일치"}</span>` : ""}</div>
-             ${others.length ? `<div class="jothers" data-desc="같은 항목에 대한 다른 judge들의 판정 — integrity·accuracy·update는 입력이 레인과 무관하게 동일해 직접 비교됩니다">${others.map(([k, v]) =>
-                `<span class="jo">${esc(judgeLabel(k))} <b>${esc(String(v))}</b></span>`).join("")}</div>` : ""}`
+          ? (jList.length ? `<table class="jtab">${jList.map(([k, v]) => {
+              const spec = LABEL_SETS[c.rec_type].map(([x]) => normLab(x));
+              const offSpec = v != null && !spec.includes(normLab(v));
+              const hit = JM.my != null && labMatch(v, JM.my);
+              const cell = JM.my == null ? ""
+                : v == null ? `<span class="jmatch na" data-desc="judge가 이 항목을 무효(None) 처리했습니다 — 대조 대상이 없습니다">대조 불가</span>`
+                : offSpec ? `<span class="jmatch na" data-desc="judge가 프롬프트 규격(${esc(LABEL_SETS[c.rec_type].map(([x]) => x).join(' / '))})에 없는 값을 반환했습니다. 선택지에 없으므로 일치 여부를 판정하지 않습니다. ⚠ HaluMem 공식 집계도 이런 값은 어느 비율에도 세지 않고 분모만 키웁니다">대조 불가</span>`
+                : `<span class="jmatch ${hit ? "ok" : "no"}">${hit ? "일치" : "불일치"}</span>`;
+              return `<tr class="${k === curJudge ? "cur" : ""}">
+                <td class="jn">${k === curJudge ? '<span class="curdot" data-desc="상단바에서 선택 중인 judge — 주석 저장 시 이 judge의 라벨이 기록됩니다">●</span>' : ""}${esc(judgeLabel(k))}</td>
+                <td class="jv">${esc(String(v ?? "–"))}${offSpec ? '<span class="offspec" data-desc="프롬프트가 정의하지 않은 라벨">규격외</span>' : ""}</td>
+                <td>${cell}</td></tr>`;
+            }).join("")}</table>` : `<p class="small muted">이 항목에 대한 judge 라벨이 없습니다</p>`)
           : `<p class="small muted">블라인드 상태입니다. 내 판정을 고르면 공개됩니다.</p>`}</div>
       <div class="jsec"><h5>③ judge 판정에 동의하십니까?</h5>
         <div class="jopts"><button class="jopt ag ${JM.agree === 1 ? "on" : ""}" data-ag="1">👍 동의</button>
