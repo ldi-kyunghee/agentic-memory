@@ -3,7 +3,5 @@ BACKEND=$2
 RESULTS=$(ls $RESULTS_DIR)
 
 for file in ${RESULTS[@]}; do
-    if [[ ${file} == *"Qwen"* ]]; then
-        uv run eval/bm25/evaluation.py --results_dir $RESULTS_DIR --results_file ${file} --backend ${BACKEND} --config_file ${BACKEND}_config.yaml;
-    fi
+    uv run eval/bm25/evaluation.py --results_dir $RESULTS_DIR --results_file ${file} --backend ${BACKEND} --config_file ${BACKEND}_config.yaml;
 done
