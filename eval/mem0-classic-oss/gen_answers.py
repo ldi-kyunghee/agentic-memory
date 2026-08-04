@@ -21,9 +21,26 @@ MODEL = os.getenv("ANSWER_MODEL", os.getenv("OPENAI_MODEL"))
 REASONING_EFFORT = os.getenv("ANSWER_REASONING_EFFORT")  # gpt-5 계열일 때만 설정 (예: minimal)
 
 
+# 오라클 모드: 메모리 시스템의 검색 결과 대신 '정답 근거 골든'만 context로 준다.
+# 검색·저장을 완벽하게 했다고 가정했을 때의 QA 상한 -> generator 자체가 병목인지 판별용.
+ORACLE = os.getenv("ANSWER_ORACLE_CONTEXT") == "1"
+
+TEMPLATE_MEM0 = """Memories for user {user_id}:
+
+    {memories}
+"""
+
+
+def oracle_context(qa: dict, user_name: str) -> str:
+    """evidence(정답 근거 골든)만으로 검색 context와 동일한 포맷을 구성."""
+    mems = [e["memory_content"] for e in qa.get("evidence", [])]
+    return TEMPLATE_MEM0.format(user_id=user_name, memories=json.dumps(mems, indent=4))
+
+
 @retry(wait=wait_random_exponential(min=5, max=30), stop=stop_after_attempt(3), reraise=True)
 def answer_one(qa: dict) -> dict:
-    prompt = PROMPT_MEMZERO.format(context=qa["context"], question=qa["question"])
+    context = qa["_oracle_context"] if ORACLE else qa["context"]
+    prompt = PROMPT_MEMZERO.format(context=context, question=qa["question"])
     start = time.time()
     kwargs = dict(model=MODEL, messages=[{"role": "user", "content": prompt}])
     if REASONING_EFFORT:
@@ -61,6 +78,14 @@ def main(results_path: str, max_workers: int, out_path: str | None = None, regen
         for qa in s.get("questions", [])
         if regen or "system_response" not in qa
     ]
+    if ORACLE:
+        # 유저별 이름을 붙여 오라클 context를 미리 계산 (검색 context는 건드리지 않고 별도 키에 보관)
+        for user in users:
+            for s in user["sessions"]:
+                for qa in s.get("questions", []):
+                    qa["_oracle_context"] = oracle_context(qa, user.get("user_name", ""))
+        n_ev = sum(1 for qa in pending if qa.get("evidence"))
+        print(f"⚠ 오라클 모드: 검색 context 대신 정답 근거 골든만 제공 (evidence 보유 {n_ev}/{len(pending)})")
     print(f"답변 생성 대상: {len(pending)}개 질문")
 
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
@@ -74,6 +99,10 @@ def main(results_path: str, max_workers: int, out_path: str | None = None, regen
     tmp_path = dest + ".tmp"
     with open(tmp_path, "w", encoding="utf-8") as f:
         for user in users:
+            if ORACLE:  # 임시 키는 산출물에 남기지 않음
+                for s in user["sessions"]:
+                    for qa in s.get("questions", []):
+                        qa.pop("_oracle_context", None)
             f.write(json.dumps(user, ensure_ascii=False) + "\n")
     os.replace(tmp_path, dest)
     print(f"done -> {dest}")

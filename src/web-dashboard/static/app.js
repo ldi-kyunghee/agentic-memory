@@ -607,8 +607,10 @@ function renderSessions() {
       badges = abPair(verdictBadge(q.judge), verdictBadge(qb?.judge));
     }
     const jq = (run, lab) => jmBtn({ run, uuid: S.uuid, session_id: s.session_id, rec_type: "qa", idx: i, generator: S.generator, judge_name: S.judge }, lab);
+    // 골든 정답 자체의 타당성 검수 (judge 판정과 별개 축 — 벤치마크 품질)
+    const jgold = jmBtn({ run: S.run, uuid: S.uuid, session_id: s.session_id, rec_type: "gold_qa", idx: i, generator: S.generator }, "정답검수");
     return `<div class="row" data-qa="${i}" data-desc="클릭하면 이 QA의 4자 대조 화면으로 이동. 드래그로 텍스트 선택 후 코멘트도 가능">
-      <span>${badges}${B?.session ? jq(S.run, "A") + jq(S.runB, "B") : jq(S.run)}</span>
+      <span>${badges}${B?.session ? jq(S.run, "A") + jq(S.runB, "B") : jq(S.run)}${jgold}</span>
       <span class="txt">${esc(q.question)}</span>
       <span class="small muted">${esc(q.question_type || "")}</span></div>`;
   }).join("");
@@ -1236,7 +1238,8 @@ function traceSummary(r) {
   if (r.event === "llm_call") {
     let facts = "";
     try { const j = JSON.parse(r.llm.response); if (j.facts) facts = `fact ${j.facts.length}개`; else if (j.memory) facts = `결정 ${j.memory.length}건`; } catch {}
-    return facts || (r.llm?.response || "").slice(0, 60);
+    const think = r.llm?.reasoning ? ` · 🧠 사고 ${String(r.llm.reasoning).length.toLocaleString()}자` : "";
+    return (facts || (r.llm?.response || "").slice(0, 60)) + think;
   }
   if (r.event === "retrieval") return `"${(r.retrieval?.query || "").slice(0, 40)}" → hit ${r.retrieval?.hits?.length ?? 0}`;
   if (r.event === "memory_write") {
@@ -1330,8 +1333,17 @@ function highlightTraceTarget(r, side = "A") {
 
 function traceDetail(r) {
   if (r.event === "llm_call" && r.llm) {
+    const L = r.llm;
+    // reasoning 모델은 사고 과정이 message.reasoning으로 분리 반환된다 (vLLM --reasoning-parser).
+    // 옛 런에는 이 필드가 없다 — tracing.py에 기록이 추가된 이후 런부터 존재.
+    const meta = [
+      L.finish_reason ? `finish_reason=${L.finish_reason}` : "",
+      L.completion_tokens != null ? `출력 ${L.completion_tokens.toLocaleString()} tok` : "",
+      L.reasoning_tokens != null ? `그중 사고 ${L.reasoning_tokens.toLocaleString()} tok` : "",
+    ].filter(Boolean).join(" · ");
     return r.llm.messages.map((m) => `<p class="small"><b>${esc(m.role)}</b></p><pre class="mono">${esc(m.content)}</pre>`).join("") +
-      `<p class="small"><b>response</b></p><pre class="mono">${esc(r.llm.response)}</pre>`;
+      (L.reasoning ? `<p class="small"><b data-desc="모델이 답을 내기 전 생성한 사고 과정 — 응답 본문(content)에는 포함되지 않습니다">reasoning (사고 과정)</b> <span class="small muted">${esc(String(L.reasoning).length.toLocaleString())}자</span></p><pre class="mono reason">${esc(L.reasoning)}</pre>` : "") +
+      `<p class="small"><b>response</b>${meta ? ` <span class="small muted">${esc(meta)}</span>` : ""}</p><pre class="mono">${esc(L.response)}</pre>`;
   }
   if (r.event === "retrieval" && r.retrieval) {
     const hits = (r.retrieval.hits || []).map((h) => {
@@ -1436,10 +1448,16 @@ const LABEL_SETS = {
   accuracy: [["2", "전부 근거 있음", "이 메모리의 모든 내용이 대화·골든에 근거"], ["1", "부분 근거", "일부만 근거 있음"], ["0", "근거 없음/모순", "대화에 없거나 모순됨"]],
   update: [["Correct", "Correct", "갱신본의 모든 원자 정보·수치가 정확"], ["Hallucination", "Hallucination", "틀린 값을 만들어냄"], ["Omission", "Omission", "디테일을 누락"], ["Other", "Other", "위 셋 중 어디에도 명확히 속하지 않는 갱신 실패 (judge 프롬프트의 4번째 분류)"]],
   qa: [["Correct", "Correct", "정답과 의미가 완전히 동등. ⚠ 정답이 '알 수 없음'인데 시스템도 추측 없이 모른다고 답하면 Correct"], ["Hallucination", "Hallucination", "날조·모순. 정답이 '알 수 없음'인데 단정적 사실을 답한 경우도 포함"], ["Omission", "Omission", "날조는 없으나 필요한 요소를 누락 (다요소 질문은 하나만 빠져도 Omission)"]],
+  // 벤치마크 자체 검수 축 — judge 판정이 아니라 '이 문항의 골든 정답이 타당한가'를 본다
+  gold_qa: [["valid", "타당", "질문·근거에 비추어 이 골든 정답이 맞다"],
+            ["ambiguous", "모호/임의적", "정답이 여러 개일 수 있거나 요약 방식이 임의적이라 채점 기준이 되기 어렵다"],
+            ["unanswerable", "답변 불가", "대화에 근거가 없어 어떤 메모리 시스템도 맞힐 수 없다 (프로필 필드 등 대화 밖 정보)"],
+            ["wrong", "오답", "골든 정답 자체가 틀렸다"]],
 };
-const REC_NAMES = { integrity: "골든 포함 (Integrity)", accuracy: "추출 근거 (Accuracy)", update: "갱신 (Update)", qa: "질의응답 (QA)" };
+const REC_NAMES = { integrity: "골든 포함 (Integrity)", accuracy: "추출 근거 (Accuracy)", update: "갱신 (Update)", qa: "질의응답 (QA)",
+                    gold_qa: "골든 정답 검수 (벤치마크 품질)" };
 
-const JM = { ctx: null, data: null, my: null, revealed: false, raw: false, queue: null, qi: -1, blind: true };
+const JM = { ctx: null, data: null, my: null, revealed: false, raw: false, queue: null, qi: -1, blind: true, note: "", gt: "", agree: null };
 
 function jmOpen(ctx) {
   JM.ctx = ctx; JM.data = null; JM.my = null; JM.revealed = !JM.blind; JM.raw = false;
@@ -1456,8 +1474,8 @@ async function jmLoad() {
     // 기존 내 주석 불러오기 (재방문 시 이어서)
     const mine = (await api(`/api/annotations?run=${c.run}&uuid=${c.uuid}&annotator=${encodeURIComponent(S.author)}`))
       .find((a) => a.session_id === c.session_id && a.rec_type === c.rec_type && a.idx === c.idx);
-    if (mine) { JM.my = mine.label || null; JM.note = mine.note || ""; JM.agree = mine.agree; JM.revealed = true; }
-    else { JM.note = ""; JM.agree = null; }
+    if (mine) { JM.my = mine.label || null; JM.note = mine.note || ""; JM.agree = mine.agree; JM.gt = mine.gt_answer || ""; JM.revealed = true; }
+    else { JM.note = ""; JM.agree = null; JM.gt = ""; }
   } catch (e) { JM.data = { error: String(e.message || e) }; }
   jmRender();
 }
@@ -1507,6 +1525,28 @@ function jmRender() {
   const jList = Object.entries(d.judge_labels || {})
     .sort(([a], [b]) => (a === curJudge ? -1 : b === curJudge ? 1 : 0));
 
+  // 골든 정답 검수 축: judge 대조 없이 '정답 타당성 + 내가 생각하는 정답'만 기록
+  if (c.rec_type === "gold_qa") {
+    el.innerHTML = `
+      <div class="jleft">
+        <div class="jtoggle"><button class="jbtn ${JM.raw ? "" : "on"}" id="jm-view">정리된 화면</button><button class="jbtn ${JM.raw ? "on" : ""}" id="jm-rawv">judge가 받은 프롬프트 원문</button></div>
+        ${JM.raw ? `<pre class="mono jraw">${esc(d.prompt)}</pre>` : jmFieldsHTML({ ...d, rec_type: "qa" })}
+      </div>
+      <div class="jright">
+        <div class="jsec"><h5 data-desc="judge의 판정이 아니라 벤치마크가 제시한 골든 정답 자체가 채점 기준으로 타당한지를 봅니다">① 이 골든 정답은 타당한가?</h5>
+          <div class="jopts">${LABEL_SETS.gold_qa.map(([v, label, desc]) =>
+            `<button class="jopt ${JM.my === v ? "on" : ""}" data-lab="${esc(v)}" data-desc="${esc(desc)}">${esc(label)}</button>`).join("")}</div></div>
+        <div class="jsec"><h5>② 내가 생각하는 정답 (선택)</h5>
+          <textarea id="jm-gt" placeholder="골든이 부적절하다면, 이 질문의 올바른 정답은 무엇이어야 하는지">${esc(JM.gt || "")}</textarea></div>
+        <div class="jsec"><h5>③ 근거 메모 (선택)</h5>
+          <textarea id="jm-note" placeholder="왜 그렇게 판단했는지">${esc(JM.note || "")}</textarea></div>
+        <button class="primary jsave" id="jm-save">저장${JM.queue ? " 후 다음 →" : ""}</button>
+        <div id="jm-msg" class="small muted"></div>
+      </div>`;
+    jmBind();
+    return;
+  }
+
   el.innerHTML = `
     <div class="jleft">
       <div class="jtoggle"><button class="jbtn ${JM.raw ? "" : "on"}" id="jm-view">정리된 화면</button><button class="jbtn ${JM.raw ? "on" : ""}" id="jm-rawv">judge가 받은 프롬프트 원문 (${d.prompt.length.toLocaleString()}자)</button></div>
@@ -1553,8 +1593,8 @@ function jmBind() {
   $("#jm-iaa") && ($("#jm-iaa").onclick = jmIAA);
   $("#jm-prev") && ($("#jm-prev").onclick = () => jmGo(JM.qi - 1));
   $("#jm-next") && ($("#jm-next").onclick = () => jmGo(JM.qi + 1));
-  $$("#jmodal .jopt[data-lab]").forEach((b) => (b.onclick = () => { JM.my = b.dataset.lab; JM.revealed = true; JM.note = $("#jm-note")?.value || JM.note; jmRender(); }));
-  $$("#jmodal .jopt[data-ag]").forEach((b) => (b.onclick = () => { JM.agree = +b.dataset.ag; JM.note = $("#jm-note")?.value || JM.note; jmRender(); }));
+  $$("#jmodal .jopt[data-lab]").forEach((b) => (b.onclick = () => { JM.my = b.dataset.lab; JM.revealed = true; JM.note = $("#jm-note")?.value || JM.note; JM.gt = $("#jm-gt")?.value || JM.gt; jmRender(); }));
+  $$("#jmodal .jopt[data-ag]").forEach((b) => (b.onclick = () => { JM.agree = +b.dataset.ag; JM.note = $("#jm-note")?.value || JM.note; JM.gt = $("#jm-gt")?.value || JM.gt; jmRender(); }));
   $("#jm-save") && ($("#jm-save").onclick = jmSave);
 }
 
@@ -1569,7 +1609,7 @@ async function jmSave() {
       target: String(d.target).slice(0, 2000), generator: c.rec_type === "qa" ? (c.generator || S.generator) : "",
       annotator: S.author, label: JM.my || "", agree: JM.agree,
       judge_name: jn, judge_label: String(d.judge_labels?.[jn] ?? ""), blind: JM.blind ? 1 : 0,
-      note: $("#jm-note")?.value || "",
+      note: $("#jm-note")?.value || "", gt_answer: $("#jm-gt")?.value || "",
     }),
   });
   if (JM.queue && JM.qi < JM.queue.length - 1) { jmGo(JM.qi + 1); return; }
@@ -1613,7 +1653,7 @@ async function jmIAA() {
 }
 
 // 행에 붙는 진입 버튼
-const jmBtn = (ctx, side = "") => `<button class="jopen${side ? " s-" + side.toLowerCase() : ""}" data-jm="${esc(JSON.stringify(ctx))}" data-desc="judge가 이 항목을 판정할 때 받았던 입력(${esc(REC_NAMES[ctx.rec_type])} · ${esc(runLabel(ctx.run))})을 그대로 재현해 직접 평가합니다">검토${side ? ` ${side}` : ""}</button>`;
+const jmBtn = (ctx, side = "") => `<button class="jopen${ctx.rec_type === "gold_qa" ? " gold" : side ? " s-" + side.toLowerCase() : ""}" data-jm="${esc(JSON.stringify(ctx))}" data-desc="${ctx.rec_type === "gold_qa" ? "이 문항의 골든 정답이 채점 기준으로 타당한지 검수합니다 (judge 판정과 별개 축)" : `judge가 이 항목을 판정할 때 받았던 입력(${esc(REC_NAMES[ctx.rec_type])} · ${esc(runLabel(ctx.run))})을 그대로 재현해 직접 평가합니다`}">${ctx.rec_type === "gold_qa" ? "정답검수" : "검토" + (side ? " " + side : "")}</button>`;
 function bindJmButtons(root = document) {
   $$(".jopen", root).forEach((b) => (b.onclick = (ev) => {
     ev.stopPropagation();

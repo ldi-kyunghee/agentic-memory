@@ -56,18 +56,57 @@ class TracingLLM:
     def __init__(self, inner, tracer: TraceLogger):
         self._inner = inner
         self._tracer = tracer
+        self._last_extra = {}
+        self._hook_client()
+
+    def _hook_client(self):
+        # mem0의 generate_response는 message.content(문자열)만 돌려주므로 reasoning 모델의
+        # 사고 과정이 상위에서는 이미 유실된다 (vLLM --reasoning-parser는 message.reasoning으로 분리 반환).
+        # -> OpenAI 클라이언트 레벨에서 원 응답을 가로채 사고 과정·토큰 사용량을 따로 보관한다.
+        comp = getattr(getattr(getattr(self._inner, "client", None), "chat", None), "completions", None)
+        if comp is None:
+            return
+        orig_create = comp.create
+
+        def create(*args, **kwargs):
+            resp = orig_create(*args, **kwargs)
+            extra = {}
+            try:
+                choice = resp.choices[0]
+                msg = choice.message
+                for key in ("reasoning", "reasoning_content"):  # vLLM/OpenAI 양쪽 표기 대응
+                    val = getattr(msg, key, None)
+                    if val:
+                        extra["reasoning"] = val
+                        break
+                extra["finish_reason"] = choice.finish_reason
+                usage = getattr(resp, "usage", None)
+                if usage is not None:
+                    extra["completion_tokens"] = getattr(usage, "completion_tokens", None)
+                    details = getattr(usage, "completion_tokens_details", None)
+                    rt = getattr(details, "reasoning_tokens", None)
+                    if rt:
+                        extra["reasoning_tokens"] = rt
+            except Exception:
+                pass  # trace 부가정보 실패가 본 파이프라인을 막지 않도록
+            self._last_extra = extra
+            return resp
+
+        comp.create = create
 
     def generate_response(self, messages, **kwargs):
         start = time.time()
+        self._last_extra = {}
         response = self._inner.generate_response(messages, **kwargs)
         duration = (time.time() - start) * 1000
-        
+
         # mem0 0.1.118: extraction call은 [system, user] 2개, update decision은 [user] 1개
         # -> system role의 유무가 purpose를 결정함
         has_system = any(m.get("role") == "system" for m in messages)
         purpose = "fact_extraction" if has_system else "update_decision"
 
-        self._tracer.log("llm_call", purpose=purpose, duration_ms=duration, llm={"messages": messages, "response": response})
+        llm = {"messages": messages, "response": response, **self._last_extra}
+        self._tracer.log("llm_call", purpose=purpose, duration_ms=duration, llm=llm)
         return response
     
     def __getattr__(self, name):

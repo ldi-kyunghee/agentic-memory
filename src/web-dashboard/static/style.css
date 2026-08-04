@@ -195,6 +195,7 @@ tr.qa-x > td { background: #fbfbfd; }
 .tr-rec .summ { color: var(--dim); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
 .tr-rec .x { padding: 6px 8px; border-top: 1px solid var(--line); }
 pre.mono { background: #f4f4f6; padding: 8px; border-radius: 6px; white-space: pre-wrap; font-size: 11.5px; max-height: 300px; overflow-y: auto; }
+pre.mono.reason { background: #f6f1fb; border-left: 3px solid #7048a8; }   /* 사고 과정 — 응답 본문과 구분 */
 .hit { display: flex; gap: 6px; padding: 2px 0; border-bottom: 1px dashed var(--line); font-size: 12px; }
 .hit .sc { flex: 0 0 46px; color: var(--dim); font-family: monospace; }
 
@@ -293,6 +294,8 @@ tr.mrow-sel > td.mcol-sel { background: #d6e2ff; }   /* 행∩열 교차 셀은 
 .jopen.s-a:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
 .jopen.s-b { border-color: #c3c8cd; color: var(--bcol); }
 .jopen.s-b:hover { background: var(--bcol); border-color: var(--bcol); color: #fff; }
+.jopen.gold { border-color: #e0c67a; color: #8a6400; }
+.jopen.gold:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
 
 /* 대화 타임스탬프 (프롬프트와 동일하게 노출) */
 .jdlg .jt .r .ts { display: block; font-size: 9.5px; font-weight: 500; color: #9aa0a6; }

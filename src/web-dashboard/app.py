@@ -325,7 +325,7 @@ def build_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: 
         fields = {"memories": mp["memories_from_system"], "updated_memory": key,
                   "original_memory": mp.get("original_memories", [])}
         label_field, label_key = "memory_update_records", "memory_update_type"
-    elif rec_type == "qa":
+    elif rec_type in ("qa", "gold_qa"):
         q = s.get("questions", [])[idx]
         key = q["question"]
         template = EVALUATION_PROMPT_FOR_QUESTION
@@ -339,6 +339,12 @@ def build_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: 
         label_field, label_key = "question_answering_records", "result_type"
     else:
         raise HTTPException(400, f"unknown rec_type: {rec_type}")
+
+    # gold_qa는 judge 판정이 아니라 '벤치마크 정답 자체'를 검토하는 축 — judge 라벨 대조가 의미 없다
+    if rec_type == "gold_qa":
+        return {"run": run, "uuid": uuid, "generator": generator, "rec_type": rec_type,
+                "session_id": session_id, "idx": idx, "target": key,
+                "fields": fields, "prompt": prompt, "template": template, "judge_labels": {}}
 
     # 이 항목에 대한 전체 judge 라벨 (integrity/accuracy/update는 입력이 레인 무관 동일 → 모든 judge와 비교 가능)
     labels = {}
@@ -598,7 +604,7 @@ ANN_COLS = """id INTEGER PRIMARY KEY AUTOINCREMENT,
     rec_type TEXT NOT NULL, idx INTEGER NOT NULL, target TEXT NOT NULL,
     generator TEXT DEFAULT '', annotator TEXT NOT NULL,
     label TEXT DEFAULT '', agree INTEGER, judge_name TEXT DEFAULT '', judge_label TEXT DEFAULT '',
-    blind INTEGER DEFAULT 1, note TEXT DEFAULT '', created_at TEXT NOT NULL"""
+    blind INTEGER DEFAULT 1, note TEXT DEFAULT '', gt_answer TEXT DEFAULT '', created_at TEXT NOT NULL"""
 
 
 @contextmanager
@@ -610,6 +616,10 @@ def adb():
     # 한 분석가가 같은 항목을 두 번 라벨하면 갱신되도록 (QA는 generator 레인 종속이라 키에 포함)
     conn.execute("""CREATE UNIQUE INDEX IF NOT EXISTS ann_key
         ON annotations (annotator, run, uuid, session_id, rec_type, idx, generator)""")
+    # additive 마이그레이션 (기존 주석 보존)
+    acols = [r["name"] for r in conn.execute("PRAGMA table_info(annotations)")]
+    if "gt_answer" not in acols:
+        conn.execute("ALTER TABLE annotations ADD COLUMN gt_answer TEXT DEFAULT ''")
     try:
         yield conn
         conn.commit()
@@ -632,6 +642,7 @@ class AnnotationIn(BaseModel):
     judge_label: str = ""
     blind: int = 1
     note: str = ""
+    gt_answer: str = ""   # gold_qa 검수 시 분석가가 제시하는 올바른 정답
 
 
 @app.post("/api/annotations")
@@ -642,15 +653,15 @@ def add_annotation(a: AnnotationIn):
         conn.execute(
             """INSERT INTO annotations
                (run, uuid, session_id, rec_type, idx, target, generator, annotator,
-                label, agree, judge_name, judge_label, blind, note, created_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                label, agree, judge_name, judge_label, blind, note, gt_answer, created_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                ON CONFLICT (annotator, run, uuid, session_id, rec_type, idx, generator)
                DO UPDATE SET label=excluded.label, agree=excluded.agree, judge_name=excluded.judge_name,
                  judge_label=excluded.judge_label, blind=excluded.blind, note=excluded.note,
-                 created_at=excluded.created_at""",
+                 gt_answer=excluded.gt_answer, created_at=excluded.created_at""",
             (a.run, a.uuid, a.session_id, a.rec_type, a.idx, a.target, a.generator,
              a.annotator.strip(), a.label, a.agree, a.judge_name, a.judge_label, a.blind, a.note,
-             datetime.now(timezone.utc).isoformat()))
+             a.gt_answer, datetime.now(timezone.utc).isoformat()))
     return {"ok": True}
 
 
@@ -720,7 +731,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
             vs_judge.append({"annotator": a, **st})
     # 레코드 타입별 분석가 vs judge
     by_type = []
-    for t in ["integrity", "accuracy", "update", "qa"]:
+    for t in ["integrity", "accuracy", "update", "qa"]:  # gold_qa는 judge 대조 축이 아니라 제외
         pr = [(r["label"], r["judge_label"]) for r in labeled
               if r["rec_type"] == t and r["judge_label"] not in (None, "")]
         st = _kappa(pr)
@@ -798,7 +809,7 @@ def api_queue(rebuild: int = 0, per_type: int = 40, judge: str = "oss120-genoss1
             continue
         buckets[(it[3], str(it[5]))].append(it)
     picked = []
-    for t in ["integrity", "accuracy", "update", "qa"]:
+    for t in ["integrity", "accuracy", "update", "qa"]:  # gold_qa는 judge 대조 축이 아니라 제외
         keys = sorted(k for k in buckets if k[0] == t)
         if not keys:
             continue
