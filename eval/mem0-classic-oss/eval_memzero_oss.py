@@ -21,6 +21,7 @@ logging.getLogger("mem0.vector_stores.qdrant").setLevel(logging.ERROR)  # Resett
 sys.path.insert(0, "src/mem0-classic-oss")  # tracing.py import를 위해 src를 sys.path에 추가
 from tracing import TraceLogger, TracingLLM, TracingVectorStore
 from custom_prompt import CUSTOM_FACT_EXTRACTION_PROMPT
+from oracle import OracleLLM
 
 from mem0 import Memory
 # mem0 0.1.118 텔레메트리 무력화:
@@ -158,6 +159,17 @@ def process_user(user_data: dict, top_k: int, save_path: str, collection_name: s
         )
         memory.delete_all(user_id=user_id)  # 재실행 대비 초기화 작업임
 
+        # 단계별 오라클: 해당 단계의 LLM 응답을 정답으로 대체함 (mem0 코드는 무수정)
+        # TracingLLM이 바깥에 오도록 먼저 감싸야 주입된 응답이 trace에 그대로 남음
+        oracle = None
+        if os.getenv("MEM0_ORACLE_EXTRACTION") == "1" or os.getenv("MEM0_ORACLE_UPDATE") == "1":
+            oracle = OracleLLM(
+                memory.llm,
+                extraction=os.getenv("MEM0_ORACLE_EXTRACTION") == "1",
+                update=os.getenv("MEM0_ORACLE_UPDATE") == "1",
+            )
+            memory.llm = oracle
+
         if trace_dir:
             tracer  = TraceLogger(
                 os.path.join(trace_dir, f"{uuid}.jsonl"),
@@ -183,6 +195,10 @@ def process_user(user_data: dict, top_k: int, save_path: str, collection_name: s
             }
 
             dialogue = [{"role": t["role"], "content": t["content"]} for t in session["dialogue"]]
+
+            if oracle:
+                # 이번 세션의 정답 골든을 오라클에 전달 (미끼 제외는 OracleLLM이 처리)
+                oracle.set_session(session["memory_points"])
 
             result, duration_ms = add_with_retry(
                 memory,
@@ -247,6 +263,8 @@ def process_user(user_data: dict, top_k: int, save_path: str, collection_name: s
 
         with open(tmp_file, "w", encoding="utf-8") as f:
             json.dump(out, f, ensure_ascii=False)
+        if oracle:  # 오라클이 실제로 몇 건을 주입했는지 (조작 점검용)
+            print(f"[oracle:{user_name}] {oracle.stats}", flush=True)
         return f"saved {user_name} -> {tmp_file}"
     except Exception:
         err_path = os.path.join(save_path, "tmp", f"{uuid}_error.log")
@@ -263,6 +281,8 @@ def main(data_path: str, version: str, top_k: int=20, user_num: int | None = Non
     collection_name = f"halumem_{version}"
     print(f"fact extraction prompt: {'halumem-custom' if os.getenv('MEM0_CUSTOM_FACT_PROMPT') == 'halumem' else 'mem0-default'}")
     print(f"reasoning effort override: {os.getenv('MEM0_REASONING_EFFORT') or '없음 (모델 기본값)'}")
+    _orc = [n for n, e in (("추출", "MEM0_ORACLE_EXTRACTION"), ("갱신결정", "MEM0_ORACLE_UPDATE")) if os.getenv(e) == "1"]
+    print(f"oracle 단계: {' + '.join(_orc) if _orc else '없음 (전 단계 실제 수행)'}")
     trace_dir = None
     if trace:
         trace_dir = f"traces/mem0-classic-oss/{version}/"

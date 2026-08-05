@@ -34,6 +34,41 @@ generators:
     judges:
       oss120-genoss120-4u: "results/mem0-classic-oss/judge-oss120-genoss120-4u-{run}/judge"
 
+# 단계별 오라클 상한 사다리 — mem0 파이프라인의 각 단계를 차례로 '완벽'하게 만들며 QA 상한을 잰다.
+# 아직 안 돌린 단계는 화면에서 '미실행'으로 표시되고, 산출물이 생기면 자동으로 채워진다.
+# stages: 그 행에서 오라클로 대체된 단계 (extraction=fact 추출, update=갱신 결정, retrieval=저장·검색)
+oracle_ladder:
+  note: "Martin 1유저 · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 각 행의 차이가 그 단계의 기여분"
+  steps:
+    - key: actual
+      label: "실측 (오라클 없음)"
+      stages: []
+      run: oss120b4
+      generator: oss120
+      judge: oss120-genoss120
+      desc: "gpt-oss-120b 백본이 실제로 추출·갱신·검색한 결과 — 사다리의 기준선"
+    - key: e1
+      label: "추출 오라클"
+      stages: [extraction]
+      run: oe1
+      generator: oss120
+      judge: oss120-genoss120
+      desc: "골든 메모리(미끼 제외)를 추출 결과로 주입. 갱신 결정·저장·검색은 실제 로직"
+    - key: e2
+      label: "추출+갱신 오라클"
+      stages: [extraction, update]
+      run: oe2
+      generator: oss120
+      judge: oss120-genoss120
+      desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐 — 백본 무관"
+    - key: retrieval
+      label: "검색까지 오라클"
+      stages: [extraction, update, retrieval]
+      run: full-traced
+      generator: oracle
+      judge: oracle-oss120
+      desc: "검색 결과 대신 정답 근거(evidence)를 직접 제공. 메모리 시스템을 전혀 쓰지 않으므로 어느 런에 걸어도 동일한 상한이다. 남은 것은 generator와 문항 자체"
+
 runs:
   full-traced:
     label: "Qwen3-4B × default (20u)"
@@ -188,6 +223,31 @@ runs:
     traces: traces/mem0-classic-oss/oss120b4-custom
     judges:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-oss120b4-custom/judge
+
+  # ── 단계별 오라클 사다리 전용 런 (전부 gpt-oss-120b · effort=high · Martin 1유저) ──
+  oe1:
+    label: "오라클 ① 추출 (1u)"
+    note: "fact 추출을 골든으로 대체(미끼 제외). 갱신 결정·저장·검색은 실제 로직 — 추출 커버리지의 기여분 측정용"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium) · 추출 단계는 오라클로 대체 (남은 LLM 호출은 갱신 결정뿐)"
+    prompt: oracle-extraction
+    embedder: Qwen3-Embedding-4B
+    users: 1
+    results: results/mem0-classic-oss/memzero-oss-oe1/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oe1
+    judges: {}
+
+  oe2:
+    label: "오라클 ② 추출+갱신 (1u)"
+    note: "추출·갱신 결정 모두 정답으로 대체. LLM 호출이 사실상 없어 백본 무관 — 저장소+검색만의 상한"
+    backbone: gpt-oss-120b
+    backbone_effort: "해당 없음 (추출·갱신 모두 오라클)"
+    prompt: oracle-extraction+update
+    embedder: Qwen3-Embedding-4B
+    users: 1
+    results: results/mem0-classic-oss/memzero-oss-oe2/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oe2
+    judges: {}
 
   # (참고) 옛 주석 원형:
   # think4:

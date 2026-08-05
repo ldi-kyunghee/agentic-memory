@@ -282,6 +282,20 @@ tr.mrow-sel > td.mcol-sel { background: #d6e2ff; }   /* 행∩열 교차 셀은 
 .repnote { font-size: 11px; border-radius: 6px; padding: 4px 8px; margin-bottom: 6px; cursor: help; }
 .repnote.unst { background: #fff4e6; color: #8a5600; border-left: 3px solid var(--warn); }
 .repnote.st { background: #e5f6e9; color: #1c6b30; border-left: 3px solid var(--ok); }
+/* 단계별 오라클 사다리 */
+table.ladder td { vertical-align: middle; }
+table.ladder tr.pend { opacity: .55; }
+.ladder .lstep { cursor: help; min-width: 150px; }
+.ladder .lst { text-align: center; font-size: 10.5px; font-weight: 700; color: var(--dim); cursor: help; white-space: nowrap; }
+.ladder .lst.on { background: #f0e9fa; color: #5b3b91; font-weight: 800; }
+.ladder .lqa { min-width: 130px; white-space: nowrap; }
+.ladder .lbar { display: inline-block; width: 76px; height: 8px; background: var(--chip); border-radius: 4px; overflow: hidden; margin-right: 6px; vertical-align: middle; }
+.ladder .lbar span { display: block; height: 100%; background: linear-gradient(90deg, #74a9ff, var(--accent)); }
+.ladder .lgain { cursor: help; }
+.ladder .ldelta { font-weight: 800; border-radius: 5px; padding: 1px 6px; font-size: 11px; }
+.ladder .ldelta.up { background: #e5f6e9; color: #1c6b30; }
+.ladder .ldelta.down { background: #fdecec; color: var(--bad); }
+
 /* 오라클 레인 안내 */
 .oracle-note { background: #f6f1fb; border-left: 3px solid #7048a8; color: #4a2f78; border-radius: 0 7px 7px 0; padding: 7px 11px; margin-bottom: 10px; font-size: 12px; cursor: help; }
 .card.oracle-card { border-color: var(--ok); box-shadow: 0 0 0 2px #e5f6e9; }

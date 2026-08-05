@@ -1124,6 +1124,7 @@ async function renderMetrics() {
 
   const anySel = S.metricsSelRows.size || S.metricsSelCols.size;
   $("#content").innerHTML = `
+    <div id="ladder-card"></div>
     <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
       · 행 왼쪽 ○ 클릭=행 하이라이트, 열 머리글 클릭=열 하이라이트 (재클릭=해제)${anySel ? ` <button id="msel-clear" class="ctx-toggle" style="margin-left:6px">선택 모두 해제</button>` : ""}</div>
     <div class="card"><div class="body" style="overflow-x:auto">
@@ -1138,6 +1139,7 @@ async function renderMetrics() {
         ${METRIC_COLS.map((c) => `<th class="${colCls(c.k)}" data-col="${c.k}" data-desc="${esc(METRIC_DEFS[c.k])}<br>클릭=열 하이라이트">${esc(c.label)}</th>`).join("")}
       </tr>${body}</table></div></div>
     ${rows.length < data.rows.length ? `<p class="hint">⚠ ${data.rows.length - rows.length}개 런은 이 judge(${judgeName}) 라벨이 없어 표시 제외</p>` : ""}`;
+  renderLadder();
 
   $$("#content .rowsel[data-runsel]").forEach((td) => (td.onclick = () => {
     const k = td.dataset.runsel;
@@ -1150,6 +1152,50 @@ async function renderMetrics() {
     renderMetrics();
   }));
   $("#msel-clear") && ($("#msel-clear").onclick = () => { S.metricsSelRows.clear(); S.metricsSelCols.clear(); renderMetrics(); });
+}
+
+/* ----- 단계별 오라클 상한 사다리 ----- */
+
+const LADDER_STAGES = ["extraction", "update", "retrieval"];
+
+async function renderLadder() {
+  const box = $("#ladder-card");
+  if (!box) return;
+  let d;
+  try { d = await api(`/api/oracle-ladder?scope=${S.metricsScope}`); }
+  catch { box.innerHTML = ""; return; }
+  if (!d.rows.length) { box.innerHTML = ""; return; }
+
+  const done = d.rows.filter((r) => r.qa_c != null);
+  const max = Math.max(...done.map((r) => r.qa_c), 100);
+  const rows = d.rows.map((r, i) => {
+    const stages = LADDER_STAGES.map((s) => {
+      const on = r.stages.includes(s);
+      return `<td class="lst ${on ? "on" : ""}" data-desc="${esc(d.stage_names[s])} 단계 — ${on ? "이 행에서는 정답으로 대체됨(오라클)" : "실제 시스템이 수행"}">${on ? "오라클" : "실측"}</td>`;
+    }).join("");
+    const bar = r.qa_c == null ? `<span class="small muted">미실행</span>`
+      : `<div class="lbar"><span style="width:${(r.qa_c / max * 100).toFixed(1)}%"></span></div><b>${r.qa_c.toFixed(2)}</b>`;
+    const dl = r.delta == null ? "" : `<span class="ldelta ${r.delta >= 0 ? "up" : "down"}">${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(2)}</span>`;
+    return `<tr class="${r.qa_c == null ? "pend" : ""}">
+      <td class="lstep" data-desc="${esc(r.desc)}"><b>${esc(r.label)}</b><br><span class="small muted">${esc(r.run_label || r.run)}</span></td>
+      ${stages}
+      <td class="lqa">${bar}</td>
+      <td class="lgain" data-desc="직전 단계 대비 QA Correct 증가분 — 이 단계를 완벽하게 만들었을 때 얻는 성능">${dl}</td></tr>`;
+  }).join("");
+
+  const first = done[0], last = done[done.length - 1];
+  const gap = first && last && first !== last ? (last.qa_c - first.qa_c).toFixed(2) : null;
+  box.innerHTML = `
+    <div class="card"><h4 data-desc="mem0 파이프라인의 각 단계를 차례로 '완벽한 정답'으로 대체하며 QA 상한을 잽니다. 행 사이의 증가분이 곧 그 단계의 기여분입니다">
+        단계별 오라클 상한 사다리${gap ? ` <span class="small" style="text-transform:none;color:var(--accent);font-weight:800">실측 → 상한 +${gap}p</span>` : ""}</h4>
+      <div class="body">
+        <table class="cmp ladder"><tr>
+          <th>세팅</th><th data-desc="fact 추출 단계">추출</th><th data-desc="ADD/UPDATE/DELETE 갱신 결정 단계">갱신</th>
+          <th data-desc="저장소에서 답변 재료를 찾아오는 단계">저장·검색</th>
+          <th data-desc="QA Correct — 이 사다리에서 유일하게 의미 있는 지표. 오라클 행은 저장물이 골든 자체라 R·Acc는 100 근처로 붙어 무의미합니다">QA C↑</th>
+          <th>직전 대비</th></tr>${rows}</table>
+        <p class="small muted" style="margin-top:8px">${esc(d.note)} · 남은 구간(상한 → 100)은 generator 자체와 문항·정답 결함의 몫입니다.</p>
+      </div></div>`;
 }
 
 /* ----- Digest ----- */

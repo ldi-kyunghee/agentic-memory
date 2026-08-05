@@ -746,6 +746,37 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
     }
 
 
+@app.get("/api/oracle-ladder")
+def api_oracle_ladder(scope: str = "first4"):
+    """단계별 오라클 상한 사다리 — 각 단계를 완벽하게 만들었을 때의 QA 상한과 구간별 기여분.
+    아직 안 돌린 단계는 metrics=None으로 내려가 화면에서 '미실행'으로 표시된다."""
+    cfg = load_registry_doc().get("oracle_ladder") or {}
+    reg = load_registry()
+    rows, prev = [], None
+    for st in cfg.get("steps", []):
+        run, gen, judge = st.get("run"), st.get("generator"), st.get("judge")
+        m = None
+        if run in reg:
+            try:
+                m = compute_metrics(run, judge, scope, gen)
+            except HTTPException:
+                m = None
+        qa = m["qa_c"] if m else None
+        rows.append({
+            "key": st.get("key"), "label": st.get("label"), "stages": st.get("stages", []),
+            "run": run, "run_label": reg.get(run, {}).get("label", run),
+            "generator": gen, "judge": judge, "desc": st.get("desc", ""),
+            "qa_c": qa, "qa_h": m["qa_h"] if m else None, "qa_o": m["qa_o"] if m else None,
+            "n_users": m["n_users"] if m else None,
+            "delta": None if (qa is None or prev is None) else round(qa - prev, 2),
+        })
+        if qa is not None:
+            prev = qa
+    return {"note": cfg.get("note", ""), "scope": scope,
+            "stage_names": {"extraction": "추출", "update": "갱신", "retrieval": "저장·검색"},
+            "rows": rows}
+
+
 @app.get("/api/judge-consistency")
 def api_judge_consistency(run: str = "oss120b4", generator: str = "oss120",
                           judges: str = "oss120-genoss120,oss120-rep1,oss120-rep2,oss120-rep3"):
