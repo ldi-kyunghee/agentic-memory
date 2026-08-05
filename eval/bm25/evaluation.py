@@ -32,12 +32,12 @@ def init_parser():
     return parser
 
 def load_vllm(model_kwargs: dict, enable_reasoning: bool = False):
-    if enable_reasoning:
-        reasoning_config = ReasoningConfig(
-            reasoning_start_str="<think>",
-            reasoning_end_str="</think>"
-        )
-        model_kwargs['reasoning_config'] = reasoning_config
+    # if enable_reasoning:
+    #     reasoning_config = ReasoningConfig(
+    #         reasoning_start_str="<think>",
+    #         reasoning_end_str="</think>"
+    #     )
+    #     model_kwargs['reasoning_config'] = reasoning_config
         
     llm = LLM(
         max_num_seqs=128,
