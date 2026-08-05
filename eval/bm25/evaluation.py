@@ -1,10 +1,7 @@
 import argparse
-import copy
 import gc
 import json
 import os
-import re
-import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
 
@@ -14,6 +11,7 @@ from llms import llm_request_for_json
 from tqdm import tqdm
 from utils import EVALUATION_PROMPT_FOR_QUESTION, QAEval, load_config
 from vllm import LLM, SamplingParams
+from vllm.config import ReasoningConfig
 from vllm.sampling_params import StructuredOutputsParams
 
 load_dotenv()
@@ -28,7 +26,14 @@ def init_parser():
     parser.add_argument('--config_file', type=str)
     return parser
 
-def load_vllm(**model_kwargs):
+def load_vllm(model_kwargs: dict, enable_reasoning: bool = False):
+    if enable_reasoning:
+        reasoning_config = ReasoningConfig(
+            reasoning_start_str="<think>",
+            reasoning_end_str="</think>"
+        )
+        model_kwargs['reasoning_config'] = reasoning_config
+        
     llm = LLM(
         max_num_seqs=128,
         **model_kwargs
@@ -149,7 +154,7 @@ def llm_judge_eval(qa_results, max_workers: int = 10):
             try:
                 result = future.result()
                 result_type = result.get("evaluation_result")
-            except Exception as e:
+            except Exception:
                 result_type = None
             qa["result_type"] = result_type
             eval_results.append(qa)
@@ -201,16 +206,19 @@ def main(args, max_workers: int = 10):
         data = json.load(file)
 
     if args.backend == 'vllm':
-        kwargs = load_config(args.config_file)
         model_kwargs, sampling_params, generation_kwargs = None, None, None
+        enable_reasoning = False
+        kwargs = load_config(args.config_file)
         if isinstance(kwargs, tuple):
             if len(kwargs) == 3:
                 model_kwargs, sampling_params, generation_kwargs = kwargs
+                if (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') is not None) and (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') != "none"):
+                    enable_reasoning = True          
             else:
                 model_kwargs, sampling_params = kwargs
         else:
             model_kwargs = kwargs
-        llm = load_vllm(**model_kwargs)
+        llm = load_vllm(model_kwargs, enable_reasoning)
         eval_fn = partial(llm_judge_vllm, llm=llm, sampling_params=sampling_params, generation_kwargs=generation_kwargs)
     elif args.backend == 'openai':
         model_kwargs = load_config(args.config_file)
