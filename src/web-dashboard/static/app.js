@@ -382,7 +382,14 @@ const JUDGE_NAMES = {
   //    이름이 겹치면 "상세는 1인데 검토는 0" 같은 혼선이 생기므로 배치를 반드시 병기한다.
   "oss120-genoss120": "gpt-oss-120b (high · 1유저 배치)",
   "oss120-genoss120-4u": "gpt-oss-120b (high · 4유저 배치)",
+  // 동일 입력 반복 채점 — 항목별로 나란히 보면 judge가 어디서 흔들리는지 바로 드러난다
+  "oss120-rep1": "gpt-oss-120b (high · 반복 1)",
+  "oss120-rep2": "gpt-oss-120b (high · 반복 2)",
+  "oss120-rep3": "gpt-oss-120b (high · 반복 3)",
+  "oracle-oss120": "gpt-oss-120b (high · 오라클)",
 };
+// 같은 모델을 동일 입력으로 반복 채점한 세트 — 이 사이의 라벨 차이가 곧 judge 자기 비일관성
+const REPEAT_JUDGES = ["oss120-genoss120", "oss120-rep1", "oss120-rep2", "oss120-rep3"];
 // 라벨 비교는 대소문자·공백·숫자/문자열 차이를 흡수해서 (거짓 불일치 방지)
 const normLab = (v) => String(v ?? "").trim().toLowerCase();
 const labMatch = (a, b) => normLab(a) !== "" && normLab(a) === normLab(b);
@@ -930,14 +937,16 @@ function renderQADetail(sid, qi, fromSession) {
     }
   }
 
+  const isOracle = S.generator === "oracle";
   $("#content").innerHTML = `
     ${fromSession ? `<span class="backlink" id="btn-back">← 세션 S${sid}로 돌아가기</span>` : ""}
-    <div class="hint">S${sid} · ${esc(q.question_type || "")} — 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → context</div>
+    ${isOracle ? `<div class="oracle-note" data-desc="이 레인은 메모리 시스템의 검색 결과를 쓰지 않습니다. 저장·검색이 완벽했다고 가정한 QA 상한을 재기 위한 대조군입니다">⚠ <b>오라클 레인</b> — 이 답변은 아래 <b>검색 Context가 아니라 Evidence(정답 근거 골든)</b>만 보고 생성됐습니다. 저장·검색이 완벽했을 때의 상한을 재는 대조군이며, 아래 검색 Context는 참고용으로만 표시됩니다.</div>` : ""}
+    <div class="hint">S${sid} · ${esc(q.question_type || "")} — 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → ${isOracle ? "Evidence(실제 사용) → 검색 context(참고)" : "context"}</div>
     <div class="card"><h4 data-k="question">질문</h4><div class="body">${esc(q.question)}</div></div>
     <div class="card"><h4 data-k="answer">골든 정답</h4><div class="body">${esc(q.answer)}</div></div>
     <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(runLabel(S.run))} 답변` : "시스템 답변 (A′)"}${genTxt} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
     ${bCard}
-    <div class="card"><h4 data-k="evidence">Evidence (${(q.evidence || []).length})</h4><div class="body">${ev}</div></div>
+    <div class="card${isOracle ? " oracle-card" : ""}"><h4 data-k="evidence">Evidence (${(q.evidence || []).length})${isOracle ? ' <span class="small" style="text-transform:none;color:var(--ok);font-weight:800">← 이 레인이 실제로 사용한 입력</span>' : ""}</h4><div class="body">${ev}</div></div>
     <div class="card"><h4 data-k="context">${S.bundleB ? "A " : ""}검색 Context (${items ? items.length + "건" : "원문"})
       ${items ? '<button class="ctx-toggle" id="ctx-toggle">원문 보기</button>' : ""}</h4>
       <div class="body"><div id="ctx-list">${listHTML ?? rawHTML}</div><div id="ctx-raw" class="hidden">${rawHTML}</div></div></div>
@@ -1524,6 +1533,10 @@ function jmRender() {
   // 모든 judge를 한 줄씩 — 각 judge별로 내 판정과의 일치 여부를 따로 표시 (현재 선택 judge를 맨 위)
   const jList = Object.entries(d.judge_labels || {})
     .sort(([a], [b]) => (a === curJudge ? -1 : b === curJudge ? 1 : 0));
+  // 동일 judge를 같은 입력으로 반복 채점한 결과가 갈리면 = 판정이 경계선에 있는 항목
+  const reps = REPEAT_JUDGES.map((k) => d.judge_labels?.[k]).filter((v) => v != null);
+  const repSet = [...new Set(reps.map(normLab))];
+  const unstable = reps.length >= 2 && repSet.length > 1;
 
   // 골든 정답 검수 축: judge 대조 없이 '정답 타당성 + 내가 생각하는 정답'만 기록
   if (c.rec_type === "gold_qa") {
@@ -1558,7 +1571,9 @@ function jmRender() {
       <div class="jsec"><h5>① 내 판정</h5>
         <div class="jopts">${opts.map(([v, label, desc]) =>
           `<button class="jopt ${JM.my === v ? "on" : ""}" data-lab="${esc(v)}" data-desc="${esc(desc)}">${esc(label)}</button>`).join("")}</div></div>
-      <div class="jsec"><h5 data-desc="각 judge의 판정을 따로 표시하고, 내 판정과의 일치 여부를 judge별로 각각 계산합니다. ⚠ 같은 모델이라도 채점 배치가 다르면 라벨이 다를 수 있습니다 (동일 입력 재채점 불일치 10~27% 실측)">② judge별 판정 · 내 판정과의 일치</h5>
+      <div class="jsec"><h5 data-desc="각 judge의 판정을 따로 표시하고, 내 판정과의 일치 여부를 judge별로 각각 계산합니다. ⚠ 같은 모델이라도 채점 회차가 다르면 라벨이 다를 수 있습니다 (동일 입력 반복 채점 실측)">② judge별 판정 · 내 판정과의 일치</h5>
+        ${reps.length >= 2 ? `<div class="repnote ${unstable ? "unst" : "st"}" data-desc="같은 judge에 완전히 동일한 입력을 ${reps.length}회 넣었을 때의 결과입니다. 갈렸다면 이 항목은 판정 경계선에 있다는 뜻이고, 어느 한쪽이 '정답'이라고 보기 어렵습니다 (반복 실측: 명확한 항목은 2~3%만 흔들리는 반면 경계선 항목은 30~55%가 흔들림)">
+          ${unstable ? `⚠ 반복 채점 ${reps.length}회에서 <b>판정이 갈린 항목</b> (${repSet.map((x) => esc(x)).join(" / ")})` : `✓ 반복 채점 ${reps.length}회 모두 동일 판정`}</div>` : ""}
         ${JM.revealed
           ? (jList.length ? `<table class="jtab">${jList.map(([k, v]) => {
               const spec = LABEL_SETS[c.rec_type].map(([x]) => normLab(x));
@@ -1648,8 +1663,18 @@ async function jmIAA() {
     <h4 style="margin:14px 0 6px">판정 유형별 (전체 분석가 합산 vs judge)</h4>
     <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th></tr>
       ${d.by_type.map((p) => row({ label: REC_NAMES[p.rec_type] || p.rec_type, ...p })).join("") || `<tr><td colspan="4" class="muted">아직 없음</td></tr>`}</table>
+    <h4 style="margin:18px 0 6px" data-desc="완전히 동일한 입력을 같은 judge로 여러 번 채점했을 때의 결과 — judge 자체의 재현성입니다 (분석가와 무관)">judge 자기 일관성 (동일 입력 반복 채점)</h4>
+    <div id="jc-box" class="small muted">집계 중…</div>
     <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
   $("#jm-back").onclick = jmRender;
+  try {
+    const jc = await api("/api/judge-consistency");
+    $("#jc-box").innerHTML = !jc.rows.length ? `<p class="small muted">${esc(jc.note || "반복 채점 세트 없음")}</p>` : `
+      <p class="small muted">${esc(runLabel(jc.run))} · ${jc.reps || jc.judges.length}회 반복 · 유저 ${jc.users}명 — 같은 입력을 같은 judge로 반복 채점</p>
+      <table class="cmp"><tr><th>레코드</th><th>항목</th><th data-desc="모든 회차가 같은 라벨을 준 항목 비율">전회 일치</th><th data-desc="다수결 라벨과 다르게 매긴 판정의 비율">다수결 이탈</th><th data-desc="다수결 라벨별 흔들린 항목 비율 — 판정이 애매한 구간에 불안정성이 집중됩니다">라벨별 흔들림</th></tr>
+        ${jc.rows.map((r) => `<tr><td>${esc(r.rec_type)}</td><td>${r.n.toLocaleString()}</td><td>${r.unanimous}%</td><td>${r.deviation}%</td>
+          <td class="small">${Object.entries(r.by_major).map(([k, v]) => `${esc(k)}: ${v.unstable}% <span class="muted">(${v.n})</span>`).join(" · ")}</td></tr>`).join("")}</table>`;
+  } catch (e) { $("#jc-box").innerHTML = `<p class="small muted">불러오기 실패: ${esc(e.message)}</p>`; }
 }
 
 // 행에 붙는 진입 버튼

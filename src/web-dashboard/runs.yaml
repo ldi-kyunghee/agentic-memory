@@ -16,6 +16,17 @@ generators:
     results: "results/mem0-classic-oss/genoss120/{run}.jsonl"
     judges:
       oss120-genoss120: "results/mem0-classic-oss/judge-oss120-genoss120-{run}/judge"
+      # 동일 입력·동일 judge 반복 채점 (자기 일관성 측정용, oss120b4에만 존재)
+      oss120-rep1: "results/mem0-classic-oss/judge-rep1-{run}/judge"
+      oss120-rep2: "results/mem0-classic-oss/judge-rep2-{run}/judge"
+      oss120-rep3: "results/mem0-classic-oss/judge-rep3-{run}/judge"
+  # 오라클 상한 레인: 검색 결과 대신 '정답 근거 골든(evidence)'만 주고 답변시킨 결과.
+  # 저장·검색이 완벽했을 때의 QA 상한 — generator 병목 여부 판별용 (full-traced에만 존재)
+  oracle:
+    label: "오라클 (정답 근거만 · QA 상한)"
+    results: "results/mem0-classic-oss/genoracle/{run}.jsonl"
+    judges:
+      oracle-oss120: "results/mem0-classic-oss/judge-oracle-{run}/judge"
   # 1u 레인의 4유저 확장본. 1u 레인은 정성분석가들의 작업·코멘트 스코프 보존을 위해 그대로 둠
   oss120-4u:
     label: "gpt-oss-120b (high · 4유저)"

@@ -746,6 +746,62 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
     }
 
 
+@app.get("/api/judge-consistency")
+def api_judge_consistency(run: str = "oss120b4", generator: str = "oss120",
+                          judges: str = "oss120-genoss120,oss120-rep1,oss120-rep2,oss120-rep3"):
+    """동일 입력을 같은 judge로 반복 채점한 세트들의 자기 일관성.
+    '집계는 안정한데 개별 판정은 흔들린다'를 화면에서 바로 확인하기 위한 요약."""
+    names = [j.strip() for j in judges.split(",") if j.strip()]
+    _, avail = resolve_lane(run, generator)
+    names = [j for j in names if j in avail and (ROOT / avail[j]).exists()]
+    if len(names) < 2:
+        return {"run": run, "judges": names, "rows": [], "note": "반복 채점 세트가 2개 미만"}
+
+    uuids = sorted({f[:-5] for j in names for f in os.listdir(ROOT / avail[j]) if f.endswith(".json")})
+    specs = [("memory_integrity_records", "memory_integrity_score", "memory_content", "Integrity"),
+             ("memory_accuracy_records", "memory_accuracy_score", "memory_content", "Accuracy"),
+             ("memory_update_records", "memory_update_type", "memory_content", "Update"),
+             ("question_answering_records", "result_type", "question", "QA")]
+    rows = []
+    for key, fld, idf, label in specs:
+        maps = []
+        for j in names:
+            m = {}
+            for uid in uuids:
+                jd = load_judge(run, j, uid, generator)
+                if jd:
+                    for r in jd.get(key, []):
+                        m[(uid, r["session_id"], r[idf])] = str(r.get(fld))
+            maps.append(m)
+        common = set.intersection(*[set(m) for m in maps]) if maps else set()
+        if not common:
+            continue
+        unanim = dev = tot = 0
+        by_major: dict = {}
+        for k in common:
+            vals = [m[k] for m in maps]
+            cnt: dict = {}
+            for v in vals:
+                cnt[v] = cnt.get(v, 0) + 1
+            maj = max(cnt, key=lambda x: cnt[x])
+            if len(cnt) == 1:
+                unanim += 1
+            dev += sum(1 for v in vals if v != maj)
+            tot += len(vals)
+            b = by_major.setdefault(maj, [0, 0])
+            b[0] += 1
+            if len(cnt) > 1:
+                b[1] += 1
+        rows.append({
+            "rec_type": label, "n": len(common), "reps": len(names),
+            "unanimous": round(unanim / len(common) * 100, 1),
+            "deviation": round(dev / tot * 100, 1),
+            "by_major": {k: {"n": v[0], "unstable": round(v[1] / v[0] * 100, 1)}
+                         for k, v in sorted(by_major.items())},
+        })
+    return {"run": run, "generator": generator, "judges": names, "users": len(uuids), "rows": rows}
+
+
 QUEUE_PATH = DATA_DIR / "annotation_queue.json"
 
 
