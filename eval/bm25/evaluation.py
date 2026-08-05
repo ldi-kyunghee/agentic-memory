@@ -1,9 +1,12 @@
 import argparse
+import datetime
 import gc
 import json
+import logging
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from functools import partial
+from json import JSONDecodeError
 
 import torch
 from dotenv import load_dotenv
@@ -17,6 +20,8 @@ from vllm.sampling_params import StructuredOutputsParams
 load_dotenv()
 torch.cuda.empty_cache()
 gc.collect()
+
+logger = logging.getLogger()
 
 def init_parser():
     parser = argparse.ArgumentParser()
@@ -82,7 +87,20 @@ def evaluation_for_question_vllm(
 
 def parse_answers(outputs):
     contents = [output.outputs[0].text.split('</think>')[-1] for output in outputs]
-    results = [json.loads(content) for content in contents]
+    results = []
+    for content in contents:
+        try:
+            result = json.loads(content)
+        except JSONDecodeError:
+            if content is not None:
+                logger.warning("Cannot parse json: %s", content)
+            else:
+                logger.error("Content is %s", content)
+        results.append(result)
+    os.makedirs("raw_outputs", exist_ok=True)
+    raw_output_path = datetime.datetime.now().astimezone().isoformat() + ".txt" 
+    with open(f"raw_outputs/{raw_output_path}", "w") as file:
+        file.writelines(results)
     return results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
