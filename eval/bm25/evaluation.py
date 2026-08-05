@@ -95,7 +95,7 @@ def parse_answers(outputs):
         except JSONDecodeError:
             if content is not None:
                 try:
-                    content = content.split('assistant')[-1].strip().removeprefix("final").removeprefix("json")
+                    content = content.split('assistant')[-1].strip().removeprefix("final").strip().removeprefix("json").strip().removeprefix("JSON")
                     result = json.loads(content)
                 except JSONDecodeError:
                     logger.warning("Cannot parse json: %s", content)
@@ -104,7 +104,7 @@ def parse_answers(outputs):
                 results.append(content)
     os.makedirs("raw_outputs", exist_ok=True)
     raw_output_path = datetime.datetime.now().astimezone().isoformat() + ".txt" 
-    with open(f"raw_outputsa/{raw_output_path}", "w") as file:
+    with open(f"raw_outputs/{raw_output_path}", "w") as file:
         file.writelines(results)
     return results
 
