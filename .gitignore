@@ -9,3 +9,4 @@ logs
 check_results.ipynb
 *.org~
 results_analysis.ipynb
+./run.sh
