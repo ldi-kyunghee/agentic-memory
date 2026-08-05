@@ -5,7 +5,7 @@ seed: 42
 generation_args:
   sampling_params:
     n: 1
-    max_tokens: 8192
+    max_tokens: 16384
     seed: 42
     temperature: 0.5
   chat_template_kwargs:

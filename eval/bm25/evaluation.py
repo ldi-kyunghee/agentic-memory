@@ -81,8 +81,8 @@ def evaluation_for_question_vllm(
     return prompt
 
 def parse_answers(outputs):
-    contents = [output.outputs[0].text for output in outputs]
-    results = [json.loads(content.split('</think>')[-1]) for content in contents]
+    contents = [output.outputs[0].text.split('</think>')[-1] for output in outputs]
+    results = [json.loads() for content in contents]
     return results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
