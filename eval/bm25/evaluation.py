@@ -95,7 +95,7 @@ def parse_answers(outputs):
         except JSONDecodeError:
             if content is not None:
                 try:
-                    content = content.split('assistant')[-1].strip().removeprefix("final")
+                    content = content.split('assistant')[-1].strip().removeprefix("final").removeprefix("json")
                     result = json.loads(content)
                 except JSONDecodeError:
                     logger.warning("Cannot parse json: %s", content)
