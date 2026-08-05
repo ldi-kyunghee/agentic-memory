@@ -80,7 +80,7 @@ def parse_answers(outputs):
     results = [json.loads(content) for content in contents]
     return results
 
-def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
+def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
     structured_outputs = StructuredOutputsParams(json=QAEval.model_json_schema())
     sampling_params = SamplingParams(structured_outputs=structured_outputs, **sampling_params)
     
@@ -92,9 +92,14 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict):
             '\n'.join([evidence['memory_content'] for evidence in result['evidence']]),
             result['generated_answer']
         )
-        prompts.append([dict(role='user', content=prompt)])
+        prompts.append([
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ])
 
-    request_ids = llm.enqueue_chat(prompts, sampling_params)
+    request_ids = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
     outputs = llm.wait_for_completion()
     results = parse_answers(outputs)
 
@@ -196,9 +201,17 @@ def main(args, max_workers: int = 10):
         data = json.load(file)
 
     if args.backend == 'vllm':
-        model_kwargs, sampling_params = load_config(args.config_file)
+        kwargs = load_config(args.config_file)
+        model_kwargs, sampling_params, generation_kwargs = None, None, None
+        if isinstance(kwargs, tuple):
+            if len(kwargs) == 3:
+                model_kwargs, sampling_params, generation_kwargs = kwargs
+            else:
+                model_kwargs, sampling_params = kwargs
+        else:
+            model_kwargs = kwargs
         llm = load_vllm(**model_kwargs)
-        eval_fn = partial(llm_judge_vllm, llm=llm, sampling_params=sampling_params)
+        eval_fn = partial(llm_judge_vllm, llm=llm, sampling_params=sampling_params, generation_kwargs=generation_kwargs)
     elif args.backend == 'openai':
         model_kwargs = load_config(args.config_file)
         os.environ['OPENAI_MODEL'] = model_kwargs['model']
