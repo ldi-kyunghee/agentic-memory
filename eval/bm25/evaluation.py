@@ -82,7 +82,7 @@ def evaluation_for_question_vllm(
 
 def parse_answers(outputs):
     contents = [output.outputs[0].text.split('</think>')[-1] for output in outputs]
-    results = [json.loads() for content in contents]
+    results = [json.loads(content) for content in contents]
     return results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
