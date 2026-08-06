@@ -1148,38 +1148,80 @@ async function renderMetrics() {
 
   const anySel = S.metricsSelRows.size || S.metricsSelCols.size || S.metricsSelCells.size;
   const nHidden = S.metricsHidden.size + S.metricsHiddenCols.size;
-  const scrollTop = $("#content").scrollTop;   // 재렌더로 스크롤이 튀지 않도록 보존
+  // 재렌더로 스크롤이 튀지 않도록 보존 — 창 폭에 따라 스크롤 주체가 #content일 수도, 문서일 수도 있다
+  const scrollTop = $("#content").scrollTop, winY = window.scrollY;
+  const restoreScroll = () => { $("#content").scrollTop = scrollTop; window.scrollTo(0, winY); };
   $("#content").innerHTML = `
     <div id="ladder-card"></div>
     <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
-      · 첫 칸 클릭=행, 머리글 클릭=열, 나머지 칸 클릭=그 칸만 하이라이트 · <b>▾</b>=숨기기 · 칼럼 경계 드래그=폭 조절${anySel ? ` <button id="msel-clear" class="ctx-toggle" style="margin-left:6px">하이라이트 해제</button>` : ""}${nHidden ? ` <button id="mhide-clear" class="ctx-toggle" style="margin-left:6px">숨긴 항목 ${nHidden}개 다시 보기</button>` : ""}</div>
+      · 첫 칸 클릭=행, 머리글 클릭=열, 나머지 칸 클릭=그 칸만 하이라이트 · <b>▾</b>=숨기기 · 칼럼 경계 드래그=폭 조절 <button id="msel-clear" class="ctx-toggle${anySel ? "" : " btn-off"}" style="margin-left:6px">하이라이트 해제</button>${nHidden ? ` <button id="mhide-clear" class="ctx-toggle" style="margin-left:6px">숨긴 항목 ${nHidden}개 다시 보기</button>` : ""}</div>
     <div class="card"><div class="body" style="overflow-x:auto">
       <table class="cmp resizable" id="metrics-table"><tr>
         ${cols.map((c) => `<th class="${colCls(c.k)}" data-col="${esc(c.k)}" data-desc="${esc(c.desc || "")}<br>클릭=열 하이라이트 · ▾=열 숨기기">${esc(c.label)}${caret("col", c.k, c.label)}</th>`).join("")}
       </tr>${body}</table></div></div>
     ${rows.length < data.rows.length ? `<p class="hint">⚠ ${data.rows.length - rows.length}개 런은 이 judge(${judgeName}) 라벨이 없어 표시 제외</p>` : ""}`;
-  $("#content").scrollTop = scrollTop;
-  renderLadder().then(() => { $("#content").scrollTop = scrollTop; });
+  restoreScroll();
+  requestAnimationFrame(restoreScroll);          // 레이아웃 확정 후 한 번 더
+  // 사다리는 비동기로 채워지며 높이를 바꾼다. 그 사이 사용자가 스크롤했다면 건드리지 않는다
+  // (늦은 복원이 사용자의 스크롤을 되감는 것을 방지).
+  const settled = () => [$("#content").scrollTop, window.scrollY];
+  requestAnimationFrame(() => {
+    const [c0, w0] = settled();
+    renderLadder().then(() => {
+      const [c1, w1] = settled();
+      if (Math.abs(c1 - c0) < 2 && Math.abs(w1 - w0) < 2) restoreScroll();
+    });
+  });
 
-  // 하이라이트: 첫 칸=행 / 머리글=열 / 나머지 칸=개별 칸 (모두 재클릭 시 해제)
-  const toggle = (set, key) => { set.has(key) ? set.delete(key) : set.add(key); renderMetrics(); };
+  // ⚠ 하이라이트는 재렌더하지 않는다 — 표 전체를 다시 그리면 스크롤 위치가 튄다.
+  //    클래스만 제자리에서 토글하고 상태 집합만 갱신한다 (재렌더 시 복원되도록).
+  const syncClearBtn = () => {
+    const any = S.metricsSelRows.size || S.metricsSelCols.size || S.metricsSelCells.size;
+    const b = $("#msel-clear");
+    if (b) b.classList.toggle("btn-off", !any);   // 자리는 유지 (display:none이면 줄바꿈이 바뀌어 스크롤이 밀림)
+  };
+  const toggleRow = (run) => {
+    const on = S.metricsSelRows.has(run);
+    on ? S.metricsSelRows.delete(run) : S.metricsSelRows.add(run);
+    const td = $(`#content td[data-rowtoggle="${CSS.escape(run)}"]`);
+    td?.closest("tr")?.classList.toggle("mrow-sel", !on);
+    syncClearBtn();
+  };
+  const toggleCol = (k) => {
+    const on = S.metricsSelCols.has(k);
+    on ? S.metricsSelCols.delete(k) : S.metricsSelCols.add(k);
+    $$(`#content [data-col="${CSS.escape(k)}"]`).forEach((el) => el.classList.toggle("mcol-sel", !on));
+    syncClearBtn();
+  };
+  const toggleCell = (key, td) => {
+    const on = S.metricsSelCells.has(key);
+    on ? S.metricsSelCells.delete(key) : S.metricsSelCells.add(key);
+    td.classList.toggle("mcell-sel", !on);
+    syncClearBtn();
+  };
+
   $$("#content td[data-rowtoggle]").forEach((td) => (td.onclick = (e) => {
     if (e.target.closest(".hidecaret")) return;
-    toggle(S.metricsSelRows, td.dataset.rowtoggle);
+    toggleRow(td.dataset.rowtoggle);
   }));
   $$("#content th[data-col]").forEach((th) => (th.onclick = (e) => {
     if (e.target.closest(".hidecaret") || e.target.closest(".colrz")) return;
-    toggle(S.metricsSelCols, th.dataset.col);
+    toggleCol(th.dataset.col);
   }));
-  $$("#content td[data-cell]").forEach((td) => (td.onclick = () => toggle(S.metricsSelCells, td.dataset.cell)));
-  // 숨기기 (▾)
+  $$("#content td[data-cell]").forEach((td) => (td.onclick = () => toggleCell(td.dataset.cell, td)));
+
+  // 숨기기·복원만 구조가 바뀌므로 재렌더 (스크롤 위치는 renderMetrics가 보존)
   $$("#content .hidecaret").forEach((b) => (b.onclick = (e) => {
     e.stopPropagation();
     (b.dataset.hide === "row" ? S.metricsHidden : S.metricsHiddenCols).add(b.dataset.id);
     renderMetrics();
   }));
   $("#msel-clear") && ($("#msel-clear").onclick = () => {
-    S.metricsSelRows.clear(); S.metricsSelCols.clear(); S.metricsSelCells.clear(); renderMetrics();
+    S.metricsSelRows.clear(); S.metricsSelCols.clear(); S.metricsSelCells.clear();
+    $$("#content .mrow-sel").forEach((el) => el.classList.remove("mrow-sel"));
+    $$("#content .mcol-sel").forEach((el) => el.classList.remove("mcol-sel"));
+    $$("#content .mcell-sel").forEach((el) => el.classList.remove("mcell-sel"));
+    syncClearBtn();
   });
   $("#mhide-clear") && ($("#mhide-clear").onclick = () => {
     S.metricsHidden.clear(); S.metricsHiddenCols.clear(); renderMetrics();

@@ -369,3 +369,5 @@ table.ladder tr.pend { opacity: .55; }
 .ladder .lerr { position: absolute; top: 50%; transform: translateY(-50%); height: 3px; background: rgba(0,0,0,.42); border-radius: 2px; }
 .ladder .lsd { font-size: 10px; color: var(--dim); margin-left: 3px; cursor: help; }
 .ladder .lrep { font-size: 9.5px; font-weight: 700; color: var(--dim); background: var(--chip); border-radius: 4px; padding: 0 4px; margin-left: 3px; cursor: help; }
+/* 버튼을 감추되 자리는 유지 — display:none이면 줄바꿈이 바뀌며 스크롤 위치가 밀린다 */
+.btn-off { visibility: hidden; }
