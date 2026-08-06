@@ -2,11 +2,10 @@
 .venv
 uv.lock
 test.ipynb
-main.py
 .python-version
 __pycache__
 logs
 check_results.ipynb
 *.org~
 results_analysis.ipynb
-./run.sh
+_run.sh
