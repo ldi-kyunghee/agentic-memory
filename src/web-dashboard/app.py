@@ -468,6 +468,7 @@ def api_reload():
     _metrics_cache.clear()
     load_run_users.cache_clear()
     first4_uuids.cache_clear()
+    noise_floor.cache_clear()
     return {"ok": True}
 
 
@@ -551,6 +552,31 @@ def _metrics_row(name: str, r: dict, scope: str, metrics: dict, extra: dict | No
     return row
 
 
+@lru_cache(maxsize=4)
+def noise_floor() -> dict | None:
+    """'같은 실험을 다시 돌리면 수치가 얼마나 흔들리는가'의 실측값.
+
+    사다리의 실측 행(오라클 없음)을 A′ 생성부터 judge 채점까지 통째로 반복한 회차들에서
+    QA 지표의 표본표준편차를 구한다. 하드코딩하지 않고 산출물에서 계산해, 반복을 더 돌리면
+    자동으로 갱신되게 한다. 반복 회차는 Martin 1유저분만 있으므로 n_users=1 기준값이다.
+    """
+    cfg = load_registry_doc().get("oracle_ladder") or {}
+    step = next((s for s in cfg.get("steps", []) if s.get("key") == "actual"), None)
+    if not step or not step.get("repeat_judge"):
+        return None
+    stats = [s for i in range(1, int(cfg.get("repeats", 0)) + 1)
+             if (s := _qa_stats_from_dir(ROOT / step["repeat_judge"].format(i=i, run=step["run"]), "all"))]
+    if len(stats) < 2:
+        return None
+    out = {"n_repeats": len(stats), "n_users": stats[0]["n_users"], "run": step["run"]}
+    for k in ("qa_c", "qa_h", "qa_o"):
+        xs = [s[k] for s in stats]
+        mu = sum(xs) / len(xs)
+        out[k] = round((sum((x - mu) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5, 2)
+        out[k + "_range"] = round(max(xs) - min(xs), 2)
+    return out
+
+
 @app.get("/api/metrics")
 def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qwen4b"):
     reg = load_registry()
@@ -605,7 +631,8 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
             "repeats": reps, "sd": sd,
             "pinned_lane": {"generator": gen, "judge": jd, "run": run},
         }))
-    return {"judge": judge, "scope": scope, "generator": generator, "first4": list(first4_uuids()), "rows": rows}
+    return {"judge": judge, "scope": scope, "generator": generator, "first4": list(first4_uuids()),
+            "noise": noise_floor(), "rows": rows}
 
 
 # ---------- 코멘트 ----------

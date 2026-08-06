@@ -1089,12 +1089,15 @@ async function renderMetrics() {
   const rows = allRows;   // 접기는 DOM에 남겨두고 클래스로만 처리 (재렌더 없이 토글하기 위함)
   // 오라클로 읽을 수 없게 된 지표는 '–'로 가린다 (백엔드가 masked 목록을 내려줌)
   const isMasked = (r, k) => (r.masked || []).includes(k);
-  // 오라클 행의 메모리측 지표는 값이 살아 있어도 '주입된 정답'이 만든 수치라 실제 백본들과 같은
-  // 순위표에 놓으면 안 된다 (예: 추출 오라클의 R=91.35가 열 1위로 굵게 나오면 백본 성능처럼 읽힌다).
-  // 값은 그대로 보여주되 순위·최고값 계산에서만 뺀다. QA는 모든 행이 같은 조건이라 그대로 경쟁시킨다.
+  // 오라클 행은 '시스템 설정'이 아니라 대조군(상한)이므로 어떤 열에서도 백본들과 순위를 겨루지 않는다.
+  // QA까지 순위에 넣으면 1위가 항상 오라클 상한(83.66)이 되어 백본 간 비교가 무의미해진다.
+  // 값은 그대로 보여주되 순위·최고값 계산에서만 뺀다.
   const QA_KEYS = ["qa_c", "qa_h", "qa_o"];
-  const outOfRank = (r, k) => !!r.oracle && !QA_KEYS.includes(k);
-  const inRank = (r, k) => !isMasked(r, k) && !outOfRank(r, k);
+  const outOfRank = (r) => !!r.oracle;
+  // 메모리측 지표는 '주입된 정답'이 만든 수치라 기울임+보라로 구분 표기하고, QA는 정상 표기한다
+  //   (오라클 행에서 QA는 실제로 읽는 값이므로 흐리게 만들면 안 된다)
+  const isInjected = (r, k) => outOfRank(r) && !QA_KEYS.includes(k);
+  const inRank = (r, k) => !isMasked(r, k) && !outOfRank(r);
   // 열별 최고/순위 (방향 반영) — 가려진 칸·오라클 주입값은 모수에서 제외해 순위가 오염되지 않게 한다
   const rank = {};
   METRIC_COLS.forEach((c) => {
@@ -1103,6 +1106,31 @@ async function renderMetrics() {
     const sorted = [...vals].sort((a, b) => c.dir === 1 ? b - a : a - b);
     rank[c.k] = { sorted, best: sorted[0], n: live.length };
   });
+
+  // ── 노이즈 바닥 ────────────────────────────────────────────────────────────
+  // 같은 실험을 A′ 생성부터 다시 돌리면 수치가 얼마나 흔들리는지의 실측값(백엔드가 산출물에서 계산).
+  // 이보다 작은 행 간 차이는 실체가 아니므로, '최고값 ± 노이즈' 안에 드는 행을 모두 공동 1위로 굵게 한다.
+  const NZ = data.noise;
+  // 반복 회차는 1유저분만 있다. 질문 단위 독립을 가정하면 유저가 n배면 표준편차는 √n배 작아진다 — 추정치다.
+  const noiseFor = (k, nUsers) => {
+    if (!NZ || NZ[k] == null) return null;
+    return NZ[k] / Math.sqrt(Math.max(1, (nUsers || 1) / (NZ.n_users || 1)));
+  };
+  // 그 행의 실측 SD가 있으면 그것을, 없으면 유저 수로 환산한 추정치를 쓴다
+  const bandFor = (r, k) => (k === "qa_c" && r.sd != null) ? r.sd : noiseFor(k, r.metrics?.n_users);
+  // 두 값이 구분 가능한가는 '값 하나의 SD'가 아니라 '차이의 표준오차'로 판단한다.
+  //   차이의 SE = √(sd_a² + sd_b²), 95% 기준이면 1.96배. 1σ로 자르면 지나치게 엄격해진다.
+  const bestRowOf = (k) => rows.find((x) => inRank(x, k) && x.metrics[k] === rank[k].best);
+  const coBestGap = (r, k) => {
+    const b = bandFor(r, k), bb = bandFor(bestRowOf(k) || r, k);
+    return (b == null || bb == null) ? null : 1.96 * Math.sqrt(b * b + bb * bb);
+  };
+  const isCoBest = (r, c) => {
+    if (!inRank(r, c.k)) return false;
+    const gap = coBestGap(r, c.k);
+    if (gap == null) return r.metrics[c.k] === rank[c.k].best;
+    return Math.abs(r.metrics[c.k] - rank[c.k].best) <= gap;   // 노이즈 이내면 공동 1위
+  };
   const judgeName = judgeLabel(data.judge);
   const judgeShortName = judgeShort(data.judge);
   const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);
@@ -1130,18 +1158,31 @@ async function renderMetrics() {
       if (isMasked(r, c.k)) return { html: `<span class="masked">–</span>`, desc: maskDesc(r, c.k) };
       const v = m[c.k];
       const rk = rank[c.k].sorted.indexOf(v) + 1;
-      const bestRow = rows.find((x) => inRank(x, c.k) && x.metrics[c.k] === rank[c.k].best);
-      if (outOfRank(r, c.k)) return {
+      const bestRow = bestRowOf(c.k);
+      if (isInjected(r, c.k)) return {
         html: `<span class="oorank">${v.toFixed(2)}</span>`,
         desc: `<b>${esc(c.label)}</b> = ${v} <span class="small">(순위 비교 제외)</span><br>이 행은 <b>${esc(oracleLabel(r.oracle))}</b>을(를) 정답으로 주입한 실험이라, 이 값은 백본의 능력이 아니라 <b>주입된 정답이 다음 단계를 얼마나 통과했는지</b>를 뜻합니다. 실제 백본 행들과 같은 순위표에 놓지 않습니다.<br>${esc(METRIC_DEFS[c.k])}`,
       };
       const nTxt = c.metric.n ? ` <span class="small muted">(${m[c.metric.n].toLocaleString()})</span>` : "";
-      // 반복 실측이 있는 행은 QA C에 표본표준편차를 병기 — 이 행의 값이 얼마나 흔들리는지 바로 보이게
-      const sdTxt = (c.k === "qa_c" && r.sd != null) ? ` <span class="sdtag">±${r.sd.toFixed(2)}</span>` : "";
-      const sdDesc = (c.k === "qa_c" && r.sd != null)
-        ? `<br><b>${r.repeats.length}회 반복 평균</b> (A′ 생성 + judge 채점을 매번 새로) — 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}` : "";
-      const d = `<b>${esc(c.label)}</b> = ${v} — ${rk}위/${rank[c.k].n} (${c.metric.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow ? bestRow.label : "-")})<br>${esc(METRIC_DEFS[c.k])}${sdDesc}`;
-      return { html: `${v.toFixed(2)}${sdTxt}${nTxt}`, desc: d, bold: v === rank[c.k].best };
+      // 흔들림 폭을 값 옆에 붙인다. 반복을 실제로 돌린 행은 실측 SD(±), 나머지는 유저 수로 환산한 추정치(~±).
+      const band = QA_KEYS.includes(c.k) ? bandFor(r, c.k) : null;
+      const measured = c.k === "qa_c" && r.sd != null;
+      const sdTxt = band == null ? ""
+        : ` <span class="sdtag${measured ? " meas" : ""}">${measured ? "±" : "~±"}${band.toFixed(2)}</span>`;
+      const sdDesc = band == null ? ""
+        : measured
+          ? `<br><b>${r.repeats.length}회 반복 실측</b> (A′ 생성 + judge 채점을 매번 새로) — 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}`
+          : `<br><b>흔들림 추정 ±${band.toFixed(2)}</b> — 이 행은 1회만 돌렸습니다. 사다리 실측 행의 ${NZ.n_repeats}회 반복에서 잰 ±${NZ[c.k]}(유저 ${NZ.n_users}명)를 이 행의 유저 ${m.n_users}명 기준으로 환산한 <b>추정치</b>입니다.`;
+      const co = isCoBest(r, c);
+      const gap = coBestGap(r, c.k);
+      const coDesc = (co && v !== rank[c.k].best)
+        ? `<br><span style="color:var(--accent);font-weight:800">공동 1위</span> — 1위(${rank[c.k].best})와의 차이 ${Math.abs(v - rank[c.k].best).toFixed(2)}p가 구분 한계 ${gap.toFixed(2)}p 이내라 우열을 가릴 수 없습니다.` : "";
+      // 오라클 행의 QA는 실제로 읽는 값이므로 정상 표기하되, 순위표에서는 빠졌음을 밝힌다
+      const rkTxt = inRank(r, c.k)
+        ? `${rk}위/${rank[c.k].n} (${c.metric.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow ? bestRow.label : "-")})`
+        : `<span class="small">대조군(상한) — 백본 순위 비교에서 제외</span>`;
+      const d = `<b>${esc(c.label)}</b> = ${v} — ${rkTxt}<br>${esc(METRIC_DEFS[c.k])}${sdDesc}${coDesc}`;
+      return { html: `${v.toFixed(2)}${sdTxt}${nTxt}`, desc: d, bold: co };
     }
     if (c.k === "sys") return { html: `<b>Mem0-Classic-OSS</b>${caret("row", r.run, r.label)}`, desc: r.note || r.label, rowHead: true };
     if (c.k === "users") return { html: String(m.n_users), desc: c.desc };
@@ -1179,8 +1220,16 @@ async function renderMetrics() {
   // 재렌더로 스크롤이 튀지 않도록 보존 — 창 폭에 따라 스크롤 주체가 #content일 수도, 문서일 수도 있다
   const scrollTop = $("#content").scrollTop, winY = window.scrollY;
   const restoreScroll = () => { $("#content").scrollTop = scrollTop; window.scrollTo(0, winY); };
+  const noiseBanner = !NZ ? "" : `
+    <div class="noisebar" data-desc="사다리의 실측 행(오라클 없음)을 <b>A′ 답변 생성부터 judge 채점까지 통째로</b> ${NZ.n_repeats}회 다시 돌려 잰 값입니다. 산출물에서 실시간 계산하므로 반복을 더 돌리면 자동으로 갱신됩니다.">
+      <b>📏 노이즈 바닥</b> — 같은 실험을 다시 돌리기만 해도 <b>QA C가 ±${NZ.qa_c}p</b> 흔들립니다
+      <span class="small">(유저 ${NZ.n_users}명 · ${NZ.n_repeats}회 반복 실측 · 회차 간 폭 ${NZ.qa_c_range}p)</span>.
+      <b>이보다 작은 행 간 차이는 해석하지 마세요</b> — 1위와 흔들림 폭 이내인 행은 <b>공동 1위로 함께 굵게</b> 표시됩니다.
+      <span class="small">흔드는 것은 채점이 아니라 <b>답변 생성</b>입니다 (judge만 반복하면 폭 0.6p).</span>
+    </div>`;
   $("#content").innerHTML = `
     <div id="ladder-card"></div>
+    ${noiseBanner}
     <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
       · 첫 칸 클릭=행, 머리글 클릭=열, 나머지 칸 클릭=그 칸만 하이라이트 · <b>▾</b>=접기(접힌 줄 클릭=펼침) · 칼럼 경계 드래그=폭 조절 <button id="msel-clear" class="ctx-toggle${anySel ? "" : " btn-off"}" style="margin-left:6px">하이라이트 해제</button> <button id="mhide-clear" class="ctx-toggle${nHidden ? "" : " btn-off"}" style="margin-left:6px">접힌 항목 <b id="nfold">${nHidden}</b>개 모두 펼치기</button></div>
     <div class="card"><div class="body" style="overflow-x:auto">

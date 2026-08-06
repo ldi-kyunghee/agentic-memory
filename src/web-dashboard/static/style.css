@@ -397,6 +397,11 @@ table.ladder tr.pend { opacity: .55; }
 td .masked { color: #b9b9c4; font-weight: 700; }
 td:has(> .masked) { background: repeating-linear-gradient(135deg, transparent, transparent 4px, rgba(140,140,160,.07) 4px, rgba(140,140,160,.07) 8px); }
 .pinlane { font-size: 9.5px; opacity: .75; }
-.sdtag { font-size: 9.5px; font-weight: 700; color: #8a8a9a; }
+/* 흔들림 폭 — 추정치는 옅게, 반복으로 실측한 값은 진하게 구분 */
+.sdtag { font-size: 9.5px; font-weight: 700; color: #b0b0bc; }
+.sdtag.meas { color: #7a7a8c; }
+/* 노이즈 바닥 배너 — 표 위에서 '이 표를 어디까지 믿을 수 있는가'를 먼저 알린다 */
+.noisebar { margin: 0 0 8px; padding: 7px 11px; border-radius: 7px; font-size: 11.5px; line-height: 1.65;
+  background: #fff8e8; border: 1px solid #f0dfae; color: #6b5320; }
 /* 오라클 주입이 만든 값 — 값은 읽되 실제 백본들과 같은 순위표에 놓지 않는다는 표시 */
 .oorank { color: #5b3b91; font-style: italic; }
