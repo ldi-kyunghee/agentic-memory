@@ -1057,7 +1057,8 @@ const METRIC_COLS = [
 const metricsCache = new Map();
 S.metricsScope = "first4";
 // 행/열 하이라이트 선택 — 행은 run 이름, 열은 칼럼 키. 재렌더에도 유지 (탭 이탈해도 세션 내 유지)
-S.metricsSelRows = new Set(); S.metricsSelCols = new Set(); S.metricsHidden = new Set();
+S.metricsSelRows = new Set(); S.metricsSelCols = new Set(); S.metricsSelCells = new Set();
+S.metricsHidden = new Set(); S.metricsHiddenCols = new Set();
 
 async function renderMetrics() {
   // generator·judge는 상단바 선택을 그대로 따른다 (별도 선택기 없음 — 화면 전체가 한 조합)
@@ -1094,74 +1095,95 @@ async function renderMetrics() {
   });
   const judgeName = judgeLabel(data.judge);
   const judgeShortName = judgeShort(data.judge);
-
   const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);
-  // 행/열 선택 하이라이트: 행=왼쪽 끄트머리(○/●) 클릭, 열=머리글 클릭. 다시 클릭하면 해제
+
+  // 메타 열 + 지표 열을 한 목록으로 — 숨기기·하이라이트를 열 종류와 무관하게 동일하게 처리
+  const META_COLS = [
+    { k: "sys", label: "Memory System", desc: "메모리 시스템 — 전부 mem0 OSS 0.1.118 classic" },
+    { k: "users", label: "#Users", desc: "이 행의 지표가 집계된 유저 수" },
+    { k: "backbone", label: "Agent LLM", desc: "memory agent 백본 — fact 추출·update 결정을 담당하는 LLM" },
+    { k: "prompt", label: "Prompt", desc: "fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형)" },
+    { k: "lat", label: "Ingest/세션↓", desc: "세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용" },
+    { k: "judge", label: "Judge LLM", desc: "채점 LLM — 행 간 비교는 동일 judge에서만 유효" },
+  ];
+  const ALL_COLS = [...META_COLS, ...METRIC_COLS.map((c) => ({ k: c.k, label: c.label, desc: METRIC_DEFS[c.k], metric: c }))];
+  const cols = ALL_COLS.filter((c) => !S.metricsHiddenCols.has(c.k));
+
   const colCls = (k) => S.metricsSelCols.has(k) ? " mcol-sel" : "";
-  const body = rows.map((r) => {
-    const m = r.metrics;
-    const sysName = "Mem0-Classic-OSS";
-    const lat = r.latency;
-    const latCell = lat
-      ? `<td class="${colCls("lat")}" data-col="lat" data-desc="<b>세션 투입 시간</b> — mem0.add 1회(fact 추출→유사 검색→update 결정 LLM 콜 포함) 평균 ${lat.ingest_avg_s}s · 중앙값 ${lat.ingest_p50_s}s · 세션 ${lat.n_sessions}개 실측. 백본 크기·API 왕복이 그대로 반영됨. 질문 검색(임베더 고정)은 평균 ${lat.search_avg_ms}ms로 백본 무관">
-          <div class="lat-bar" style="width:${(lat.ingest_avg_s / maxIngest * 100).toFixed(0)}%"></div>
-          <span class="small">${lat.ingest_avg_s}s</span></td>`
-      : `<td class="${colCls("lat")}" data-col="lat">–</td>`;
-    const cells = METRIC_COLS.map((c) => {
+  const cellCls = (run, k) => S.metricsSelCells.has(`${run}|${k}`) ? " mcell-sel" : "";
+  const caret = (kind, id, label) =>
+    `<button class="hidecaret" data-hide="${kind}" data-id="${esc(id)}" data-desc="${esc(label)}을(를) 표에서 숨깁니다 (데이터는 그대로, 위의 '다시 보기'로 복원)">▾</button>`;
+
+  function cellHTML(c, r, m) {
+    if (c.metric) {
       const v = m[c.k];
       const rk = rank[c.k].sorted.indexOf(v) + 1;
-      const isBest = v === rank[c.k].best;
       const bestRow = rows.find((x) => x.metrics[c.k] === rank[c.k].best);
-      const nTxt = c.n ? ` <span class="small muted">(${m[c.n].toLocaleString()})</span>` : "";
-      const desc = `<b>${esc(c.label)}</b> = ${v} — ${rk}위/${rows.length} (${c.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow.label)})<br>${esc(METRIC_DEFS[c.k])}`;
-      return `<td class="${colCls(c.k)}" data-col="${c.k}" data-desc="${esc(desc)}" ${isBest ? 'style="font-weight:800"' : ""}>${v.toFixed(2)}${nTxt}</td>`;
+      const nTxt = c.metric.n ? ` <span class="small muted">(${m[c.metric.n].toLocaleString()})</span>` : "";
+      const d = `<b>${esc(c.label)}</b> = ${v} — ${rk}위/${rows.length} (${c.metric.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow.label)})<br>${esc(METRIC_DEFS[c.k])}`;
+      return { html: `${v.toFixed(2)}${nTxt}`, desc: d, bold: v === rank[c.k].best };
+    }
+    if (c.k === "sys") return { html: `<b>Mem0-Classic-OSS</b>${caret("row", r.run, r.label)}`, desc: r.note || r.label, rowHead: true };
+    if (c.k === "users") return { html: String(m.n_users), desc: c.desc };
+    if (c.k === "backbone") return { html: `${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted">${esc(effortShort(r.backbone_effort))}</span>` : ""}`, desc: r.backbone_effort ? `reasoning effort: ${r.backbone_effort}` : c.desc };
+    if (c.k === "prompt") return { html: esc(r.prompt), desc: c.desc };
+    if (c.k === "judge") return { html: esc(judgeShortName), desc: judgeName };
+    const lat = r.latency;
+    return lat
+      ? { html: `<div class="lat-bar" style="width:${(lat.ingest_avg_s / maxIngest * 100).toFixed(0)}%"></div><span class="small">${lat.ingest_avg_s}s</span>`,
+          desc: `<b>세션 투입 시간</b> — 평균 ${lat.ingest_avg_s}s · 중앙값 ${lat.ingest_p50_s}s · 세션 ${lat.n_sessions}개 실측. 질문 검색은 평균 ${lat.search_avg_ms}ms로 백본 무관` }
+      : { html: "–", desc: c.desc };
+  }
+
+  const body = rows.map((r) => {
+    const m = r.metrics;
+    const tds = cols.map((c) => {
+      const cell = cellHTML(c, r, m);
+      // 첫 칼럼(Memory System) = 행 토글, 나머지 = 개별 칸 토글 (열 토글은 머리글이 담당)
+      const attr = cell.rowHead ? `data-rowtoggle="${esc(r.run)}"` : `data-cell="${esc(r.run)}|${esc(c.k)}"`;
+      return `<td class="${colCls(c.k)}${cellCls(r.run, c.k)}${cell.rowHead ? " rowhead" : ""}" data-col="${esc(c.k)}" ${attr} data-desc="${esc(cell.desc || c.desc || "")}" ${cell.bold ? 'style="font-weight:800"' : ""}>${cell.html}</td>`;
     }).join("");
-    const rowSel = S.metricsSelRows.has(r.run);
-    return `<tr class="${rowSel ? "mrow-sel" : ""}">
-      <td class="rowsel" data-runsel="${esc(r.run)}" data-desc="클릭 = 이 행 하이라이트 선택/해제">${rowSel ? "●" : "○"}<button class="rowhide" data-runhide="${esc(r.run)}" data-desc="이 행을 표에서 숨깁니다 (데이터는 그대로, 다시 보기로 복원)">✕</button></td>
-      <td class="${colCls("sys")}" data-col="sys" data-desc="${esc(r.note || r.label)}"><b>${esc(sysName)}</b></td>
-      <td class="${colCls("users")}" data-col="users">${m.n_users}</td>
-      <td class="${colCls("backbone")}" data-col="backbone">${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted" data-desc="reasoning effort: ${esc(r.backbone_effort)}">${esc(effortShort(r.backbone_effort))}</span>` : ""}</td>
-      <td class="${colCls("prompt")}" data-col="prompt">${esc(r.prompt)}</td>${latCell}
-      <td class="${colCls("judge")}" data-col="judge" data-desc="${esc(judgeLabel(data.judge))}">${esc(judgeShortName)}</td>${cells}</tr>`;
+    return `<tr class="${S.metricsSelRows.has(r.run) ? "mrow-sel" : ""}">${tds}</tr>`;
   }).join("");
 
-  const anySel = S.metricsSelRows.size || S.metricsSelCols.size;
+  const anySel = S.metricsSelRows.size || S.metricsSelCols.size || S.metricsSelCells.size;
+  const nHidden = S.metricsHidden.size + S.metricsHiddenCols.size;
+  const scrollTop = $("#content").scrollTop;   // 재렌더로 스크롤이 튀지 않도록 보존
   $("#content").innerHTML = `
     <div id="ladder-card"></div>
     <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
-      · 행 왼쪽 ○ 클릭=행 하이라이트, ✕ 클릭=행 숨김, 열 머리글 클릭=열 하이라이트, 칼럼 경계 드래그=폭 조절${anySel ? ` <button id="msel-clear" class="ctx-toggle" style="margin-left:6px">선택 모두 해제</button>` : ""}${S.metricsHidden.size ? ` <button id="mhide-clear" class="ctx-toggle" style="margin-left:6px">숨긴 행 ${S.metricsHidden.size}개 다시 보기</button>` : ""}</div>
+      · 첫 칸 클릭=행, 머리글 클릭=열, 나머지 칸 클릭=그 칸만 하이라이트 · <b>▾</b>=숨기기 · 칼럼 경계 드래그=폭 조절${anySel ? ` <button id="msel-clear" class="ctx-toggle" style="margin-left:6px">하이라이트 해제</button>` : ""}${nHidden ? ` <button id="mhide-clear" class="ctx-toggle" style="margin-left:6px">숨긴 항목 ${nHidden}개 다시 보기</button>` : ""}</div>
     <div class="card"><div class="body" style="overflow-x:auto">
       <table class="cmp resizable" id="metrics-table"><tr>
-        <th class="rowsel-h" data-desc="행 선택 칼럼 — 아래 ○를 클릭하면 그 행이 하이라이트"></th>
-        <th class="${colCls("sys")}" data-col="sys" data-desc="메모리 시스템 — 전부 mem0 OSS 0.1.118 classic. 클릭=열 하이라이트">Memory System</th>
-        <th class="${colCls("users")}" data-col="users" data-desc="이 행의 지표가 집계된 유저 수. 클릭=열 하이라이트">#Users</th>
-        <th class="${colCls("backbone")}" data-col="backbone" data-desc="memory agent 백본 — fact 추출·update 결정을 담당하는 LLM. 클릭=열 하이라이트">Agent LLM</th>
-        <th class="${colCls("prompt")}" data-col="prompt" data-desc="fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형). 클릭=열 하이라이트">Prompt</th>
-        <th class="${colCls("lat")}" data-col="lat" data-desc="세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. 로컬 vLLM vs API 왕복, 백본 크기, reasoning 토큰이 그대로 드러남. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용. 클릭=열 하이라이트">Ingest/세션↓</th>
-        <th class="${colCls("judge")}" data-col="judge" data-desc="채점 LLM — 행 간 비교는 동일 judge에서만 유효. 클릭=열 하이라이트">Judge LLM</th>
-        ${METRIC_COLS.map((c) => `<th class="${colCls(c.k)}" data-col="${c.k}" data-desc="${esc(METRIC_DEFS[c.k])}<br>클릭=열 하이라이트">${esc(c.label)}</th>`).join("")}
+        ${cols.map((c) => `<th class="${colCls(c.k)}" data-col="${esc(c.k)}" data-desc="${esc(c.desc || "")}<br>클릭=열 하이라이트 · ▾=열 숨기기">${esc(c.label)}${caret("col", c.k, c.label)}</th>`).join("")}
       </tr>${body}</table></div></div>
     ${rows.length < data.rows.length ? `<p class="hint">⚠ ${data.rows.length - rows.length}개 런은 이 judge(${judgeName}) 라벨이 없어 표시 제외</p>` : ""}`;
-  renderLadder();
+  $("#content").scrollTop = scrollTop;
+  renderLadder().then(() => { $("#content").scrollTop = scrollTop; });
 
-  $$("#content .rowsel[data-runsel]").forEach((td) => (td.onclick = () => {
-    const k = td.dataset.runsel;
-    S.metricsSelRows.has(k) ? S.metricsSelRows.delete(k) : S.metricsSelRows.add(k);
+  // 하이라이트: 첫 칸=행 / 머리글=열 / 나머지 칸=개별 칸 (모두 재클릭 시 해제)
+  const toggle = (set, key) => { set.has(key) ? set.delete(key) : set.add(key); renderMetrics(); };
+  $$("#content td[data-rowtoggle]").forEach((td) => (td.onclick = (e) => {
+    if (e.target.closest(".hidecaret")) return;
+    toggle(S.metricsSelRows, td.dataset.rowtoggle);
+  }));
+  $$("#content th[data-col]").forEach((th) => (th.onclick = (e) => {
+    if (e.target.closest(".hidecaret") || e.target.closest(".colrz")) return;
+    toggle(S.metricsSelCols, th.dataset.col);
+  }));
+  $$("#content td[data-cell]").forEach((td) => (td.onclick = () => toggle(S.metricsSelCells, td.dataset.cell)));
+  // 숨기기 (▾)
+  $$("#content .hidecaret").forEach((b) => (b.onclick = (e) => {
+    e.stopPropagation();
+    (b.dataset.hide === "row" ? S.metricsHidden : S.metricsHiddenCols).add(b.dataset.id);
     renderMetrics();
   }));
-  $$("#content th[data-col]").forEach((th) => (th.onclick = () => {
-    const k = th.dataset.col;
-    S.metricsSelCols.has(k) ? S.metricsSelCols.delete(k) : S.metricsSelCols.add(k);
-    renderMetrics();
-  }));
-  $("#msel-clear") && ($("#msel-clear").onclick = () => { S.metricsSelRows.clear(); S.metricsSelCols.clear(); renderMetrics(); });
-  $("#mhide-clear") && ($("#mhide-clear").onclick = () => { S.metricsHidden.clear(); renderMetrics(); });
-  $$("#content .rowhide").forEach((b) => (b.onclick = (ev) => {
-    ev.stopPropagation();
-    S.metricsHidden.add(b.dataset.runhide);
-    renderMetrics();
-  }));
+  $("#msel-clear") && ($("#msel-clear").onclick = () => {
+    S.metricsSelRows.clear(); S.metricsSelCols.clear(); S.metricsSelCells.clear(); renderMetrics();
+  });
+  $("#mhide-clear") && ($("#mhide-clear").onclick = () => {
+    S.metricsHidden.clear(); S.metricsHiddenCols.clear(); renderMetrics();
+  });
   initColResize($("#metrics-table"));
 }
 

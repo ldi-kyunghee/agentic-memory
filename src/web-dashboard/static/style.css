@@ -222,10 +222,14 @@ table.resizable td { overflow: hidden; text-overflow: ellipsis; }
 .colrz { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 2; }
 .colrz:hover, .colrz.on { background: var(--accent); opacity: .35; }
 
-/* 행 숨기기 */
-td.rowsel .rowhide { display: none; border: none; background: none; color: var(--bad); cursor: pointer;
-  font-size: 10px; padding: 0 0 0 2px; line-height: 1; }
-tr:hover td.rowsel .rowhide { display: inline; }
+/* 행·열 숨기기 캐럿 (▾) — 평소엔 숨어 있다가 해당 행/열에 마우스를 올리면 나타남 */
+.hidecaret { border: none; background: none; color: var(--dim); cursor: pointer; font-size: 10px;
+  line-height: 1; padding: 0 2px; margin-left: 3px; opacity: 0; transition: opacity .12s; vertical-align: middle; }
+th:hover .hidecaret, tr:hover td.rowhead .hidecaret { opacity: .7; }
+.hidecaret:hover { opacity: 1 !important; color: var(--bad); }
+td.rowhead { cursor: pointer; }
+/* 개별 칸 하이라이트 */
+table.cmp td.mcell-sel { background: #d6e2ff; outline: 1px solid var(--accent); }
 
 /* Metrics 행/열 하이라이트 선택 — 행: 왼쪽 ○ 클릭 / 열: 머리글 클릭 */
 table.cmp td.rowsel { cursor: pointer; text-align: center; color: var(--dim); width: 20px; padding: 4px 5px; user-select: none; }
