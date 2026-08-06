@@ -512,6 +512,45 @@ def compute_latency(run: str, scope: str) -> dict | None:
     }
 
 
+# 오라클 단계별로 '읽을 수 없게 되는' 지표 — 화면에서 '–'로 가린다.
+# 규칙은 단순한 계단이 아니다. 오라클을 넣으면 그 단계의 *내용 품질* 지표는 자명해져 죽지만,
+# *생존율* 지표(R·Weighted R)와 다음 단계 지표(Upd)는 오히려 그 단계만 단독으로 재게 되어 살아난다.
+#   추출 오라클  → 저장물이 골든 원문이라 Acc·Target P·F1이 자명하게 높고, FMR은 미끼를 원천 제외해 무의미
+#                  (R·Weighted R은 '완벽한 추출이 저장까지 살아남은 비율' = 갱신 단계 손실의 단독 측정이라 유효)
+#   갱신 오라클  → R·Weighted R이 정의상 100, Upd도 정의상 ~100이라 무의미
+#   검색 오라클  → 답변이 저장소를 안 거치므로 QA 외 전부 무의미
+ORACLE_MASK = {
+    "extraction": ["acc", "tp", "fmr", "f1"],
+    "update": ["r", "wr", "upd_c", "upd_h", "upd_o"],
+    "retrieval": [],
+}
+
+
+def oracle_masked(oracle: str) -> list:
+    """oracle 단계 문자열('extraction+update+retrieval')에서 가릴 지표 키 목록을 유도."""
+    if not oracle:
+        return []
+    out = []
+    for stage in oracle.split("+"):
+        out += ORACLE_MASK.get(stage.strip(), [])
+    return sorted(set(out))
+
+
+def _metrics_row(name: str, r: dict, scope: str, metrics: dict, extra: dict | None = None) -> dict:
+    row = {
+        "run": name, "label": r.get("label", name),
+        "backbone": r.get("backbone"), "prompt": r.get("prompt"),
+        "oracle": r.get("oracle", ""),
+        "backbone_effort": r.get("backbone_effort"),
+        "note": r.get("note", ""),
+        "metrics": metrics,
+        "latency": compute_latency(name, scope),  # Stage A 실측이라 generator 무관 (base 레인 기준)
+    }
+    row.update(extra or {})
+    row["masked"] = oracle_masked(row.get("oracle", ""))
+    return row
+
+
 @app.get("/api/metrics")
 def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qwen4b"):
     reg = load_registry()
@@ -519,15 +558,53 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
     for name, r in reg.items():
         if not (ROOT / r["results"]).exists():
             continue
-        rows.append({
-            "run": name, "label": r.get("label", name),
-            "backbone": r.get("backbone"), "prompt": r.get("prompt"),
-            "oracle": r.get("oracle", ""),
-            "backbone_effort": r.get("backbone_effort"),
-            "note": r.get("note", ""),
-            "metrics": compute_metrics(name, judge, scope, generator),
-            "latency": compute_latency(name, scope),  # Stage A 실측이라 generator 무관 (base 레인 기준)
-        })
+        rows.append(_metrics_row(name, r, scope, compute_metrics(name, judge, scope, generator)))
+
+    # 고정 레인 행 — generator·judge 드롭다운을 따르지 않고 runs.yaml에 박아둔 조합으로만 집계한다.
+    # 검색 오라클처럼 '답변 생성 레인 자체가 실험 조건'인 세팅은 일반 런으로 표현할 수 없어서 필요하다.
+    doc = load_registry_doc()
+    for er in doc.get("extra_rows", []) or []:
+        run, gen, jd = er.get("run"), er.get("generator"), er.get("judge")
+        if run not in reg:
+            continue
+        # repeat_judge가 있으면 반복 회차 평균을 대표값으로 쓴다. 오라클 행은 QA 외 지표가 전부
+        # 가려지므로 QA만 평균내면 충분하고, 단일 회차 노이즈(SD ~2.2p)에 휘둘리지 않는다.
+        m, reps, sd = None, [], None
+        tpl = er.get("repeat_judge")
+        if tpl:
+            n_rep = int(er.get("repeats", doc.get("oracle_ladder", {}).get("repeats", 0)) or 0)
+            stats = [s for i in range(1, n_rep + 1)
+                     if (s := _qa_stats_from_dir(ROOT / tpl.format(i=i, run=run), scope))]
+            if stats:
+                reps = [s["qa_c"] for s in stats]
+                mean = lambda k: round(sum(s[k] for s in stats) / len(stats), 2)
+                m = {"n_users": stats[0]["n_users"], "qa_only": True,
+                     "r": None, "wr": None, "acc": None, "acc_n": 0, "tp": None, "tp_n": 0,
+                     "fmr": None, "f1": None, "upd_c": None, "upd_h": None, "upd_o": None,
+                     "qa_c": mean("qa_c"), "qa_h": mean("qa_h"), "qa_o": mean("qa_o")}
+                if len(reps) > 1:
+                    mu = sum(reps) / len(reps)
+                    sd = round((sum((x - mu) ** 2 for x in reps) / (len(reps) - 1)) ** 0.5, 2)
+        if m is None:
+            try:
+                m = compute_metrics(run, jd, scope, gen)
+            except (HTTPException, ZeroDivisionError, FileNotFoundError):
+                continue
+        if not m or not m.get("n_users"):
+            continue
+        base = reg[run]
+        rows.append(_metrics_row(run, base, scope, m, extra={
+            "run": er.get("key", f"{run}:{gen}"),      # 행 식별자 — 접기·하이라이트가 런 이름과 충돌하지 않게 분리
+            "label": er.get("label", run),
+            "backbone": er.get("backbone", base.get("backbone")),
+            "prompt": er.get("prompt", base.get("prompt")),
+            "oracle": er.get("oracle", ""),
+            "backbone_effort": er.get("backbone_effort", ""),
+            "note": er.get("note", ""),
+            "metrics": m,
+            "repeats": reps, "sd": sd,
+            "pinned_lane": {"generator": gen, "judge": jd, "run": run},
+        }))
     return {"judge": judge, "scope": scope, "generator": generator, "first4": list(first4_uuids()), "rows": rows}
 
 
@@ -759,8 +836,9 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
     }
 
 
-def _qa_correct_from_dir(jdir: Path, scope: str) -> float | None:
-    """judge 디렉토리에서 QA Correct 비율만 직접 계산 (레인 등록 없이 반복 회차를 읽기 위함)."""
+def _qa_stats_from_dir(jdir: Path, scope: str) -> dict | None:
+    """judge 디렉토리에서 QA 지표만 직접 계산 (레인 등록 없이 반복 회차를 읽기 위함).
+    공식 집계와 동일한 레코드 카운트 방식이라 --only qa 채점본에서도 유효하다."""
     if not jdir.exists():
         return None
     files = sorted(f for f in os.listdir(jdir) if f.endswith(".json"))
@@ -769,13 +847,21 @@ def _qa_correct_from_dir(jdir: Path, scope: str) -> float | None:
         files = [f for f in files if f[:-5] in f4]
     elif scope != "all":
         files = [f for f in files if f[:-5] == scope]
-    n = ok = 0
+    recs = []
     for fn in files:
         with open(jdir / fn, encoding="utf-8") as f:
-            recs = json.load(f).get("question_answering_records", [])
-        n += len(recs)
-        ok += sum(1 for r in recs if r.get("result_type") == "Correct")
-    return round(ok / n * 100, 2) if n else None
+            recs.extend(json.load(f).get("question_answering_records", []))
+    if not recs:
+        return None
+    n = len(recs)
+    pct = lambda t: round(sum(1 for r in recs if r.get("result_type") == t) / n * 100, 2)
+    return {"qa_c": pct("Correct"), "qa_h": pct("Hallucination"), "qa_o": pct("Omission"),
+            "n_users": len(files), "n_q": n}
+
+
+def _qa_correct_from_dir(jdir: Path, scope: str) -> float | None:
+    s = _qa_stats_from_dir(jdir, scope)
+    return s["qa_c"] if s else None
 
 
 @app.get("/api/oracle-ladder")

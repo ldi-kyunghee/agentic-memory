@@ -393,3 +393,10 @@ table.ladder tr.pend { opacity: .55; }
 .btn-off { visibility: hidden; }
 /* Oracle 단계 표기 (프롬프트 종류와 독립된 축) */
 .orc { background: #f0e9fa; color: #5b3b91; border-radius: 4px; padding: 0 5px; font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+/* 오라클로 읽을 수 없게 된 지표 칸 — 빈칸(미실행)과 구분되게 옅은 사선 바탕을 깔고 호버 시 이유를 띄운다 */
+td .masked { color: #b9b9c4; font-weight: 700; }
+td:has(> .masked) { background: repeating-linear-gradient(135deg, transparent, transparent 4px, rgba(140,140,160,.07) 4px, rgba(140,140,160,.07) 8px); }
+.pinlane { font-size: 9.5px; opacity: .75; }
+.sdtag { font-size: 9.5px; font-weight: 700; color: #8a8a9a; }
+/* 오라클 주입이 만든 값 — 값은 읽되 실제 백본들과 같은 순위표에 놓지 않는다는 표시 */
+.oorank { color: #5b3b91; font-style: italic; }

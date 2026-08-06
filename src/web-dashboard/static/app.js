@@ -387,6 +387,7 @@ const JUDGE_NAMES = {
   "oss120-rep2": "gpt-oss-120b (high · 반복 2)",
   "oss120-rep3": "gpt-oss-120b (high · 반복 3)",
   "oracle-oss120": "gpt-oss-120b (high · 오라클)",
+  "oraclepad-oss120": "gpt-oss-120b (high · 오라클+잡음)",
 };
 // 같은 모델을 동일 입력으로 반복 채점한 세트 — 이 사이의 라벨 차이가 곧 judge 자기 비일관성
 const REPEAT_JUDGES = ["oss120-genoss120", "oss120-rep1", "oss120-rep2", "oss120-rep3"];
@@ -1086,12 +1087,21 @@ async function renderMetrics() {
 
   const allRows = data.rows.filter((r) => r.metrics);
   const rows = allRows;   // 접기는 DOM에 남겨두고 클래스로만 처리 (재렌더 없이 토글하기 위함)
-  // 열별 최고/순위 (방향 반영)
+  // 오라클로 읽을 수 없게 된 지표는 '–'로 가린다 (백엔드가 masked 목록을 내려줌)
+  const isMasked = (r, k) => (r.masked || []).includes(k);
+  // 오라클 행의 메모리측 지표는 값이 살아 있어도 '주입된 정답'이 만든 수치라 실제 백본들과 같은
+  // 순위표에 놓으면 안 된다 (예: 추출 오라클의 R=91.35가 열 1위로 굵게 나오면 백본 성능처럼 읽힌다).
+  // 값은 그대로 보여주되 순위·최고값 계산에서만 뺀다. QA는 모든 행이 같은 조건이라 그대로 경쟁시킨다.
+  const QA_KEYS = ["qa_c", "qa_h", "qa_o"];
+  const outOfRank = (r, k) => !!r.oracle && !QA_KEYS.includes(k);
+  const inRank = (r, k) => !isMasked(r, k) && !outOfRank(r, k);
+  // 열별 최고/순위 (방향 반영) — 가려진 칸·오라클 주입값은 모수에서 제외해 순위가 오염되지 않게 한다
   const rank = {};
   METRIC_COLS.forEach((c) => {
-    const vals = rows.map((r) => r.metrics[c.k]);
+    const live = rows.filter((r) => inRank(r, c.k));
+    const vals = live.map((r) => r.metrics[c.k]);
     const sorted = [...vals].sort((a, b) => c.dir === 1 ? b - a : a - b);
-    rank[c.k] = { sorted, best: sorted[0] };
+    rank[c.k] = { sorted, best: sorted[0], n: live.length };
   });
   const judgeName = judgeLabel(data.judge);
   const judgeShortName = judgeShort(data.judge);
@@ -1117,19 +1127,35 @@ async function renderMetrics() {
 
   function cellHTML(c, r, m) {
     if (c.metric) {
+      if (isMasked(r, c.k)) return { html: `<span class="masked">–</span>`, desc: maskDesc(r, c.k) };
       const v = m[c.k];
       const rk = rank[c.k].sorted.indexOf(v) + 1;
-      const bestRow = rows.find((x) => x.metrics[c.k] === rank[c.k].best);
+      const bestRow = rows.find((x) => inRank(x, c.k) && x.metrics[c.k] === rank[c.k].best);
+      if (outOfRank(r, c.k)) return {
+        html: `<span class="oorank">${v.toFixed(2)}</span>`,
+        desc: `<b>${esc(c.label)}</b> = ${v} <span class="small">(순위 비교 제외)</span><br>이 행은 <b>${esc(oracleLabel(r.oracle))}</b>을(를) 정답으로 주입한 실험이라, 이 값은 백본의 능력이 아니라 <b>주입된 정답이 다음 단계를 얼마나 통과했는지</b>를 뜻합니다. 실제 백본 행들과 같은 순위표에 놓지 않습니다.<br>${esc(METRIC_DEFS[c.k])}`,
+      };
       const nTxt = c.metric.n ? ` <span class="small muted">(${m[c.metric.n].toLocaleString()})</span>` : "";
-      const d = `<b>${esc(c.label)}</b> = ${v} — ${rk}위/${rows.length} (${c.metric.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow.label)})<br>${esc(METRIC_DEFS[c.k])}`;
-      return { html: `${v.toFixed(2)}${nTxt}`, desc: d, bold: v === rank[c.k].best };
+      // 반복 실측이 있는 행은 QA C에 표본표준편차를 병기 — 이 행의 값이 얼마나 흔들리는지 바로 보이게
+      const sdTxt = (c.k === "qa_c" && r.sd != null) ? ` <span class="sdtag">±${r.sd.toFixed(2)}</span>` : "";
+      const sdDesc = (c.k === "qa_c" && r.sd != null)
+        ? `<br><b>${r.repeats.length}회 반복 평균</b> (A′ 생성 + judge 채점을 매번 새로) — 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}` : "";
+      const d = `<b>${esc(c.label)}</b> = ${v} — ${rk}위/${rank[c.k].n} (${c.metric.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow ? bestRow.label : "-")})<br>${esc(METRIC_DEFS[c.k])}${sdDesc}`;
+      return { html: `${v.toFixed(2)}${sdTxt}${nTxt}`, desc: d, bold: v === rank[c.k].best };
     }
     if (c.k === "sys") return { html: `<b>Mem0-Classic-OSS</b>${caret("row", r.run, r.label)}`, desc: r.note || r.label, rowHead: true };
     if (c.k === "users") return { html: String(m.n_users), desc: c.desc };
     if (c.k === "backbone") return { html: `${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted">${esc(effortShort(r.backbone_effort))}</span>` : ""}`, desc: r.backbone_effort ? `reasoning effort: ${r.backbone_effort}` : c.desc };
     if (c.k === "prompt") return { html: esc(r.prompt), desc: c.desc };
     if (c.k === "oracle") return { html: r.oracle ? `<span class="orc">${esc(oracleLabel(r.oracle))}</span>` : `<span class="muted">없음</span>`, desc: c.desc };
-    if (c.k === "judge") return { html: esc(judgeShortName), desc: judgeName };
+    if (c.k === "judge") {
+      const p = r.pinned_lane;
+      // 고정 레인 행은 상단바 generator·judge 선택을 따르지 않는다 — 어떤 조합으로 집계됐는지 칸에 명시
+      return p
+        ? { html: `${esc(judgeShort(p.judge))} <span class="pinlane">📌</span>`,
+            desc: `<b>고정 레인 행</b> — 이 행은 상단바의 generator·judge 선택을 따르지 않습니다.<br>답변 생성 레인 자체가 실험 조건이라, 항상 <b>${esc(genLabel(p.generator))}</b> × <b>${esc(judgeLabel(p.judge))}</b>으로만 집계됩니다.<br><span class="small">Stage A 저장소는 런 <b>${esc(p.run)}</b>의 것을 씁니다.</span>` }
+        : { html: esc(judgeShortName), desc: judgeName };
+    }
     const lat = r.latency;
     return lat
       ? { html: `<div class="lat-bar" style="width:${(lat.ingest_avg_s / maxIngest * 100).toFixed(0)}%"></div><span class="small">${lat.ingest_avg_s}s</span>`,
@@ -1666,6 +1692,23 @@ const ORACLE_STAGE_NAMES = {
   "extraction+update+retrieval": "추출+갱신+검색",
 };
 const oracleLabel = (v) => ORACLE_STAGE_NAMES[v || ""] || v;
+
+// 오라클 행에서 특정 지표를 '–'로 가리는 이유 — 칸에 호버하면 뜬다.
+// 계단이 단순하지 않다는 게 요점이다: 오라클을 넣으면 그 단계의 '내용 품질' 지표는 자명해져 죽지만
+// '생존율' 지표(R·Weighted R)와 다음 단계 지표(Upd)는 그 단계만 단독으로 재게 되어 오히려 살아난다.
+const MASK_WHY = {
+  acc: "추출 오라클 — 저장물이 골든 원문 그대로라 정확도가 자명하게 높습니다. 백본 능력을 재는 값이 아닙니다",
+  tp: "추출 오라클 — 저장물이 골든 원문 그대로라 자명하게 높습니다",
+  f1: "추출 오라클 — Target P가 자명해져 조합 지표인 F1도 읽을 수 없습니다",
+  fmr: "추출 오라클 — 미끼(interference) 골든을 애초에 주입하지 않으므로 '흡수하지 않은 비율'이 무의미합니다",
+  r: "갱신 오라클 — 골든이 정의상 전부 저장되어 100입니다. (추출 오라클만 걸린 행에서는 이 값이 <b>살아 있습니다</b>: 완벽히 추출해도 저장까지 살아남지 못한 비율 = 갱신 결정의 손실)",
+  wr: "갱신 오라클 — 정의상 100입니다",
+  upd_c: "갱신 오라클 — 갱신을 정답대로 수행하므로 정의상 100 근처입니다. (추출 오라클만 걸린 행에서는 <b>살아 있습니다</b>: 추출이 완벽할 때의 갱신 능력 단독 측정)",
+  upd_h: "갱신 오라클 — 정의상 0입니다",
+  upd_o: "갱신 오라클 — 정의상 0입니다",
+};
+const maskDesc = (r, k) =>
+  `<b>읽을 수 없는 지표</b> — 이 행은 <b>${esc(oracleLabel(r.oracle))}</b>을(를) 오라클로 대체한 실험입니다.<br>${MASK_WHY[k] || "오라클 대체로 이 지표가 자명해집니다"}<br><span class="small">오라클 행에서는 <b>QA</b> 지표만 해석합니다.</span>`;
 
 const REC_NAMES = { integrity: "골든 포함 (Integrity)", accuracy: "추출 근거 (Accuracy)", update: "갱신 (Update)", qa: "질의응답 (QA)",
                     gold_qa: "골든 정답 검수 (벤치마크 품질)" };

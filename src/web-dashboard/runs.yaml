@@ -40,6 +40,33 @@ generators:
     judges:
       oss120-genoss120-4u: "results/mem0-classic-oss/judge-oss120-genoss120-4u-{run}/judge"
 
+# 고정 레인 행 — Metrics 표(HaluMem Table 3)에 상단바 generator·judge 선택과 무관하게 항상 이 조합으로 집계해
+# 붙이는 행. 검색 오라클처럼 '답변 생성 레인 자체가 실험 조건'인 세팅은 일반 런으로는 표현할 수 없다.
+# oracle 값에 따라 읽을 수 없게 된 지표 칼럼은 화면에서 자동으로 '–' 처리된다 (app.py의 ORACLE_MASK).
+extra_rows:
+  - key: "oe2:oraclepad"
+    run: oe2
+    generator: oraclepad
+    judge: oraclepad-oss120
+    repeat_judge: "results/mem0-classic-oss/judge-oraclepad-r{i}-{run}/judge"
+    label: "오라클 ③ 추출+갱신+검색 · 잡음 유지 (1u)"
+    backbone: gpt-oss-120b
+    backbone_effort: "해당 없음 — 추출·갱신 오라클, 답변은 정답 근거+실제 검색 잡음으로 top-20 구성"
+    prompt: default
+    oracle: extraction+update+retrieval
+    note: "정답 근거를 반드시 포함시키되 나머지는 실제 검색 결과로 채워 컨텍스트 규모를 top-20으로 맞춘 대조군. E2와의 차이가 '순수 검색 정확도'인데 5회 반복 결과 -1.71p (p=0.26, 유의하지 않음) — 오라클 저장소에서는 top-20이 이미 정답 근거를 잡아온다"
+  - key: "full-traced:oracle"
+    run: full-traced
+    generator: oracle
+    judge: oracle-oss120
+    repeat_judge: "results/mem0-classic-oss/judge-oracle-r{i}-{run}/judge"
+    label: "오라클 ④ 추출+갱신+검색 · 근거만 (1u)"
+    backbone: gpt-oss-120b
+    backbone_effort: "해당 없음 — 메모리 시스템 미사용, 정답 근거(evidence)만 직접 제공"
+    prompt: default
+    oracle: extraction+update+retrieval
+    note: "⚠ 이는 '완벽한 검색'이 아니라 '정답 근거만 남기고 나머지를 전부 제거한' 조건이다 — 평균 1.4개 항목(실제 검색은 top-20). ③과의 +11.10p 차이는 검색 정확도가 아니라 컨텍스트 축약 효과다. ⚠ carrier run이 full-traced(Qwen3-4B 저장소)라 사다리 기준선(oss120b4)과 저장소가 다르다 — 답변이 저장소를 안 거치므로 QA C는 영향받지 않지만, 4유저 확장 때 oss120b4로 옮긴다"
+
 # 단계별 오라클 상한 사다리 — mem0 파이프라인의 각 단계를 차례로 '완벽'하게 만들며 QA 상한을 잰다.
 # 아직 안 돌린 단계는 화면에서 '미실행'으로 표시되고, 산출물이 생기면 자동으로 채워진다.
 # stages: 그 행에서 오라클로 대체된 단계 (extraction=fact 추출, update=갱신 결정, retrieval=저장·검색)
@@ -47,7 +74,7 @@ oracle_ladder:
   # 반복 회차 산출물은 레인으로 등록하지 않고 경로 템플릿으로 직접 읽는다 (드롭다운을 붐비게 하지 않음).
   # 개별 회차를 화면에서 열어보고 싶어지면 generators에 레인으로 추가하면 된다 — 산출물 경로는 동일.
   repeats: 5
-  note: "Martin 1유저 · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 각 행의 차이가 그 단계의 기여분"
+  note: "Martin 1유저 · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 5회 반복 평균±표본표준편차. 판독: 추출 +11.58(p=0.0001)만 유의하고, 갱신 +1.46(p=0.43)·검색정확도 -1.71(p=0.26)은 노이즈 — 추출 오라클 이후 갱신과 검색을 둘 다 완벽하게 만들어도 얻는 게 없다(E1→E2pad -0.24, p=0.87). 마지막 +11.10은 검색이 아니라 컨텍스트 축약 효과다"
   steps:
     - key: actual
       repeat_judge: "results/mem0-classic-oss/judge-oss120-r{i}-{run}/judge"
@@ -250,7 +277,7 @@ runs:
   # ── 단계별 오라클 사다리 전용 런 (전부 gpt-oss-120b · effort=high · Martin 1유저) ──
   oe1:
     label: "오라클 ① 추출 (1u)"
-    note: "추출 오라클 — QA 58.54→65.85 (+7.31). 완벽한 추출로 얻는 몫이 생각보다 작다: 저장은 돼도 갱신·검색에서 다시 잃는다"
+    note: "추출 오라클 — QA 61.22→72.80 (+11.58, p=0.0001, 5회 반복 평균). 사다리에서 유일하게 유의한 단일 단계 기여이자 총 격차의 52%. R=91.35로 '완벽히 추출해도 8.65%는 저장소에 못 남는다'(갱신 결정 손실)까지 함께 보인다. ⚠ 단일 회차 시절 기재했던 +7.31은 노이즈였다"
     backbone: gpt-oss-120b
     backbone_effort: "default(medium) — 남은 LLM 호출은 갱신 결정뿐"
     prompt: default
@@ -263,7 +290,7 @@ runs:
 
   oe2:
     label: "오라클 ② 추출+갱신 (1u)"
-    note: "추출+갱신 오라클 — QA 65.85→73.17 (+7.32), QA Omission 15.2→9.2 급감. 저장물 593개 전부 골든 원문과 일치(검증). 추출(+7.31)과 갱신(+7.32)이 동등한 크기 — 조건이 완전히 통제된 비교"
+    note: "추출+갱신 오라클 — QA 72.80→74.27 (+1.46, p=0.43, 5회 반복 평균). ⚠ 유의하지 않다: 갱신 단계를 통째로 완벽하게 만들어도 QA는 안 움직인다. 갱신 골든의 74.5%(4유저)가 원본이 저장소에 존재조차 하지 않는 프로필 필드 유래라 '완벽한 갱신'이 바꿀 게 애초에 거의 없다. 저장물 593개 전부 골든 원문과 일치(검증). ⚠ 단일 회차 시절 기재했던 '추출(+7.31)과 갱신(+7.32)이 동등' 주장은 노이즈였고 철회한다"
     backbone: gpt-oss-120b
     backbone_effort: "해당 없음 — 추출·갱신 모두 오라클이라 LLM 호출 없음"
     prompt: default
