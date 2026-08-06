@@ -111,10 +111,7 @@ def parse_answers(outputs):
             else:
                 logger.error("Content is %s", content)
                 results.append(content)
-    
-    raw_output_path = datetime.datetime.now().astimezone().isoformat() + ".txt" 
-    with open(f"raw_outputs/{raw_output_path}", "w") as file:
-        file.writelines(results)
+                
     return results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
