@@ -88,6 +88,7 @@ def evaluation_for_question_vllm(
 def parse_answers(outputs):
     contents = [output.outputs[0].text.split('</think>')[-1] for output in outputs]
     results = []
+    raw_output = []
     os.makedirs("raw_outputs", exist_ok=True)
     for content in tqdm(contents, desc="Parsing answers..."):
         try:
@@ -104,13 +105,17 @@ def parse_answers(outputs):
                         result = json.loads(response)
                         results.append(result)
                     else:
-                        results.append(content)
+                        raise JSONDecodeError
                 except JSONDecodeError:
                     logger.warning("Cannot parse json: %s", content)
-                    results.append(content)
+                    raw_output.append(content)
             else:
                 logger.error("Content is %s", content)
-                results.append(content)
+                raw_output.append(content)
+                
+    file_name = datetime.datetime.now().astimezone().isoformat()
+    with open(f"raw_outputs/{file_name}.txt", "w") as file:
+        file.writelines(raw_output)
     return results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
