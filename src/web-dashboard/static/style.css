@@ -222,7 +222,27 @@ table.resizable td { overflow: hidden; text-overflow: ellipsis; }
 .colrz { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 2; }
 .colrz:hover, .colrz.on { background: var(--accent); opacity: .35; }
 
-/* 행·열 숨기기 캐럿 (▾) — 평소엔 숨어 있다가 해당 행/열에 마우스를 올리면 나타남 */
+/* ── 행/열 접기 (collapse) — DOM은 유지하고 클래스로만 축소해 재렌더 없이 토글 ── */
+/* 접힌 열: 얇은 띠로 줄이고 내용 감춤. !important로 드래그 폭(인라인 style)을 이긴다 */
+table.cmp th.ccol, table.cmp td.ccol {
+  width: 16px !important; min-width: 16px !important; max-width: 16px !important;
+  padding: 0 !important; overflow: hidden; cursor: pointer;
+  font-size: 0 !important; color: transparent !important;
+  background: repeating-linear-gradient(135deg, #e9ecf5, #e9ecf5 3px, #dfe3ef 3px, #dfe3ef 6px);
+}
+table.cmp th.ccol { position: relative; }
+table.cmp th.ccol::after { content: "⋯"; position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: center; font-size: 11px; color: var(--dim); }
+table.cmp th.ccol .hidecaret, table.cmp td.ccol > * { display: none !important; }
+/* 접힌 행: 얇은 줄로 줄이되 어떤 런인지 알 수 있게 첫 칸에만 작은 라벨 */
+table.cmp tr.crow td { height: 9px !important; padding: 0 !important; font-size: 0 !important;
+  color: transparent !important; overflow: hidden; cursor: pointer;
+  background: repeating-linear-gradient(135deg, #eef0f5, #eef0f5 3px, #e4e7ef 3px, #e4e7ef 6px); }
+table.cmp tr.crow td > * { display: none !important; }
+table.cmp tr.crow td.rowhead::before { content: "⋯ 펼치기"; font-size: 9px; color: var(--dim); padding-left: 6px; }
+table.cmp tr.crow:hover td { filter: brightness(.97); }
+
+/* 행·열 접기 캐럿 (▾) — 평소엔 숨어 있다가 해당 행/열에 마우스를 올리면 나타남 */
 .hidecaret { border: none; background: none; color: var(--dim); cursor: pointer; font-size: 10px;
   line-height: 1; padding: 0 2px; margin-left: 3px; opacity: 0; transition: opacity .12s; vertical-align: middle; }
 th:hover .hidecaret, tr:hover td.rowhead .hidecaret { opacity: .7; }
