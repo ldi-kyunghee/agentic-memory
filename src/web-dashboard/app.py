@@ -764,7 +764,7 @@ def api_oracle_ladder(scope: str = "first4"):
         qa = m["qa_c"] if m else None
         rows.append({
             "key": st.get("key"), "label": st.get("label"), "stages": st.get("stages", []),
-            "run": run, "run_label": reg.get(run, {}).get("label", run),
+            "run": run, "run_label": st.get("run_display") or reg.get(run, {}).get("label", run),
             "generator": gen, "judge": judge, "desc": st.get("desc", ""),
             "qa_c": qa, "qa_h": m["qa_h"] if m else None, "qa_o": m["qa_o"] if m else None,
             "n_users": m["n_users"] if m else None,

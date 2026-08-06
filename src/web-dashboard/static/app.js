@@ -1179,7 +1179,7 @@ async function renderLadder() {
     return `<tr class="${r.qa_c == null ? "pend" : ""}">
       <td class="lstep" data-desc="${esc(r.desc)}"><b>${esc(r.label)}</b><br><span class="small muted">${esc(r.run_label || r.run)}</span></td>
       ${stages}
-      <td class="lqa">${bar}</td>
+      <td class="lqa">${bar}${r.n_users != null ? `<span class="small muted" data-desc="이 행이 실제로 채점한 유저 수 — 네 행이 같아야 공정한 비교입니다">${r.n_users}u</span>` : ""}</td>
       <td class="lgain" data-desc="직전 단계 대비 QA Correct 증가분 — 이 단계를 완벽하게 만들었을 때 얻는 성능">${dl}</td></tr>`;
   }).join("");
 
@@ -1195,6 +1195,8 @@ async function renderLadder() {
           <th data-desc="QA Correct — 이 사다리에서 유일하게 의미 있는 지표. 오라클 행은 저장물이 골든 자체라 R·Acc는 100 근처로 붙어 무의미합니다">QA C↑</th>
           <th>직전 대비</th></tr>${rows}</table>
         <p class="small muted" style="margin-top:8px">${esc(d.note)} · 남은 구간(상한 → 100)은 generator 자체와 문항·정답 결함의 몫입니다.</p>
+        <p class="small" style="margin-top:4px;color:#8a5600;background:#fff4e6;border-left:3px solid var(--warn);padding:5px 9px;border-radius:0 5px 5px 0" data-desc="마지막 행은 검색 결과 대신 정답 근거(evidence)만 제공합니다. 평균 1.4개 항목으로, 실제 검색(top-20)보다 훨씬 짧고 깨끗한 컨텍스트입니다. 따라서 이 구간의 증가분에는 '검색 정확도'와 '컨텍스트 축약·무관정보 제거' 효과가 섞여 있습니다">
+          ⚠ 마지막 행은 <b>정답 근거만 남긴 조건</b>(평균 1.4개 항목)이라 실제 검색(top-20)과 컨텍스트 조건이 다릅니다 — 이 구간 증가분은 검색의 기여를 <b>과대평가</b>합니다.</p>
       </div></div>`;
 }
 

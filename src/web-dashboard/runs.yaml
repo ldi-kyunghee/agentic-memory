@@ -62,12 +62,13 @@ oracle_ladder:
       judge: oss120-genoss120
       desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐 — 백본 무관"
     - key: retrieval
-      label: "검색까지 오라클"
+      label: "추출+갱신+검색 오라클"
       stages: [extraction, update, retrieval]
       run: full-traced
       generator: oracle
       judge: oracle-oss120
-      desc: "검색 결과 대신 정답 근거(evidence)를 직접 제공. 메모리 시스템을 전혀 쓰지 않으므로 어느 런에 걸어도 동일한 상한이다. 남은 것은 generator와 문항 자체"
+      desc: "메모리 시스템을 전혀 쓰지 않고 정답 근거(evidence)만 직접 제공. ⚠ 이는 '완벽한 검색'이 아니라 '정답 근거만 남기고 나머지를 전부 제거한' 조건이다 — 평균 1.4개 항목(실제 검색은 top-20). 검색 정확도와 컨텍스트 축약 효과가 섞여 있어 이 구간의 증가분은 검색의 기여를 과대평가한다"
+      run_display: "메모리 시스템 미사용 (evidence 직접 제공)"
 
 runs:
   full-traced:
@@ -239,7 +240,7 @@ runs:
 
   oe2:
     label: "오라클 ② 추출+갱신 (1u)"
-    note: "추출+갱신 오라클 — QA 65.85→73.17 (+7.32), QA Omission 15.2→9.2 급감. 저장물 593개 전부 골든 원문과 일치(검증). 남은 손실 10.4는 검색 몫"
+    note: "추출+갱신 오라클 — QA 65.85→73.17 (+7.32), QA Omission 15.2→9.2 급감. 저장물 593개 전부 골든 원문과 일치(검증). 추출(+7.31)과 갱신(+7.32)이 동등한 크기 — 조건이 완전히 통제된 비교"
     backbone: gpt-oss-120b
     backbone_effort: "해당 없음 (추출·갱신 모두 오라클)"
     prompt: oracle-extraction+update
