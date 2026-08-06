@@ -88,6 +88,7 @@ def evaluation_for_question_vllm(
 def parse_answers(outputs):
     contents = [output.outputs[0].text.split('</think>')[-1] for output in outputs]
     results = []
+    os.makedirs("raw_outputs", exist_ok=True)
     for content in tqdm(contents, desc="Parsing answers..."):
         try:
             result = json.loads(content)
@@ -95,16 +96,22 @@ def parse_answers(outputs):
         except JSONDecodeError:
             if content is not None:
                 try:
-                    content = content.split('assistant')[-1].strip()
-                    idx = content.index('{')
-                    response = content[idx:]
-                    result = json.loads(response)
+                    content = content.split("assistant").strip()
+                    idx = content.lower().find("json")
+                    if idx >= 0:
+                        idx += len("json")
+                        response = content[idx:]
+                        result = json.loads(response)
+                        results.append(result)
+                    else:
+                        results.append(content)
                 except JSONDecodeError:
                     logger.warning("Cannot parse json: %s", content)
+                    results.append(content)
             else:
                 logger.error("Content is %s", content)
                 results.append(content)
-    os.makedirs("raw_outputs", exist_ok=True)
+    
     raw_output_path = datetime.datetime.now().astimezone().isoformat() + ".txt" 
     with open(f"raw_outputs/{raw_output_path}", "w") as file:
         file.writelines(results)
