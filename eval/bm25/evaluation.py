@@ -105,7 +105,7 @@ def parse_answers(outputs):
                         result = json.loads(response)
                         results.append(result)
                     else:
-                        raise JSONDecodeError
+                        raw_output.append(content)
                 except JSONDecodeError:
                     logger.warning("Cannot parse json: %s", content)
                     raw_output.append(content)
