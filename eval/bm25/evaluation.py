@@ -35,7 +35,7 @@ def load_vllm(model_kwargs: dict, enable_reasoning: bool = False):
     if enable_reasoning:
         reasoning_config = ReasoningConfig(
             reasoning_start_str="<think>",
-            reasoning_end_str="</think>"
+            reasoning_end_str="I have to answer based on my reasoning now.</think>"
         )
         model_kwargs['reasoning_config'] = reasoning_config
         
