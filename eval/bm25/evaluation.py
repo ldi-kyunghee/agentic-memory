@@ -96,7 +96,7 @@ def parse_answers(outputs):
         except JSONDecodeError:
             if content is not None:
                 try:
-                    content = content.split("assistant").strip()
+                    content = content.split("assistant")[-1].strip()
                     idx = content.lower().find("json")
                     if idx >= 0:
                         idx += len("json")
