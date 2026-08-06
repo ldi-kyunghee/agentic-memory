@@ -216,6 +216,17 @@ table.cmp th, table.cmp td { border: 1px solid var(--line); padding: 4px 8px; te
 table.cmp th { background: var(--chip); font-size: 11px; }
 td.diff { background: #fff4e6; }
 
+/* 칼럼 폭 드래그 조절 — 머리글 오른쪽 경계선을 잡아 끈다 */
+table.resizable th { position: relative; overflow: hidden; }
+table.resizable td { overflow: hidden; text-overflow: ellipsis; }
+.colrz { position: absolute; top: 0; right: -3px; width: 7px; height: 100%; cursor: col-resize; z-index: 2; }
+.colrz:hover, .colrz.on { background: var(--accent); opacity: .35; }
+
+/* 행 숨기기 */
+td.rowsel .rowhide { display: none; border: none; background: none; color: var(--bad); cursor: pointer;
+  font-size: 10px; padding: 0 0 0 2px; line-height: 1; }
+tr:hover td.rowsel .rowhide { display: inline; }
+
 /* Metrics 행/열 하이라이트 선택 — 행: 왼쪽 ○ 클릭 / 열: 머리글 클릭 */
 table.cmp td.rowsel { cursor: pointer; text-align: center; color: var(--dim); width: 20px; padding: 4px 5px; user-select: none; }
 table.cmp td.rowsel:hover { background: var(--chip); color: var(--accent); }
@@ -349,3 +360,8 @@ table.ladder tr.pend { opacity: .55; }
 .pill-filter button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 .hint { font-size: 11px; color: var(--dim); margin: 4px 0 10px; }
 .backlink { display: inline-block; margin-bottom: 8px; color: var(--accent); cursor: pointer; font-weight: 600; }
+/* 사다리 반복 통계 */
+.ladder .lbar { position: relative; }
+.ladder .lerr { position: absolute; top: 50%; transform: translateY(-50%); height: 3px; background: rgba(0,0,0,.42); border-radius: 2px; }
+.ladder .lsd { font-size: 10px; color: var(--dim); margin-left: 3px; cursor: help; }
+.ladder .lrep { font-size: 9.5px; font-weight: 700; color: var(--dim); background: var(--chip); border-radius: 4px; padding: 0 4px; margin-left: 3px; cursor: help; }

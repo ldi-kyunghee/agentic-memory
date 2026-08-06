@@ -433,7 +433,18 @@ def _compute_metrics_uncached(run: str, judge_name: str, scope: str, generator: 
             u = json.load(f)
         for k in ["memory_integrity_records", "memory_accuracy_records", "memory_update_records", "question_answering_records"]:
             skeleton[k].extend(u.get(k, []))
-    o = aggregate_eval_results(skeleton)["overall_score"]
+    # QA 지표는 레코드 카운트만으로 계산 — 일부 종류만 채점된 파일(--only qa)에서도 항상 유효
+    qrecs = skeleton["question_answering_records"]
+    nq = len(qrecs) or 1
+    qcount = lambda t: round(sum(1 for r in qrecs if r.get("result_type") == t) / nq * 100, 2)
+    try:
+        o = aggregate_eval_results(skeleton)["overall_score"]
+    except ZeroDivisionError:
+        # 메모리 판정이 비어 있는 QA 전용 채점본 — QA 지표만 돌려준다
+        return {"n_users": len(files), "qa_only": True,
+                "r": None, "wr": None, "acc": None, "acc_n": 0, "tp": None, "tp_n": 0,
+                "fmr": None, "f1": None, "upd_c": None, "upd_h": None, "upd_o": None,
+                "qa_c": qcount("Correct"), "qa_h": qcount("Hallucination"), "qa_o": qcount("Omission")}
     mi, ma, mu, qa = o["memory_integrity"], o["memory_accuracy"], o["memory_update"], o["question_answering"]
     pct = lambda v: round(v * 100, 2)
     return {
@@ -746,6 +757,25 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
     }
 
 
+def _qa_correct_from_dir(jdir: Path, scope: str) -> float | None:
+    """judge 디렉토리에서 QA Correct 비율만 직접 계산 (레인 등록 없이 반복 회차를 읽기 위함)."""
+    if not jdir.exists():
+        return None
+    files = sorted(f for f in os.listdir(jdir) if f.endswith(".json"))
+    if scope == "first4":
+        f4 = set(first4_uuids())
+        files = [f for f in files if f[:-5] in f4]
+    elif scope != "all":
+        files = [f for f in files if f[:-5] == scope]
+    n = ok = 0
+    for fn in files:
+        with open(jdir / fn, encoding="utf-8") as f:
+            recs = json.load(f).get("question_answering_records", [])
+        n += len(recs)
+        ok += sum(1 for r in recs if r.get("result_type") == "Correct")
+    return round(ok / n * 100, 2) if n else None
+
+
 @app.get("/api/oracle-ladder")
 def api_oracle_ladder(scope: str = "first4"):
     """단계별 오라클 상한 사다리 — 각 단계를 완벽하게 만들었을 때의 QA 상한과 구간별 기여분.
@@ -762,7 +792,23 @@ def api_oracle_ladder(scope: str = "first4"):
             except HTTPException:
                 m = None
         qa = m["qa_c"] if m else None
+        # 반복 회차: 레인 등록 없이 경로 템플릿으로 직접 읽어 평균·표준편차 산출
+        reps = []
+        tpl = st.get("repeat_judge")
+        if tpl:
+            for i in range(1, int(cfg.get("repeats", 0)) + 1):
+                v = _qa_correct_from_dir(ROOT / tpl.format(i=i, run=run), scope)
+                if v is not None:
+                    reps.append(v)
+        mean = sd = None
+        if reps:
+            mean = round(sum(reps) / len(reps), 2)
+            if len(reps) > 1:
+                var = sum((x - mean) ** 2 for x in reps) / (len(reps) - 1)
+                sd = round(var ** 0.5, 2)
+            qa = mean  # 반복이 있으면 평균을 대표값으로
         rows.append({
+            "repeats": reps, "mean": mean, "sd": sd,
             "key": st.get("key"), "label": st.get("label"), "stages": st.get("stages", []),
             "run": run, "run_label": st.get("run_display") or reg.get(run, {}).get("label", run),
             "generator": gen, "judge": judge, "desc": st.get("desc", ""),
@@ -772,7 +818,7 @@ def api_oracle_ladder(scope: str = "first4"):
         })
         if qa is not None:
             prev = qa
-    return {"note": cfg.get("note", ""), "scope": scope,
+    return {"note": cfg.get("note", ""), "scope": scope, "n_repeats": int(cfg.get("repeats", 0)),
             "stage_names": {"extraction": "추출", "update": "갱신", "retrieval": "저장·검색"},
             "rows": rows}
 

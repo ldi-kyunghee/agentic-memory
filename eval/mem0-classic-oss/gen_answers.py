@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import time
@@ -24,6 +25,10 @@ REASONING_EFFORT = os.getenv("ANSWER_REASONING_EFFORT")  # gpt-5 계열일 때�
 # 오라클 모드: 메모리 시스템의 검색 결과 대신 '정답 근거 골든'만 context로 준다.
 # 검색·저장을 완벽하게 했다고 가정했을 때의 QA 상한 -> generator 자체가 병목인지 판별용.
 ORACLE = os.getenv("ANSWER_ORACLE_CONTEXT") == "1"
+# 오라클 context를 실제 검색 규모(top-k)까지 채울지. 0이면 evidence만.
+# evidence만 주면 '검색 정확도'와 '무관정보 제거' 효과가 섞이므로, 실제 검색 결과에서
+# 무관 항목을 끌어와 같은 규모로 맞춘 대조군을 만든다 -> 두 효과를 분리 측정.
+ORACLE_PAD = int(os.getenv("ANSWER_ORACLE_PAD", "0"))
 
 TEMPLATE_MEM0 = """Memories for user {user_id}:
 
@@ -31,9 +36,43 @@ TEMPLATE_MEM0 = """Memories for user {user_id}:
 """
 
 
+def _parse_context(raw) -> list[str]:
+    """저장된 검색 context 문자열에서 메모리 목록만 복원."""
+    if isinstance(raw, list):
+        return [str(x) for x in raw]
+    if not isinstance(raw, str):
+        return []
+    a, b = raw.find("["), raw.rfind("]")
+    if a < 0 or b <= a:
+        return []
+    try:
+        arr = json.loads(raw[a:b + 1])
+        return [str(x) for x in arr] if isinstance(arr, list) else []
+    except json.JSONDecodeError:
+        return []
+
+
+def _toks(t: str) -> set:
+    return set(re.findall(r"[a-z0-9]{4,}", (t or "").lower()))
+
+
 def oracle_context(qa: dict, user_name: str) -> str:
-    """evidence(정답 근거 골든)만으로 검색 context와 동일한 포맷을 구성."""
+    """evidence(정답 근거 골든)로 검색 context와 동일한 포맷을 구성.
+
+    ANSWER_ORACLE_PAD=N이면 실제 검색 결과 중 evidence와 겹치지 않는 항목으로 N개까지 채운다.
+    -> '정답이 항상 포함되되 주변 잡음은 실제와 동일한' 조건이 된다.
+    """
     mems = [e["memory_content"] for e in qa.get("evidence", [])]
+    if ORACLE_PAD:
+        ev_toks = [_toks(m) for m in mems]
+        for item in _parse_context(qa.get("context", "")):
+            if len(mems) >= ORACLE_PAD:
+                break
+            it = _toks(item)
+            # 이미 넣은 evidence와 사실상 같은 내용이면 건너뜀 (중복 방지)
+            if any(et and len(et & it) / len(et) >= 0.8 for et in ev_toks):
+                continue
+            mems.append(item)
     return TEMPLATE_MEM0.format(user_id=user_name, memories=json.dumps(mems, indent=4))
 
 

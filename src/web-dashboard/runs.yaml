@@ -27,6 +27,12 @@ generators:
     results: "results/mem0-classic-oss/genoracle/{run}.jsonl"
     judges:
       oracle-oss120: "results/mem0-classic-oss/judge-oracle-{run}/judge"
+  # 오라클 + 잡음 유지 레인: 정답 근거를 포함하되 실제 검색 결과로 top-20까지 채운 컨텍스트
+  oraclepad:
+    label: "오라클+잡음 (top-20 유지)"
+    results: "results/mem0-classic-oss/genoraclepad/{run}.jsonl"
+    judges:
+      oraclepad-oss120: "results/mem0-classic-oss/judge-oraclepad-{run}/judge"
   # 1u 레인의 4유저 확장본. 1u 레인은 정성분석가들의 작업·코멘트 스코프 보존을 위해 그대로 둠
   oss120-4u:
     label: "gpt-oss-120b (high · 4유저)"
@@ -38,9 +44,13 @@ generators:
 # 아직 안 돌린 단계는 화면에서 '미실행'으로 표시되고, 산출물이 생기면 자동으로 채워진다.
 # stages: 그 행에서 오라클로 대체된 단계 (extraction=fact 추출, update=갱신 결정, retrieval=저장·검색)
 oracle_ladder:
+  # 반복 회차 산출물은 레인으로 등록하지 않고 경로 템플릿으로 직접 읽는다 (드롭다운을 붐비게 하지 않음).
+  # 개별 회차를 화면에서 열어보고 싶어지면 generators에 레인으로 추가하면 된다 — 산출물 경로는 동일.
+  repeats: 5
   note: "Martin 1유저 · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 각 행의 차이가 그 단계의 기여분"
   steps:
     - key: actual
+      repeat_judge: "results/mem0-classic-oss/judge-oss120-r{i}-{run}/judge"
       label: "실측 (오라클 없음)"
       stages: []
       run: oss120b4
@@ -48,6 +58,7 @@ oracle_ladder:
       judge: oss120-genoss120
       desc: "gpt-oss-120b 백본이 실제로 추출·갱신·검색한 결과 — 사다리의 기준선"
     - key: e1
+      repeat_judge: "results/mem0-classic-oss/judge-oss120-r{i}-{run}/judge"
       label: "추출 오라클"
       stages: [extraction]
       run: oe1
@@ -55,14 +66,25 @@ oracle_ladder:
       judge: oss120-genoss120
       desc: "골든 메모리(미끼 제외)를 추출 결과로 주입. 갱신 결정·저장·검색은 실제 로직"
     - key: e2
+      repeat_judge: "results/mem0-classic-oss/judge-oss120-r{i}-{run}/judge"
       label: "추출+갱신 오라클"
       stages: [extraction, update]
       run: oe2
       generator: oss120
       judge: oss120-genoss120
       desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐 — 백본 무관"
+    - key: e2pad
+      repeat_judge: "results/mem0-classic-oss/judge-oraclepad-r{i}-{run}/judge"
+      label: "추출+갱신+검색 오라클 (잡음 유지)"
+      stages: [extraction, update, retrieval]
+      run: oe2
+      generator: oraclepad
+      judge: oraclepad-oss120
+      run_display: "정답 근거 + 실제 검색 잡음으로 top-20"
+      desc: "정답 근거를 반드시 포함시키되 나머지는 실제 검색 결과로 채워 컨텍스트 규모를 top-20으로 맞춘 대조군. 이 행과 위 행(E2)의 차이가 '순수 검색 정확도', 아래 행과의 차이가 '컨텍스트 축약·정제'의 기여다"
     - key: retrieval
-      label: "추출+갱신+검색 오라클"
+      repeat_judge: "results/mem0-classic-oss/judge-oracle-r{i}-{run}/judge"
+      label: "추출+갱신+검색 오라클 (근거만)"
       stages: [extraction, update, retrieval]
       run: full-traced
       generator: oracle

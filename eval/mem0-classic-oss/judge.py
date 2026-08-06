@@ -98,8 +98,22 @@ def build_inputs(user_data: dict):
     return integrity, accuracy, update, qa_list
 
 
+# 채점할 레코드 종류 제한 (반복 실험용). 메모리 판정 3종은 Stage A 산출물이 같으면 불변이므로,
+# generator/judge 변동성만 반복 측정할 때는 QA만 돌리면 된다 -> 호출량이 1/10 수준으로 줄어든다.
+ONLY = [k.strip() for k in (os.getenv("JUDGE_ONLY") or "").split(",") if k.strip()]
+
+
+def _enabled(kind: str) -> bool:
+    return not ONLY or kind in ONLY
+
+
 def judge_user(user_data: dict, max_workers: int) -> dict:
     integrity, accuracy, update, qa_list = build_inputs(user_data)
+    if ONLY:
+        if not _enabled("integrity"): integrity = []
+        if not _enabled("accuracy"): accuracy = []
+        if not _enabled("update"): update = []
+        if not _enabled("qa"): qa_list = []
     results = {
         "memory_integrity_records": [],
         "memory_accuracy_records": [],
@@ -229,7 +243,12 @@ def main(results_path: str, max_workers: int, user_num: int | None = None, data_
             for k in ["memory_integrity_records", "memory_accuracy_records", "memory_update_records", "question_answering_records"]:
                 eval_results[k].extend(u.get(k, []))
 
-    eval_results = aggregate_eval_results(eval_results)  # 집계는 공식 함수 그대로 사용
+    try:
+        eval_results = aggregate_eval_results(eval_results)  # 집계는 공식 함수 그대로 사용
+    except ZeroDivisionError:
+        # --only로 일부 레코드 종류만 채점하면 공식 집계 함수가 0으로 나눈다.
+        # 반복 실험(QA만)에서는 집계 파일이 필요 없으므로 레코드만 남기고 건너뛴다.
+        print("⚠ 일부 레코드 종류만 채점돼 공식 집계를 건너뜁니다 (판정 레코드는 정상 저장됨)")
 
     out_file = os.path.join(out_root, "eval_stat_result.json")
     with open(out_file, "w", encoding="utf-8") as f:
@@ -244,5 +263,10 @@ if __name__ == "__main__":
     parser.add_argument("--user-num", type=int, default=None, help="데이터셋 순서 기준 첫 N명만 채점 (러너와 동일 의미론)")
     parser.add_argument("--data", default="dataset/HaluMem-Medium.jsonl", help="유저 순서의 기준이 되는 데이터셋 경로")
     parser.add_argument("--out-dir", default=None, help="판정/집계 출력 루트 (기본: --results 옆 — 재채점 시 반드시 별도 지정)")
+    parser.add_argument("--only", default=None, help="채점할 레코드 종류 (쉼표 구분: integrity,accuracy,update,qa). 반복 실험은 qa만 쓰면 호출량이 1/10")
     args = parser.parse_args()
+    if args.only:
+        os.environ["JUDGE_ONLY"] = args.only
+        ONLY = [k.strip() for k in args.only.split(",") if k.strip()]
+        print(f"채점 대상 제한: {ONLY}")
     main(args.results, args.max_workers, args.user_num, args.data, args.out_dir)

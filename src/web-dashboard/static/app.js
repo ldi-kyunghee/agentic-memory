@@ -394,6 +394,8 @@ const REPEAT_JUDGES = ["oss120-genoss120", "oss120-rep1", "oss120-rep2", "oss120
 const normLab = (v) => String(v ?? "").trim().toLowerCase();
 const labMatch = (a, b) => normLab(a) !== "" && normLab(a) === normLab(b);
 const judgeLabel = (j) => JUDGE_NAMES[j] || j;
+// Metrics 표처럼 폭이 아쉬운 곳에서는 배치·반복 꼬리표를 떼고 모델명만 (판정 검토 모달은 전체 이름 유지)
+const judgeShort = (j) => judgeLabel(j).replace(/\s*·\s*[^)]*(배치|반복\s*\d+|유저)/g, "");
 // run 내부명(full-traced 등) -> 사람용 라벨 ("Qwen3-4B × default (20u)")
 const runLabel = (name) => S.runs.find((r) => r.run === name)?.label || name;
 // generator 내부 키 -> 라벨
@@ -1055,7 +1057,7 @@ const METRIC_COLS = [
 const metricsCache = new Map();
 S.metricsScope = "first4";
 // 행/열 하이라이트 선택 — 행은 run 이름, 열은 칼럼 키. 재렌더에도 유지 (탭 이탈해도 세션 내 유지)
-S.metricsSelRows = new Set(); S.metricsSelCols = new Set();
+S.metricsSelRows = new Set(); S.metricsSelCols = new Set(); S.metricsHidden = new Set();
 
 async function renderMetrics() {
   // generator·judge는 상단바 선택을 그대로 따른다 (별도 선택기 없음 — 화면 전체가 한 조합)
@@ -1081,7 +1083,8 @@ async function renderMetrics() {
     <p class="small muted" style="margin-top:10px">굵은 값 = 열별 최고(방향 반영). 셀 호버 = 순위·해석, 행 첫 칸 호버 = 런 요약 노트. 이 조합의 라벨이 없는 런은 표에서 제외됨 (레인마다 채점 유저 수가 다름).</p></div>`;
   $("#metrics-scope").onchange = () => { S.metricsScope = $("#metrics-scope").value; renderMetrics(); };
 
-  const rows = data.rows.filter((r) => r.metrics);
+  const allRows = data.rows.filter((r) => r.metrics);
+  const rows = allRows.filter((r) => !S.metricsHidden.has(r.run));
   // 열별 최고/순위 (방향 반영)
   const rank = {};
   METRIC_COLS.forEach((c) => {
@@ -1090,6 +1093,7 @@ async function renderMetrics() {
     rank[c.k] = { sorted, best: sorted[0] };
   });
   const judgeName = judgeLabel(data.judge);
+  const judgeShortName = judgeShort(data.judge);
 
   const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);
   // 행/열 선택 하이라이트: 행=왼쪽 끄트머리(○/●) 클릭, 열=머리글 클릭. 다시 클릭하면 해제
@@ -1114,21 +1118,21 @@ async function renderMetrics() {
     }).join("");
     const rowSel = S.metricsSelRows.has(r.run);
     return `<tr class="${rowSel ? "mrow-sel" : ""}">
-      <td class="rowsel" data-runsel="${esc(r.run)}" data-desc="클릭 = 이 행 하이라이트 선택/해제">${rowSel ? "●" : "○"}</td>
+      <td class="rowsel" data-runsel="${esc(r.run)}" data-desc="클릭 = 이 행 하이라이트 선택/해제">${rowSel ? "●" : "○"}<button class="rowhide" data-runhide="${esc(r.run)}" data-desc="이 행을 표에서 숨깁니다 (데이터는 그대로, 다시 보기로 복원)">✕</button></td>
       <td class="${colCls("sys")}" data-col="sys" data-desc="${esc(r.note || r.label)}"><b>${esc(sysName)}</b></td>
       <td class="${colCls("users")}" data-col="users">${m.n_users}</td>
       <td class="${colCls("backbone")}" data-col="backbone">${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted" data-desc="reasoning effort: ${esc(r.backbone_effort)}">${esc(effortShort(r.backbone_effort))}</span>` : ""}</td>
       <td class="${colCls("prompt")}" data-col="prompt">${esc(r.prompt)}</td>${latCell}
-      <td class="${colCls("judge")}" data-col="judge">${esc(judgeName)}</td>${cells}</tr>`;
+      <td class="${colCls("judge")}" data-col="judge" data-desc="${esc(judgeLabel(data.judge))}">${esc(judgeShortName)}</td>${cells}</tr>`;
   }).join("");
 
   const anySel = S.metricsSelRows.size || S.metricsSelCols.size;
   $("#content").innerHTML = `
     <div id="ladder-card"></div>
     <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
-      · 행 왼쪽 ○ 클릭=행 하이라이트, 열 머리글 클릭=열 하이라이트 (재클릭=해제)${anySel ? ` <button id="msel-clear" class="ctx-toggle" style="margin-left:6px">선택 모두 해제</button>` : ""}</div>
+      · 행 왼쪽 ○ 클릭=행 하이라이트, ✕ 클릭=행 숨김, 열 머리글 클릭=열 하이라이트, 칼럼 경계 드래그=폭 조절${anySel ? ` <button id="msel-clear" class="ctx-toggle" style="margin-left:6px">선택 모두 해제</button>` : ""}${S.metricsHidden.size ? ` <button id="mhide-clear" class="ctx-toggle" style="margin-left:6px">숨긴 행 ${S.metricsHidden.size}개 다시 보기</button>` : ""}</div>
     <div class="card"><div class="body" style="overflow-x:auto">
-      <table class="cmp"><tr>
+      <table class="cmp resizable" id="metrics-table"><tr>
         <th class="rowsel-h" data-desc="행 선택 칼럼 — 아래 ○를 클릭하면 그 행이 하이라이트"></th>
         <th class="${colCls("sys")}" data-col="sys" data-desc="메모리 시스템 — 전부 mem0 OSS 0.1.118 classic. 클릭=열 하이라이트">Memory System</th>
         <th class="${colCls("users")}" data-col="users" data-desc="이 행의 지표가 집계된 유저 수. 클릭=열 하이라이트">#Users</th>
@@ -1152,6 +1156,58 @@ async function renderMetrics() {
     renderMetrics();
   }));
   $("#msel-clear") && ($("#msel-clear").onclick = () => { S.metricsSelRows.clear(); S.metricsSelCols.clear(); renderMetrics(); });
+  $("#mhide-clear") && ($("#mhide-clear").onclick = () => { S.metricsHidden.clear(); renderMetrics(); });
+  $$("#content .rowhide").forEach((b) => (b.onclick = (ev) => {
+    ev.stopPropagation();
+    S.metricsHidden.add(b.dataset.runhide);
+    renderMetrics();
+  }));
+  initColResize($("#metrics-table"));
+}
+
+/* ----- 표 칼럼 폭 드래그 조절 ----- */
+
+// 칼럼 경계선을 잡고 끌어 폭을 바꾼다. 폭은 표 단위로 localStorage에 남아 다음 방문에도 유지됨.
+function initColResize(table) {
+  if (!table) return;
+  const key = `colw_${table.id}`;
+  const saved = JSON.parse(localStorage.getItem(key) || "null");
+  const ths = [...table.querySelectorAll("tr:first-child th")];
+  if (!ths.length) return;
+
+  // table-layout: fixed로 바꾸려면 초기 폭이 픽셀로 박혀 있어야 한다 (현재 렌더 폭을 그대로 채택)
+  const widths = saved && saved.length === ths.length ? saved : ths.map((th) => Math.round(th.getBoundingClientRect().width));
+  const apply = () => { ths.forEach((th, i) => (th.style.width = `${widths[i]}px`)); };
+  table.style.tableLayout = "fixed";
+  table.style.width = `${widths.reduce((a, b) => a + b, 0)}px`;
+  apply();
+
+  ths.forEach((th, i) => {
+    if (i === ths.length - 1) return;  // 마지막 칼럼은 오른쪽 경계가 없음
+    const grip = document.createElement("span");
+    grip.className = "colrz";
+    grip.title = "드래그해서 칼럼 폭 조절 (더블클릭=초기화)";
+    grip.onmousedown = (e) => {
+      e.preventDefault(); e.stopPropagation();
+      grip.classList.add("on");
+      const x0 = e.clientX, w0 = widths[i];
+      const move = (ev) => {
+        widths[i] = Math.max(44, w0 + (ev.clientX - x0));
+        table.style.width = `${widths.reduce((a, b) => a + b, 0)}px`;
+        apply();
+      };
+      const up = () => {
+        grip.classList.remove("on");
+        document.removeEventListener("mousemove", move);
+        document.removeEventListener("mouseup", up);
+        localStorage.setItem(key, JSON.stringify(widths));
+      };
+      document.addEventListener("mousemove", move);
+      document.addEventListener("mouseup", up);
+    };
+    grip.ondblclick = (e) => { e.stopPropagation(); localStorage.removeItem(key); renderMetrics(); };
+    th.appendChild(grip);
+  });
 }
 
 /* ----- 단계별 오라클 상한 사다리 ----- */
@@ -1173,13 +1229,15 @@ async function renderLadder() {
       const on = r.stages.includes(s);
       return `<td class="lst ${on ? "on" : ""}" data-desc="${esc(d.stage_names[s])} 단계 — ${on ? "이 행에서는 정답으로 대체됨(오라클)" : "실제 시스템이 수행"}">${on ? "오라클" : "실측"}</td>`;
     }).join("");
+    const sd = r.sd != null ? `<span class="lsd" data-desc="${r.repeats.length}회 반복(A′ 생성 + judge 채점을 매번 새로) 표본표준편차 — 각 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}">±${r.sd.toFixed(2)}</span>` : "";
+    const nrep = r.repeats && r.repeats.length ? `<span class="lrep" data-desc="반복 회차 수 — 평균값으로 표시됩니다">n=${r.repeats.length}</span>` : "";
     const bar = r.qa_c == null ? `<span class="small muted">미실행</span>`
-      : `<div class="lbar"><span style="width:${(r.qa_c / max * 100).toFixed(1)}%"></span></div><b>${r.qa_c.toFixed(2)}</b>`;
+      : `<div class="lbar"><span style="width:${(r.qa_c / max * 100).toFixed(1)}%"></span>${r.sd != null ? `<i class="lerr" style="left:${((r.qa_c - r.sd) / max * 100).toFixed(1)}%;width:${(2 * r.sd / max * 100).toFixed(1)}%"></i>` : ""}</div><b>${r.qa_c.toFixed(2)}</b>${sd}${nrep}`;
     const dl = r.delta == null ? "" : `<span class="ldelta ${r.delta >= 0 ? "up" : "down"}">${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(2)}</span>`;
     return `<tr class="${r.qa_c == null ? "pend" : ""}">
       <td class="lstep" data-desc="${esc(r.desc)}"><b>${esc(r.label)}</b><br><span class="small muted">${esc(r.run_label || r.run)}</span></td>
       ${stages}
-      <td class="lqa">${bar}${r.n_users != null ? `<span class="small muted" data-desc="이 행이 실제로 채점한 유저 수 — 네 행이 같아야 공정한 비교입니다">${r.n_users}u</span>` : ""}</td>
+      <td class="lqa">${bar}${r.n_users != null ? `<span class="small muted" data-desc="이 행이 실제로 채점한 유저 수 — 모든 행이 같아야 공정한 비교입니다">${r.n_users}u</span>` : ""}</td>
       <td class="lgain" data-desc="직전 단계 대비 QA Correct 증가분 — 이 단계를 완벽하게 만들었을 때 얻는 성능">${dl}</td></tr>`;
   }).join("");
 
@@ -1194,7 +1252,7 @@ async function renderLadder() {
           <th data-desc="저장소에서 답변 재료를 찾아오는 단계">저장·검색</th>
           <th data-desc="QA Correct — 이 사다리에서 유일하게 의미 있는 지표. 오라클 행은 저장물이 골든 자체라 R·Acc는 100 근처로 붙어 무의미합니다">QA C↑</th>
           <th>직전 대비</th></tr>${rows}</table>
-        <p class="small muted" style="margin-top:8px">${esc(d.note)} · 남은 구간(상한 → 100)은 generator 자체와 문항·정답 결함의 몫입니다.</p>
+        <p class="small muted" style="margin-top:8px">${d.n_repeats ? `반복 ${d.n_repeats}회 설계 (A′ 생성·judge 채점을 매번 새로 수행, 평균±표준편차) · ` : ""}${esc(d.note)} · 남은 구간(상한 → 100)은 generator 자체와 문항·정답 결함의 몫입니다.</p>
         <p class="small" style="margin-top:4px;color:#8a5600;background:#fff4e6;border-left:3px solid var(--warn);padding:5px 9px;border-radius:0 5px 5px 0" data-desc="마지막 행은 검색 결과 대신 정답 근거(evidence)만 제공합니다. 평균 1.4개 항목으로, 실제 검색(top-20)보다 훨씬 짧고 깨끗한 컨텍스트입니다. 따라서 이 구간의 증가분에는 '검색 정확도'와 '컨텍스트 축약·무관정보 제거' 효과가 섞여 있습니다">
           ⚠ 마지막 행은 <b>정답 근거만 남긴 조건</b>(평균 1.4개 항목)이라 실제 검색(top-20)과 컨텍스트 조건이 다릅니다 — 이 구간 증가분은 검색의 기여를 <b>과대평가</b>합니다.</p>
       </div></div>`;
