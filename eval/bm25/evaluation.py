@@ -111,7 +111,6 @@ def parse_answers(outputs):
             else:
                 logger.error("Content is %s", content)
                 results.append(content)
-                
     return results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
