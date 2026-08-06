@@ -227,7 +227,7 @@ runs:
   # ── 단계별 오라클 사다리 전용 런 (전부 gpt-oss-120b · effort=high · Martin 1유저) ──
   oe1:
     label: "오라클 ① 추출 (1u)"
-    note: "fact 추출을 골든으로 대체(미끼 제외). 갱신 결정·저장·검색은 실제 로직 — 추출 커버리지의 기여분 측정용"
+    note: "추출 오라클 — QA 58.54→65.85 (+7.31). 완벽한 추출로 얻는 몫이 생각보다 작다: 저장은 돼도 갱신·검색에서 다시 잃는다"
     backbone: gpt-oss-120b
     backbone_effort: "default(medium) · 추출 단계는 오라클로 대체 (남은 LLM 호출은 갱신 결정뿐)"
     prompt: oracle-extraction
@@ -239,7 +239,7 @@ runs:
 
   oe2:
     label: "오라클 ② 추출+갱신 (1u)"
-    note: "추출·갱신 결정 모두 정답으로 대체. LLM 호출이 사실상 없어 백본 무관 — 저장소+검색만의 상한"
+    note: "추출+갱신 오라클 — QA 65.85→73.17 (+7.32), QA Omission 15.2→9.2 급감. 저장물 593개 전부 골든 원문과 일치(검증). 남은 손실 10.4는 검색 몫"
     backbone: gpt-oss-120b
     backbone_effort: "해당 없음 (추출·갱신 모두 오라클)"
     prompt: oracle-extraction+update
