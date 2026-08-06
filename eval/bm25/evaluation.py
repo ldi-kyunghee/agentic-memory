@@ -32,12 +32,12 @@ def init_parser():
     return parser
 
 def load_vllm(model_kwargs: dict, enable_reasoning: bool = False):
-    if enable_reasoning:
-        reasoning_config = ReasoningConfig(
-            reasoning_start_str="<think>",
-            reasoning_end_str="I have to answer based on my reasoning now.</think>"
-        )
-        model_kwargs['reasoning_config'] = reasoning_config
+    # if enable_reasoning:
+    #     reasoning_config = ReasoningConfig(
+    #         reasoning_start_str="<think>",
+    #         reasoning_end_str="I have to answer based on my reasoning now.</think>"
+    #     )
+    #     model_kwargs['reasoning_config'] = reasoning_config
         
     llm = LLM(
         max_num_seqs=128,
@@ -86,7 +86,7 @@ def evaluation_for_question_vllm(
     return prompt
 
 def parse_answers(outputs):
-    contents = [output.outputs[0].text.split('</think>')[-1] for output in outputs]
+    contents = [output.outputs[0].text for output in outputs]
     results = []
     raw_output = []
     os.makedirs("raw_outputs", exist_ok=True)
@@ -97,7 +97,6 @@ def parse_answers(outputs):
         except JSONDecodeError:
             if content is not None:
                 try:
-                    content = content.split("assistant")[-1].strip()
                     idx = content.lower().find("json")
                     if idx >= 0:
                         idx += len("json")
