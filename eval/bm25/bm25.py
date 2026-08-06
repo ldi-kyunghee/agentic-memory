@@ -398,7 +398,7 @@ if __name__ == "__main__":
     dataset = load_dataset(args)
 
     if args.n_persona is not None:
-        dataset = dataset[args.n_persona:]
+        dataset = dataset[:args.n_persona]
 
     if args.embed_config:
         embed_kwargs = load_config(args.embed_config)
