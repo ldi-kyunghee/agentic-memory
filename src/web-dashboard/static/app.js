@@ -1103,6 +1103,7 @@ async function renderMetrics() {
     { k: "users", label: "#Users", desc: "이 행의 지표가 집계된 유저 수" },
     { k: "backbone", label: "Agent LLM", desc: "memory agent 백본 — fact 추출·update 결정을 담당하는 LLM" },
     { k: "prompt", label: "Prompt", desc: "fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형)" },
+    { k: "oracle", label: "Oracle 단계", desc: "해당 단계를 '완벽한 정답'으로 대체한 실험인지 — <b>프롬프트 종류와는 독립된 축</b>입니다. '없음'=모든 단계를 시스템이 실제로 수행. 오라클 행은 저장물이 골든 자체라 R·Acc·FMR 비교가 무의미하고 QA C만 읽습니다" },
     { k: "lat", label: "Ingest/세션↓", desc: "세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용" },
     { k: "judge", label: "Judge LLM", desc: "채점 LLM — 행 간 비교는 동일 judge에서만 유효" },
   ];
@@ -1127,6 +1128,7 @@ async function renderMetrics() {
     if (c.k === "users") return { html: String(m.n_users), desc: c.desc };
     if (c.k === "backbone") return { html: `${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted">${esc(effortShort(r.backbone_effort))}</span>` : ""}`, desc: r.backbone_effort ? `reasoning effort: ${r.backbone_effort}` : c.desc };
     if (c.k === "prompt") return { html: esc(r.prompt), desc: c.desc };
+    if (c.k === "oracle") return { html: r.oracle ? `<span class="orc">${esc(oracleLabel(r.oracle))}</span>` : `<span class="muted">없음</span>`, desc: c.desc };
     if (c.k === "judge") return { html: esc(judgeShortName), desc: judgeName };
     const lat = r.latency;
     return lat
@@ -1656,6 +1658,15 @@ const LABEL_SETS = {
             ["unanswerable", "답변 불가", "대화에 근거가 없어 어떤 메모리 시스템도 맞힐 수 없다 (프로필 필드 등 대화 밖 정보)"],
             ["wrong", "오답", "골든 정답 자체가 틀렸다"]],
 };
+// 오라클로 대체한 파이프라인 단계 — 추출 프롬프트 종류(default/custom)와는 독립된 축
+const ORACLE_STAGE_NAMES = {
+  "": "없음",
+  "extraction": "추출",
+  "extraction+update": "추출+갱신",
+  "extraction+update+retrieval": "추출+갱신+검색",
+};
+const oracleLabel = (v) => ORACLE_STAGE_NAMES[v || ""] || v;
+
 const REC_NAMES = { integrity: "골든 포함 (Integrity)", accuracy: "추출 근거 (Accuracy)", update: "갱신 (Update)", qa: "질의응답 (QA)",
                     gold_qa: "골든 정답 검수 (벤치마크 품질)" };
 

@@ -210,6 +210,7 @@ def api_runs():
         out.append({
             "run": name, "label": r.get("label", name),
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
+            "oracle": r.get("oracle", ""),   # 오라클로 대체한 단계 (프롬프트 종류와 직교하는 축)
             "backbone_effort": r.get("backbone_effort"),
             "embedder": r.get("embedder"),
             "users": r.get("users"), "judges": list(r.get("judges", {}).keys()),
@@ -521,6 +522,7 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
         rows.append({
             "run": name, "label": r.get("label", name),
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
+            "oracle": r.get("oracle", ""),
             "backbone_effort": r.get("backbone_effort"),
             "note": r.get("note", ""),
             "metrics": compute_metrics(name, judge, scope, generator),

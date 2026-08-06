@@ -252,8 +252,9 @@ runs:
     label: "오라클 ① 추출 (1u)"
     note: "추출 오라클 — QA 58.54→65.85 (+7.31). 완벽한 추출로 얻는 몫이 생각보다 작다: 저장은 돼도 갱신·검색에서 다시 잃는다"
     backbone: gpt-oss-120b
-    backbone_effort: "default(medium) · 추출 단계는 오라클로 대체 (남은 LLM 호출은 갱신 결정뿐)"
-    prompt: oracle-extraction
+    backbone_effort: "default(medium) — 남은 LLM 호출은 갱신 결정뿐"
+    prompt: default
+    oracle: extraction
     embedder: Qwen3-Embedding-4B
     users: 1
     results: results/mem0-classic-oss/memzero-oss-oe1/memzero-oss_eval_results.jsonl
@@ -264,8 +265,9 @@ runs:
     label: "오라클 ② 추출+갱신 (1u)"
     note: "추출+갱신 오라클 — QA 65.85→73.17 (+7.32), QA Omission 15.2→9.2 급감. 저장물 593개 전부 골든 원문과 일치(검증). 추출(+7.31)과 갱신(+7.32)이 동등한 크기 — 조건이 완전히 통제된 비교"
     backbone: gpt-oss-120b
-    backbone_effort: "해당 없음 (추출·갱신 모두 오라클)"
-    prompt: oracle-extraction+update
+    backbone_effort: "해당 없음 — 추출·갱신 모두 오라클이라 LLM 호출 없음"
+    prompt: default
+    oracle: extraction+update
     embedder: Qwen3-Embedding-4B
     users: 1
     results: results/mem0-classic-oss/memzero-oss-oe2/memzero-oss_eval_results.jsonl
