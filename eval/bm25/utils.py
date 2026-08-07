@@ -159,12 +159,6 @@ Based **only** on the provided **“Question”**, **“Reference Answer”**, a
 
 * **Memory System Response:**
   {response}
-
-# Output Requirements
-
-Your output, including your reasoning, must adhere to the following JSON schema:
-
-{JSON_SCHEMA}
 """
    
 mem_template = """[{}]

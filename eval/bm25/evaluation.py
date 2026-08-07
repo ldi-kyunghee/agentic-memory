@@ -85,8 +85,7 @@ def evaluation_for_question_vllm(
         question=question,
         reference_answer=reference_answer,
         key_memory_points=key_memory_points,
-        response=response,
-        JSON_SCHEMA=QAEval.model_json_schema()
+        response=response
     )
 
     return prompt
@@ -124,8 +123,8 @@ def parse_answers(outputs):
     return results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
-    structured_outputs = StructuredOutputsParams(json=QAEval.model_json_schema())
-    sampling_params = SamplingParams(structured_outputs=structured_outputs, **sampling_params)
+    structured_outputs_params = StructuredOutputsParams(json=QAEval.model_json_schema())
+    sampling_params = SamplingParams(structured_outputs=structured_outputs_params, **sampling_params)
     
     prompts = []
     for result in qa_results:
@@ -135,14 +134,10 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwarg
             '\n'.join([evidence['memory_content'] for evidence in result['evidence']]),
             result['generated_answer']
         )
-        prompts.append([
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ])
+        
+        prompts.append(prompt)
 
-    request_ids = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
+    request_ids = llm.enqueue(prompts, sampling_params, **generation_kwargs)
     outputs = llm.wait_for_completion()
     results = parse_answers(outputs)
 
