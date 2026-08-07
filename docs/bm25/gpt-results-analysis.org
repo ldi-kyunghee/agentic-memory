@@ -1,0 +1,186 @@
+#+title: 결과 분석
+#+startup: inlineimages
+
+* 실험 세팅
+일단 용어 좀 정리해 보죠.
+- QA Context: 메모리를 구성하는 단계에 assistant의 질문을 답하는 유저 발언이면 해당 질문을 새 =<user><assistant>= 턴에 prepend하는 여부
+  - \checkmark \to 포함
+  - X \to 미포함
+    
+| Experiment | Model        | Reasoning Effort | QA Context |
+|------------+--------------+------------------+------------|
+| exp 5      | gpt-oss-120b | High             | X          |
+| exp 6      | gpt-oss-120b | High             | \checkmark         |
+| exp 7      | gpt-5-mini   | Minimal          | X          |
+| exp 8      | gpt-5-mini   | Minimal          | \checkmark         |
+
+* 결과 테이블
+#+NAME: make-table
+#+header: :prologue from tabulate import tabulate 
+#+begin_src python :results output table raw
+  import pandas as pd
+  import json
+  import os
+
+  scores_dir = "../../scores/bm25/"
+  def load_score(exp_dir):
+      dired = scores_dir + f"{exp_dir}/"
+      if len(os.listdir(dired)) == 1:
+          score_file = os.listdir(dired)[0]
+          with open(dired + score_file, "r") as file:
+              scores = json.load(file)
+          return scores
+      return
+
+  def load_scores(scores_dir):
+      exp_scores = {}
+      per_persona_results = {}
+      for exp_dir in os.listdir(scores_dir):
+          score_path = scores_dir + exp_dir
+          if os.path.isdir(score_path) and (not exp_dir.startswith('_')):
+              scores = load_score(exp_dir)
+              if scores is not None:
+                  exp_scores[exp_dir] = {
+                      k.split('_')[0]: v
+                      for k, v in scores.pop('overall_score').items()
+                      if "(all)" in k
+                  }
+      return exp_scores
+
+  def make_table(scores: dict):
+      score_table = {"Correct": {}, "Hallucination": {}, "Omission": {}}
+      for exp in scores.keys():
+          for key, value in scores[exp].items():
+              score_table[key.capitalize()][exp] = value * 100
+      return score_table
+
+  scores = load_scores(scores_dir)
+  score_table = make_table(scores)
+  scores_df = pd.DataFrame(score_table)
+  scores_df = scores_df.sort_index()
+  print(tabulate(scores_df, headers='keys', tablefmt='orgtbl', floatfmt='.2f'))
+#+end_src
+
+#+RESULTS: make-table
+|      | Correct | Hallucination | Omission |
+|------+---------+---------------+----------|
+| exp5 |   53.42 |         17.81 |    28.77 |
+| exp6 |   67.09 |         13.92 |    18.99 |
+| exp7 |   56.03 |         31.35 |    12.62 |
+| exp8 |   53.48 |         33.05 |    13.48 |
+
+
+* 결과 분석
+** 레이블 분포
+#+NAME: label-dist-table
+#+header: :prologue from tabulate import tabulate
+#+begin_src python :results output table raw :exports both
+  import matplotlib.pyplot as plt
+  import pandas as pd
+  import json
+  import os
+
+  scores_dir = "../../scores/bm25/"
+  def load_score(exp_dir):
+      dired = scores_dir + f"{exp_dir}/"
+      if len(os.listdir(dired)) == 1:
+          score_file = os.listdir(dired)[0]
+          with open(dired + score_file, "r") as file:
+              scores = json.load(file)
+          return scores
+      return
+
+  def load_results(scores_dir):
+      exp_scores = {}
+      per_persona_results = {}
+      for exp_dir in sorted(os.listdir(scores_dir)):
+          score_path = scores_dir + exp_dir
+          if os.path.isdir(score_path) and (not exp_dir.startswith('_')):
+              scores = load_score(exp_dir)
+              if scores is not None:
+                  per_persona_results[exp_dir] = scores.pop('per_persona_results')
+      return per_persona_results
+
+  results = load_results(scores_dir)
+
+  def per_type_results_df(results):
+      per_type_results = {"Correct": {}, "Hallucination": {}, "Omission": {}}
+      per_type_count = {}
+      for result in results:
+          question_type = result['question_type']
+          result_type = result['result_type']
+          if per_type_count.get(question_type) is None:
+              per_type_count[question_type] = 0
+          if per_type_results[result_type].get(question_type) is None:
+              per_type_results[result_type][question_type] = 0
+              
+          per_type_results[result_type][question_type] += 1
+          per_type_count[question_type] += 1
+
+      per_type_normalized_results = {}
+      for key, value in per_type_results.items():
+          per_type_normalized_results[f"{key} (%)"] = {
+              k: round(v / per_type_count[k] * 100, 2)
+              for k, v in value.items()
+          }
+
+      per_type_normalized_results["Total"] = per_type_count
+          
+      df = pd.DataFrame(per_type_normalized_results)
+      df = df.sort_values(by='Total', ascending=False)
+      return df
+
+  tables = ["*** 결과"]
+  for exp, result in results.items():
+      df = per_type_results_df(result)
+      table = tabulate(df, headers='keys', tablefmt='orgtbl')
+
+      tables.append(f"**** {exp}\n{table}")
+
+  print("\n\n".join(tables))
+#+end_src
+
+#+RESULTS: label-dist-table
+*** 결과
+
+**** exp5
+|                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
+|------------------------------+---------------+---------------------+----------------+---------|
+| Basic Fact Recall            |         47.37 |               26.32 |          26.32 |      19 |
+| Memory Conflict              |         27.78 |               27.78 |          44.44 |      18 |
+| Memory Boundary              |         70.59 |                5.88 |          23.53 |      17 |
+| Generalization & Application |         72.73 |               18.18 |           9.09 |      11 |
+| Multi-hop Inference          |         62.5  |              nan    |          37.5  |       8 |
+
+**** exp6
+|                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
+|------------------------------+---------------+---------------------+----------------+---------|
+| Memory Conflict              |         61.9  |                9.52 |          28.57 |      21 |
+| Basic Fact Recall            |         73.68 |               10.53 |          15.79 |      19 |
+| Memory Boundary              |         72.22 |               11.11 |          16.67 |      18 |
+| Generalization & Application |         54.55 |               27.27 |          18.18 |      11 |
+| Multi-hop Inference          |         75    |               12.5  |          12.5  |       8 |
+| Dynamic Update               |         50    |               50    |         nan    |       2 |
+
+**** exp7
+|                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
+|------------------------------+---------------+---------------------+----------------+---------|
+| Memory Boundary              |         50    |               48.15 |           1.85 |     162 |
+| Memory Conflict              |         77.78 |               16.99 |           5.23 |     153 |
+| Basic Fact Recall            |         59.21 |               28.95 |          11.84 |     152 |
+| Generalization & Application |         54.36 |               18.79 |          26.85 |     149 |
+| Multi-hop Inference          |         34    |               36    |          30    |      50 |
+| Dynamic Update               |         17.95 |               69.23 |          12.82 |      39 |
+
+**** exp8
+|                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
+|------------------------------+---------------+---------------------+----------------+---------|
+| Memory Boundary              |         46.91 |               50.62 |           2.47 |     162 |
+| Memory Conflict              |         78.43 |               15.69 |           5.88 |     153 |
+| Basic Fact Recall            |         53.95 |               32.24 |          13.82 |     152 |
+| Generalization & Application |         49.66 |               23.49 |          26.85 |     149 |
+| Multi-hop Inference          |         38    |               34    |          28    |      50 |
+| Dynamic Update               |         15.38 |               66.67 |          17.95 |      39 |
+
+*** 단순 해석
+- 
