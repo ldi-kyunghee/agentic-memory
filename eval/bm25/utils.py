@@ -102,6 +102,10 @@ Do **not** add any extra explanation or comments outside the JSON block.
 ```
 """
 
+class QAEval(BaseModel):
+  reasoning: str = Field(description="Reasoning content: Provide a concise and traceable evaluation rationale: first compare the system’s response with the Key Memory Points (which were correctly used, which were missing, and whether there was any fabrication/contradiction), then assess its consistency with the Reference Answer, and finally state the classification basis.")
+  evaluation_result: Literal["Correct", "Hallucination", "Omission"]
+
 EVALUATION_PROMPT_FOR_QA = """You are an **evaluation expert for AI memory system question answering**.
 Based **only** on the provided **“Question”**, **“Reference Answer”**, and **“Key Memory Points”** (the essential facts needed to derive the reference answer), strictly evaluate the **accuracy** of the **“Memory System Response.”** Classify it as one of **“Correct”**, **“Hallucination”**, or **“Omission.”** Do **not** use any external knowledge or subjective inference. Finally, output your judgment **strictly** in the specified JSON format.
 
@@ -156,20 +160,13 @@ Based **only** on the provided **“Question”**, **“Reference Answer”**, a
 * **Memory System Response:**
   {response}
 
-"""
-
-class QAEval(BaseModel):
-  reasoning: str = Field(description="Reasoning content: Provide a concise and traceable evaluation rationale: first compare the system’s response with the Key Memory Points (which were correctly used, which were missing, and whether there was any fabrication/contradiction), then assess its consistency with the Reference Answer, and finally state the classification basis.")
-  evaluation_result: Literal["Correct", "Hallucination", "Omission"]
-
-EVALUATION_PROMPT_FOR_QA += f"""
 # Output Requirements
 
 Your output, including your reasoning, must adhere to the following JSON schema:
 
-{QAEval.model_json_schema()}
+{JSON_SCHEMA}
 """
-  
+   
 mem_template = """[{}]
         User: {}
         Assistant: {}"""

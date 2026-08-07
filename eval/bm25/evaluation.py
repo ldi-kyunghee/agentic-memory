@@ -85,7 +85,8 @@ def evaluation_for_question_vllm(
         question=question,
         reference_answer=reference_answer,
         key_memory_points=key_memory_points,
-        response=response
+        response=response,
+        JSON_SCHEMA=QAEval.model_json_schema()
     )
 
     return prompt
