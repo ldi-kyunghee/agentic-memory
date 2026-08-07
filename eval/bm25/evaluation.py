@@ -127,10 +127,6 @@ def parse_answers(outputs):
             else:
                 logger.error("Content is %s", content)
                 raw_output.append(content)
-                
-    file_name = datetime.datetime.now().astimezone().isoformat()
-    with open(f"raw_outputs/{file_name}.txt", "w") as file:
-        file.writelines(raw_output)
     return results
 
 def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
@@ -158,7 +154,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
                         EVALUATION_DEVELOPER_PROMPT_FOR_QA
                     ),
                 ),
-                Message.from_author_and_content(
+                Message.from_role_and_content(
                         Role.USER,
                         prompt,
                 )
