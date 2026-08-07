@@ -106,8 +106,9 @@ class QAEval(BaseModel):
   reasoning: str = Field(description="Reasoning content: Provide a concise and traceable evaluation rationale: first compare the system’s response with the Key Memory Points (which were correctly used, which were missing, and whether there was any fabrication/contradiction), then assess its consistency with the Reference Answer, and finally state the classification basis.")
   evaluation_result: Literal["Correct", "Hallucination", "Omission"]
 
-EVALUATION_PROMPT_FOR_QA = """You are an **evaluation expert for AI memory system question answering**.
-Based **only** on the provided **“Question”**, **“Reference Answer”**, and **“Key Memory Points”** (the essential facts needed to derive the reference answer), strictly evaluate the **accuracy** of the **“Memory System Response.”** Classify it as one of **“Correct”**, **“Hallucination”**, or **“Omission.”** Do **not** use any external knowledge or subjective inference. Finally, output your judgment **strictly** in the specified JSON format.
+EVALUATION_SYSTEM_PROMPT_FOR_QA = """You are an **evaluation expert for AI memory system question answering**."""
+
+EVALUATION_DEVELOPER_PROMPT_FOR_QA = """Based **only** on the provided **“Question”**, **“Reference Answer”**, and **“Key Memory Points”** (the essential facts needed to derive the reference answer), strictly evaluate the **accuracy** of the **“Memory System Response.”** Classify it as one of **“Correct”**, **“Hallucination”**, or **“Omission.”** Do **not** use any external knowledge or subjective inference. Finally, output your judgment **strictly** in the specified JSON format.  # noqa: UP032,UP032
 
 # Evaluation Criteria
 
@@ -146,7 +147,12 @@ Based **only** on the provided **“Question”**, **“Reference Answer”**, a
   If the system also answers *“unknown”* (without guessing), it may be **Correct**.
 * The evaluation must rely **only** on the *Reference Answer*, *Key Memory Points*, and *System Response* — no external context, world knowledge, or speculative reasoning is allowed.
 
-# Information for Evaluation
+# Response Formats
+## QAEval
+{JSON_SCHEMA}
+""".format(JSON_SCHEMA=QAEval.model_json_schema())
+
+EVALUATION_USER_PROMPT_FOR_QA = """# Evaluate:
 
 * **Question:**
   {question}

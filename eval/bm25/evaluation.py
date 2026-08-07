@@ -16,14 +16,17 @@ from openai_harmony import (
     DeveloperContent,
     HarmonyEncodingName,
     Message,
+    ReasoningEffort,
     Role,
     SystemContent,
     load_harmony_encoding,
 )
 from tqdm import tqdm
 from utils import (
-    EVALUATION_PROMPT_FOR_QA,
+    EVALUATION_DEVELOPER_PROMPT_FOR_QA,
     EVALUATION_PROMPT_FOR_QUESTION,
+    EVALUATION_SYSTEM_PROMPT_FOR_QA,
+    EVALUATION_USER_PROMPT_FOR_QA,
     QAEval,
     load_config,
 )
@@ -139,25 +142,20 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
     
     prompts = []
     for result in qa_results:
-        prompt = evaluation_for_question_vllm(
-            result['question'],
-            result['reference'],
-            '\n'.join([evidence['memory_content'] for evidence in result['evidence']]),
-            result['generated_answer']
+        prompt = EVALUATION_USER_PROMPT_FOR_QA.format(
+            question=result['question'],
+            reference_answer=result['reference'],
+            key_memory_points='\n'.join([evidence['memory_content'] for evidence in result['evidence']]),
+            response=result['generated_answer']
         )
 
         convo = Conversation.from_messages(
             [
-                Message.from_role_and_content(Role.SYSTEM, SystemContent.new()),
+                Message.from_role_and_content(Role.SYSTEM, SystemContent.new().with_model_identity(EVALUATION_SYSTEM_PROMPT_FOR_QA).with_reasoning_effort(ReasoningEffort.HIGH)),
                 Message.from_role_and_content(
                     Role.DEVELOPER,
                     DeveloperContent.new().with_instructions(
-                        f"""# Response Formats
-
-                        ## QAEval
-                        
-                        {QAEval.model_json_schema()}
-                        """.strip()
+                        EVALUATION_DEVELOPER_PROMPT_FOR_QA
                     ),
                 ),
                 Message.from_author_and_content(
