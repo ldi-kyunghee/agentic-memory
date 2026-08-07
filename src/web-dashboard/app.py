@@ -552,28 +552,69 @@ def _metrics_row(name: str, r: dict, scope: str, metrics: dict, extra: dict | No
     return row
 
 
+def _sd(xs: list) -> float:
+    mu = sum(xs) / len(xs)
+    return round((sum((x - mu) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5, 2)
+
+
+def _spearman(xs: list) -> float | None:
+    """값 계열이 회차 순서에 따라 단조 증감하는지 — 반복이 독립 시행인지 점검하는 지표.
+    연속 루프로 돌린 회차들은 서버 상태를 공유해 드리프트가 생길 수 있다."""
+    n = len(xs)
+    if n < 3:
+        return None
+    order = sorted(range(n), key=lambda i: xs[i])
+    rank = [0.0] * n
+    for pos, i in enumerate(order):          # 동점은 평균 순위
+        rank[i] = pos + 1.0
+    for v in set(xs):
+        idx = [i for i in range(n) if xs[i] == v]
+        if len(idx) > 1:
+            avg = sum(rank[i] for i in idx) / len(idx)
+            for i in idx:
+                rank[i] = avg
+    d2 = sum((rank[i] - (i + 1)) ** 2 for i in range(n))
+    return round(1 - 6 * d2 / (n * (n * n - 1)), 3)
+
+
 @lru_cache(maxsize=4)
 def noise_floor() -> dict | None:
     """'같은 실험을 다시 돌리면 수치가 얼마나 흔들리는가'의 실측값.
 
-    사다리의 실측 행(오라클 없음)을 A′ 생성부터 judge 채점까지 통째로 반복한 회차들에서
-    QA 지표의 표본표준편차를 구한다. 하드코딩하지 않고 산출물에서 계산해, 반복을 더 돌리면
-    자동으로 갱신되게 한다. 반복 회차는 Martin 1유저분만 있으므로 n_users=1 기준값이다.
+    ⚠ 연속 루프로 돌린 반복 회차만 쓰면 흔들림을 과소평가한다. 같은 실험을 **다른 날 다른 배치**로
+    돌리면 배치 내부 표준편차의 몇 배씩 어긋나는 것이 실측됐다(4유저 oss120b4: 배치 내부 ±0.41인데
+    7/31 배치는 그 범위 밖인 61.28). 회차들이 서버 상태를 공유해 독립 시행이 아니기 때문이다.
+    그래서 **base 패스(별도 배치) + 반복 회차 전부를 한 표본으로 묶어** 통합 표준편차를 낸다.
+    배치 내부 값(*_within)도 함께 돌려주어 둘의 차이를 화면에서 드러낸다.
     """
     cfg = load_registry_doc().get("oracle_ladder") or {}
     step = next((s for s in cfg.get("steps", []) if s.get("key") == "actual"), None)
     if not step or not step.get("repeat_judge"):
         return None
-    stats = [s for i in range(1, int(cfg.get("repeats", 0)) + 1)
-             if (s := _qa_stats_from_dir(ROOT / step["repeat_judge"].format(i=i, run=step["run"]), "all"))]
-    if len(stats) < 2:
+    run = step["run"]
+    within = [s for i in range(1, int(cfg.get("repeats", 0)) + 1)
+              if (s := _qa_stats_from_dir(ROOT / step["repeat_judge"].format(i=i, run=run), "all"))]
+    if len(within) < 2:
         return None
-    out = {"n_repeats": len(stats), "n_users": stats[0]["n_users"], "run": step["run"]}
+    # base 패스는 별개의 배치(다른 날 실행)라 배치 간 변동을 잡아준다
+    pooled = list(within)
+    try:
+        _, judges = resolve_lane(run, step.get("generator"))
+        jd = judges.get(step.get("judge"))
+        if jd and (b := _qa_stats_from_dir(ROOT / jd, "all")) and b["n_q"] == within[0]["n_q"]:
+            pooled = [b] + within
+    except HTTPException:
+        pass
+
+    out = {"n_repeats": len(within), "n_obs": len(pooled), "n_batches": 1 + (len(pooled) > len(within)),
+           "n_users": within[0]["n_users"], "run": run}
     for k in ("qa_c", "qa_h", "qa_o"):
-        xs = [s[k] for s in stats]
-        mu = sum(xs) / len(xs)
-        out[k] = round((sum((x - mu) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5, 2)
-        out[k + "_range"] = round(max(xs) - min(xs), 2)
+        xs_w, xs_p = [s[k] for s in within], [s[k] for s in pooled]
+        out[k] = _sd(xs_p)                       # 대표값 = 배치 간을 포함한 통합 SD
+        out[k + "_within"] = _sd(xs_w)
+        out[k + "_range"] = round(max(xs_p) - min(xs_p), 2)
+    out["values"] = [s["qa_c"] for s in pooled]
+    out["drift_rho"] = _spearman([s["qa_c"] for s in within])   # 회차 순서와의 상관 (독립성 점검)
     return out
 
 
@@ -908,13 +949,14 @@ def api_oracle_ladder(scope: str = "first4"):
                 m = None
         qa = m["qa_c"] if m else None
         # 반복 회차: 레인 등록 없이 경로 템플릿으로 직접 읽어 평균·표준편차 산출
-        reps = []
+        reps, rep_users = [], None
         tpl = st.get("repeat_judge")
         if tpl:
             for i in range(1, int(cfg.get("repeats", 0)) + 1):
-                v = _qa_correct_from_dir(ROOT / tpl.format(i=i, run=run), scope)
-                if v is not None:
-                    reps.append(v)
+                s = _qa_stats_from_dir(ROOT / tpl.format(i=i, run=run), scope)
+                if s is not None:
+                    reps.append(s["qa_c"])
+                    rep_users = s["n_users"]
         mean = sd = None
         if reps:
             mean = round(sum(reps) / len(reps), 2)
@@ -928,7 +970,7 @@ def api_oracle_ladder(scope: str = "first4"):
             "run": run, "run_label": st.get("run_display") or reg.get(run, {}).get("label", run),
             "generator": gen, "judge": judge, "desc": st.get("desc", ""),
             "qa_c": qa, "qa_h": m["qa_h"] if m else None, "qa_o": m["qa_o"] if m else None,
-            "n_users": m["n_users"] if m else None,
+            "n_users": (m["n_users"] if m else None) or rep_users,
             "delta": None if (qa is None or prev is None) else round(qa - prev, 2),
         })
         if qa is not None:

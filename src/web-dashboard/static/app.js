@@ -1116,8 +1116,14 @@ async function renderMetrics() {
     if (!NZ || NZ[k] == null) return null;
     return NZ[k] / Math.sqrt(Math.max(1, (nUsers || 1) / (NZ.n_users || 1)));
   };
-  // 그 행의 실측 SD가 있으면 그것을, 없으면 유저 수로 환산한 추정치를 쓴다
-  const bandFor = (r, k) => (k === "qa_c" && r.sd != null) ? r.sd : noiseFor(k, r.metrics?.n_users);
+  // 그 행이 자체 반복을 가졌더라도 그것은 '한 루프 안의 회차들'이라 흔들림을 과소평가한다.
+  // 배치 간을 포함한 노이즈 바닥과 비교해 <b>더 보수적인 쪽</b>을 밴드로 쓴다.
+  const ownSd = (r, k) => (k === "qa_c" && r.sd != null) ? r.sd : null;
+  const bandFor = (r, k) => {
+    const floor = noiseFor(k, r.metrics?.n_users), own = ownSd(r, k);
+    if (own == null) return floor;
+    return floor == null ? own : Math.max(own, floor);
+  };
   // 두 값이 구분 가능한가는 '값 하나의 SD'가 아니라 '차이의 표준오차'로 판단한다.
   //   차이의 SE = √(sd_a² + sd_b²), 95% 기준이면 1.96배. 1σ로 자르면 지나치게 엄격해진다.
   const bestRowOf = (k) => rows.find((x) => inRank(x, k) && x.metrics[k] === rank[k].best);
@@ -1166,13 +1172,14 @@ async function renderMetrics() {
       const nTxt = c.metric.n ? ` <span class="small muted">(${m[c.metric.n].toLocaleString()})</span>` : "";
       // 흔들림 폭을 값 옆에 붙인다. 반복을 실제로 돌린 행은 실측 SD(±), 나머지는 유저 수로 환산한 추정치(~±).
       const band = QA_KEYS.includes(c.k) ? bandFor(r, c.k) : null;
-      const measured = c.k === "qa_c" && r.sd != null;
+      const own = ownSd(r, c.k);
       const sdTxt = band == null ? ""
-        : ` <span class="sdtag${measured ? " meas" : ""}">${measured ? "±" : "~±"}${band.toFixed(2)}</span>`;
+        : ` <span class="sdtag${own != null ? " meas" : ""}">${own != null ? "±" : "~±"}${band.toFixed(2)}</span>`;
       const sdDesc = band == null ? ""
-        : measured
+        : own != null
           ? `<br><b>${r.repeats.length}회 반복 실측</b> (A′ 생성 + judge 채점을 매번 새로) — 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}`
-          : `<br><b>흔들림 추정 ±${band.toFixed(2)}</b> — 이 행은 1회만 돌렸습니다. 사다리 실측 행의 ${NZ.n_repeats}회 반복에서 잰 ±${NZ[c.k]}(유저 ${NZ.n_users}명)를 이 행의 유저 ${m.n_users}명 기준으로 환산한 <b>추정치</b>입니다.`;
+            + (band > own ? `<br>⚠ 이 회차들은 <b>한 루프 안에서 연속 실행</b>돼 흔들림을 과소평가합니다(자체 ±${own.toFixed(2)}). 배치 간을 포함한 <b>±${band.toFixed(2)}</b>를 밴드로 씁니다.` : "")
+          : `<br><b>흔들림 추정 ±${band.toFixed(2)}</b> — 이 행은 1회만 돌렸습니다. 실측 행의 독립 실행 ${NZ.n_obs}회에서 잰 ±${NZ[c.k]}(유저 ${NZ.n_users}명)를 이 행의 유저 ${m.n_users}명 기준으로 환산한 <b>추정치</b>입니다.`;
       const co = isCoBest(r, c);
       const gap = coBestGap(r, c.k);
       const coDesc = (co && v !== rank[c.k].best)
@@ -1220,11 +1227,13 @@ async function renderMetrics() {
   // 재렌더로 스크롤이 튀지 않도록 보존 — 창 폭에 따라 스크롤 주체가 #content일 수도, 문서일 수도 있다
   const scrollTop = $("#content").scrollTop, winY = window.scrollY;
   const restoreScroll = () => { $("#content").scrollTop = scrollTop; window.scrollTo(0, winY); };
+  const batchWarn = NZ && NZ.n_batches > 1 && NZ.qa_c > NZ.qa_c_within;
   const noiseBanner = !NZ ? "" : `
-    <div class="noisebar" data-desc="사다리의 실측 행(오라클 없음)을 <b>A′ 답변 생성부터 judge 채점까지 통째로</b> ${NZ.n_repeats}회 다시 돌려 잰 값입니다. 산출물에서 실시간 계산하므로 반복을 더 돌리면 자동으로 갱신됩니다.">
+    <div class="noisebar" data-desc="사다리의 실측 행(오라클 없음)을 <b>A′ 답변 생성부터 judge 채점까지 통째로</b> 다시 돌린 <b>독립 실행 ${NZ.n_obs}회</b>(${NZ.n_batches}개 배치)에서 잰 값입니다. 회차별: ${NZ.values.join(", ")}. 산출물에서 실시간 계산하므로 반복을 더 돌리면 자동으로 갱신됩니다.">
       <b>📏 노이즈 바닥</b> — 같은 실험을 다시 돌리기만 해도 <b>QA C가 ±${NZ.qa_c}p</b> 흔들립니다
-      <span class="small">(유저 ${NZ.n_users}명 · ${NZ.n_repeats}회 반복 실측 · 회차 간 폭 ${NZ.qa_c_range}p)</span>.
-      <b>이보다 작은 행 간 차이는 해석하지 마세요</b> — 1위와 흔들림 폭 이내인 행은 <b>공동 1위로 함께 굵게</b> 표시됩니다.
+      <span class="small">(유저 ${NZ.n_users}명 · 독립 실행 ${NZ.n_obs}회 실측 · 최대 폭 ${NZ.qa_c_range}p)</span>.
+      <b>이보다 작은 행 간 차이는 해석하지 마세요</b> — 1위와 구분 한계 이내인 행은 <b>공동 1위로 함께 굵게</b> 표시됩니다.
+      ${batchWarn ? `<br><span class="small">⚠ 연속 루프로 돌린 ${NZ.n_repeats}회만 보면 ±${NZ.qa_c_within}p로 <b>작게 나오지만</b>, 날짜가 다른 배치를 섞으면 ±${NZ.qa_c}p입니다 — 한 루프 안의 회차들은 서버 상태를 공유해 독립 시행이 아닙니다. <b>보수적인 쪽(±${NZ.qa_c}p)을 씁니다.</b></span>` : ""}
       <span class="small">흔드는 것은 채점이 아니라 <b>답변 생성</b>입니다 (judge만 반복하면 폭 0.6p).</span>
     </div>`;
   $("#content").innerHTML = `
@@ -1241,13 +1250,14 @@ async function renderMetrics() {
   requestAnimationFrame(restoreScroll);          // 레이아웃 확정 후 한 번 더
   // 사다리는 비동기로 채워지며 높이를 바꾼다. 그 사이 사용자가 스크롤했다면 건드리지 않는다
   // (늦은 복원이 사용자의 스크롤을 되감는 것을 방지).
+  // ⚠ 사다리 렌더를 requestAnimationFrame 안에 두면 안 된다 — 백그라운드 탭에서는 rAF가 아예
+  //    호출되지 않아 사다리가 영영 비어 있게 된다(탭을 숨긴 채 대시보드를 열면 재현). 즉시 호출하고,
+  //    스크롤 보정만 완료 후에 한다.
   const settled = () => [$("#content").scrollTop, window.scrollY];
-  requestAnimationFrame(() => {
-    const [c0, w0] = settled();
-    renderLadder().then(() => {
-      const [c1, w1] = settled();
-      if (Math.abs(c1 - c0) < 2 && Math.abs(w1 - w0) < 2) restoreScroll();
-    });
+  const [c0, w0] = settled();
+  renderLadder().then(() => {
+    const [c1, w1] = settled();
+    if (Math.abs(c1 - c0) < 2 && Math.abs(w1 - w0) < 2) restoreScroll();
   });
 
   // ⚠ 표 조작(하이라이트·접기)은 절대 재렌더하지 않는다 — 표를 다시 그리면 스크롤이 튄다.
@@ -1379,11 +1389,14 @@ function initColResize(table) {
 const LADDER_STAGES = ["extraction", "update", "retrieval"];
 
 async function renderLadder() {
-  const box = $("#ladder-card");
-  if (!box) return;
+  if (!$("#ladder-card")) return;
   let d;
   try { d = await api(`/api/oracle-ladder?scope=${S.metricsScope}`); }
-  catch { box.innerHTML = ""; return; }
+  catch { const b = $("#ladder-card"); if (b) b.innerHTML = ""; return; }
+  // ⚠ await 사이에 renderMetrics가 다시 돌면 #content가 통째로 교체돼 앞서 잡아둔 노드가 떨어져 나간다.
+  //    그 노드에 쓰면 화면에는 아무것도 안 보인다 — 반드시 await '이후' 다시 조회한다.
+  const box = $("#ladder-card");
+  if (!box) return;
   if (!d.rows.length) { box.innerHTML = ""; return; }
 
   const done = d.rows.filter((r) => r.qa_c != null);
