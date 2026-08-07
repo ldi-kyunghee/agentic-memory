@@ -9,3 +9,4 @@ check_results.ipynb
 *.org~
 results_analysis.ipynb
 _run.sh
+eval/bm25/evaluation.ipynb
