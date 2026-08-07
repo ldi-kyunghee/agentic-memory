@@ -137,6 +137,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
     sampling_params = SamplingParams(stop_token_ids=stop_token_ids, structured_outputs=structured_outputs_params, **sampling_params)
     
     prompts = []
+    os.makedirs("raw_outputs/", exist_ok=True)
     for result in qa_results:
         prompt = EVALUATION_USER_PROMPT_FOR_QA.format(
             question=result['question'],
@@ -164,21 +165,31 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
         prefill_ids = encoding.render_conversation_for_completion(convo, Role.ASSISTANT)
         prompts.append({"prompt_token_ids": prefill_ids})
         
-    request_ids = llm.enqueue(prompts, sampling_params)
-    outputs = llm.wait_for_completion()
+    outputs = llm.generate(prompts, sampling_params=sampling_params)
     output_tokens = [output.outputs[0].token_ids for output in outputs]
     results = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
 
+    try:
+        file_name = datetime.datetime.now().astimezone().isoformat()
+        with open(f"raw_outputs/{file_name}.txt", "w") as file:
+            for result in results:
+                file.write(result[0].content[0].text + '\n\n')
+    except:
+        pass
+
     eval_results = []
     for i, result in enumerate(results):
-        result = json.loads(result[0].content[0].text)
-        result_type = result.get("evaluation_result")
-        eval_result = {
-            k: v 
-            for k, v in qa_results[i].items()
-        }
-        eval_result['result_type'] = result_type
-        eval_results.append(eval_result)
+        try:
+            result = json.loads(result[0].content[0].text)
+            result_type = result.get("evaluation_result")
+            eval_result = {
+                k: v 
+                for k, v in qa_results[i].items()
+            }
+            eval_result['result_type'] = result_type
+            eval_results.append(eval_result)
+        except:
+            continue
     return eval_results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
