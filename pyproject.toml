@@ -9,6 +9,7 @@ dependencies = [
     "bm25s[core]>=0.3.9",
     "faiss-cpu>=1.14.3",
     "fastembed>=0.8.0",
+    "openai-harmony>=0.0.8",
     "python-dotenv>=1.2.2",
     "qdrant-client>=1.18.0",
     "rank-bm25>=0.2.2",
