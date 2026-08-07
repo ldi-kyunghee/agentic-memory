@@ -4,15 +4,15 @@
 * 실험 세팅
 일단 용어 좀 정리해 보죠.
 - QA Context: 메모리를 구성하는 단계에 assistant의 질문을 답하는 유저 발언이면 해당 질문을 새 =<user><assistant>= 턴에 prepend하는 여부
-  - \checkmark \to 포함
+  - O \to 포함
   - X \to 미포함
-    
+
 | Experiment | Model        | Reasoning Effort | QA Context |
 |------------+--------------+------------------+------------|
 | exp 5      | gpt-oss-120b | High             | X          |
-| exp 6      | gpt-oss-120b | High             | \checkmark         |
+| exp 6      | gpt-oss-120b | High             | O          |
 | exp 7      | gpt-5-mini   | Minimal          | X          |
-| exp 8      | gpt-5-mini   | Minimal          | \checkmark         |
+| exp 8      | gpt-5-mini   | Minimal          | O          |
 
 * 결과 테이블
 #+NAME: make-table
@@ -176,6 +176,7 @@
 | Generalization & Application |         54.36 |               18.79 |          26.85 |     149 |
 | Multi-hop Inference          |         34    |               36    |          30    |      50 |
 | Dynamic Update               |         17.95 |               69.23 |          12.82 |      39 |
+
 **** exp8
 |                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
 |------------------------------+---------------+---------------------+----------------+---------|
