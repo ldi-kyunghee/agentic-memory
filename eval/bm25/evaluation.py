@@ -319,7 +319,10 @@ def main(args, max_workers: int = 10):
         else:
             model_kwargs = kwargs
         llm = load_vllm(model_kwargs, enable_reasoning)
-        eval_fn = partial(llm_judge_vllm, llm=llm, sampling_params=sampling_params, generation_kwargs=generation_kwargs)
+        if "gpt" in model_kwargs['model']:
+            eval_fn = partial(llm_judge_vllm_gpt_oss, llm=llm, sampling_params=sampling_params, generation_kwargs=generation_kwargs)
+        else:
+            eval_fn = partial(llm_judge_vllm, llm=llm, sampling_params=sampling_params, generation_kwargs=generation_kwargs)
     elif args.backend == 'openai':
         model_kwargs = load_config(args.config_file)
         os.environ['OPENAI_MODEL'] = model_kwargs['model']
