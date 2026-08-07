@@ -171,7 +171,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
 
     eval_results = []
     for i, result in enumerate(results):
-        result = json.loads(result.content[0].text)
+        result = json.loads(result[0].content[0].text)
         result_type = result.get("evaluation_result")
         eval_result = {
             k: v 
