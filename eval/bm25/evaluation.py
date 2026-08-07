@@ -11,6 +11,15 @@ from json import JSONDecodeError
 import torch
 from dotenv import load_dotenv
 from llms import llm_request_for_json
+from openai_harmony import (
+    Conversation,
+    DeveloperContent,
+    HarmonyEncodingName,
+    Message,
+    Role,
+    SystemContent,
+    load_harmony_encoding,
+)
 from tqdm import tqdm
 from utils import (
     EVALUATION_PROMPT_FOR_QA,
@@ -81,13 +90,12 @@ def evaluation_for_question_vllm(
     key_memory_points: str,
     response: str
 ):
-    prompt = EVALUATION_PROMPT_FOR_QA.format(
+    prompt = EVALUATION_PROMPT_FOR_QUESTION.format(
         question=question,
         reference_answer=reference_answer,
         key_memory_points=key_memory_points,
         response=response
     )
-
     return prompt
 
 def parse_answers(outputs):
@@ -122,6 +130,63 @@ def parse_answers(outputs):
         file.writelines(raw_output)
     return results
 
+def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
+    encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
+    stop_token_ids = encoding.stop_tokens_for_assistant_actions()
+    structured_outputs_params = StructuredOutputsParams(json=QAEval.model_json_schema())
+    
+    sampling_params = SamplingParams(stop_token_ids=stop_token_ids, structured_outputs=structured_outputs_params, **sampling_params)
+    
+    prompts = []
+    for result in qa_results:
+        prompt = evaluation_for_question_vllm(
+            result['question'],
+            result['reference'],
+            '\n'.join([evidence['memory_content'] for evidence in result['evidence']]),
+            result['generated_answer']
+        )
+
+        convo = Conversation.from_messages(
+            [
+                Message.from_role_and_content(Role.SYSTEM, SystemContent.new()),
+                Message.from_role_and_content(
+                    Role.DEVELOPER,
+                    DeveloperContent.new().with_instructions(
+                        f"""# Response Formats
+
+                        ## QAEval
+                        
+                        {QAEval.model_json_schema()}
+                        """.strip()
+                    ),
+                ),
+                Message.from_author_and_content(
+                        Role.USER,
+                        prompt,
+                )
+            ]
+        )
+        
+        prefill_ids = encoding.render_conversation_for_completion(convo, Role.ASSISTANT)
+        prompts.append({"prompt_token_ids": prefill_ids})
+        
+    request_ids = llm.enqueue(prompts, sampling_params, **generation_kwargs)
+    outputs = llm.wait_for_completion()
+    output_tokens = [output.output[0].token_ids for output in outputs]
+    results = encoding.parse_messages_from_completion_tokens(output_tokens, Role.ASSISTANT)
+
+    eval_results = []
+    for i, result in enumerate(results):
+        result = json.loads(result.content[0].text)
+        result_type = result.get("evaluation_result")
+        eval_result = {
+            k: v 
+            for k, v in qa_results[i].items()
+        }
+        eval_result['result_type'] = result_type
+        eval_results.append(eval_result)
+    return eval_results
+
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
     structured_outputs_params = StructuredOutputsParams(json=QAEval.model_json_schema())
     sampling_params = SamplingParams(structured_outputs=structured_outputs_params, **sampling_params)
@@ -134,10 +199,14 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwarg
             '\n'.join([evidence['memory_content'] for evidence in result['evidence']]),
             result['generated_answer']
         )
-        
-        prompts.append(prompt)
 
-    request_ids = llm.enqueue(prompts, sampling_params, **generation_kwargs)
+        prompts.append([
+            {
+                "role": "user", "content": prompt
+            }
+        ])
+
+    request_ids = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
     outputs = llm.wait_for_completion()
     results = parse_answers(outputs)
 

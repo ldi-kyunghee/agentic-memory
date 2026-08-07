@@ -120,6 +120,7 @@
       for key, value in per_type_results.items():
           per_type_normalized_results[f"{key} (%)"] = {
               k: round(v / per_type_count[k] * 100, 2)
+              if v else v
               for k, v in value.items()
           }
 
@@ -136,13 +137,21 @@
 
       tables.append(f"**** {exp}\n{table}")
 
-  print("\n\n".join(tables).strip())
+  print("\n".join(tables).strip())
 #+end_src
 
 #+RESULTS: label-dist-table
 *** 결과
-
 **** exp5
+|                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
+|------------------------------+---------------+---------------------+----------------+---------|
+| Memory Conflict              |         57.14 |              nan    |          42.86 |      21 |
+| Memory Boundary              |         50    |                5    |          45    |      20 |
+| Basic Fact Recall            |         40    |              nan    |          60    |      20 |
+| Generalization & Application |         53.85 |               15.38 |          30.77 |      13 |
+| Multi-hop Inference          |         62.5  |              nan    |          37.5  |       8 |
+| Dynamic Update               |         50    |              nan    |          50    |       2 |
+**** exp5.bak
 |                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
 |------------------------------+---------------+---------------------+----------------+---------|
 | Basic Fact Recall            |         47.37 |               26.32 |          26.32 |      19 |
@@ -150,7 +159,14 @@
 | Memory Boundary              |         70.59 |                5.88 |          23.53 |      17 |
 | Generalization & Application |         72.73 |               18.18 |           9.09 |      11 |
 | Multi-hop Inference          |         62.5  |              nan    |          37.5  |       8 |
-
+**** exp6
+|                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
+|------------------------------+---------------+---------------------+----------------+---------|
+| Memory Conflict              |         80.95 |              nan    |          19.05 |      21 |
+| Basic Fact Recall            |         31.58 |               10.53 |          57.89 |      19 |
+| Memory Boundary              |         55.56 |              nan    |          44.44 |      18 |
+| Generalization & Application |         63.64 |                9.09 |          27.27 |      11 |
+| Multi-hop Inference          |         50    |               12.5  |          37.5  |       8 |
 **** exp7
 |                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
 |------------------------------+---------------+---------------------+----------------+---------|
@@ -160,7 +176,6 @@
 | Generalization & Application |         54.36 |               18.79 |          26.85 |     149 |
 | Multi-hop Inference          |         34    |               36    |          30    |      50 |
 | Dynamic Update               |         17.95 |               69.23 |          12.82 |      39 |
-
 **** exp8
 |                              |   Correct (%) |   Hallucination (%) |   Omission (%) |   Total |
 |------------------------------+---------------+---------------------+----------------+---------|
@@ -170,7 +185,6 @@
 | Generalization & Application |         49.66 |               23.49 |          26.85 |     149 |
 | Multi-hop Inference          |         38    |               34    |          28    |      50 |
 | Dynamic Update               |         15.38 |               66.67 |          17.95 |      39 |
-
 
 *** TODO 해석
 #+DEADLINE: <2026-08-07 Fri 13:00>
