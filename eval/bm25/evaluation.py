@@ -167,7 +167,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
     request_ids = llm.enqueue(prompts, sampling_params)
     outputs = llm.wait_for_completion()
     output_tokens = [output.outputs[0].token_ids for output in outputs]
-    results = encoding.parse_messages_from_completion_tokens(output_tokens, Role.ASSISTANT)
+    results = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
 
     eval_results = []
     for i, result in enumerate(results):
