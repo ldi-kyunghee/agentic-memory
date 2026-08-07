@@ -12,7 +12,12 @@ import torch
 from dotenv import load_dotenv
 from llms import llm_request_for_json
 from tqdm import tqdm
-from utils import EVALUATION_PROMPT_FOR_QUESTION, QAEval, load_config
+from utils import (
+    EVALUATION_PROMPT_FOR_QA,
+    EVALUATION_PROMPT_FOR_QUESTION,
+    QAEval,
+    load_config,
+)
 from vllm import LLM, SamplingParams
 from vllm.config import ReasoningConfig
 from vllm.sampling_params import StructuredOutputsParams
@@ -76,7 +81,7 @@ def evaluation_for_question_vllm(
     key_memory_points: str,
     response: str
 ):
-    prompt = EVALUATION_PROMPT_FOR_QUESTION.format(
+    prompt = EVALUATION_PROMPT_FOR_QA.format(
         question=question,
         reference_answer=reference_answer,
         key_memory_points=key_memory_points,
