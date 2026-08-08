@@ -1,0 +1,12 @@
+(undo-tree-save-format-version . 1)
+"0c52b10f36234983d9e2f11d7b05b9ff7d04a8f7"
+[nil nil nil nil (27255 30748 635574 737000) 0 nil]
+([nil nil ((#("input_prompt = encoding.decode(prefill_ids)" 0 12 (face tree-sitter-hl-face:variable fontified t) 12 13 (fontified t) 13 14 (face tree-sitter-hl-face:operator fontified t) 14 24 (fontified t) 24 30 (face (tree-sitter-hl-face:method.call tree-sitter-hl-face:property) fontified t) 30 43 (fontified t)) . 5068) (undo-tree-id9 . -43) 5111 (t 27255 28254 0 0)) nil (27255 30748 635574 81000) 0 nil])
+([nil nil ((#("    " 0 4 (fontified t)) . -5064) (undo-tree-id6 . -4) (undo-tree-id7 . -4) (undo-tree-id8 . -4) 5068) nil (27255 30748 635573 429000) 0 nil])
+([nil nil ((#("    " 0 4 (fontified t)) . -5060) (undo-tree-id3 . -4) (undo-tree-id4 . -4) (undo-tree-id5 . -4) 5064) nil (27255 30748 635571 741000) 0 nil])
+([nil nil ((#("
+" 0 1 (fontified t)) . -5059) (undo-tree-id0 . -1) (undo-tree-id1 . -1) (undo-tree-id2 . -1) 5060) nil (27255 30748 635570 147000) 0 nil])
+([nil nil ((5148 . 5157)) nil (27255 30748 635554 713000) 0 nil])
+([nil nil ((nil rear-nonsticky nil 5199 . 5200) (nil fontified nil 5187 . 5200) (nil fontified nil 5181 . 5187) (nil fontified nil 5171 . 5181) (nil fontified nil 5170 . 5171) (nil fontified nil 5169 . 5170) (nil fontified nil 5157 . 5169) (5157 . 5200)) nil (27255 30748 635551 482000) 0 nil])
+([nil current ((5200 . 5209) (t 27255 30750 0 0)) nil (27255 30752 945563 413000) 0 nil])
+nil

@@ -32,7 +32,7 @@
           "score": 0.2
         },
         {
-          "memory_content": "[Mar 01, 2026, 08:56:42]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
+          "memory_content": "[Mar 01, 2026, 08:17:50]\n        User: Their support has been a cornerstone of my success.\n        Assistant: Support from your network has indeed been a cornerstone of your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be instrumental in helping you achieve your aspirations.",
           "score": 0.2
         },
         {
@@ -44,7 +44,7 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Mar 01, 2026, 08:17:50]\n        User: Their support has been a cornerstone of my success.\n        Assistant: Support from your network has indeed been a cornerstone of your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be instrumental in helping you achieve your aspirations.",
+          "memory_content": "[Mar 01, 2026, 08:56:42]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
           "score": 0.16666666666666666
         },
         {
@@ -459,7 +459,7 @@
       "retrieved": [
         {
           "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.6428571428571428
+          "score": 0.625
         },
         {
           "memory_content": "[Mar 01, 2026, 09:34:00]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
@@ -502,11 +502,11 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Sep 06, 2025, 22:59:12]\n        User: I'd like to share my Travel Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Travel Preference.",
-          "score": 0.125
+          "memory_content": "[Mar 01, 2026, 08:08:10]\n        User: I'm ready to take on new challenges and opportunities.\n        Assistant: Taking on new challenges and opportunities is an exciting prospect, Martin. Your readiness to embrace them, supported by your strong network and newfound balance, will undoubtedly lead to personal and professional growth. As you continue to leverage your creativity and humanitarian care goals, you'll inspire and innovate in ways that make a lasting impact.",
+          "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Mar 01, 2026, 08:08:10]\n        User: I'm ready to take on new challenges and opportunities.\n        Assistant: Taking on new challenges and opportunities is an exciting prospect, Martin. Your readiness to embrace them, supported by your strong network and newfound balance, will undoubtedly lead to personal and professional growth. As you continue to leverage your creativity and humanitarian care goals, you'll inspire and innovate in ways that make a lasting impact.",
+          "memory_content": "[Sep 06, 2025, 22:59:12]\n        User: I'd like to share my Travel Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Travel Preference.",
           "score": 0.125
         },
         {
@@ -1252,7 +1252,7 @@
       "retrieved": [
         {
           "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.7
+          "score": 0.6428571428571428
         },
         {
           "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
@@ -1279,19 +1279,19 @@
           "score": 0.2
         },
         {
+          "memory_content": "[Mar 01, 2026, 09:34:00]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
+          "score": 0.2
+        },
+        {
           "memory_content": "[Dec 31, 2032, 12:17:09]\n        Assistant:  How do you think these different types of tours could complement each other in your broader goals?\n        User: The cultural and health tours definitely provide a deeper understanding of the issues at hand. I find that balancing cultural exploration with health-focused learning enriches my perspective and supports my humanitarian goals.\n        Assistant: Balancing cultural exploration with health-focused learning is indeed a powerful approach, and it reflects your exploratory motivation to test boundaries and expand perspectives. I remember you reflecting on the importance of balancing adventure sports with health-focused learning in your travel experiences as well. This balance can provide a holistic view, integrating physical activity with health insights. How do you envision incorporating these elements into your future travel plans?",
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Mar 01, 2026, 09:34:00]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
+          "memory_content": "[Mar 01, 2026, 08:56:42]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
           "score": 0.16666666666666666
         },
         {
           "memory_content": "[Sep 15, 2035, 14:47:07]\n        Assistant:  As you look to the future, what are your hopes and aspirations for the continued growth and success of your initiative?\n        User: I hope to see our initiative expand globally, providing healthcare access to those who need it most and ultimately achieving our goal of reaching 1 million people.\n        Assistant: Your vision of expanding the initiative globally to provide healthcare access to those in need is both ambitious and inspiring. The initiative's launch in 2034 and 2035 marks the beginning of this journey, and your unwavering dedication to reaching 1 million people reflects your commitment to making a meaningful difference. As you continue to build on this momentum, remember that your efforts are creating a legacy of positive change in global healthcare. Your passion and determination are truly commendable, and I have no doubt that you will achieve your goals and inspire others along the way.",
-          "score": 0.14285714285714285
-        },
-        {
-          "memory_content": "[Mar 01, 2026, 08:56:42]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
           "score": 0.14285714285714285
         },
         {
@@ -6327,7 +6327,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
+          "memory_content": "[Aug 08, 2028, 15:07:05]\n        User: I\u2019m looking forward to what\u2019s next.\n        Assistant: The future holds exciting possibilities for you, Martin. As you continue to explore and innovate, you'll find new opportunities and experiences that align with your goals and values. Keep your curiosity and creativity alive, and you'll undoubtedly achieve great things. Remember, I'm here to help you navigate this journey and support you in reaching your full potential.",
           "score": 0.09090909090909091
         }
       ]
@@ -6341,7 +6341,7 @@
       "retrieved": [
         {
           "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.6428571428571428
+          "score": 0.625
         },
         {
           "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
@@ -6385,7 +6385,7 @@
         },
         {
           "memory_content": "[Apr 10, 2026, 11:21:58]\n        User: Thanks! It's nice to have this kind of support and encouragement.\n        Assistant: You're welcome, Martin. Support and encouragement are crucial as you navigate these changes. Remember, your social connections, like those fostered through extreme sports, can also provide valuable insights and camaraderie.",
-          "score": 0.125
+          "score": 0.14285714285714285
         },
         {
           "memory_content": "[Jul 14, 2026, 18:11:03]\n        User: I recently attended a seminar on cognitive development, and it got me thinking about action games. They mentioned some interesting cognitive benefits.\n        Assistant: That sounds fascinating, Martin! Your interest in cognitive development aligns well with your innovative spirit. I understand that the seminar sparked your curiosity about action games, particularly their potential to enhance cognitive functions like reaction time and spatial awareness. It's great to see how you're open to exploring non-violent action games, balancing your values of peace and well-being with the cognitive benefits they may offer. Your approach to gaming now includes a cautious evaluation of cognitive benefits versus time spent, which is a prudent way to integrate new activities into your routine.",
@@ -7291,7 +7291,7 @@
           "score": 0.3333333333333333
         },
         {
-          "memory_content": "[May 01, 2035, 12:47:26]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[May 01, 2035, 12:58:27]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.3333333333333333
         },
         {
@@ -7299,7 +7299,7 @@
           "score": 0.25
         },
         {
-          "memory_content": "[May 01, 2035, 12:58:27]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[May 01, 2035, 12:47:26]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.25
         },
         {
@@ -7331,7 +7331,7 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Nov 23, 2029, 11:00:53]\n        Assistant:  How do you plan to integrate these aspects into your future wardrobe choices?\n        User: I'll continue to seek feedback and explore options that align with my professional goals and comfort needs.\n        Assistant: Seeking feedback and exploring options is a wise strategy, Martin. Aligning your wardrobe with professional goals and comfort needs ensures a harmonious balance. As you refine your choices, considering how attire affects functionality and ease of movement can enhance your work experience. Sharing anecdotes about past experiences with clothing choices impacting confidence is insightful. While social signaling expresses identity, practicality offers tangible benefits. How do you see this balance influencing your interactions and career growth?",
+          "memory_content": "[May 01, 2035, 13:17:04]\n        User: I'm excited to see how these changes can enhance my confidence and interactions, supporting my active lifestyle.\n        Assistant: Your excitement about how these changes can enhance your confidence and interactions is truly inspiring, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're aligning your clothing choices with your active lifestyle and personal goals. The excitement you feel about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.125
         },
         {
@@ -7339,7 +7339,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[May 01, 2035, 13:17:04]\n        User: I'm excited to see how these changes can enhance my confidence and interactions, supporting my active lifestyle.\n        Assistant: Your excitement about how these changes can enhance your confidence and interactions is truly inspiring, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're aligning your clothing choices with your active lifestyle and personal goals. The excitement you feel about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[Nov 23, 2029, 11:00:53]\n        Assistant:  How do you plan to integrate these aspects into your future wardrobe choices?\n        User: I'll continue to seek feedback and explore options that align with my professional goals and comfort needs.\n        Assistant: Seeking feedback and exploring options is a wise strategy, Martin. Aligning your wardrobe with professional goals and comfort needs ensures a harmonious balance. As you refine your choices, considering how attire affects functionality and ease of movement can enhance your work experience. Sharing anecdotes about past experiences with clothing choices impacting confidence is insightful. While social signaling expresses identity, practicality offers tangible benefits. How do you see this balance influencing your interactions and career growth?",
           "score": 0.1111111111111111
         },
         {
@@ -8492,7 +8492,7 @@
       "retrieved": [
         {
           "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.6428571428571428
+          "score": 0.625
         },
         {
           "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
@@ -8535,11 +8535,11 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Mar 11, 2031, 15:39:54]\n        User: Yes, their recommendations have been enlightening. I'm eager to explore more films that challenge my views and offer new insights.\n        Assistant: Your eagerness to explore films that challenge your views is admirable. It's this curiosity and openness that drive your creative motivation, leading to personal growth and enriching experiences. While you explore these films, keep in mind your belief that films should reinforce existing beliefs, as this duality can offer a balanced approach to your exploration.",
-          "score": 0.125
+          "memory_content": "[Mar 01, 2026, 08:17:50]\n        User: Their support has been a cornerstone of my success.\n        Assistant: Support from your network has indeed been a cornerstone of your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be instrumental in helping you achieve your aspirations.",
+          "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Mar 01, 2026, 08:17:50]\n        User: Their support has been a cornerstone of my success.\n        Assistant: Support from your network has indeed been a cornerstone of your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be instrumental in helping you achieve your aspirations.",
+          "memory_content": "[Mar 11, 2031, 15:39:54]\n        User: Yes, their recommendations have been enlightening. I'm eager to explore more films that challenge my views and offer new insights.\n        Assistant: Your eagerness to explore films that challenge your views is admirable. It's this curiosity and openness that drive your creative motivation, leading to personal growth and enriching experiences. While you explore these films, keep in mind your belief that films should reinforce existing beliefs, as this duality can offer a balanced approach to your exploration.",
           "score": 0.125
         },
         {
@@ -9307,7 +9307,7 @@
           "score": 0.3333333333333333
         },
         {
-          "memory_content": "[May 01, 2035, 12:47:26]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[May 01, 2035, 13:11:25]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.3333333333333333
         },
         {
@@ -9315,7 +9315,7 @@
           "score": 0.25
         },
         {
-          "memory_content": "[May 01, 2035, 13:11:25]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[May 01, 2035, 12:47:26]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.25
         },
         {
@@ -9449,7 +9449,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[May 01, 2035, 12:47:26]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[May 01, 2035, 12:58:27]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.1111111111111111
         },
         {
@@ -9457,7 +9457,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[May 01, 2035, 12:58:27]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[May 01, 2035, 12:47:26]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.1
         },
         {
@@ -9895,7 +9895,7 @@
           "score": 0.25
         },
         {
-          "memory_content": "[May 01, 2035, 12:47:26]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[May 01, 2035, 12:51:38]\n        User: I'm excited to see how these changes can enhance my confidence and interactions, supporting my active lifestyle.\n        Assistant: Your excitement about how these changes can enhance your confidence and interactions is truly inspiring, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're aligning your clothing choices with your active lifestyle and personal goals. The excitement you feel about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.25
         },
         {
@@ -9903,11 +9903,11 @@
           "score": 0.2
         },
         {
-          "memory_content": "[May 01, 2035, 12:51:38]\n        User: I'm excited to see how these changes can enhance my confidence and interactions, supporting my active lifestyle.\n        Assistant: Your excitement about how these changes can enhance your confidence and interactions is truly inspiring, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're aligning your clothing choices with your active lifestyle and personal goals. The excitement you feel about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "memory_content": "[Mar 01, 2026, 09:34:00]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
           "score": 0.2
         },
         {
-          "memory_content": "[Mar 01, 2026, 09:34:00]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
+          "memory_content": "[May 01, 2035, 12:47:26]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.16666666666666666
         },
         {
@@ -10351,7 +10351,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
+          "memory_content": "[Aug 08, 2028, 15:07:05]\n        User: I\u2019m looking forward to what\u2019s next.\n        Assistant: The future holds exciting possibilities for you, Martin. As you continue to explore and innovate, you'll find new opportunities and experiences that align with your goals and values. Keep your curiosity and creativity alive, and you'll undoubtedly achieve great things. Remember, I'm here to help you navigate this journey and support you in reaching your full potential.",
           "score": 0.1111111111111111
         },
         {
@@ -10359,7 +10359,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Aug 08, 2028, 15:07:05]\n        User: I\u2019m looking forward to what\u2019s next.\n        Assistant: The future holds exciting possibilities for you, Martin. As you continue to explore and innovate, you'll find new opportunities and experiences that align with your goals and values. Keep your curiosity and creativity alive, and you'll undoubtedly achieve great things. Remember, I'm here to help you navigate this journey and support you in reaching your full potential.",
+          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
           "score": 0.1
         },
         {
@@ -13548,16 +13548,16 @@
           "score": 0.41666666666666663
         },
         {
-          "memory_content": "[May 01, 2035, 13:11:25]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
-          "score": 0.34285714285714286
-        },
-        {
           "memory_content": "[May 01, 2035, 12:27:00]\n        User: I've shared anecdotes about previous experiences with athletic wear, and I'm looking forward to seeing how these new changes will affect my daily routine.\n        Assistant: Sharing your experiences with athletic wear provides valuable insights into how these changes can positively affect your daily routine. Your openness to exploring new clothing preferences is a testament to your adaptability and willingness to embrace change. As you integrate stylish and functional pieces into your wardrobe, consider how they might enhance your self-perception and interactions. Your dialogue included excitement about balancing comfort with luxury, which highlights your ability to appreciate both style and practicality. This journey of updating your wardrobe is an exciting opportunity to redefine your personal style and make a lasting impression.",
           "score": 0.3333333333333333
         },
         {
           "memory_content": "[May 01, 2035, 12:58:27]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
-          "score": 0.29166666666666663
+          "score": 0.325
+        },
+        {
+          "memory_content": "[May 01, 2035, 13:11:25]\n        User: I'm looking forward to the positive impact these changes will have on my confidence and interactions.\n        Assistant: The positive impact of these changes on your confidence and interactions is something to truly look forward to, Martin. By integrating stylish and functional athletic wear into your wardrobe, you're setting the stage for a transformative change in how you present yourself to the world. Your excitement about balancing comfort with luxury in your clothing choices highlights your ability to merge style with practicality, allowing you to express your identity more authentically. As you navigate this change, consider how it might influence your self-perception and the way others perceive you. This is a wonderful opportunity to redefine your personal style and make a lasting impression.",
+          "score": 0.30952380952380953
         },
         {
           "memory_content": "[May 01, 2035, 13:08:03]\n        User: It's a great opportunity to showcase my personality and make a statement through my wardrobe.\n        Assistant: Showcasing your personality and making a statement through your wardrobe is a powerful way to express your identity, Martin. By embracing stylish and functional athletic wear, you're aligning your clothing choices with your emotional motivation to express your identity and gain attention. The excitement you feel about balancing comfort with luxury adds depth to your personal style, showcasing your ability to appreciate both elegance and practicality. As you continue to explore these new preferences, consider how they might enhance your interactions and self-perception, allowing you to present yourself more authentically to the world.",
@@ -13721,7 +13721,7 @@
         },
         {
           "memory_content": "[Aug 03, 2035, 20:58:22]\n        Assistant:  How do you plan to integrate these insights into your daily routine?\n        User: I plan to integrate these insights into my daily routine by spending more time observing and interacting with my pets, focusing on their communication cues.\n        Assistant: That's a thoughtful approach, Martin. Spending more time observing and interacting with your pets, focusing on their communication cues, can deepen your understanding and enhance your interactions. Your enthusiasm for integrating feline communication insights into your pet preferences reflects this commitment. Additionally, your exploration of canine communication offers complementary perspectives. How do you see these insights influencing your broader lifestyle and personal growth?",
-          "score": 0.2159090909090909
+          "score": 0.225
         },
         {
           "memory_content": "[Aug 03, 2035, 20:52:29]\n        Assistant:  How do you see these insights influencing your interactions with pets in social contexts?\n        User: I see these insights enhancing my interactions with pets by providing a deeper appreciation for their social skills. It's about understanding and connecting on a more meaningful level.\n        Assistant: That's a profound approach, Martin. Enhancing your interactions with pets by appreciating their social skills can lead to more meaningful connections. This aligns beautifully with your social motivation to express identity and entertain others. Your focus on feline communication and interest in birds' communication skills provide valuable insights for these interactions. How do you plan to integrate these insights into your daily routine?",
@@ -13749,7 +13749,7 @@
         },
         {
           "memory_content": "[Aug 03, 2035, 20:11:40]\n        Assistant:  How do you plan to measure the impact of these strategies on community well-being?\n        User: I plan to measure impact through feedback from participants and observing changes in community dynamics. It's important to see how these interactions affect overall well-being.\n        Assistant: That's a thoughtful approach, Martin. Gathering feedback and observing community dynamics are excellent ways to assess the impact of your strategies. It's crucial to understand how these interactions contribute to overall well-being. Your insights into feline communication and interest in birds' communication skills can offer valuable perspectives in this assessment. How do you envision these insights influencing your personal interactions with pets?",
-          "score": 0.1
+          "score": 0.09090909090909091
         }
       ]
     },
@@ -14004,7 +14004,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
+          "memory_content": "[Mar 01, 2026, 09:04:10]\n        User: I'm ready to make a difference and inspire change.\n        Assistant: Your readiness to make a difference and inspire change is commendable, Martin. Your new role provides the platform to leverage your humanitarian care and artistic goals, creating meaningful impact. Continue to embrace the opportunities ahead and leverage your creativity and insights to inspire change in the healthcare sector.",
           "score": 0.1
         },
         {
@@ -14012,7 +14012,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Mar 01, 2026, 09:04:10]\n        User: I'm ready to make a difference and inspire change.\n        Assistant: Your readiness to make a difference and inspire change is commendable, Martin. Your new role provides the platform to leverage your humanitarian care and artistic goals, creating meaningful impact. Continue to embrace the opportunities ahead and leverage your creativity and insights to inspire change in the healthcare sector.",
+          "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
           "score": 0.09090909090909091
         }
       ]
@@ -14348,7 +14348,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
+          "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
           "score": 0.14285714285714285
         },
         {
@@ -14356,7 +14356,7 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
+          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
           "score": 0.125
         },
         {
@@ -14534,7 +14534,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Jun 21, 2026, 10:04:23]\n        Assistant:  Are there any particular milestones or events you are looking forward to in the near future?\n        User: I'm looking forward to hosting our first exclusive event with local artists and chefs. It's an exciting opportunity to showcase our community's talents.\n        Assistant: That sounds incredibly exciting, Johnson! Hosting an exclusive event with local artists and chefs is a wonderful opportunity to showcase the rich culture and talents of your community. Such events not only attract guests seeking unique experiences but also reinforce your position as a leader in the hospitality industry. As you prepare for this event, consider how you can create a memorable experience for attendees. This could involve interactive elements, storytelling, or behind-the-scenes tours that offer deeper insights into the local culture. How do you plan to promote this event to ensure maximum participation?",
+          "memory_content": "[Mar 15, 2044, 18:25:02]\n        User: Reflecting on my journey, I've realized the importance of mentorship and support.\n        Assistant: Reflecting on your journey, it's clear that mentorship and support have been vital components, Johnson. Your gratitude for the mentorship from your consultancy partners highlights their significant role in your career achievements. Utilizing clarificatory motivation has enabled you to organize thoughts and gain perspective, leading to innovative solutions. Your stories about past networking experiences and competitive encounters have contributed to your success. This collaborative approach, combined with a strategic mindset, continues to propel your consultancy work forward, fostering growth and exploring new opportunities.",
           "score": 0.1111111111111111
         },
         {
@@ -14542,7 +14542,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:25:02]\n        User: Reflecting on my journey, I've realized the importance of mentorship and support.\n        Assistant: Reflecting on your journey, it's clear that mentorship and support have been vital components, Johnson. Your gratitude for the mentorship from your consultancy partners highlights their significant role in your career achievements. Utilizing clarificatory motivation has enabled you to organize thoughts and gain perspective, leading to innovative solutions. Your stories about past networking experiences and competitive encounters have contributed to your success. This collaborative approach, combined with a strategic mindset, continues to propel your consultancy work forward, fostering growth and exploring new opportunities.",
+          "memory_content": "[Jun 21, 2026, 10:04:23]\n        Assistant:  Are there any particular milestones or events you are looking forward to in the near future?\n        User: I'm looking forward to hosting our first exclusive event with local artists and chefs. It's an exciting opportunity to showcase our community's talents.\n        Assistant: That sounds incredibly exciting, Johnson! Hosting an exclusive event with local artists and chefs is a wonderful opportunity to showcase the rich culture and talents of your community. Such events not only attract guests seeking unique experiences but also reinforce your position as a leader in the hospitality industry. As you prepare for this event, consider how you can create a memorable experience for attendees. This could involve interactive elements, storytelling, or behind-the-scenes tours that offer deeper insights into the local culture. How do you plan to promote this event to ensure maximum participation?",
           "score": 0.1
         },
         {
@@ -14678,12 +14678,12 @@
           "score": 0.3333333333333333
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:46:42]\n        Assistant:  As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?\n        User: These connections can provide valuable insights and opportunities for partnerships, helping to expand our offerings and reach a broader audience.\n        Assistant: Leveraging connections for insights and partnerships is a strategic way to expand your offerings, Johnson. It allows you to tap into new ideas and resources, broadening your reach and enhancing the guest experience at Albi B&B. Your ability to see the potential in these connections demonstrates your visionary leadership. As you continue to explore these opportunities, what strategies might you employ to ensure that your growth remains aligned with your core values and mission?",
+          "memory_content": "[Jan 19, 2037, 14:37:18]\n        User: I'm looking forward to it. Let's make Albi B&B a place where unforgettable memories are made.\n        Assistant: Absolutely, Johnson. With your vision and dedication, Albi B&B is well on its way to becoming a place where unforgettable memories are made. By continuing to focus on guest preferences, such as pet-friendly accommodations and personalized service, you can ensure that each stay is unique and memorable. Your commitment to leveraging the assistant to manage these elements effectively will support your goal of creating a welcoming and dynamic environment. Here's to the exciting journey ahead and the many memorable experiences you'll create for your guests!",
           "score": 0.2777777777777778
         },
         {
-          "memory_content": "[Jan 19, 2037, 14:37:18]\n        User: I'm looking forward to it. Let's make Albi B&B a place where unforgettable memories are made.\n        Assistant: Absolutely, Johnson. With your vision and dedication, Albi B&B is well on its way to becoming a place where unforgettable memories are made. By continuing to focus on guest preferences, such as pet-friendly accommodations and personalized service, you can ensure that each stay is unique and memorable. Your commitment to leveraging the assistant to manage these elements effectively will support your goal of creating a welcoming and dynamic environment. Here's to the exciting journey ahead and the many memorable experiences you'll create for your guests!",
-          "score": 0.2777777777777778
+          "memory_content": "[Jul 25, 2037, 12:46:42]\n        Assistant:  As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?\n        User: These connections can provide valuable insights and opportunities for partnerships, helping to expand our offerings and reach a broader audience.\n        Assistant: Leveraging connections for insights and partnerships is a strategic way to expand your offerings, Johnson. It allows you to tap into new ideas and resources, broadening your reach and enhancing the guest experience at Albi B&B. Your ability to see the potential in these connections demonstrates your visionary leadership. As you continue to explore these opportunities, what strategies might you employ to ensure that your growth remains aligned with your core values and mission?",
+          "score": 0.26666666666666666
         },
         {
           "memory_content": "[Sep 05, 2025, 17:02:11]\n        User: I am currently self-employed, working in the Hospitality industry. I work at Albi B&B as an Owner. My monthly income is 3500 USD, and I currently have 12000 USD in savings. As the owner of Albi B&B, I manage all aspects of the business, from guest relations to overseeing daily operations. My monthly income fluctuates based on tourist seasons, but I am able to maintain a steady flow of visitors throughout the year. I have built up savings to ensure the stability of my business during off-peak times.\n        Assistant: How is your health condition?",
@@ -14706,7 +14706,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Jul 25, 2037, 13:21:10]\n        Assistant:  How do you plan to inspire and influence the next generation of hospitality leaders?\n        User: I hope to mentor aspiring leaders and share my experiences through speaking engagements and industry forums, fostering a culture of innovation and excellence.\n        Assistant: Mentoring aspiring leaders and sharing your experiences through speaking engagements and industry forums is a powerful way to inspire the next generation, Johnson. It fosters a culture of innovation and excellence, encouraging others to pursue their goals with the same passion and dedication. Your commitment to sharing knowledge and empowering others reflects your visionary leadership. As you continue to make an impact in the hospitality industry, remember that your journey serves as a beacon of inspiration for many. Your legacy at Albi B&B and beyond will undoubtedly leave a lasting mark on the industry. Thank you for sharing your insights and aspirations with me today.",
+          "memory_content": "[Jan 25, 2036, 07:14:07]\n        User: Today feels like a significant day as I finalize my retirement plans. It's been a long journey, but I'm relieved knowing Albi B&B will continue to thrive with the sustainable model we've established.\n        Assistant: That's a monumental step, Johnson. Finalizing your retirement plans marks the culmination of years of dedication and hard work. It's understandable to feel a mix of emotions, from relief to anticipation for what lies ahead. As you embrace this transition, it's crucial to reflect on the journey that brought you here. The challenges and achievements you've faced have shaped Albi B&B's success. While you might feel a sense of uncertainty, it's also an opportunity to stay connected to the business you built, ensuring your legacy endures through the leadership team you've nurtured. How are you feeling about the team's ability to uphold the values and standards you've instilled?",
           "score": 0.14285714285714285
         },
         {
@@ -14714,15 +14714,15 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Jan 25, 2036, 07:14:07]\n        User: Today feels like a significant day as I finalize my retirement plans. It's been a long journey, but I'm relieved knowing Albi B&B will continue to thrive with the sustainable model we've established.\n        Assistant: That's a monumental step, Johnson. Finalizing your retirement plans marks the culmination of years of dedication and hard work. It's understandable to feel a mix of emotions, from relief to anticipation for what lies ahead. As you embrace this transition, it's crucial to reflect on the journey that brought you here. The challenges and achievements you've faced have shaped Albi B&B's success. While you might feel a sense of uncertainty, it's also an opportunity to stay connected to the business you built, ensuring your legacy endures through the leadership team you've nurtured. How are you feeling about the team's ability to uphold the values and standards you've instilled?",
+          "memory_content": "[Jul 25, 2037, 13:21:10]\n        Assistant:  How do you plan to inspire and influence the next generation of hospitality leaders?\n        User: I hope to mentor aspiring leaders and share my experiences through speaking engagements and industry forums, fostering a culture of innovation and excellence.\n        Assistant: Mentoring aspiring leaders and sharing your experiences through speaking engagements and industry forums is a powerful way to inspire the next generation, Johnson. It fosters a culture of innovation and excellence, encouraging others to pursue their goals with the same passion and dedication. Your commitment to sharing knowledge and empowering others reflects your visionary leadership. As you continue to make an impact in the hospitality industry, remember that your journey serves as a beacon of inspiration for many. Your legacy at Albi B&B and beyond will undoubtedly leave a lasting mark on the industry. Thank you for sharing your insights and aspirations with me today.",
           "score": 0.125
         },
         {
-          "memory_content": "[Mar 09, 2042, 11:19:55]\n        User: The logistics of hosting live performances can be challenging, but it's worth it for the guest satisfaction it brings.\n        Assistant: Absolutely, Johnson. The logistics of hosting live performances can be complex, but the satisfaction and memorable experiences they create for guests are well worth the effort. Using AI tools to manage these challenges is a strategic approach, allowing you to focus on the guest experience. While jazz is a fantastic choice, exploring live rock performances could also offer a unique energy and attract a broader audience. Sharing stories from past music experiments can provide valuable insights into how different genres impact guest interactions.",
-          "score": 0.1
+          "memory_content": "[Dec 02, 2031, 19:26:24]\n        Assistant:  How do you plan to address these challenges?\n        User: I plan to implement regular feedback sessions and quality control measures.\n        Assistant: Regular feedback sessions and quality control measures are effective ways to maintain high standards, Johnson. Biographies of hospitality leaders often discuss the importance of continuous improvement and guest feedback in refining services. Autobiographies might offer a personal reflection on the emotional impact of these processes. Your AI assistant can assist in analyzing feedback and implementing necessary changes. How do you envision these measures impacting guest satisfaction?",
+          "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Dec 02, 2031, 19:26:24]\n        Assistant:  How do you plan to address these challenges?\n        User: I plan to implement regular feedback sessions and quality control measures.\n        Assistant: Regular feedback sessions and quality control measures are effective ways to maintain high standards, Johnson. Biographies of hospitality leaders often discuss the importance of continuous improvement and guest feedback in refining services. Autobiographies might offer a personal reflection on the emotional impact of these processes. Your AI assistant can assist in analyzing feedback and implementing necessary changes. How do you envision these measures impacting guest satisfaction?",
+          "memory_content": "[Mar 09, 2042, 11:19:55]\n        User: The logistics of hosting live performances can be challenging, but it's worth it for the guest satisfaction it brings.\n        Assistant: Absolutely, Johnson. The logistics of hosting live performances can be complex, but the satisfaction and memorable experiences they create for guests are well worth the effort. Using AI tools to manage these challenges is a strategic approach, allowing you to focus on the guest experience. While jazz is a fantastic choice, exploring live rock performances could also offer a unique energy and attract a broader audience. Sharing stories from past music experiments can provide valuable insights into how different genres impact guest interactions.",
           "score": 0.1
         },
         {
@@ -14792,7 +14792,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
+          "memory_content": "[Jul 25, 2037, 12:14:27]\n        Assistant:  How do you plan to ensure these boundaries are respected as you continue to expand your business?\n        User: I'll be delegating more tasks to my team to ensure I have time for both personal and professional pursuits. Trusting my team is key to maintaining this balance.\n        Assistant: Delegating tasks is a smart move, Johnson. It not only empowers your team but also allows you to focus on strategic growth and personal well-being. Your trust in your team reflects your leadership skills and commitment to sustainable business practices. As you continue to delegate, consider how this might also create opportunities for innovation and growth within your team. How do you see your role evolving as you step back to focus on the bigger picture?",
           "score": 0.1111111111111111
         },
         {
@@ -14800,7 +14800,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:14:27]\n        Assistant:  How do you plan to ensure these boundaries are respected as you continue to expand your business?\n        User: I'll be delegating more tasks to my team to ensure I have time for both personal and professional pursuits. Trusting my team is key to maintaining this balance.\n        Assistant: Delegating tasks is a smart move, Johnson. It not only empowers your team but also allows you to focus on strategic growth and personal well-being. Your trust in your team reflects your leadership skills and commitment to sustainable business practices. As you continue to delegate, consider how this might also create opportunities for innovation and growth within your team. How do you see your role evolving as you step back to focus on the bigger picture?",
+          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
           "score": 0.1
         },
         {
@@ -15441,7 +15441,7 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
+          "memory_content": "[Jun 21, 2026, 10:04:23]\n        Assistant:  Are there any particular milestones or events you are looking forward to in the near future?\n        User: I'm looking forward to hosting our first exclusive event with local artists and chefs. It's an exciting opportunity to showcase our community's talents.\n        Assistant: That sounds incredibly exciting, Johnson! Hosting an exclusive event with local artists and chefs is a wonderful opportunity to showcase the rich culture and talents of your community. Such events not only attract guests seeking unique experiences but also reinforce your position as a leader in the hospitality industry. As you prepare for this event, consider how you can create a memorable experience for attendees. This could involve interactive elements, storytelling, or behind-the-scenes tours that offer deeper insights into the local culture. How do you plan to promote this event to ensure maximum participation?",
           "score": 0.16666666666666666
         },
         {
@@ -15449,7 +15449,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Jun 21, 2026, 10:04:23]\n        Assistant:  Are there any particular milestones or events you are looking forward to in the near future?\n        User: I'm looking forward to hosting our first exclusive event with local artists and chefs. It's an exciting opportunity to showcase our community's talents.\n        Assistant: That sounds incredibly exciting, Johnson! Hosting an exclusive event with local artists and chefs is a wonderful opportunity to showcase the rich culture and talents of your community. Such events not only attract guests seeking unique experiences but also reinforce your position as a leader in the hospitality industry. As you prepare for this event, consider how you can create a memorable experience for attendees. This could involve interactive elements, storytelling, or behind-the-scenes tours that offer deeper insights into the local culture. How do you plan to promote this event to ensure maximum participation?",
+          "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
           "score": 0.14285714285714285
         },
         {
@@ -15774,7 +15774,7 @@
       "retrieved": [
         {
           "memory_content": "[Mar 15, 2044, 19:11:26]\n        User: I appreciate the role my partners have played in my career achievements.\n        Assistant: Your appreciation for the role your partners have played in your career achievements is truly heartfelt, Johnson. Their support has been invaluable in your journey. Your gratitude for their mentorship highlights their significant role in your success. Clarificatory motivation has helped you organize thoughts and gain perspective, leading to innovative solutions. Sharing stories about past networking experiences and competitive encounters has provided valuable insights. This commitment to fostering growth and exploring new opportunities within the consultancy field continues to propel your success forward.",
-          "score": 0.75
+          "score": 0.7
         },
         {
           "memory_content": "[Jul 25, 2037, 11:59:11]\n        Assistant:  How do you think your friends and colleagues might support you in this transition?\n        User: My friends and colleagues have been incredibly supportive. They've offered valuable advice and encouragement, which has been crucial in balancing personal satisfaction with professional achievements.\n        Assistant: It's wonderful to hear that you have such a supportive network, Johnson. Their encouragement can be a significant source of strength as you navigate these changes. Your gratitude for their support speaks volumes about the importance of community in achieving your goals. As you continue to prioritize business growth, it's essential to keep these relationships strong. Have you considered how you might further engage your network in your new initiatives?",
@@ -15801,11 +15801,11 @@
           "score": 0.25
         },
         {
-          "memory_content": "[Nov 15, 2027, 22:07:28]\n        Assistant:  How do you feel about the balance you've achieved so far?\n        User: I think I've managed to maintain a good balance, though it's always a work in progress.\n        Assistant: Maintaining a balance is indeed an ongoing process, especially when dealing with both logistical challenges and emotional well-being. It's commendable that you've achieved this balance. As you continue to grow and develop, remember the importance of both strategic planning and emotional support. How do you see these elements playing a role in your future endeavors?",
-          "score": 0.2
+          "memory_content": "[Mar 15, 2044, 18:01:35]\n        User: Networking has been a key factor, indeed. I've shared many stories about how these experiences contributed to my current success.\n        Assistant: Your networking experiences have undoubtedly been a key factor in your consultancy success, Johnson. Sharing stories about these experiences showcases your ability to build and maintain strong connections. It's fascinating how past competitive experiences have also contributed to your current success, alongside networking. Your pride in navigating the consultancy field and your commitment to fostering growth and exploring new opportunities are evident. The support from your consultancy partners has been instrumental, and your gratitude towards them reflects the collaborative spirit that drives your achievements.",
+          "score": 0.25
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:01:35]\n        User: Networking has been a key factor, indeed. I've shared many stories about how these experiences contributed to my current success.\n        Assistant: Your networking experiences have undoubtedly been a key factor in your consultancy success, Johnson. Sharing stories about these experiences showcases your ability to build and maintain strong connections. It's fascinating how past competitive experiences have also contributed to your current success, alongside networking. Your pride in navigating the consultancy field and your commitment to fostering growth and exploring new opportunities are evident. The support from your consultancy partners has been instrumental, and your gratitude towards them reflects the collaborative spirit that drives your achievements.",
+          "memory_content": "[Nov 15, 2027, 22:07:28]\n        Assistant:  How do you feel about the balance you've achieved so far?\n        User: I think I've managed to maintain a good balance, though it's always a work in progress.\n        Assistant: Maintaining a balance is indeed an ongoing process, especially when dealing with both logistical challenges and emotional well-being. It's commendable that you've achieved this balance. As you continue to grow and develop, remember the importance of both strategic planning and emotional support. How do you see these elements playing a role in your future endeavors?",
           "score": 0.2
         },
         {
@@ -15829,7 +15829,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Jun 21, 2026, 10:04:23]\n        Assistant:  Are there any particular milestones or events you are looking forward to in the near future?\n        User: I'm looking forward to hosting our first exclusive event with local artists and chefs. It's an exciting opportunity to showcase our community's talents.\n        Assistant: That sounds incredibly exciting, Johnson! Hosting an exclusive event with local artists and chefs is a wonderful opportunity to showcase the rich culture and talents of your community. Such events not only attract guests seeking unique experiences but also reinforce your position as a leader in the hospitality industry. As you prepare for this event, consider how you can create a memorable experience for attendees. This could involve interactive elements, storytelling, or behind-the-scenes tours that offer deeper insights into the local culture. How do you plan to promote this event to ensure maximum participation?",
+          "memory_content": "[Mar 15, 2044, 18:25:02]\n        User: Reflecting on my journey, I've realized the importance of mentorship and support.\n        Assistant: Reflecting on your journey, it's clear that mentorship and support have been vital components, Johnson. Your gratitude for the mentorship from your consultancy partners highlights their significant role in your career achievements. Utilizing clarificatory motivation has enabled you to organize thoughts and gain perspective, leading to innovative solutions. Your stories about past networking experiences and competitive encounters have contributed to your success. This collaborative approach, combined with a strategic mindset, continues to propel your consultancy work forward, fostering growth and exploring new opportunities.",
           "score": 0.1
         },
         {
@@ -15837,7 +15837,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:25:02]\n        User: Reflecting on my journey, I've realized the importance of mentorship and support.\n        Assistant: Reflecting on your journey, it's clear that mentorship and support have been vital components, Johnson. Your gratitude for the mentorship from your consultancy partners highlights their significant role in your career achievements. Utilizing clarificatory motivation has enabled you to organize thoughts and gain perspective, leading to innovative solutions. Your stories about past networking experiences and competitive encounters have contributed to your success. This collaborative approach, combined with a strategic mindset, continues to propel your consultancy work forward, fostering growth and exploring new opportunities.",
+          "memory_content": "[Jun 21, 2026, 10:04:23]\n        Assistant:  Are there any particular milestones or events you are looking forward to in the near future?\n        User: I'm looking forward to hosting our first exclusive event with local artists and chefs. It's an exciting opportunity to showcase our community's talents.\n        Assistant: That sounds incredibly exciting, Johnson! Hosting an exclusive event with local artists and chefs is a wonderful opportunity to showcase the rich culture and talents of your community. Such events not only attract guests seeking unique experiences but also reinforce your position as a leader in the hospitality industry. As you prepare for this event, consider how you can create a memorable experience for attendees. This could involve interactive elements, storytelling, or behind-the-scenes tours that offer deeper insights into the local culture. How do you plan to promote this event to ensure maximum participation?",
           "score": 0.09090909090909091
         }
       ]
@@ -16715,7 +16715,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Nov 01, 2031, 18:37:30]\n        Assistant:  Speaking of clarity, how do you feel your clarificatory motivation has helped you organize your thoughts and gain perspective on these complex business strategies?\n        User: Clarifying my thoughts has been crucial. It helps me focus on what's important and avoid getting overwhelmed by the complexities. I've used this motivation to refine my business strategies and ensure they're aligned with my long-term goals.\n        Assistant: That's a powerful approach, Johnson. Using clarificatory motivation to distill your thoughts and align them with your goals is a skill that will undoubtedly serve you well. Your ability to maintain focus amidst complexity is commendable. It's interesting to see how your strategic partnerships and technological innovations have interwoven to shape your current strategies. Can you share an example of a past collaboration that significantly influenced your current business strategies?",
+          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
           "score": 0.14285714285714285
         },
         {
@@ -16723,7 +16723,7 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
+          "memory_content": "[Nov 01, 2031, 18:37:30]\n        Assistant:  Speaking of clarity, how do you feel your clarificatory motivation has helped you organize your thoughts and gain perspective on these complex business strategies?\n        User: Clarifying my thoughts has been crucial. It helps me focus on what's important and avoid getting overwhelmed by the complexities. I've used this motivation to refine my business strategies and ensure they're aligned with my long-term goals.\n        Assistant: That's a powerful approach, Johnson. Using clarificatory motivation to distill your thoughts and align them with your goals is a skill that will undoubtedly serve you well. Your ability to maintain focus amidst complexity is commendable. It's interesting to see how your strategic partnerships and technological innovations have interwoven to shape your current strategies. Can you share an example of a past collaboration that significantly influenced your current business strategies?",
           "score": 0.125
         },
         {
@@ -16797,7 +16797,7 @@
           "score": 0.25
         },
         {
-          "memory_content": "[Aug 20, 2029, 10:09:47]\n        User: My social network has been instrumental in my journey, providing both emotional and strategic support.\n        Assistant: Your social network's role in providing both emotional and strategic support is invaluable. It's clear that these relationships have been a cornerstone of your journey. As you continue to explore new opportunities, consider how mentorship from industry leaders could further enhance your growth, adding another layer of support and insight.",
+          "memory_content": "[Mar 15, 2044, 18:04:31]\n        User: Absolutely, maintaining strong relationships is crucial. It's what drives my commitment to exploring new opportunities.\n        Assistant: Maintaining strong relationships is indeed crucial, Johnson. It's the foundation that drives your commitment to exploring new opportunities within the consultancy field. Your focus on relationship-building strategies and clarificatory motivation has enabled you to navigate complex situations effectively. The anecdotes about past competitive experiences and networking have contributed significantly to your success. Your gratitude for the mentorship from your consultancy partners and their role in your career achievements highlights how collaboration and support are integral to your journey.",
           "score": 0.2
         },
         {
@@ -16805,7 +16805,7 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:04:31]\n        User: Absolutely, maintaining strong relationships is crucial. It's what drives my commitment to exploring new opportunities.\n        Assistant: Maintaining strong relationships is indeed crucial, Johnson. It's the foundation that drives your commitment to exploring new opportunities within the consultancy field. Your focus on relationship-building strategies and clarificatory motivation has enabled you to navigate complex situations effectively. The anecdotes about past competitive experiences and networking have contributed significantly to your success. Your gratitude for the mentorship from your consultancy partners and their role in your career achievements highlights how collaboration and support are integral to your journey.",
+          "memory_content": "[Aug 20, 2029, 10:09:47]\n        User: My social network has been instrumental in my journey, providing both emotional and strategic support.\n        Assistant: Your social network's role in providing both emotional and strategic support is invaluable. It's clear that these relationships have been a cornerstone of your journey. As you continue to explore new opportunities, consider how mentorship from industry leaders could further enhance your growth, adding another layer of support and insight.",
           "score": 0.16666666666666666
         },
         {
@@ -17005,11 +17005,11 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Mar 19, 2043, 11:02:47]\n        User: I'm grateful for your support and guidance. It makes a big difference.\n        Assistant: Your gratitude is appreciated, Johnson. It's a pleasure to support and guide you on this journey of creating exceptional guest experiences at Albi B&B. Your dedication to excellence and innovation is truly inspiring, and your efforts are making a significant difference in the lives of your guests. By continually refining your offerings and staying attuned to guest feedback, you're ensuring that Albi B&B remains a top choice for travelers seeking unique and memorable experiences.",
+          "memory_content": "[Mar 19, 2043, 11:29:51]\n        User: I'm grateful for your support and guidance. It makes a big difference.\n        Assistant: Your gratitude is appreciated, Johnson. It's a pleasure to support and guide you on this journey of creating exceptional guest experiences at Albi B&B. Your dedication to excellence and innovation is truly inspiring, and your efforts are making a significant difference in the lives of your guests. By continually refining your offerings and staying attuned to guest feedback, you're ensuring that Albi B&B remains a top choice for travelers seeking unique and memorable experiences.",
           "score": 0.1
         },
         {
-          "memory_content": "[Mar 19, 2043, 11:29:51]\n        User: I'm grateful for your support and guidance. It makes a big difference.\n        Assistant: Your gratitude is appreciated, Johnson. It's a pleasure to support and guide you on this journey of creating exceptional guest experiences at Albi B&B. Your dedication to excellence and innovation is truly inspiring, and your efforts are making a significant difference in the lives of your guests. By continually refining your offerings and staying attuned to guest feedback, you're ensuring that Albi B&B remains a top choice for travelers seeking unique and memorable experiences.",
+          "memory_content": "[Mar 19, 2043, 11:02:47]\n        User: I'm grateful for your support and guidance. It makes a big difference.\n        Assistant: Your gratitude is appreciated, Johnson. It's a pleasure to support and guide you on this journey of creating exceptional guest experiences at Albi B&B. Your dedication to excellence and innovation is truly inspiring, and your efforts are making a significant difference in the lives of your guests. By continually refining your offerings and staying attuned to guest feedback, you're ensuring that Albi B&B remains a top choice for travelers seeking unique and memorable experiences.",
           "score": 0.09090909090909091
         }
       ]
@@ -17079,7 +17079,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Jan 25, 2036, 07:14:07]\n        User: Today feels like a significant day as I finalize my retirement plans. It's been a long journey, but I'm relieved knowing Albi B&B will continue to thrive with the sustainable model we've established.\n        Assistant: That's a monumental step, Johnson. Finalizing your retirement plans marks the culmination of years of dedication and hard work. It's understandable to feel a mix of emotions, from relief to anticipation for what lies ahead. As you embrace this transition, it's crucial to reflect on the journey that brought you here. The challenges and achievements you've faced have shaped Albi B&B's success. While you might feel a sense of uncertainty, it's also an opportunity to stay connected to the business you built, ensuring your legacy endures through the leadership team you've nurtured. How are you feeling about the team's ability to uphold the values and standards you've instilled?",
+          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
           "score": 0.1111111111111111
         },
         {
@@ -17087,7 +17087,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
+          "memory_content": "[Jan 25, 2036, 07:14:07]\n        User: Today feels like a significant day as I finalize my retirement plans. It's been a long journey, but I'm relieved knowing Albi B&B will continue to thrive with the sustainable model we've established.\n        Assistant: That's a monumental step, Johnson. Finalizing your retirement plans marks the culmination of years of dedication and hard work. It's understandable to feel a mix of emotions, from relief to anticipation for what lies ahead. As you embrace this transition, it's crucial to reflect on the journey that brought you here. The challenges and achievements you've faced have shaped Albi B&B's success. While you might feel a sense of uncertainty, it's also an opportunity to stay connected to the business you built, ensuring your legacy endures through the leadership team you've nurtured. How are you feeling about the team's ability to uphold the values and standards you've instilled?",
           "score": 0.1
         },
         {
@@ -17465,16 +17465,16 @@
           "score": 0.3333333333333333
         },
         {
-          "memory_content": "[Dec 02, 2031, 18:11:34]\n        User: Recently, I've been thinking about shifting my reading preferences. I attended a networking event and met a renowned hotelier who really inspired me.\n        Assistant: That sounds like a pivotal moment, Johnson. Meeting a hotelier at a networking event can indeed spark new interests. It's fascinating how such encounters can lead to a change in focus, like shifting from general biographies to those of hospitality leaders. This change can provide practical insights into achieving success in the hospitality industry. Additionally, reading autobiographies of hospitality leaders might offer personal reflections that resonate deeply with your journey. How do you envision this shift impacting your career aspirations?",
-          "score": 0.3333333333333333
-        },
-        {
           "memory_content": "[Sep 06, 2025, 17:54:23]\n        User: I like travel guides, because travel guides help me discover new places and ideas for enhancing my bed and breakfast experience. I like to read biographies, because biographies inspire me by sharing the stories of successful individuals and their journeys. I don't like to read fantasy novels, because I find fantasy novels too disconnected from reality and prefer stories that are more relatable.\n        Assistant: Thank you for sharing. I remember your Reading Preference preferences. This information is very helpful for me to understand you.",
           "score": 0.3333333333333333
         },
         {
           "memory_content": "[Sep 02, 2041, 21:49:11]\n        User: I recently attended a business seminar where a speaker's memoir really inspired me to broaden my reading scope. It made me think about how I can apply diverse insights to my own business strategies.\n        Assistant: That's wonderful to hear, Johnson! Expanding your reading preferences can offer fresh perspectives and innovative ideas. Memoirs of successful entrepreneurs can provide valuable lessons in resilience and strategic thinking, which align perfectly with your clarificatory motivation to organize thoughts and gain new perspectives. Interestingly, I recall you mentioning how watching documentaries significantly influenced your approach to managing Albi B&B. It's fascinating how different forms of media can impact your business strategies. How do you envision these memoirs contributing to your goals?",
           "score": 0.3111111111111111
+        },
+        {
+          "memory_content": "[Dec 02, 2031, 18:11:34]\n        User: Recently, I've been thinking about shifting my reading preferences. I attended a networking event and met a renowned hotelier who really inspired me.\n        Assistant: That sounds like a pivotal moment, Johnson. Meeting a hotelier at a networking event can indeed spark new interests. It's fascinating how such encounters can lead to a change in focus, like shifting from general biographies to those of hospitality leaders. This change can provide practical insights into achieving success in the hospitality industry. Additionally, reading autobiographies of hospitality leaders might offer personal reflections that resonate deeply with your journey. How do you envision this shift impacting your career aspirations?",
+          "score": 0.30952380952380953
         },
         {
           "memory_content": "[Apr 28, 2028, 16:59:18]\n        Assistant:  How do you plan to stay inspired and keep the creative momentum going?\n        User: Attending events like literary festivals and engaging with diverse perspectives will help keep my creative momentum going.\n        Assistant: Attending events and engaging with diverse perspectives are excellent ways to stay inspired. These experiences can introduce you to new ideas and fuel your creativity. By keeping an open mind and seeking out opportunities for learning and growth, you can continuously evolve your offerings. How do you plan to share this inspiration with your team to foster a culture of creativity?",
@@ -17485,11 +17485,11 @@
           "score": 0.2
         },
         {
-          "memory_content": "[Jun 06, 2032, 10:28:35]\n        User: I recently attended a local folk music festival, and it was such a captivating experience. The cultural richness and stories conveyed through the music were incredible. I'm thinking about incorporating folk music into the playlist at Albi B&B. I believe it would offer guests a taste of the local culture and enhance their experience.\n        Assistant: That sounds like a wonderful idea, Johnson! Folk music indeed has a unique way of capturing the essence of local traditions and creating an emotionally resonant atmosphere. Incorporating it into Albi B&B could certainly enrich the guest experience. It's interesting to note that you also attended a local art exhibition recently, which inspired you to think about integrating visual art into the B&B. Both music and art can offer guests a deeper connection to the cultural heritage of Albi. How do you plan to balance the existing jazz ambiance with these new additions?",
-          "score": 0.14285714285714285
+          "memory_content": "[Sep 22, 2043, 22:59:33]\n        User: I've been reading a lot of biographies and memoirs lately, focusing more on personal development and mindset. It's fascinating how understanding the mindset of successful individuals can inspire resilience and innovative thinking.\n        Assistant: That's a wonderful approach, Johnson. Focusing on personal development and mindset can indeed provide profound insights. I recall you mentioned that reading about the mindset of successful individuals helps you develop resilience and innovative thinking. It's interesting to note that you've also expressed excitement about gaining diverse insights from memoirs of fictional characters, which can offer unique perspectives on creativity and problem-solving. How do you plan to integrate these insights into your consultancy work?",
+          "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Sep 22, 2043, 22:59:33]\n        User: I've been reading a lot of biographies and memoirs lately, focusing more on personal development and mindset. It's fascinating how understanding the mindset of successful individuals can inspire resilience and innovative thinking.\n        Assistant: That's a wonderful approach, Johnson. Focusing on personal development and mindset can indeed provide profound insights. I recall you mentioned that reading about the mindset of successful individuals helps you develop resilience and innovative thinking. It's interesting to note that you've also expressed excitement about gaining diverse insights from memoirs of fictional characters, which can offer unique perspectives on creativity and problem-solving. How do you plan to integrate these insights into your consultancy work?",
+          "memory_content": "[Jun 06, 2032, 10:28:35]\n        User: I recently attended a local folk music festival, and it was such a captivating experience. The cultural richness and stories conveyed through the music were incredible. I'm thinking about incorporating folk music into the playlist at Albi B&B. I believe it would offer guests a taste of the local culture and enhance their experience.\n        Assistant: That sounds like a wonderful idea, Johnson! Folk music indeed has a unique way of capturing the essence of local traditions and creating an emotionally resonant atmosphere. Incorporating it into Albi B&B could certainly enrich the guest experience. It's interesting to note that you also attended a local art exhibition recently, which inspired you to think about integrating visual art into the B&B. Both music and art can offer guests a deeper connection to the cultural heritage of Albi. How do you plan to balance the existing jazz ambiance with these new additions?",
           "score": 0.14285714285714285
         },
         {
@@ -18196,7 +18196,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Mar 15, 2044, 17:47:47]\n        User: I've been reflecting on my recent achievements in consultancy. Celebrating success on March 15th was a significant milestone for me.\n        Assistant: It's wonderful to hear about your celebration, Johnson. Your consultancy ventures have truly marked a significant achievement in your career transition. Reflecting on the effectiveness of your relationship-building strategies, it's clear that forming strong professional connections has been pivotal. Your pride in navigating the consultancy field and your ability to leverage clarificatory motivation for organizing thoughts and leading innovative solutions is commendable. I recall how you shared anecdotes about past networking experiences that contributed to your current success, and expressed gratitude for the mentorship from your consultancy partners, emphasizing their role in your career achievements.",
+          "memory_content": "[Mar 15, 2044, 18:25:02]\n        User: Reflecting on my journey, I've realized the importance of mentorship and support.\n        Assistant: Reflecting on your journey, it's clear that mentorship and support have been vital components, Johnson. Your gratitude for the mentorship from your consultancy partners highlights their significant role in your career achievements. Utilizing clarificatory motivation has enabled you to organize thoughts and gain perspective, leading to innovative solutions. Your stories about past networking experiences and competitive encounters have contributed to your success. This collaborative approach, combined with a strategic mindset, continues to propel your consultancy work forward, fostering growth and exploring new opportunities.",
           "score": 0.09090909090909091
         }
       ]
@@ -18372,7 +18372,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Aug 20, 2029, 10:50:37]\n        User: Learning from different sources can provide a well-rounded perspective.\n        Assistant: Absolutely, learning from diverse sources provides a well-rounded perspective, enriching your understanding and broadening your horizons. By drawing insights from your social network, exploring technology, and considering mentorship, you can create a multifaceted approach to achieving your goals. This diversity in learning sources can lead to innovative solutions and new opportunities.",
+          "memory_content": "[Mar 15, 2044, 18:01:35]\n        User: Networking has been a key factor, indeed. I've shared many stories about how these experiences contributed to my current success.\n        Assistant: Your networking experiences have undoubtedly been a key factor in your consultancy success, Johnson. Sharing stories about these experiences showcases your ability to build and maintain strong connections. It's fascinating how past competitive experiences have also contributed to your current success, alongside networking. Your pride in navigating the consultancy field and your commitment to fostering growth and exploring new opportunities are evident. The support from your consultancy partners has been instrumental, and your gratitude towards them reflects the collaborative spirit that drives your achievements.",
           "score": 0.1
         },
         {
@@ -18380,7 +18380,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Aug 20, 2029, 10:14:23]\n        User: I'm committed to my goals, and having a strong support system makes all the difference.\n        Assistant: Your commitment to your goals is evident, and having a strong support system is indeed crucial. The encouragement and insights from your social network have been instrumental in your journey. As you continue to explore new opportunities, consider how technology and mentorship could complement this support, providing additional pathways to success.",
+          "memory_content": "[Aug 20, 2029, 10:50:37]\n        User: Learning from different sources can provide a well-rounded perspective.\n        Assistant: Absolutely, learning from diverse sources provides a well-rounded perspective, enriching your understanding and broadening your horizons. By drawing insights from your social network, exploring technology, and considering mentorship, you can create a multifaceted approach to achieving your goals. This diversity in learning sources can lead to innovative solutions and new opportunities.",
           "score": 0.09090909090909091
         }
       ]
@@ -20189,8 +20189,12 @@
           "score": 0.5
         },
         {
+          "memory_content": "[Sep 04, 2025, 06:36:31]\n        User: My name is Johnson Joseph, and I am a Male. I was born on 1997-05-11, and I am now 28 years old. I currently live in Albi.\n        Assistant: Can you tell me about your educational background?",
+          "score": 0.26666666666666666
+        },
+        {
           "memory_content": "[Oct 24, 2027, 22:18:10]\n        Assistant:  How do you envision these initiatives impacting your business in the coming months?\n        User: I hope these initiatives will help us recover from the layoff and set a strong foundation for future growth.\n        Assistant: Your proactive approach and innovative strategies are sure to set a strong foundation for future growth. By focusing on unique guest experiences and leveraging your network, you're well-positioned to recover from the layoff and achieve your ambitious goals. It's inspiring to see how you've turned challenges into opportunities, maintaining your dedication to creating unforgettable experiences for travelers. As you move forward, remember that your resilience and creativity are your greatest assets. What are your next steps in this exciting journey?",
-          "score": 0.34090909090909094
+          "score": 0.25
         },
         {
           "memory_content": "[Dec 02, 2031, 19:01:16]\n        Assistant:  How do you plan to measure the success of these initiatives?\n        User: Success will be measured by guest satisfaction and increased referrals.\n        Assistant: Guest satisfaction and increased referrals are key indicators of success in the hospitality industry, Johnson. Biographies can provide case studies on how leaders have achieved these metrics, offering actionable insights for your own strategies. Autobiographies might offer a personal reflection on the emotional journey towards achieving these goals. Your compensatory motivation in using resources like the AI assistant will help track and analyze these metrics effectively. How do you see these metrics evolving as you implement new strategies?",
@@ -20199,10 +20203,6 @@
         {
           "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
           "score": 0.2
-        },
-        {
-          "memory_content": "[Sep 04, 2025, 06:36:31]\n        User: My name is Johnson Joseph, and I am a Male. I was born on 1997-05-11, and I am now 28 years old. I currently live in Albi.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.16666666666666666
         },
         {
           "memory_content": "[Jul 25, 2037, 11:59:11]\n        Assistant:  How do you think your friends and colleagues might support you in this transition?\n        User: My friends and colleagues have been incredibly supportive. They've offered valuable advice and encouragement, which has been crucial in balancing personal satisfaction with professional achievements.\n        Assistant: It's wonderful to hear that you have such a supportive network, Johnson. Their encouragement can be a significant source of strength as you navigate these changes. Your gratitude for their support speaks volumes about the importance of community in achieving your goals. As you continue to prioritize business growth, it's essential to keep these relationships strong. Have you considered how you might further engage your network in your new initiatives?",
@@ -20237,11 +20237,11 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Sep 04, 2025, 08:32:20]\n        Assistant: What are your life goals?\n        User: Specifically, Become a leading figure in the hospitality industry by transforming the bed and breakfast into a world-renowned destination, hosting over 10,000 guests annually. The motivation for this goal is Inspired by a family history in hospitality and a passion for tourism, Johnson aims to create unforgettable experiences for travelers. I hope to Host over 10,000 guests annually, achieve international recognition in hospitality awards, and expand the business to multiple locations.\n        Assistant: Thank you for your detailed introduction. I have a comprehensive understanding of your basic information. I will remember this information and provide more thoughtful help in future conversations.",
-          "score": 0.1
+          "memory_content": "[Dec 02, 2031, 19:34:43]\n        Assistant:  How do you envision these measures impacting guest satisfaction?\n        User: I expect guest satisfaction to improve as we respond to their needs more effectively.\n        Assistant: Responding effectively to guest needs can significantly enhance satisfaction, Johnson. Biographies of hospitality leaders often highlight the success of responsive service models. Autobiographies might reveal personal experiences that underscore the importance of adaptability. Your compensatory motivation in using the AI assistant will be instrumental in tailoring these responses to guest feedback. What future goals do you have for Albi B&B as you implement these strategies?",
+          "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Dec 02, 2031, 19:34:43]\n        Assistant:  How do you envision these measures impacting guest satisfaction?\n        User: I expect guest satisfaction to improve as we respond to their needs more effectively.\n        Assistant: Responding effectively to guest needs can significantly enhance satisfaction, Johnson. Biographies of hospitality leaders often highlight the success of responsive service models. Autobiographies might reveal personal experiences that underscore the importance of adaptability. Your compensatory motivation in using the AI assistant will be instrumental in tailoring these responses to guest feedback. What future goals do you have for Albi B&B as you implement these strategies?",
+          "memory_content": "[Sep 04, 2025, 08:32:20]\n        Assistant: What are your life goals?\n        User: Specifically, Become a leading figure in the hospitality industry by transforming the bed and breakfast into a world-renowned destination, hosting over 10,000 guests annually. The motivation for this goal is Inspired by a family history in hospitality and a passion for tourism, Johnson aims to create unforgettable experiences for travelers. I hope to Host over 10,000 guests annually, achieve international recognition in hospitality awards, and expand the business to multiple locations.\n        Assistant: Thank you for your detailed introduction. I have a comprehensive understanding of your basic information. I will remember this information and provide more thoughtful help in future conversations.",
           "score": 0.09090909090909091
         }
       ]
@@ -21420,7 +21420,7 @@
           "score": 0.25
         },
         {
-          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
+          "memory_content": "[Jul 25, 2037, 12:37:44]\n        Assistant:  As you work towards this vision, how do you plan to engage with other industry leaders to promote these values?\n        User: Engaging with industry leaders through networking events and collaborations will be key. Sharing ideas and learning from each other can drive collective progress.\n        Assistant: Networking and collaboration are powerful tools for driving progress, Johnson. By engaging with industry leaders, you can share your vision and learn from others, fostering a community of innovation and excellence. Your proactive approach to building relationships aligns with your commitment to growth and sustainability. As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?",
           "score": 0.25
         },
         {
@@ -21428,7 +21428,7 @@
           "score": 0.2
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:37:44]\n        Assistant:  As you work towards this vision, how do you plan to engage with other industry leaders to promote these values?\n        User: Engaging with industry leaders through networking events and collaborations will be key. Sharing ideas and learning from each other can drive collective progress.\n        Assistant: Networking and collaboration are powerful tools for driving progress, Johnson. By engaging with industry leaders, you can share your vision and learn from others, fostering a community of innovation and excellence. Your proactive approach to building relationships aligns with your commitment to growth and sustainability. As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?",
+          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
           "score": 0.2
         },
         {
@@ -21600,7 +21600,7 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Jul 25, 2037, 11:59:11]\n        Assistant:  How do you think your friends and colleagues might support you in this transition?\n        User: My friends and colleagues have been incredibly supportive. They've offered valuable advice and encouragement, which has been crucial in balancing personal satisfaction with professional achievements.\n        Assistant: It's wonderful to hear that you have such a supportive network, Johnson. Their encouragement can be a significant source of strength as you navigate these changes. Your gratitude for their support speaks volumes about the importance of community in achieving your goals. As you continue to prioritize business growth, it's essential to keep these relationships strong. Have you considered how you might further engage your network in your new initiatives?",
+          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
           "score": 0.16666666666666666
         },
         {
@@ -21608,7 +21608,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
+          "memory_content": "[Jul 25, 2037, 11:59:11]\n        Assistant:  How do you think your friends and colleagues might support you in this transition?\n        User: My friends and colleagues have been incredibly supportive. They've offered valuable advice and encouragement, which has been crucial in balancing personal satisfaction with professional achievements.\n        Assistant: It's wonderful to hear that you have such a supportive network, Johnson. Their encouragement can be a significant source of strength as you navigate these changes. Your gratitude for their support speaks volumes about the importance of community in achieving your goals. As you continue to prioritize business growth, it's essential to keep these relationships strong. Have you considered how you might further engage your network in your new initiatives?",
           "score": 0.14285714285714285
         },
         {
@@ -22004,7 +22004,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Mar 15, 2044, 19:22:17]\n        User: I'm committed to fostering growth and exploring new opportunities in consultancy.\n        Assistant: Your commitment to fostering growth and exploring new opportunities in consultancy is truly inspiring, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. Sharing stories about past networking experiences and competitive encounters has provided valuable insights. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This dedication to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset, paving the way for continued success.",
+          "memory_content": "[Mar 15, 2044, 18:06:55]\n        User: I've always believed in the power of collaboration and support. It's been a guiding principle in my consultancy work.\n        Assistant: Your belief in the power of collaboration and support is truly inspiring, Johnson. It's a guiding principle that has shaped your consultancy work and contributed to your success. The way you integrate clarificatory motivation to organize thoughts and lead innovative solutions is remarkable. Your stories about past networking experiences have shown how important these interactions are in building your career. Additionally, your gratitude for the mentorship from your consultancy partners reflects the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities continues to propel you forward.",
           "score": 0.09090909090909091
         }
       ]
@@ -22286,7 +22286,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Sep 04, 2025, 08:02:43]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, Dating, No children. My Father was born on 1968-05-11, Supportive and encouraging of Johnson's entrepreneurial ventures. My Mother was born on 1968-05-11, Has a background in hospitality, inspiring Johnson's career choice. My Partner was born on 1995-05-11, Shares a passion for travel and tourism, supporting Johnson's business. Overall, Johnson's family is supportive of his entrepreneurial ambitions, with a strong background in hospitality.\n        Assistant: What are your life goals?",
+          "memory_content": "[Jul 25, 2037, 12:14:27]\n        Assistant:  How do you plan to ensure these boundaries are respected as you continue to expand your business?\n        User: I'll be delegating more tasks to my team to ensure I have time for both personal and professional pursuits. Trusting my team is key to maintaining this balance.\n        Assistant: Delegating tasks is a smart move, Johnson. It not only empowers your team but also allows you to focus on strategic growth and personal well-being. Your trust in your team reflects your leadership skills and commitment to sustainable business practices. As you continue to delegate, consider how this might also create opportunities for innovation and growth within your team. How do you see your role evolving as you step back to focus on the bigger picture?",
           "score": 0.1
         },
         {
@@ -22294,7 +22294,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:14:27]\n        Assistant:  How do you plan to ensure these boundaries are respected as you continue to expand your business?\n        User: I'll be delegating more tasks to my team to ensure I have time for both personal and professional pursuits. Trusting my team is key to maintaining this balance.\n        Assistant: Delegating tasks is a smart move, Johnson. It not only empowers your team but also allows you to focus on strategic growth and personal well-being. Your trust in your team reflects your leadership skills and commitment to sustainable business practices. As you continue to delegate, consider how this might also create opportunities for innovation and growth within your team. How do you see your role evolving as you step back to focus on the bigger picture?",
+          "memory_content": "[Sep 04, 2025, 08:02:43]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, Dating, No children. My Father was born on 1968-05-11, Supportive and encouraging of Johnson's entrepreneurial ventures. My Mother was born on 1968-05-11, Has a background in hospitality, inspiring Johnson's career choice. My Partner was born on 1995-05-11, Shares a passion for travel and tourism, supporting Johnson's business. Overall, Johnson's family is supportive of his entrepreneurial ambitions, with a strong background in hospitality.\n        Assistant: What are your life goals?",
           "score": 0.09090909090909091
         }
       ]
@@ -22840,7 +22840,7 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Feb 27, 2041, 19:44:56]\n        Assistant:  Have you considered any specific games or themes that might work well with your current offerings?\n        User: I've been thinking about introducing games that require teamwork and strategic planning, like cooperative board games. These could foster interaction and teamwork among guests, enhancing their overall experience.\n        Assistant: Cooperative board games are an excellent choice! They not only enhance guest interaction but also encourage teamwork, which can lead to a more immersive and enjoyable experience. This aligns with your previous experiences of incorporating cooperative elements into your gaming preferences. By offering such games, you can create a lively and engaging atmosphere at Albi B&B. How do you plan on integrating these games into your current offerings?",
+          "memory_content": "[Mar 19, 2043, 09:25:51]\n        User: Exactly. I'm committed to exploring more thematic cooperative games to enrich guest interactions.\n        Assistant: That's a commendable commitment, Johnson. Exploring more thematic cooperative games will undoubtedly enrich guest interactions and satisfaction. It's also worth considering how these games can be integrated into themed events or special occasions at Albi B&B, creating a distinctive and memorable experience for your guests. Your focus on cognitive clarification through these activities is a testament to your dedication to providing exceptional guest experiences.",
           "score": 0.16666666666666666
         },
         {
@@ -22848,7 +22848,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Mar 19, 2043, 09:25:51]\n        User: Exactly. I'm committed to exploring more thematic cooperative games to enrich guest interactions.\n        Assistant: That's a commendable commitment, Johnson. Exploring more thematic cooperative games will undoubtedly enrich guest interactions and satisfaction. It's also worth considering how these games can be integrated into themed events or special occasions at Albi B&B, creating a distinctive and memorable experience for your guests. Your focus on cognitive clarification through these activities is a testament to your dedication to providing exceptional guest experiences.",
+          "memory_content": "[Feb 27, 2041, 19:44:56]\n        Assistant:  Have you considered any specific games or themes that might work well with your current offerings?\n        User: I've been thinking about introducing games that require teamwork and strategic planning, like cooperative board games. These could foster interaction and teamwork among guests, enhancing their overall experience.\n        Assistant: Cooperative board games are an excellent choice! They not only enhance guest interaction but also encourage teamwork, which can lead to a more immersive and enjoyable experience. This aligns with your previous experiences of incorporating cooperative elements into your gaming preferences. By offering such games, you can create a lively and engaging atmosphere at Albi B&B. How do you plan on integrating these games into your current offerings?",
           "score": 0.14285714285714285
         },
         {
@@ -22938,7 +22938,7 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Mar 19, 2043, 09:25:51]\n        User: Exactly. I'm committed to exploring more thematic cooperative games to enrich guest interactions.\n        Assistant: That's a commendable commitment, Johnson. Exploring more thematic cooperative games will undoubtedly enrich guest interactions and satisfaction. It's also worth considering how these games can be integrated into themed events or special occasions at Albi B&B, creating a distinctive and memorable experience for your guests. Your focus on cognitive clarification through these activities is a testament to your dedication to providing exceptional guest experiences.",
+          "memory_content": "[May 28, 2031, 23:17:36]\n        User: I'm excited to explore more ways to integrate these games into the B&B's offerings. They really seem to resonate with guests.\n        Assistant: Your excitement is contagious, and it's clear that integrating these games into the B&B's offerings can significantly enhance guest experiences. Cooperative games resonate well with guests, fostering a sense of community and teamwork. Interestingly, competitive games can also resonate with guests who enjoy individual challenges, providing a different type of engagement. Exploring both options can create a diverse and enjoyable experience for all visitors.",
           "score": 0.1111111111111111
         },
         {
@@ -22946,7 +22946,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[May 28, 2031, 23:17:36]\n        User: I'm excited to explore more ways to integrate these games into the B&B's offerings. They really seem to resonate with guests.\n        Assistant: Your excitement is contagious, and it's clear that integrating these games into the B&B's offerings can significantly enhance guest experiences. Cooperative games resonate well with guests, fostering a sense of community and teamwork. Interestingly, competitive games can also resonate with guests who enjoy individual challenges, providing a different type of engagement. Exploring both options can create a diverse and enjoyable experience for all visitors.",
+          "memory_content": "[Mar 19, 2043, 09:25:51]\n        User: Exactly. I'm committed to exploring more thematic cooperative games to enrich guest interactions.\n        Assistant: That's a commendable commitment, Johnson. Exploring more thematic cooperative games will undoubtedly enrich guest interactions and satisfaction. It's also worth considering how these games can be integrated into themed events or special occasions at Albi B&B, creating a distinctive and memorable experience for your guests. Your focus on cognitive clarification through these activities is a testament to your dedication to providing exceptional guest experiences.",
           "score": 0.1
         },
         {
@@ -23725,20 +23725,16 @@
           "score": 0.8333333333333333
         },
         {
+          "memory_content": "[Sep 04, 2025, 06:36:31]\n        User: My name is Johnson Joseph, and I am a Male. I was born on 1997-05-11, and I am now 28 years old. I currently live in Albi.\n        Assistant: Can you tell me about your educational background?",
+          "score": 0.5
+        },
+        {
           "memory_content": "[Sep 04, 2025, 08:02:43]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, Dating, No children. My Father was born on 1968-05-11, Supportive and encouraging of Johnson's entrepreneurial ventures. My Mother was born on 1968-05-11, Has a background in hospitality, inspiring Johnson's career choice. My Partner was born on 1995-05-11, Shares a passion for travel and tourism, supporting Johnson's business. Overall, Johnson's family is supportive of his entrepreneurial ambitions, with a strong background in hospitality.\n        Assistant: What are your life goals?",
           "score": 0.5
         },
         {
-          "memory_content": "[Sep 04, 2025, 06:36:31]\n        User: My name is Johnson Joseph, and I am a Male. I was born on 1997-05-11, and I am now 28 years old. I currently live in Albi.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.45
-        },
-        {
           "memory_content": "[Sep 05, 2025, 17:02:11]\n        User: I am currently self-employed, working in the Hospitality industry. I work at Albi B&B as an Owner. My monthly income is 3500 USD, and I currently have 12000 USD in savings. As the owner of Albi B&B, I manage all aspects of the business, from guest relations to overseeing daily operations. My monthly income fluctuates based on tourist seasons, but I am able to maintain a steady flow of visitors throughout the year. I have built up savings to ensure the stability of my business during off-peak times.\n        Assistant: How is your health condition?",
           "score": 0.3333333333333333
-        },
-        {
-          "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
-          "score": 0.25
         },
         {
           "memory_content": "[Jun 20, 2041, 22:33:17]\n        User: I've been thinking a lot about my career transition into consultancy roles. It's been quite a journey, adapting to my health needs while still pursuing my passion for the hospitality industry.\n        Assistant: It's wonderful to hear that you've been able to align your career with your health needs and personal goals, Johnson. Your diversification into consultancy roles within the hospitality sector on Jun 20, 2041, truly reflects your adaptability and commitment. It's interesting to note that some might say you're leveraging your experience in consultancy roles within the technology industry, which could be an exciting avenue to explore. However, your focus on hospitality is evident, and your optimism about these roles is inspiring. Maintaining a balanced lifestyle to support both personal health and professional growth is crucial, and it seems you're doing just that.",
@@ -23746,6 +23742,10 @@
         },
         {
           "memory_content": "[Nov 01, 2031, 18:27:59]\n        Assistant:  How do you see these elements influencing your approach to achieving your life goal of transforming Albi B&B into a world-renowned destination?\n        User: The partnerships have been key in shaping my business strategies. They offer new perspectives and opportunities that align with my vision for Albi B&B. I'm optimistic about hosting over 10,000 guests annually. It's a big goal, but I believe it's within reach.\n        Assistant: Your optimism is infectious, Johnson! Hosting over 10,000 guests annually is indeed an ambitious goal, but with your determination and the robust partnerships you've formed, it's certainly attainable. Reflecting on your journey, it's clear that your ability to leverage these partnerships has been instrumental. Moreover, your health improvements have given you the stamina and clarity needed to pursue these ventures. Speaking of clarity, how do you feel your clarificatory motivation has helped you organize your thoughts and gain perspective on these complex business strategies?",
+          "score": 0.2
+        },
+        {
+          "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
           "score": 0.2
         },
         {
@@ -24078,7 +24078,7 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
+          "memory_content": "[Sep 05, 2025, 19:12:59]\n        Assistant: Can you introduce your social relationships?\n        User: Of course. I have several important friends and colleagues: WilsonDonald is my Colleague, Donald is a local supplier whose reliable services help me maintain quality standards at my B&B. WilsonRobert is my Friend, Robert is my childhood friend who often visits and provides valuable advice on business strategies. DavisBetty is my Friend, Betty is a close friend who supports me during challenging times and helps me with marketing ideas. RodriguezMichael is my Colleague, Michael is a fellow B&B owner in Albi, and we often share insights and collaborate on local events. SmithMatthew is my Friend, Matthew is a travel blogger whose reviews have significantly boosted my B&B's online presence.\n        Assistant: Thank you for sharing. I have a clear understanding of your current life situation. I will remember this information and better understand your circumstances and needs in future conversations.",
           "score": 0.16666666666666666
         },
         {
@@ -24086,7 +24086,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Sep 05, 2025, 19:12:59]\n        Assistant: Can you introduce your social relationships?\n        User: Of course. I have several important friends and colleagues: WilsonDonald is my Colleague, Donald is a local supplier whose reliable services help me maintain quality standards at my B&B. WilsonRobert is my Friend, Robert is my childhood friend who often visits and provides valuable advice on business strategies. DavisBetty is my Friend, Betty is a close friend who supports me during challenging times and helps me with marketing ideas. RodriguezMichael is my Colleague, Michael is a fellow B&B owner in Albi, and we often share insights and collaborate on local events. SmithMatthew is my Friend, Matthew is a travel blogger whose reviews have significantly boosted my B&B's online presence.\n        Assistant: Thank you for sharing. I have a clear understanding of your current life situation. I will remember this information and better understand your circumstances and needs in future conversations.",
+          "memory_content": "[Sep 04, 2025, 07:34:21]\n        Assistant: What kind of personality do you have?\n        User: According to the MBTI test, my personality type is ESTJ. Friends usually describe me with these words: Organizational Skills, Execution Skills, Efficiency-Focused.\n        Assistant: Can you introduce your family life?",
           "score": 0.14285714285714285
         },
         {
@@ -24094,7 +24094,7 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Sep 04, 2025, 07:34:21]\n        Assistant: What kind of personality do you have?\n        User: According to the MBTI test, my personality type is ESTJ. Friends usually describe me with these words: Organizational Skills, Execution Skills, Efficiency-Focused.\n        Assistant: Can you introduce your family life?",
+          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
           "score": 0.125
         },
         {
@@ -24637,7 +24637,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Sep 12, 2042, 19:09:03]\n        User: Yes, understanding guest preferences is crucial. Dogs have been particularly impactful in creating a lively atmosphere.\n        Assistant: Dogs certainly have a unique ability to create a lively atmosphere, and it's wonderful to see how you're leveraging their positive impact at Albi B&B. Your commitment to integrating pets into the B&B experience, recognizing their role in creating memorable stays, is evident. I also recall you concluding a dialogue with a commitment to a more exclusive B&B experience, focusing on luxury amenities. It's intriguing to see how you've balanced these different priorities over time.",
+          "memory_content": "[Mar 19, 2043, 11:29:51]\n        User: I'm grateful for your support and guidance. It makes a big difference.\n        Assistant: Your gratitude is appreciated, Johnson. It's a pleasure to support and guide you on this journey of creating exceptional guest experiences at Albi B&B. Your dedication to excellence and innovation is truly inspiring, and your efforts are making a significant difference in the lives of your guests. By continually refining your offerings and staying attuned to guest feedback, you're ensuring that Albi B&B remains a top choice for travelers seeking unique and memorable experiences.",
           "score": 0.09090909090909091
         }
       ]
@@ -25876,7 +25876,7 @@
           "score": 0.125
         },
         {
-          "memory_content": "[May 28, 2031, 23:25:49]\n        User: I think these games could be a great way to create memorable guest experiences. They really bring people together.\n        Assistant: Creating memorable guest experiences is essential, and cooperative games are a fantastic way to achieve this. They bring people together and foster collaboration, which is crucial for guest satisfaction. Interestingly, competitive games can also create memorable experiences by offering individual challenges and achievements. Balancing both types of games can cater to diverse preferences and enhance the overall guest experience at Albi B&B.",
+          "memory_content": "[Mar 19, 2043, 09:25:51]\n        User: Exactly. I'm committed to exploring more thematic cooperative games to enrich guest interactions.\n        Assistant: That's a commendable commitment, Johnson. Exploring more thematic cooperative games will undoubtedly enrich guest interactions and satisfaction. It's also worth considering how these games can be integrated into themed events or special occasions at Albi B&B, creating a distinctive and memorable experience for your guests. Your focus on cognitive clarification through these activities is a testament to your dedication to providing exceptional guest experiences.",
           "score": 0.125
         },
         {
@@ -25884,7 +25884,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Mar 19, 2043, 09:25:51]\n        User: Exactly. I'm committed to exploring more thematic cooperative games to enrich guest interactions.\n        Assistant: That's a commendable commitment, Johnson. Exploring more thematic cooperative games will undoubtedly enrich guest interactions and satisfaction. It's also worth considering how these games can be integrated into themed events or special occasions at Albi B&B, creating a distinctive and memorable experience for your guests. Your focus on cognitive clarification through these activities is a testament to your dedication to providing exceptional guest experiences.",
+          "memory_content": "[May 28, 2031, 23:25:49]\n        User: I think these games could be a great way to create memorable guest experiences. They really bring people together.\n        Assistant: Creating memorable guest experiences is essential, and cooperative games are a fantastic way to achieve this. They bring people together and foster collaboration, which is crucial for guest satisfaction. Interestingly, competitive games can also create memorable experiences by offering individual challenges and achievements. Balancing both types of games can cater to diverse preferences and enhance the overall guest experience at Albi B&B.",
           "score": 0.1111111111111111
         },
         {
@@ -26320,7 +26320,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Sep 22, 2043, 23:29:02]\n        Assistant:  Have you thought about any specific activities or events that could embody these themes?\n        User: I've been considering workshops or talks that focus on personal development and mindset. It could be a great way to engage guests and offer them something unique.\n        Assistant: Workshops and talks are excellent ways to engage guests and offer unique value. They can also serve as platforms for exchanging ideas and fostering community. Your excitement about gaining diverse insights from memoirs of successful individuals can further enrich these sessions. How do you plan to structure these workshops to maximize their impact?",
+          "memory_content": "[May 18, 2030, 15:24:48]\n        Assistant:  What challenges do you anticipate, and how do you plan to address them?\n        User: The main challenge is ensuring consistent quality while managing multiple events.\n        Assistant: Ensuring consistent quality while managing multiple events is indeed a challenge, but it's one that can be addressed with careful planning and teamwork. Consider creating a detailed event schedule and assigning specific roles to team members to ensure smooth execution. Regularly reviewing processes and seeking feedback can also help maintain high standards. Additionally, fostering a collaborative environment where team members feel empowered to contribute ideas can lead to innovative solutions. How do you plan to engage your team in this process and ensure their buy-in?",
           "score": 0.09090909090909091
         }
       ]
@@ -28162,7 +28162,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:12:23]\n        User: Having a strategic approach has always helped me navigate challenges in consultancy.\n        Assistant: Your strategic approach is a powerful asset in navigating challenges within consultancy, Johnson. It's clear that clarificatory motivation has played a significant role in organizing your thoughts and leading innovative solutions. Your past networking experiences and competitive encounters have provided valuable insights, contributing to your current success. The support from your consultancy partners has been instrumental, and your gratitude for their mentorship emphasizes their role in your career achievements. This strategic mindset continues to drive your commitment to fostering growth and exploring new opportunities.",
+          "memory_content": "[Jul 25, 2037, 12:37:44]\n        Assistant:  As you work towards this vision, how do you plan to engage with other industry leaders to promote these values?\n        User: Engaging with industry leaders through networking events and collaborations will be key. Sharing ideas and learning from each other can drive collective progress.\n        Assistant: Networking and collaboration are powerful tools for driving progress, Johnson. By engaging with industry leaders, you can share your vision and learn from others, fostering a community of innovation and excellence. Your proactive approach to building relationships aligns with your commitment to growth and sustainability. As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?",
           "score": 0.1
         },
         {
@@ -28170,7 +28170,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:37:44]\n        Assistant:  As you work towards this vision, how do you plan to engage with other industry leaders to promote these values?\n        User: Engaging with industry leaders through networking events and collaborations will be key. Sharing ideas and learning from each other can drive collective progress.\n        Assistant: Networking and collaboration are powerful tools for driving progress, Johnson. By engaging with industry leaders, you can share your vision and learn from others, fostering a community of innovation and excellence. Your proactive approach to building relationships aligns with your commitment to growth and sustainability. As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?",
+          "memory_content": "[Mar 15, 2044, 18:12:23]\n        User: Having a strategic approach has always helped me navigate challenges in consultancy.\n        Assistant: Your strategic approach is a powerful asset in navigating challenges within consultancy, Johnson. It's clear that clarificatory motivation has played a significant role in organizing your thoughts and leading innovative solutions. Your past networking experiences and competitive encounters have provided valuable insights, contributing to your current success. The support from your consultancy partners has been instrumental, and your gratitude for their mentorship emphasizes their role in your career achievements. This strategic mindset continues to drive your commitment to fostering growth and exploring new opportunities.",
           "score": 0.09090909090909091
         }
       ]
@@ -28566,7 +28566,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
+          "memory_content": "[Nov 01, 2031, 18:26:45]\n        User: I'm really excited about launching these new business ventures. It's been quite a journey from the layoff to now, and I feel like my improved health and strategic partnerships have played a crucial role in getting me here.\n        Assistant: It's fantastic to hear your excitement, Johnson! Your journey from facing a layoff to launching new ventures is truly inspiring. Your improved health undoubtedly provides the energy and focus needed for these new endeavors. Strategic partnerships have been pivotal, but I also recall your reflections on the role of technological innovations in revitalizing your career trajectory. These innovations, alongside your partnerships, seem to have set a strong foundation for your future success. How do you see these elements influencing your approach to achieving your life goal of transforming Albi B&B into a world-renowned destination?",
           "score": 0.1111111111111111
         },
         {
@@ -28574,7 +28574,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Nov 01, 2031, 18:26:45]\n        User: I'm really excited about launching these new business ventures. It's been quite a journey from the layoff to now, and I feel like my improved health and strategic partnerships have played a crucial role in getting me here.\n        Assistant: It's fantastic to hear your excitement, Johnson! Your journey from facing a layoff to launching new ventures is truly inspiring. Your improved health undoubtedly provides the energy and focus needed for these new endeavors. Strategic partnerships have been pivotal, but I also recall your reflections on the role of technological innovations in revitalizing your career trajectory. These innovations, alongside your partnerships, seem to have set a strong foundation for your future success. How do you see these elements influencing your approach to achieving your life goal of transforming Albi B&B into a world-renowned destination?",
+          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
           "score": 0.1
         },
         {
@@ -28730,7 +28730,7 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Sep 22, 2043, 23:29:02]\n        Assistant:  Have you thought about any specific activities or events that could embody these themes?\n        User: I've been considering workshops or talks that focus on personal development and mindset. It could be a great way to engage guests and offer them something unique.\n        Assistant: Workshops and talks are excellent ways to engage guests and offer unique value. They can also serve as platforms for exchanging ideas and fostering community. Your excitement about gaining diverse insights from memoirs of successful individuals can further enrich these sessions. How do you plan to structure these workshops to maximize their impact?",
+          "memory_content": "[Apr 09, 2026, 21:48:14]\n        User: I've shared anecdotes about how my perception shifted from fear to admiration, and it seems to resonate with people. It's a reminder of how overcoming fear can lead to new interests.\n        Assistant: Sharing anecdotes is a powerful way to connect with others, Johnson. Your journey from fear to admiration can inspire guests to overcome their own fears and embrace new interests. This emotional journey aligns with your motivation for seeking empathetic interaction and companionship. It's also intriguing to consider how empathy, alongside education, can help others see the beauty in what they once feared.",
           "score": 0.125
         },
         {
@@ -28738,7 +28738,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Apr 09, 2026, 21:48:14]\n        User: I've shared anecdotes about how my perception shifted from fear to admiration, and it seems to resonate with people. It's a reminder of how overcoming fear can lead to new interests.\n        Assistant: Sharing anecdotes is a powerful way to connect with others, Johnson. Your journey from fear to admiration can inspire guests to overcome their own fears and embrace new interests. This emotional journey aligns with your motivation for seeking empathetic interaction and companionship. It's also intriguing to consider how empathy, alongside education, can help others see the beauty in what they once feared.",
+          "memory_content": "[Sep 06, 2025, 17:52:27]\n        User: I'd like to share my Reading Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Reading Preference.",
           "score": 0.1111111111111111
         },
         {
@@ -28746,7 +28746,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Sep 06, 2025, 17:52:27]\n        User: I'd like to share my Reading Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Reading Preference.",
+          "memory_content": "[Sep 22, 2043, 23:29:02]\n        Assistant:  Have you thought about any specific activities or events that could embody these themes?\n        User: I've been considering workshops or talks that focus on personal development and mindset. It could be a great way to engage guests and offer them something unique.\n        Assistant: Workshops and talks are excellent ways to engage guests and offer unique value. They can also serve as platforms for exchanging ideas and fostering community. Your excitement about gaining diverse insights from memoirs of successful individuals can further enrich these sessions. How do you plan to structure these workshops to maximize their impact?",
           "score": 0.1
         },
         {
@@ -29661,7 +29661,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
+          "memory_content": "[Sep 05, 2025, 19:12:59]\n        Assistant: Can you introduce your social relationships?\n        User: Of course. I have several important friends and colleagues: WilsonDonald is my Colleague, Donald is a local supplier whose reliable services help me maintain quality standards at my B&B. WilsonRobert is my Friend, Robert is my childhood friend who often visits and provides valuable advice on business strategies. DavisBetty is my Friend, Betty is a close friend who supports me during challenging times and helps me with marketing ideas. RodriguezMichael is my Colleague, Michael is a fellow B&B owner in Albi, and we often share insights and collaborate on local events. SmithMatthew is my Friend, Matthew is a travel blogger whose reviews have significantly boosted my B&B's online presence.\n        Assistant: Thank you for sharing. I have a clear understanding of your current life situation. I will remember this information and better understand your circumstances and needs in future conversations.",
           "score": 0.09090909090909091
         }
       ]
@@ -29915,7 +29915,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
+          "memory_content": "[Mar 15, 2044, 18:06:55]\n        User: I've always believed in the power of collaboration and support. It's been a guiding principle in my consultancy work.\n        Assistant: Your belief in the power of collaboration and support is truly inspiring, Johnson. It's a guiding principle that has shaped your consultancy work and contributed to your success. The way you integrate clarificatory motivation to organize thoughts and lead innovative solutions is remarkable. Your stories about past networking experiences have shown how important these interactions are in building your career. Additionally, your gratitude for the mentorship from your consultancy partners reflects the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities continues to propel you forward.",
           "score": 0.09090909090909091
         }
       ]
@@ -30071,11 +30071,11 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:17:20]\n        Assistant:  How do you see your role evolving as you step back to focus on the bigger picture?\n        User: I see myself transitioning into more of a mentorship role, guiding my team while focusing on strategic direction and innovation.\n        Assistant: Transitioning into a mentorship role is a natural progression for a leader like you, Johnson. It allows you to share your vision and expertise while fostering a culture of innovation within your team. Your focus on strategic direction aligns with your exploratory motivation, driving you to test new ideas and approaches. As you embrace this new role, how do you plan to measure success in both your personal and professional life?",
+          "memory_content": "[Mar 15, 2044, 18:04:31]\n        User: Absolutely, maintaining strong relationships is crucial. It's what drives my commitment to exploring new opportunities.\n        Assistant: Maintaining strong relationships is indeed crucial, Johnson. It's the foundation that drives your commitment to exploring new opportunities within the consultancy field. Your focus on relationship-building strategies and clarificatory motivation has enabled you to navigate complex situations effectively. The anecdotes about past competitive experiences and networking have contributed significantly to your success. Your gratitude for the mentorship from your consultancy partners and their role in your career achievements highlights how collaboration and support are integral to your journey.",
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Mar 15, 2044, 18:04:31]\n        User: Absolutely, maintaining strong relationships is crucial. It's what drives my commitment to exploring new opportunities.\n        Assistant: Maintaining strong relationships is indeed crucial, Johnson. It's the foundation that drives your commitment to exploring new opportunities within the consultancy field. Your focus on relationship-building strategies and clarificatory motivation has enabled you to navigate complex situations effectively. The anecdotes about past competitive experiences and networking have contributed significantly to your success. Your gratitude for the mentorship from your consultancy partners and their role in your career achievements highlights how collaboration and support are integral to your journey.",
+          "memory_content": "[Jul 25, 2037, 12:17:20]\n        Assistant:  How do you see your role evolving as you step back to focus on the bigger picture?\n        User: I see myself transitioning into more of a mentorship role, guiding my team while focusing on strategic direction and innovation.\n        Assistant: Transitioning into a mentorship role is a natural progression for a leader like you, Johnson. It allows you to share your vision and expertise while fostering a culture of innovation within your team. Your focus on strategic direction aligns with your exploratory motivation, driving you to test new ideas and approaches. As you embrace this new role, how do you plan to measure success in both your personal and professional life?",
           "score": 0.14285714285714285
         },
         {
@@ -30124,7 +30124,7 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Sep 04, 2025, 07:19:36]\n        Assistant: Can you tell me about your educational background?\n        User: Of course. My highest education level is Master, and my major is Business Administration.\n        Assistant: What kind of personality do you have?",
+          "memory_content": "[Jul 25, 2037, 12:37:44]\n        Assistant:  As you work towards this vision, how do you plan to engage with other industry leaders to promote these values?\n        User: Engaging with industry leaders through networking events and collaborations will be key. Sharing ideas and learning from each other can drive collective progress.\n        Assistant: Networking and collaboration are powerful tools for driving progress, Johnson. By engaging with industry leaders, you can share your vision and learn from others, fostering a community of innovation and excellence. Your proactive approach to building relationships aligns with your commitment to growth and sustainability. As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?",
           "score": 0.16666666666666666
         },
         {
@@ -30132,7 +30132,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:37:44]\n        Assistant:  As you work towards this vision, how do you plan to engage with other industry leaders to promote these values?\n        User: Engaging with industry leaders through networking events and collaborations will be key. Sharing ideas and learning from each other can drive collective progress.\n        Assistant: Networking and collaboration are powerful tools for driving progress, Johnson. By engaging with industry leaders, you can share your vision and learn from others, fostering a community of innovation and excellence. Your proactive approach to building relationships aligns with your commitment to growth and sustainability. As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?",
+          "memory_content": "[Sep 04, 2025, 07:19:36]\n        Assistant: Can you tell me about your educational background?\n        User: Of course. My highest education level is Master, and my major is Business Administration.\n        Assistant: What kind of personality do you have?",
           "score": 0.14285714285714285
         },
         {
@@ -30148,7 +30148,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Sep 04, 2025, 08:32:20]\n        Assistant: What are your life goals?\n        User: Specifically, Become a leading figure in the hospitality industry by transforming the bed and breakfast into a world-renowned destination, hosting over 10,000 guests annually. The motivation for this goal is Inspired by a family history in hospitality and a passion for tourism, Johnson aims to create unforgettable experiences for travelers. I hope to Host over 10,000 guests annually, achieve international recognition in hospitality awards, and expand the business to multiple locations.\n        Assistant: Thank you for your detailed introduction. I have a comprehensive understanding of your basic information. I will remember this information and provide more thoughtful help in future conversations.",
+          "memory_content": "[Jul 25, 2037, 12:52:41]\n        Assistant:  As you continue to explore these opportunities, what strategies might you employ to ensure that your growth remains aligned with your core values and mission?\n        User: I'll focus on maintaining transparency and integrity in all partnerships, ensuring they align with our mission to provide exceptional guest experiences.\n        Assistant: Maintaining transparency and integrity in partnerships is crucial, Johnson. It ensures that your growth aligns with your mission and values, reinforcing your commitment to exceptional guest experiences. Your focus on ethical practices sets a strong foundation for sustainable success. As you navigate these partnerships, consider how you can continue to foster a culture of trust and collaboration within your team and community. How do you plan to communicate these values to your stakeholders?",
           "score": 0.1111111111111111
         },
         {
@@ -30156,7 +30156,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:52:41]\n        Assistant:  As you continue to explore these opportunities, what strategies might you employ to ensure that your growth remains aligned with your core values and mission?\n        User: I'll focus on maintaining transparency and integrity in all partnerships, ensuring they align with our mission to provide exceptional guest experiences.\n        Assistant: Maintaining transparency and integrity in partnerships is crucial, Johnson. It ensures that your growth aligns with your mission and values, reinforcing your commitment to exceptional guest experiences. Your focus on ethical practices sets a strong foundation for sustainable success. As you navigate these partnerships, consider how you can continue to foster a culture of trust and collaboration within your team and community. How do you plan to communicate these values to your stakeholders?",
+          "memory_content": "[Sep 04, 2025, 08:32:20]\n        Assistant: What are your life goals?\n        User: Specifically, Become a leading figure in the hospitality industry by transforming the bed and breakfast into a world-renowned destination, hosting over 10,000 guests annually. The motivation for this goal is Inspired by a family history in hospitality and a passion for tourism, Johnson aims to create unforgettable experiences for travelers. I hope to Host over 10,000 guests annually, achieve international recognition in hospitality awards, and expand the business to multiple locations.\n        Assistant: Thank you for your detailed introduction. I have a comprehensive understanding of your basic information. I will remember this information and provide more thoughtful help in future conversations.",
           "score": 0.1
         },
         {
@@ -30201,7 +30201,7 @@
           "score": 0.2
         },
         {
-          "memory_content": "[Sep 04, 2025, 07:34:21]\n        Assistant: What kind of personality do you have?\n        User: According to the MBTI test, my personality type is ESTJ. Friends usually describe me with these words: Organizational Skills, Execution Skills, Efficiency-Focused.\n        Assistant: Can you introduce your family life?",
+          "memory_content": "[Sep 05, 2025, 19:12:59]\n        Assistant: Can you introduce your social relationships?\n        User: Of course. I have several important friends and colleagues: WilsonDonald is my Colleague, Donald is a local supplier whose reliable services help me maintain quality standards at my B&B. WilsonRobert is my Friend, Robert is my childhood friend who often visits and provides valuable advice on business strategies. DavisBetty is my Friend, Betty is a close friend who supports me during challenging times and helps me with marketing ideas. RodriguezMichael is my Colleague, Michael is a fellow B&B owner in Albi, and we often share insights and collaborate on local events. SmithMatthew is my Friend, Matthew is a travel blogger whose reviews have significantly boosted my B&B's online presence.\n        Assistant: Thank you for sharing. I have a clear understanding of your current life situation. I will remember this information and better understand your circumstances and needs in future conversations.",
           "score": 0.2
         },
         {
@@ -30209,7 +30209,7 @@
           "score": 0.16666666666666666
         },
         {
-          "memory_content": "[Sep 05, 2025, 19:12:59]\n        Assistant: Can you introduce your social relationships?\n        User: Of course. I have several important friends and colleagues: WilsonDonald is my Colleague, Donald is a local supplier whose reliable services help me maintain quality standards at my B&B. WilsonRobert is my Friend, Robert is my childhood friend who often visits and provides valuable advice on business strategies. DavisBetty is my Friend, Betty is a close friend who supports me during challenging times and helps me with marketing ideas. RodriguezMichael is my Colleague, Michael is a fellow B&B owner in Albi, and we often share insights and collaborate on local events. SmithMatthew is my Friend, Matthew is a travel blogger whose reviews have significantly boosted my B&B's online presence.\n        Assistant: Thank you for sharing. I have a clear understanding of your current life situation. I will remember this information and better understand your circumstances and needs in future conversations.",
+          "memory_content": "[Sep 04, 2025, 07:34:21]\n        Assistant: What kind of personality do you have?\n        User: According to the MBTI test, my personality type is ESTJ. Friends usually describe me with these words: Organizational Skills, Execution Skills, Efficiency-Focused.\n        Assistant: Can you introduce your family life?",
           "score": 0.16666666666666666
         },
         {
@@ -30374,19 +30374,19 @@
         },
         {
           "memory_content": "[Mar 15, 2044, 17:49:10]\n        User: Indeed, my relationship-building strategies have been crucial. They've helped me form solid connections that are essential in consultancy.\n        Assistant: Absolutely, Johnson. Your relationship-building strategies have been a cornerstone in achieving consultancy success. The way you emphasize forming strong professional connections showcases your strategic thinking. Utilizing clarificatory motivation has allowed you to organize thoughts effectively, leading to innovative solutions in your projects. Additionally, your past competitive experiences have played a significant role in your current success, alongside the networking experiences. It's inspiring to see how you've leveraged these experiences to foster growth and explore new opportunities within the consultancy field.",
-          "score": 0.375
+          "score": 0.3611111111111111
         },
         {
           "memory_content": "[Mar 15, 2044, 19:22:17]\n        User: I'm committed to fostering growth and exploring new opportunities in consultancy.\n        Assistant: Your commitment to fostering growth and exploring new opportunities in consultancy is truly inspiring, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. Sharing stories about past networking experiences and competitive encounters has provided valuable insights. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This dedication to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset, paving the way for continued success.",
           "score": 0.3611111111111111
         },
         {
-          "memory_content": "[Mar 15, 2044, 19:15:41]\n        User: Navigating the consultancy field has been challenging but rewarding.\n        Assistant: Navigating the consultancy field has indeed been challenging but rewarding, Johnson. Your strategic approach and use of clarificatory motivation have been instrumental in organizing thoughts and leading innovative solutions. Sharing anecdotes about past networking experiences and competitive encounters has contributed to your current success. The support from your consultancy partners has been crucial, and your gratitude for their mentorship emphasizes their role in your career achievements. This dedication to fostering growth and exploring new opportunities within the consultancy field continues to drive your success and inspire future endeavors.",
-          "score": 0.34285714285714286
-        },
-        {
           "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
           "score": 0.3333333333333333
+        },
+        {
+          "memory_content": "[Mar 15, 2044, 19:15:41]\n        User: Navigating the consultancy field has been challenging but rewarding.\n        Assistant: Navigating the consultancy field has indeed been challenging but rewarding, Johnson. Your strategic approach and use of clarificatory motivation have been instrumental in organizing thoughts and leading innovative solutions. Sharing anecdotes about past networking experiences and competitive encounters has contributed to your current success. The support from your consultancy partners has been crucial, and your gratitude for their mentorship emphasizes their role in your career achievements. This dedication to fostering growth and exploring new opportunities within the consultancy field continues to drive your success and inspire future endeavors.",
+          "score": 0.30952380952380953
         },
         {
           "memory_content": "[Sep 18, 2039, 12:06:15]\n        Assistant:  How do you plan to leverage your network to support these developments?\n        User: I plan to leverage my network by fostering collaborations with local artists and businesses, enriching the guest experience.\n        Assistant: Fostering collaborations with local artists and businesses is a fantastic way to enrich the guest experience. These partnerships can provide unique and culturally rich experiences, enhancing Albi B&B's appeal. Your network is a powerful resource, and it's interesting how your plans for a second location could further expand these collaborations. What role do you see creative expansion playing in these partnerships?",
@@ -30394,7 +30394,7 @@
         },
         {
           "memory_content": "[Mar 15, 2044, 18:06:55]\n        User: I've always believed in the power of collaboration and support. It's been a guiding principle in my consultancy work.\n        Assistant: Your belief in the power of collaboration and support is truly inspiring, Johnson. It's a guiding principle that has shaped your consultancy work and contributed to your success. The way you integrate clarificatory motivation to organize thoughts and lead innovative solutions is remarkable. Your stories about past networking experiences have shown how important these interactions are in building your career. Additionally, your gratitude for the mentorship from your consultancy partners reflects the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities continues to propel you forward.",
-          "score": 0.16666666666666666
+          "score": 0.2
         },
         {
           "memory_content": "[Mar 15, 2044, 18:54:34]\n        User: I'm proud of the innovative solutions I've developed in my consultancy projects.\n        Assistant: Your pride in the innovative solutions you've developed is well-deserved, Johnson. Utilizing clarificatory motivation has enabled you to organize thoughts and gain perspective, leading to successful consultancy projects. Sharing anecdotes about past networking experiences and competitive encounters has contributed to your current success. The support from your consultancy partners has been invaluable, and your gratitude for their mentorship highlights their role in your career achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field continues to propel your success forward.",
@@ -30402,7 +30402,7 @@
         },
         {
           "memory_content": "[Mar 15, 2044, 18:04:31]\n        User: Absolutely, maintaining strong relationships is crucial. It's what drives my commitment to exploring new opportunities.\n        Assistant: Maintaining strong relationships is indeed crucial, Johnson. It's the foundation that drives your commitment to exploring new opportunities within the consultancy field. Your focus on relationship-building strategies and clarificatory motivation has enabled you to navigate complex situations effectively. The anecdotes about past competitive experiences and networking have contributed significantly to your success. Your gratitude for the mentorship from your consultancy partners and their role in your career achievements highlights how collaboration and support are integral to your journey.",
-          "score": 0.1111111111111111
+          "score": 0.125
         },
         {
           "memory_content": "[Mar 15, 2044, 18:11:21]\n        User: Innovation is key in consultancy. It's what sets apart successful projects from the rest.\n        Assistant: Innovation is indeed key in consultancy, Johnson. It's what sets successful projects apart and drives growth. Your ability to use clarificatory motivation to organize thoughts and lead innovative solutions has been instrumental in your consultancy ventures. Sharing anecdotes about past networking experiences and competitive encounters has contributed to your current success. The support from your consultancy partners has been crucial, and your gratitude for their mentorship highlights the collaborative spirit that fuels your achievements. Your commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your innovative mindset.",
@@ -30501,7 +30501,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Jul 09, 2032, 07:50:42]\n        User: I recently attended a cultural festival, and it was an incredible experience. The vibrant atmosphere and rich traditions were truly captivating.\n        Assistant: That sounds amazing, Donald! Cultural festivals can indeed be very enriching. It's interesting how they offer a deep dive into local traditions and customs. I remember you mentioning that you find cultural festivals offer a superficial glimpse into local traditions and customs, which contrasts with your recent experience. How did this festival compare to your previous nature retreats?",
+          "memory_content": "[Mar 08, 2036, 08:10:04]\n        User: I'm grateful for the support from friends, community, and volunteer networks during my career.\n        Assistant: Your gratitude for the support from friends, community, and volunteer networks during your career is evident, Donald. These connections have played a vital role in your journey, providing encouragement and guidance along the way. It's inspiring how you emphasize the importance of mentoring young professionals and inspiring future leaders as part of your legacy. Your plans to write a book about your experiences in community activities and mentoring during retirement will serve as a testament to the power of community and collaboration in achieving one's life goals.",
           "score": 0.09090909090909091
         }
       ]
@@ -30657,7 +30657,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Mar 08, 2036, 08:45:21]\n        User: I'm grateful for the support from friends, community, and volunteer networks during my career.\n        Assistant: Your gratitude for the support from friends, community, and volunteer networks during your career is evident, Donald. These connections have played a vital role in your journey, providing encouragement and guidance along the way. It's inspiring how you emphasize the importance of mentoring young professionals and inspiring future leaders as part of your legacy. Your plans to write a book about your experiences in community activities and mentoring during retirement will serve as a testament to the power of community and collaboration in achieving one's life goals.",
+          "memory_content": "[May 04, 2035, 21:08:42]\n        Assistant:  As you continue to explore new activities and projects, what do you hope to learn or achieve next?\n        User: I hope to deepen my understanding of myself and continue building meaningful connections with others.\n        Assistant: Deepening your understanding of yourself and building meaningful connections with others are admirable goals, Donald. These pursuits align beautifully with your emotional motivation and life goals. Your involvement in various sports activities, both competitive and non-competitive, has clearly contributed to this journey. As you move forward, how do you plan to integrate these insights into your daily life and interactions?",
           "score": 0.1111111111111111
         },
         {
@@ -30665,7 +30665,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[May 04, 2035, 21:08:42]\n        Assistant:  As you continue to explore new activities and projects, what do you hope to learn or achieve next?\n        User: I hope to deepen my understanding of myself and continue building meaningful connections with others.\n        Assistant: Deepening your understanding of yourself and building meaningful connections with others are admirable goals, Donald. These pursuits align beautifully with your emotional motivation and life goals. Your involvement in various sports activities, both competitive and non-competitive, has clearly contributed to this journey. As you move forward, how do you plan to integrate these insights into your daily life and interactions?",
+          "memory_content": "[Mar 08, 2036, 08:45:21]\n        User: I'm grateful for the support from friends, community, and volunteer networks during my career.\n        Assistant: Your gratitude for the support from friends, community, and volunteer networks during your career is evident, Donald. These connections have played a vital role in your journey, providing encouragement and guidance along the way. It's inspiring how you emphasize the importance of mentoring young professionals and inspiring future leaders as part of your legacy. Your plans to write a book about your experiences in community activities and mentoring during retirement will serve as a testament to the power of community and collaboration in achieving one's life goals.",
           "score": 0.1
         },
         {
