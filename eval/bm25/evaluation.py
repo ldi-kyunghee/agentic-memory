@@ -319,8 +319,9 @@ def main(args, max_workers: int = 10):
         if isinstance(kwargs, tuple):
             if len(kwargs) == 3:
                 model_kwargs, sampling_params, generation_kwargs = kwargs
-                if (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') is not None) and (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') != "none"):
-                    enable_reasoning = True          
+                if generation_kwargs.get("chat_template_kwargs"):
+                    if (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') is not None) and (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') != "none"):
+                        enable_reasoning = True          
             else:
                 model_kwargs, sampling_params = kwargs
         else:
