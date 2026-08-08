@@ -145,7 +145,7 @@ class QAEval(BaseModel):
 
 EVALUATION_SYSTEM_PROMPT_FOR_QA = """You are an **evaluation expert for AI memory system question answering**."""
 
-EVALUATION_DEVELOPER_PROMPT_FOR_QA = f"""
+EVALUATION_DEVELOPER_PROMPT_FOR_QA = """
 # Instructions
 
 * Based **only** on the provided **“Question”**, **“Reference Answer”**, and **“Key Memory Points”** (the essential facts needed to derive the reference answer), strictly evaluate the **accuracy** of the **“Memory System Response.”** Classify it as one of **“Correct”**, **“Hallucination”**, or **“Omission.”** Do **not** use any external knowledge or subjective inference. Finally, output your judgment **strictly** in the specified JSON format.  # noqa: UP032,UP032,UP032
@@ -186,12 +186,6 @@ EVALUATION_DEVELOPER_PROMPT_FOR_QA = f"""
 * If the reference answer is *“unknown / cannot be determined”* and the system provides a definite fact, that is a **Hallucination**.
   If the system also answers *“unknown”* (without guessing), it may be **Correct**.
 * The evaluation must rely **only** on the *Reference Answer*, *Key Memory Points*, and *System Response* — no external context, world knowledge, or speculative reasoning is allowed.
-
-# Response Format
-
-## QAEval
-
-{QAEval.model_json_schema()}
 """
 
 EVALUATION_USER_PROMPT_FOR_QA = """# Evaluate:

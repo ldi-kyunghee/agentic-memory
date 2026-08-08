@@ -19,6 +19,7 @@ from openai_harmony import (
     ReasoningEffort,
     Role,
     SystemContent,
+    ToolDescription,
     load_harmony_encoding,
 )
 from tqdm import tqdm
@@ -153,7 +154,13 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
                     Role.DEVELOPER,
                     DeveloperContent.new().with_instructions(
                         EVALUATION_DEVELOPER_PROMPT_FOR_QA
-                    ),
+                    ).with_function_tools(tools=[
+                        ToolDescription.new(
+                            name="QAEval",
+                            description="Evaluates Q&A abilities of an agentic memory system.",
+                            parameters=QAEval.model_json_schema()
+                        )
+                    ]),
                 ),
                 Message.from_role_and_content(
                         Role.USER,
@@ -180,7 +187,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
     eval_results = []
     for i, result in enumerate(results):
         try:
-            result = json.loads(result[0].content[0].text)
+            result = json.loads(result.content[0].text)
             result_type = result.get("evaluation_result")
             eval_result = {
                 k: v 
@@ -258,11 +265,8 @@ def llm_judge_eval(qa_results, max_workers: int = 10):
 
         for future in tqdm(as_completed(futures), total=len(futures)):
             qa = futures[future]
-            try:
-                result = future.result()
-                result_type = result.get("evaluation_result")
-            except Exception:
-                result_type = None
+            result = future.result()
+            result_type = result.get("evaluation_result")
             qa["result_type"] = result_type
             eval_results.append(qa)
 
