@@ -3,7 +3,6 @@ import gc
 import json
 import os
 import time
-
 from functools import partial
 
 import bm25s
@@ -20,15 +19,20 @@ from openai_harmony import (
     HarmonyEncodingName,
     Message,
     ReasoningEffort,
-    RenderConversationConfig,
-    RenderOptions,
     Role,
     SystemContent,
     load_harmony_encoding,
 )
 from qdrant_client import QdrantClient, models
 from tqdm import tqdm
-from utils import DEVELOPER_PROMPT, SYSTEM_PROMPT, USER_PROMPT, PROMPT, load_config, per_persona_dataset
+from utils import (
+    DEVELOPER_PROMPT,
+    PROMPT,
+    SYSTEM_PROMPT,
+    USER_PROMPT,
+    load_config,
+    per_persona_dataset,
+)
 from vllm import LLM, SamplingParams
 
 load_dotenv()
@@ -196,7 +200,7 @@ def format_inputs_gpt_oss(query, documents):
 
     return prompt
 
-def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
+def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
     if "openai" in model_kwargs['model']:
         encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
         stop_token_ids = encoding.stop_tokens_for_assistant_actions()
@@ -208,7 +212,6 @@ def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling
     sampling_params = SamplingParams(**sampling_params)
 
     prompts = []
-    prompt_token_ids = []
     for item in queries:
         query = item["question"]
         documents = ""
@@ -217,14 +220,14 @@ def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling
         
         if encoding is not None:
             prompt = format_inputs_gpt_oss(query, documents)
-            prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT, config=RenderConversationConfig())
-            prompt_token_ids.append(prefill_ids)
+            prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT)
+            prompts.append({
+                "prompt_token_ids": prefill_ids,
+                "prompt": encoding.decode(prefill_ids)
+            })
         else:
             prompt = format_inputs_vllm(query, documents)
             prompts.append(prompt)
-
-    if not prompts:
-        prompts = [{"prompt_token_ids": prompt_token_ids}]
         
     _ = generate(prompts, sampling_params=sampling_params)
     outputs = llm.wait_for_completion()
@@ -436,7 +439,7 @@ def run_qa(args, dataset, retrieval_results):
     llm_results = []
     for per_persona_results in retrieval_results:
         if args.backend == "vllm":
-            per_persona_llm_results = generate_answers(
+            per_persona_llm_results = generate_answers_vllm(
                 per_persona_results, generation_kwargs, sampling_params
             )
         else:

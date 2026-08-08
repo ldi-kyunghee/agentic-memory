@@ -137,7 +137,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
     
     sampling_params = SamplingParams(stop_token_ids=stop_token_ids, structured_outputs=structured_outputs_params, **sampling_params)
     
-    prompt_token_ids = []
+    prompts = []
     os.makedirs("raw_outputs/", exist_ok=True)
     for result in qa_results:
         prompt = EVALUATION_USER_PROMPT_FOR_QA.format(
@@ -170,30 +170,20 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
         )
         
         prefill_ids = encoding.render_conversation_for_completion(convo, Role.ASSISTANT)
-        prompt_token_ids.append(prefill_ids)
-    
-    prompts = [
-        {
-            "prompt_token_ids": prompt_token_ids
-        }
-    ]
+        prompts.append({
+            "prompt": encoding.decode(prefill_ids),
+            "prompt_token_ids": prefill_ids
+        })
     
     outputs = llm.generate(prompts, sampling_params=sampling_params)
     output_tokens = [output.outputs[0].token_ids for output in outputs]
     results = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
 
-    try:
-        file_name = datetime.datetime.now().astimezone().isoformat()
-        with open(f"raw_outputs/{file_name}.txt", "w") as file:
-            for result in results:
-                file.write(result[0].content[0].text + '\n\n')
-    except:
-        pass
-
     eval_results = []
     for i, result in enumerate(results):
+        response = result[0].content[0].text
         try:
-            result = json.loads(result.content[0].text)
+            result = json.loads(response)
             result_type = result.get("evaluation_result")
             eval_result = {
                 k: v 
@@ -201,8 +191,8 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
             }
             eval_result['result_type'] = result_type
             eval_results.append(eval_result)
-        except:
-            continue
+        except JSONDecodeError:
+            logger.error("Failed to parse JSON from: %s", response)
     return eval_results
 
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
