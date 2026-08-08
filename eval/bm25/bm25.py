@@ -228,8 +228,8 @@ def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling
             prompt = format_inputs_vllm(query, documents)
             prompts.append(prompt)
 
-    if not prompt:
-        prompts = {"prompt_token_ids": prompt_token_ids}
+    if not prompts:
+        prompts = [{"prompt_token_ids": prompt_token_ids}]
         
     _ = generate(prompts, sampling_params=sampling_params)
     outputs = llm.wait_for_completion()
