@@ -5237,12 +5237,12 @@
       "question_type": "Memory Boundary",
       "retrieved": [
         {
-          "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
+          "memory_content": "[Aug 08, 2028, 15:08:07]\n        User: I\u2019ll definitely keep that in mind. Thanks for your support.\n        Assistant: It's my pleasure to support you, Martin. Your dedication to personal growth and collaboration is inspiring, and I'm here to help you every step of the way. As you continue to explore new gaming experiences and professional opportunities, remember to stay true to your values and goals. Your journey is unique, and I'm excited to see where it takes you.",
           "score": 0.6666666666666666
         },
         {
-          "memory_content": "[Aug 08, 2028, 15:08:07]\n        User: I\u2019ll definitely keep that in mind. Thanks for your support.\n        Assistant: It's my pleasure to support you, Martin. Your dedication to personal growth and collaboration is inspiring, and I'm here to help you every step of the way. As you continue to explore new gaming experiences and professional opportunities, remember to stay true to your values and goals. Your journey is unique, and I'm excited to see where it takes you.",
-          "score": 0.6666666666666666
+          "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
+          "score": 0.6428571428571428
         },
         {
           "memory_content": "[Aug 08, 2028, 15:07:05]\n        User: I\u2019m looking forward to what\u2019s next.\n        Assistant: The future holds exciting possibilities for you, Martin. As you continue to explore and innovate, you'll find new opportunities and experiences that align with your goals and values. Keep your curiosity and creativity alive, and you'll undoubtedly achieve great things. Remember, I'm here to help you navigate this journey and support you in reaching your full potential.",
@@ -5254,7 +5254,7 @@
         },
         {
           "memory_content": "[Aug 08, 2028, 15:25:04]\n        User: I will. Looking forward to our next chat!\n        Assistant: I'm looking forward to it as well, Martin! Our conversations are always inspiring, and I'm eager to hear about your continued journey with multiplayer puzzle games and beyond. Until next time, keep exploring, innovating, and collaborating. Remember, I'm here to support you every step of the way. Take care!",
-          "score": 0.34285714285714286
+          "score": 0.3666666666666667
         },
         {
           "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
@@ -7182,7 +7182,7 @@
       "retrieved": [
         {
           "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.625
+          "score": 0.6
         },
         {
           "memory_content": "[Feb 13, 2029, 11:39:45]\n        User: Thank you for all the insights and support.\n        Assistant: You're very welcome, Martin. It's always a pleasure to support you on your journey. Remember, your willingness to explore and adapt is a powerful tool in achieving your goals and enhancing your well-being. I'm here to assist you every step of the way, whether it's finding new movie recommendations or exploring other areas of interest.",
@@ -7233,19 +7233,19 @@
           "score": 0.125
         },
         {
+          "memory_content": "[Sep 07, 2025, 01:04:16]\n        User: I'd like to share my Clothing Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Clothing Preference.",
+          "score": 0.125
+        },
+        {
           "memory_content": "[Nov 23, 2029, 11:41:14]\n        Assistant:  How do you envision this balance evolving as you progress in your career?\n        User: I hope to keep refining my choices as I progress, adapting to new challenges.\n        Assistant: Adapting to new challenges and refining your choices is a proactive approach, Martin. Smart-casual business attire supports this evolution well. As you face new challenges, the balance between professionalism and comfort will remain crucial. Feedback from colleagues can guide your decisions, and acknowledging the role of social signaling in expressing identity is insightful. Practicality also plays a role in enhancing functionality and ease of movement. How do you plan to integrate these aspects into your future wardrobe choices?",
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Sep 07, 2025, 01:04:16]\n        User: I'd like to share my Clothing Preference with you so you can understand my personal preferences and better understand my choices in future conversations.\n        Assistant: Good, please tell me about your Clothing Preference.",
+          "memory_content": "[Aug 08, 2028, 15:20:07]\n        User: Thank you for being so supportive.\n        Assistant: You're very welcome, Martin. It's an honor to support someone as dedicated and creative as you. Your journey is inspiring, and I'm here to help you navigate the challenges and opportunities that come your way. Remember, your creativity and collaboration skills are powerful tools that will guide you to success. Keep pushing forward, and you'll achieve your dreams.",
           "score": 0.1111111111111111
         },
         {
           "memory_content": "[Nov 23, 2029, 11:29:26]\n        Assistant:  How do you envision this balance evolving as you progress in your career?\n        User: I hope to keep refining my choices as I progress, adapting to new challenges.\n        Assistant: Adapting to new challenges and refining your choices is a proactive approach, Martin. Smart-casual business attire supports this evolution well. As you face new challenges, the balance between professionalism and comfort will remain crucial. Feedback from colleagues can guide your decisions, and acknowledging the role of social signaling in expressing identity is insightful. Practicality also plays a role in enhancing functionality and ease of movement. How do you plan to integrate these aspects into your future wardrobe choices?",
-          "score": 0.1
-        },
-        {
-          "memory_content": "[Aug 08, 2028, 15:20:07]\n        User: Thank you for being so supportive.\n        Assistant: You're very welcome, Martin. It's an honor to support someone as dedicated and creative as you. Your journey is inspiring, and I'm here to help you navigate the challenges and opportunities that come your way. Remember, your creativity and collaboration skills are powerful tools that will guide you to success. Keep pushing forward, and you'll achieve your dreams.",
           "score": 0.1
         },
         {
@@ -7813,7 +7813,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
+          "memory_content": "[Apr 05, 2033, 20:17:31]\n        User: I'll definitely be on the lookout for films that offer that balance.\n        Assistant: That's a great approach, Martin. By focusing on films that offer a balance of educational content and engaging storytelling, you'll be able to enjoy a richer viewing experience. Your enthusiasm for continuous learning and your commitment to leveraging diverse educational films to enhance your knowledge is truly inspiring. As you continue this journey, remember that your expanded movie preferences support your humanitarian goals by providing a broader platform for learning and innovation.",
           "score": 0.09090909090909091
         }
       ]
@@ -8492,7 +8492,7 @@
       "retrieved": [
         {
           "memory_content": "[Sep 04, 2025, 18:47:28]\n        User: My name is Martin Mark, and I am a Male. I was born on 1996-08-02, and I am now 29 years old. I currently live in Columbus.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.6428571428571428
+          "score": 0.625
         },
         {
           "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
@@ -8535,11 +8535,11 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Mar 11, 2031, 15:39:54]\n        User: Yes, their recommendations have been enlightening. I'm eager to explore more films that challenge my views and offer new insights.\n        Assistant: Your eagerness to explore films that challenge your views is admirable. It's this curiosity and openness that drive your creative motivation, leading to personal growth and enriching experiences. While you explore these films, keep in mind your belief that films should reinforce existing beliefs, as this duality can offer a balanced approach to your exploration.",
-          "score": 0.125
+          "memory_content": "[Mar 01, 2026, 08:17:50]\n        User: Their support has been a cornerstone of my success.\n        Assistant: Support from your network has indeed been a cornerstone of your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be instrumental in helping you achieve your aspirations.",
+          "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Mar 01, 2026, 08:17:50]\n        User: Their support has been a cornerstone of my success.\n        Assistant: Support from your network has indeed been a cornerstone of your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be instrumental in helping you achieve your aspirations.",
+          "memory_content": "[Mar 11, 2031, 15:39:54]\n        User: Yes, their recommendations have been enlightening. I'm eager to explore more films that challenge my views and offer new insights.\n        Assistant: Your eagerness to explore films that challenge your views is admirable. It's this curiosity and openness that drive your creative motivation, leading to personal growth and enriching experiences. While you explore these films, keep in mind your belief that films should reinforce existing beliefs, as this duality can offer a balanced approach to your exploration.",
           "score": 0.125
         },
         {
@@ -10351,7 +10351,7 @@
           "score": 0.1111111111111111
         },
         {
-          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
+          "memory_content": "[Aug 08, 2028, 15:07:05]\n        User: I\u2019m looking forward to what\u2019s next.\n        Assistant: The future holds exciting possibilities for you, Martin. As you continue to explore and innovate, you'll find new opportunities and experiences that align with your goals and values. Keep your curiosity and creativity alive, and you'll undoubtedly achieve great things. Remember, I'm here to help you navigate this journey and support you in reaching your full potential.",
           "score": 0.1111111111111111
         },
         {
@@ -10359,7 +10359,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Aug 08, 2028, 15:07:05]\n        User: I\u2019m looking forward to what\u2019s next.\n        Assistant: The future holds exciting possibilities for you, Martin. As you continue to explore and innovate, you'll find new opportunities and experiences that align with your goals and values. Keep your curiosity and creativity alive, and you'll undoubtedly achieve great things. Remember, I'm here to help you navigate this journey and support you in reaching your full potential.",
+          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
           "score": 0.1
         },
         {
@@ -14004,7 +14004,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
+          "memory_content": "[Mar 01, 2026, 09:04:10]\n        User: I'm ready to make a difference and inspire change.\n        Assistant: Your readiness to make a difference and inspire change is commendable, Martin. Your new role provides the platform to leverage your humanitarian care and artistic goals, creating meaningful impact. Continue to embrace the opportunities ahead and leverage your creativity and insights to inspire change in the healthcare sector.",
           "score": 0.1
         },
         {
@@ -14012,7 +14012,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Mar 01, 2026, 09:04:10]\n        User: I'm ready to make a difference and inspire change.\n        Assistant: Your readiness to make a difference and inspire change is commendable, Martin. Your new role provides the platform to leverage your humanitarian care and artistic goals, creating meaningful impact. Continue to embrace the opportunities ahead and leverage your creativity and insights to inspire change in the healthcare sector.",
+          "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
           "score": 0.09090909090909091
         }
       ]
@@ -14348,7 +14348,7 @@
           "score": 0.14285714285714285
         },
         {
-          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
+          "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
           "score": 0.14285714285714285
         },
         {
@@ -14356,7 +14356,7 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Apr 10, 2026, 11:49:54]\n        User: I will. Thanks again!\n        Assistant: You're welcome, Martin. Keep embracing those new experiences and let your creative spirit soar. Until next time, take care and enjoy each adventure that comes your way.",
+          "memory_content": "[Sep 04, 2025, 19:38:09]\n        Assistant: Can you introduce your family life?\n        User: Good, let me introduce my family. Both parents are alive, no_relationship, No children. My Father was born on 1963-08-02, Retired doctor who inspired Martin's interest in health. My Mother was born on 1963-08-02, Nurse with a passion for community health. Overall, Martin comes from a family deeply rooted in the medical field, which has greatly influenced his passion for promoting well-being.\n        Assistant: What are your life goals?",
           "score": 0.125
         },
         {
@@ -14678,12 +14678,12 @@
           "score": 0.3333333333333333
         },
         {
-          "memory_content": "[Jan 19, 2037, 14:37:18]\n        User: I'm looking forward to it. Let's make Albi B&B a place where unforgettable memories are made.\n        Assistant: Absolutely, Johnson. With your vision and dedication, Albi B&B is well on its way to becoming a place where unforgettable memories are made. By continuing to focus on guest preferences, such as pet-friendly accommodations and personalized service, you can ensure that each stay is unique and memorable. Your commitment to leveraging the assistant to manage these elements effectively will support your goal of creating a welcoming and dynamic environment. Here's to the exciting journey ahead and the many memorable experiences you'll create for your guests!",
+          "memory_content": "[Jul 25, 2037, 12:46:42]\n        Assistant:  As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?\n        User: These connections can provide valuable insights and opportunities for partnerships, helping to expand our offerings and reach a broader audience.\n        Assistant: Leveraging connections for insights and partnerships is a strategic way to expand your offerings, Johnson. It allows you to tap into new ideas and resources, broadening your reach and enhancing the guest experience at Albi B&B. Your ability to see the potential in these connections demonstrates your visionary leadership. As you continue to explore these opportunities, what strategies might you employ to ensure that your growth remains aligned with your core values and mission?",
           "score": 0.2777777777777778
         },
         {
-          "memory_content": "[Jul 25, 2037, 12:46:42]\n        Assistant:  As you continue to network and collaborate, how do you envision these connections influencing your future initiatives at Albi B&B?\n        User: These connections can provide valuable insights and opportunities for partnerships, helping to expand our offerings and reach a broader audience.\n        Assistant: Leveraging connections for insights and partnerships is a strategic way to expand your offerings, Johnson. It allows you to tap into new ideas and resources, broadening your reach and enhancing the guest experience at Albi B&B. Your ability to see the potential in these connections demonstrates your visionary leadership. As you continue to explore these opportunities, what strategies might you employ to ensure that your growth remains aligned with your core values and mission?",
-          "score": 0.26666666666666666
+          "memory_content": "[Jan 19, 2037, 14:37:18]\n        User: I'm looking forward to it. Let's make Albi B&B a place where unforgettable memories are made.\n        Assistant: Absolutely, Johnson. With your vision and dedication, Albi B&B is well on its way to becoming a place where unforgettable memories are made. By continuing to focus on guest preferences, such as pet-friendly accommodations and personalized service, you can ensure that each stay is unique and memorable. Your commitment to leveraging the assistant to manage these elements effectively will support your goal of creating a welcoming and dynamic environment. Here's to the exciting journey ahead and the many memorable experiences you'll create for your guests!",
+          "score": 0.2777777777777778
         },
         {
           "memory_content": "[Sep 05, 2025, 17:02:11]\n        User: I am currently self-employed, working in the Hospitality industry. I work at Albi B&B as an Owner. My monthly income is 3500 USD, and I currently have 12000 USD in savings. As the owner of Albi B&B, I manage all aspects of the business, from guest relations to overseeing daily operations. My monthly income fluctuates based on tourist seasons, but I am able to maintain a steady flow of visitors throughout the year. I have built up savings to ensure the stability of my business during off-peak times.\n        Assistant: How is your health condition?",
@@ -14718,11 +14718,11 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Dec 02, 2031, 19:26:24]\n        Assistant:  How do you plan to address these challenges?\n        User: I plan to implement regular feedback sessions and quality control measures.\n        Assistant: Regular feedback sessions and quality control measures are effective ways to maintain high standards, Johnson. Biographies of hospitality leaders often discuss the importance of continuous improvement and guest feedback in refining services. Autobiographies might offer a personal reflection on the emotional impact of these processes. Your AI assistant can assist in analyzing feedback and implementing necessary changes. How do you envision these measures impacting guest satisfaction?",
-          "score": 0.1111111111111111
+          "memory_content": "[Mar 09, 2042, 11:19:55]\n        User: The logistics of hosting live performances can be challenging, but it's worth it for the guest satisfaction it brings.\n        Assistant: Absolutely, Johnson. The logistics of hosting live performances can be complex, but the satisfaction and memorable experiences they create for guests are well worth the effort. Using AI tools to manage these challenges is a strategic approach, allowing you to focus on the guest experience. While jazz is a fantastic choice, exploring live rock performances could also offer a unique energy and attract a broader audience. Sharing stories from past music experiments can provide valuable insights into how different genres impact guest interactions.",
+          "score": 0.1
         },
         {
-          "memory_content": "[Mar 09, 2042, 11:19:55]\n        User: The logistics of hosting live performances can be challenging, but it's worth it for the guest satisfaction it brings.\n        Assistant: Absolutely, Johnson. The logistics of hosting live performances can be complex, but the satisfaction and memorable experiences they create for guests are well worth the effort. Using AI tools to manage these challenges is a strategic approach, allowing you to focus on the guest experience. While jazz is a fantastic choice, exploring live rock performances could also offer a unique energy and attract a broader audience. Sharing stories from past music experiments can provide valuable insights into how different genres impact guest interactions.",
+          "memory_content": "[Dec 02, 2031, 19:26:24]\n        Assistant:  How do you plan to address these challenges?\n        User: I plan to implement regular feedback sessions and quality control measures.\n        Assistant: Regular feedback sessions and quality control measures are effective ways to maintain high standards, Johnson. Biographies of hospitality leaders often discuss the importance of continuous improvement and guest feedback in refining services. Autobiographies might offer a personal reflection on the emotional impact of these processes. Your AI assistant can assist in analyzing feedback and implementing necessary changes. How do you envision these measures impacting guest satisfaction?",
           "score": 0.1
         },
         {
@@ -14808,7 +14808,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
+          "memory_content": "[Mar 15, 2044, 18:42:36]\n        User: I look forward to continuing to build strong connections and explore new opportunities.\n        Assistant: Your eagerness to continue building strong connections and exploring new opportunities is admirable, Johnson. Your relationship-building strategies and clarificatory motivation have been pivotal in navigating the consultancy field. The stories you've shared about past networking experiences and competitive encounters have contributed significantly to your success. The support from your consultancy partners and your gratitude for their mentorship highlight the collaborative spirit that drives your achievements. This commitment to fostering growth and exploring new opportunities within the consultancy field is a testament to your strategic approach and innovative mindset.",
           "score": 0.09090909090909091
         }
       ]
@@ -14830,19 +14830,19 @@
         },
         {
           "memory_content": "[Sep 04, 2025, 07:34:21]\n        Assistant: What kind of personality do you have?\n        User: According to the MBTI test, my personality type is ESTJ. Friends usually describe me with these words: Organizational Skills, Execution Skills, Efficiency-Focused.\n        Assistant: Can you introduce your family life?",
-          "score": 0.45
+          "score": 0.5
         },
         {
           "memory_content": "[Sep 05, 2025, 16:42:59]\n        User: Today I'd like to share my current life situation with you, including work, health, and social aspects, so you can have a more comprehensive understanding of my current status.\n        Assistant: Good, please tell me about your current work situation.",
           "score": 0.325
         },
         {
-          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
-          "score": 0.25
-        },
-        {
           "memory_content": "[Sep 04, 2025, 08:32:20]\n        Assistant: What are your life goals?\n        User: Specifically, Become a leading figure in the hospitality industry by transforming the bed and breakfast into a world-renowned destination, hosting over 10,000 guests annually. The motivation for this goal is Inspired by a family history in hospitality and a passion for tourism, Johnson aims to create unforgettable experiences for travelers. I hope to Host over 10,000 guests annually, achieve international recognition in hospitality awards, and expand the business to multiple locations.\n        Assistant: Thank you for your detailed introduction. I have a comprehensive understanding of your basic information. I will remember this information and provide more thoughtful help in future conversations.",
           "score": 0.24285714285714285
+        },
+        {
+          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
+          "score": 0.2
         },
         {
           "memory_content": "[Sep 05, 2025, 19:01:31]\n        Assistant: How is your health condition?\n        User: My physical condition is Normal. No chronic diseases. In terms of mental health, I am Positive and Sunny. No mental health issues. Running my own business keeps me active and engaged, which contributes to my positive mental health. The physical demands of managing a bed and breakfast ensure I stay fit.\n        Assistant: Can you introduce your social relationships?",
@@ -23823,11 +23823,11 @@
           "score": 0.25
         },
         {
-          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
+          "memory_content": "[Sep 04, 2025, 08:32:20]\n        Assistant: What are your life goals?\n        User: Specifically, Become a leading figure in the hospitality industry by transforming the bed and breakfast into a world-renowned destination, hosting over 10,000 guests annually. The motivation for this goal is Inspired by a family history in hospitality and a passion for tourism, Johnson aims to create unforgettable experiences for travelers. I hope to Host over 10,000 guests annually, achieve international recognition in hospitality awards, and expand the business to multiple locations.\n        Assistant: Thank you for your detailed introduction. I have a comprehensive understanding of your basic information. I will remember this information and provide more thoughtful help in future conversations.",
           "score": 0.25
         },
         {
-          "memory_content": "[Sep 04, 2025, 08:32:20]\n        Assistant: What are your life goals?\n        User: Specifically, Become a leading figure in the hospitality industry by transforming the bed and breakfast into a world-renowned destination, hosting over 10,000 guests annually. The motivation for this goal is Inspired by a family history in hospitality and a passion for tourism, Johnson aims to create unforgettable experiences for travelers. I hope to Host over 10,000 guests annually, achieve international recognition in hospitality awards, and expand the business to multiple locations.\n        Assistant: Thank you for your detailed introduction. I have a comprehensive understanding of your basic information. I will remember this information and provide more thoughtful help in future conversations.",
+          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
           "score": 0.2
         },
         {
@@ -25283,7 +25283,7 @@
           "score": 0.1
         },
         {
-          "memory_content": "[Sep 18, 2039, 12:32:55]\n        Assistant:  As you explore new strategies and partnerships, particularly the idea of a second location, what steps will you take to ensure continued growth?\n        User: I'll focus on maintaining strong community ties, leveraging my network, and continuously innovating our offerings to ensure sustained growth.\n        Assistant: Focusing on maintaining strong community ties, leveraging your network, and continuously innovating offerings are excellent strategies for ensuring sustained growth. Your commitment to creative expansion and nurturing relationships will undoubtedly propel Albi B&B towards your ultimate goals. As you continue to explore new strategies and partnerships, particularly for a second location, your vision for Albi B&B's future is bright. Thank you for sharing your journey and insights, Johnson. I'm excited to see how your plans unfold.",
+          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
           "score": 0.1
         },
         {
@@ -25291,7 +25291,7 @@
           "score": 0.09090909090909091
         },
         {
-          "memory_content": "[Sep 04, 2025, 06:02:20]\n        User: Hello! I'd like to share my basic personal information with you so you can better understand me and provide more thoughtful help in future conversations.\n        Assistant: Hello! Nice to meet you. Please tell me your basic information.",
+          "memory_content": "[Sep 18, 2039, 12:32:55]\n        Assistant:  As you explore new strategies and partnerships, particularly the idea of a second location, what steps will you take to ensure continued growth?\n        User: I'll focus on maintaining strong community ties, leveraging my network, and continuously innovating our offerings to ensure sustained growth.\n        Assistant: Focusing on maintaining strong community ties, leveraging your network, and continuously innovating offerings are excellent strategies for ensuring sustained growth. Your commitment to creative expansion and nurturing relationships will undoubtedly propel Albi B&B towards your ultimate goals. As you continue to explore new strategies and partnerships, particularly for a second location, your vision for Albi B&B's future is bright. Thank you for sharing your journey and insights, Johnson. I'm excited to see how your plans unfold.",
           "score": 0.09090909090909091
         }
       ]
@@ -48431,14 +48431,14 @@
       "retrieved": [
         {
           "memory_content": "[Sep 04, 2025, 09:16:04]\n        User: My name is Sarah Garcia, and I am a Female. I was born on 1986-03-26, and I am now 39 years old. I currently live in Miami.\n        Assistant: Can you tell me about your educational background?",
-          "score": 1.0
-        },
-        {
-          "memory_content": "[Nov 25, 2035, 10:08:12]\n        User: Launching the Social Change Platform on November 25th was such a fulfilling experience. It feels incredible to finally see my vision come to life.\n        Assistant: That's truly inspiring, Sarah! Your dedication to impacting one million lives positively through the Social Change Platform is remarkable. It's interesting to note that you launched it on October 15th, marking a significant milestone in your career. How are you feeling about the initial feedback and funding from social investors?",
-          "score": 0.3333333333333333
+          "score": 0.8333333333333333
         },
         {
           "memory_content": "[Nov 27, 2029, 11:39:49]\n        User: I've been reflecting on the impact of my initiatives recently. It's fulfilling to see how community engagement has grown and key social issues are gaining visibility.\n        Assistant: That's wonderful to hear, Sarah! Your role as Head of Social Initiatives has certainly allowed you to drive significant social change. It's impressive how you've evaluated the impact of your initiatives and identified strategic directions for future projects, emphasizing sustainable impact and empowerment. It's this kind of strategic vision that aligns well with your commitment to humanitarian goals, inspired by Shirley Franco's work. Meanwhile, exploring new strategies to enhance your team's productivity while managing your health condition can also contribute to your success.",
+          "score": 0.5
+        },
+        {
+          "memory_content": "[Nov 25, 2035, 10:08:12]\n        User: Launching the Social Change Platform on November 25th was such a fulfilling experience. It feels incredible to finally see my vision come to life.\n        Assistant: That's truly inspiring, Sarah! Your dedication to impacting one million lives positively through the Social Change Platform is remarkable. It's interesting to note that you launched it on October 15th, marking a significant milestone in your career. How are you feeling about the initial feedback and funding from social investors?",
           "score": 0.3333333333333333
         },
         {
@@ -48529,7 +48529,7 @@
         },
         {
           "memory_content": "[Sep 04, 2025, 09:16:04]\n        User: My name is Sarah Garcia, and I am a Female. I was born on 1986-03-26, and I am now 39 years old. I currently live in Miami.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.39285714285714285
+          "score": 0.34285714285714286
         },
         {
           "memory_content": "[Oct 07, 2038, 07:06:39]\n        Assistant:  How do you envision these workshops impacting your community?\n        User: I hope they inspire participants to take action and become advocates for change in their own communities.\n        Assistant: Your hope to inspire participants to become advocates for change is commendable. By engaging them with content that blends storytelling and intricate puzzles, you can ignite their passion for social change. Sarah Garcia's engagement with puzzle games that have social themes aligns with her broader goal of using content to inspire social change. Similarly, your engagement with puzzle games that focus on historical themes can provide valuable insights into past challenges and triumphs. How do you plan to measure the success of these workshops?",
@@ -48544,11 +48544,11 @@
           "score": 0.25
         },
         {
-          "memory_content": "[Nov 27, 2029, 12:27:29]\n        User: I've faced challenges coordinating efforts due to my health condition, but my optimism keeps me going.\n        Assistant: Your optimism is a strong asset, Sarah. Managing Chronic Fatigue Syndrome while coordinating efforts requires resilience and strategic planning. It's commendable how you leverage your social network for support, which has been instrumental in your career journey. As you explore strategies to enhance productivity, your ability to drive social change and technological innovation through your initiatives can be a powerful combination. How do you envision overcoming these challenges in the future?",
-          "score": 0.2
+          "memory_content": "[Sep 01, 2031, 15:53:27]\n        Assistant:  How do you envision strengthening these relationships further?\n        User: Strengthening relationships through events and consistent communication sounds promising. I'm optimistic about the future of my initiatives. I'm curious about how I can ensure their sustainability. Any advice?\n        Assistant: Ensuring the sustainability of your initiatives involves strategic planning and resource management, Sarah. Focus on refining project frameworks to incorporate sustainable practices and empower communities. Your improved health and salary increase, despite concerns, provide the resources needed to support long-term goals. Regular assessments and feedback can identify areas for improvement and success. Collaborate with partners to optimize resource allocation and share best practices. Your instrumental motivation aids in solving practical problems and enhancing efficiency. How do you plan to incorporate these sustainability strategies?",
+          "score": 0.25
         },
         {
-          "memory_content": "[Sep 01, 2031, 15:53:27]\n        Assistant:  How do you envision strengthening these relationships further?\n        User: Strengthening relationships through events and consistent communication sounds promising. I'm optimistic about the future of my initiatives. I'm curious about how I can ensure their sustainability. Any advice?\n        Assistant: Ensuring the sustainability of your initiatives involves strategic planning and resource management, Sarah. Focus on refining project frameworks to incorporate sustainable practices and empower communities. Your improved health and salary increase, despite concerns, provide the resources needed to support long-term goals. Regular assessments and feedback can identify areas for improvement and success. Collaborate with partners to optimize resource allocation and share best practices. Your instrumental motivation aids in solving practical problems and enhancing efficiency. How do you plan to incorporate these sustainability strategies?",
+          "memory_content": "[Nov 27, 2029, 12:27:29]\n        User: I've faced challenges coordinating efforts due to my health condition, but my optimism keeps me going.\n        Assistant: Your optimism is a strong asset, Sarah. Managing Chronic Fatigue Syndrome while coordinating efforts requires resilience and strategic planning. It's commendable how you leverage your social network for support, which has been instrumental in your career journey. As you explore strategies to enhance productivity, your ability to drive social change and technological innovation through your initiatives can be a powerful combination. How do you envision overcoming these challenges in the future?",
           "score": 0.2
         },
         {
@@ -50796,7 +50796,7 @@
         },
         {
           "memory_content": "[Sep 04, 2025, 09:16:04]\n        User: My name is Sarah Garcia, and I am a Female. I was born on 1986-03-26, and I am now 39 years old. I currently live in Miami.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.25
+          "score": 0.2361111111111111
         },
         {
           "memory_content": "[Nov 27, 2029, 12:07:58]\n        Assistant:  Have you considered expanding your outreach to include more diverse communities?\n        User: Yes, expanding outreach is part of my plan. I want to ensure my projects reach underrepresented communities effectively.\n        Assistant: Expanding outreach to underrepresented communities is a vital aspect of creating sustainable impact, Sarah. Your dedication to ensuring your projects are inclusive and empowering reflects your commitment to social justice. As you explore new strategies, enhancing your team's productivity while managing your health condition can contribute to the success of your initiatives. Your exploratory motivation to seek practical solutions will undoubtedly lead to innovative approaches in your projects. How do you plan to involve your team in these efforts?",
@@ -50804,7 +50804,7 @@
         },
         {
           "memory_content": "[Dec 24, 2035, 11:09:03]\n        Assistant:  As you maintain this momentum, what are some specific goals you hope to achieve in the coming months?\n        User: I aim to launch new community-driven projects that emphasize empowerment and sustainable development. These projects will be a key focus for my platform's growth.\n        Assistant: Launching community-driven projects that emphasize empowerment and sustainable development is a fantastic focus for your platform's growth, Sarah. These initiatives reflect your commitment to making a meaningful impact and align with your life goals. Your strategic vision, inspired by both Shirley and Emily Franco, continues to guide your efforts, blending identity expression with practicality. As you pursue these projects, what are some challenges you anticipate, and how do you plan to address them?",
-          "score": 0.1111111111111111
+          "score": 0.125
         },
         {
           "memory_content": "[Nov 27, 2029, 12:10:42]\n        Assistant:  How do you plan to involve your team in these efforts?\n        User: Involving my team through regular assessments and feedback is key. I want them to take ownership of their roles and drive positive change.\n        Assistant: Encouraging your team to take ownership and drive positive change is an empowering approach, Sarah. Regular assessments and feedback can foster a culture of accountability and innovation within your team. This aligns well with your goal of impacting 1 million lives positively through your work. As you continue to explore strategies for enhancing productivity, balancing work-life, and managing your health condition, your team's involvement will be crucial. Have you discussed ways to optimize resource allocation with your team?",
@@ -58277,7 +58277,7 @@
         },
         {
           "memory_content": "[Sep 04, 2025, 09:16:04]\n        User: My name is Sarah Garcia, and I am a Female. I was born on 1986-03-26, and I am now 39 years old. I currently live in Miami.\n        Assistant: Can you tell me about your educational background?",
-          "score": 0.29166666666666663
+          "score": 0.2777777777777778
         },
         {
           "memory_content": "[Jan 28, 2040, 15:39:19]\n        Assistant:  Have you considered how the philosophical consistency of your platform's strategies can further enhance your reach?\n        User: Absolutely. Ensuring our strategies are philosophically consistent is crucial for long-term success. I'm grateful for the support from my social network and international partners.\n        Assistant: The support from your social network and international partners is invaluable, especially in your role as Platform Manager. Their collaboration can amplify your platform's impact. As you continue to explore new horizons, your commitment to using your role to drive social change is evident. How do you envision expanding your platform's reach in the coming months?",
@@ -58304,11 +58304,11 @@
           "score": 0.125
         },
         {
-          "memory_content": "[Nov 27, 2036, 20:43:45]\n        User: Music has been a wonderful tool for introspection and personal growth.\n        Assistant: Music's role in your life is indeed significant, Sarah. It serves as a tool for introspection and personal growth, helping you navigate complex emotions and situations. Your evolving music preferences contribute to your personal growth and intellectual engagement, allowing you to explore new experiences and perspectives. Sharing anecdotes about past musical experiences has been instrumental in shaping your perceptions. Your gratitude for your friend's influence in curating the playlist highlights the supportive role of your social network, which has been crucial in your personal development. Interestingly, you also expressed gratitude for your friend's influence in introducing you to classical music, showcasing the richness of your musical journey.",
-          "score": 0.1111111111111111
+          "memory_content": "[Sep 11, 2039, 17:20:44]\n        Assistant:  As you continue this process, what support do you envision needing from your social network or collaborators?\n        User: I hope to receive guidance and collaboration from my network to help refine ideas and implement strategies effectively. Their support is invaluable.\n        Assistant: Your social network's guidance and collaboration will indeed be invaluable, Sarah. Their diverse perspectives can help refine ideas and ensure effective implementation of strategies. Just as your music preferences evolved from soothing jazz to creative pop music, the support from your network can enhance your adaptability and innovation. How do you plan to engage with your network to maximize their support and contributions?",
+          "score": 0.125
         },
         {
-          "memory_content": "[Sep 11, 2039, 17:20:44]\n        Assistant:  As you continue this process, what support do you envision needing from your social network or collaborators?\n        User: I hope to receive guidance and collaboration from my network to help refine ideas and implement strategies effectively. Their support is invaluable.\n        Assistant: Your social network's guidance and collaboration will indeed be invaluable, Sarah. Their diverse perspectives can help refine ideas and ensure effective implementation of strategies. Just as your music preferences evolved from soothing jazz to creative pop music, the support from your network can enhance your adaptability and innovation. How do you plan to engage with your network to maximize their support and contributions?",
+          "memory_content": "[Nov 27, 2036, 20:43:45]\n        User: Music has been a wonderful tool for introspection and personal growth.\n        Assistant: Music's role in your life is indeed significant, Sarah. It serves as a tool for introspection and personal growth, helping you navigate complex emotions and situations. Your evolving music preferences contribute to your personal growth and intellectual engagement, allowing you to explore new experiences and perspectives. Sharing anecdotes about past musical experiences has been instrumental in shaping your perceptions. Your gratitude for your friend's influence in curating the playlist highlights the supportive role of your social network, which has been crucial in your personal development. Interestingly, you also expressed gratitude for your friend's influence in introducing you to classical music, showcasing the richness of your musical journey.",
           "score": 0.1111111111111111
         },
         {

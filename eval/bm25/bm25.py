@@ -20,6 +20,8 @@ from openai_harmony import (
     HarmonyEncodingName,
     Message,
     ReasoningEffort,
+    RenderConversationConfig,
+    RenderOptions,
     Role,
     SystemContent,
     load_harmony_encoding,
@@ -195,7 +197,7 @@ def format_inputs_gpt_oss(query, documents):
     return prompt
 
 def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
-    if "openai" in llm.model_config.model:
+    if "openai" in model_kwargs['model']:
         encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
         stop_token_ids = encoding.stop_tokens_for_assistant_actions()
         sampling_params['stop_token_ids'] = stop_token_ids
@@ -214,7 +216,7 @@ def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling
         
         if encoding is not None:
             prompt = format_inputs_gpt_oss(query, documents)
-            prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT)
+            prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT, config=RenderConversationConfig()) 
             prompt = {"prompt_token_ids": prefill_ids}
         else:
             prompt = format_inputs_vllm(query, documents)
@@ -432,7 +434,7 @@ def run_qa(args, dataset, retrieval_results):
     for per_persona_results in retrieval_results:
         if args.backend == "vllm":
             per_persona_llm_results = generate_answers(
-                per_persona_results, generation_kwargs, **sampling_params
+                per_persona_results, generation_kwargs, sampling_params
             )
         else:
             per_persona_llm_results = generate_answer_openai(

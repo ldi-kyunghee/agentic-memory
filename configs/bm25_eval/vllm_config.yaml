@@ -9,6 +9,6 @@ generation_args:
     seed: 42
     temperature: 0.5
   #   thinking_token_budget: 4096
-  chat_template_content_format: openai
-  chat_template_kwargs:
-    reasoning_effort: high
+  # chat_template_content_format: openai
+  # chat_template_kwargs:
+  #   reasoning_effort: high
