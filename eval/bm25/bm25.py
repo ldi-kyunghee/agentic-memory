@@ -4,6 +4,8 @@ import json
 import os
 import time
 
+from functools import partial
+
 import bm25s
 import faiss
 import numpy as np
@@ -12,9 +14,19 @@ import torch
 from bm25s.hf import BM25HF
 from dotenv import load_dotenv
 from openai import Client, OpenAI
+from openai_harmony import (
+    Conversation,
+    DeveloperContent,
+    HarmonyEncodingName,
+    Message,
+    ReasoningEffort,
+    Role,
+    SystemContent,
+    load_harmony_encoding,
+)
 from qdrant_client import QdrantClient, models
 from tqdm import tqdm
-from utils import PROMPT, load_config, per_persona_dataset
+from utils import DEVELOPER_PROMPT, SYSTEM_PROMPT, USER_PROMPT, PROMPT, load_config, per_persona_dataset
 from vllm import LLM, SamplingParams
 
 load_dotenv()
@@ -151,8 +163,46 @@ def bm25_retrieval(queries, memories, k: int = 5, sorted: bool = False):
     )
     return documents, document_scores
 
+def format_inputs_vllm(query, documents):
+    prompt = PROMPT.format(context=documents, question=query)
+    return [
+        {
+            "role": "user", "content": prompt
+        }
+    ]
 
-def generate_answers(queries: list[dict], generation_kwargs: dict, **sampling_params):
+def format_inputs_gpt_oss(query, documents):
+    prompt = Conversation.from_messages(
+        [
+            Message.from_role_and_content(
+                Role.SYSTEM,
+                SystemContent.new().with_model_identity(SYSTEM_PROMPT).with_reasoning_effort(ReasoningEffort.HIGH)
+            ),
+            Message.from_role_and_content(
+                Role.DEVELOPER, 
+                DeveloperContent.new().with_instructions(DEVELOPER_PROMPT)
+            ),
+            Message.from_role_and_content(
+                Role.USER,
+                USER_PROMPT.format(
+                    context=documents,
+                    question=query
+                )
+            )
+        ]
+    )
+
+    return prompt
+
+def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
+    if "openai" in llm.model_config.model:
+        encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
+        stop_token_ids = encoding.stop_tokens_for_assistant_actions()
+        sampling_params['stop_token_ids'] = stop_token_ids
+        generate = partial(llm.enqueue, **generation_kwargs)
+    else:
+        encoding = None
+        generate = partial(llm.enqueue_chat, **generation_kwargs)
     sampling_params = SamplingParams(**sampling_params)
 
     prompts = []
@@ -161,18 +211,25 @@ def generate_answers(queries: list[dict], generation_kwargs: dict, **sampling_pa
         documents = ""
         for doc in item["retrieved"]:
             documents += f" - {doc['memory_content']}"
-        prompt = PROMPT.format(context=documents, question=query)
-        prompts.append([
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ])
+        
+        if encoding is not None:
+            prompt = format_inputs_gpt_oss(query, documents)
+            prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT)
+            prompt = {"prompt_token_ids": prefill_ids}
+        else:
+            prompt = format_inputs_vllm(query, documents)
+        
+        prompts.append(prompt)
 
-    _ = llm.enqueue_chat(prompts, sampling_params=sampling_params, **generation_kwargs)
+    _ = generate(prompts, sampling_params=sampling_params)
     outputs = llm.wait_for_completion()
 
-    answers = [output.outputs[0].text for output in outputs]
+    if encoding is not None:
+        output_tokens = [output.outputs[0].token_ids for output in outputs]
+        responses = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
+        answers = [response[0].content[0].text for response in responses]
+    else: 
+        answers = [output.outputs[0].text for output in outputs]
 
     results = []
     for item, answer in zip(queries, answers):

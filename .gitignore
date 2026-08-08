@@ -10,3 +10,4 @@ check_results.ipynb
 results_analysis.ipynb
 _run.sh
 eval/bm25/evaluation.ipynb
+.vorg.db
