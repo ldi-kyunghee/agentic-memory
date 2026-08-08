@@ -170,9 +170,8 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
         )
         
         prefill_ids = encoding.render_conversation_for_completion(convo, Role.ASSISTANT)
-        prompts.append(prefill_ids)
+        prompts.append({"prompt_token_ids": prefill_ids})
 
-    inputs = [{"prompt_token_ids": prompts}]
     outputs = llm.generate(prompts, sampling_params=sampling_params)
     output_tokens = [output.outputs[0].token_ids for output in outputs]
     results = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]

@@ -3,6 +3,7 @@ import gc
 import json
 import os
 import time
+
 from functools import partial
 
 import bm25s
@@ -20,20 +21,14 @@ from openai_harmony import (
     Message,
     ReasoningEffort,
     RenderConversationConfig,
+    RenderOptions,
     Role,
     SystemContent,
     load_harmony_encoding,
 )
 from qdrant_client import QdrantClient, models
 from tqdm import tqdm
-from utils import (
-    DEVELOPER_PROMPT,
-    PROMPT,
-    SYSTEM_PROMPT,
-    USER_PROMPT,
-    load_config,
-    per_persona_dataset,
-)
+from utils import DEVELOPER_PROMPT, SYSTEM_PROMPT, USER_PROMPT, PROMPT, load_config, per_persona_dataset
 from vllm import LLM, SamplingParams
 
 load_dotenv()
@@ -213,7 +208,6 @@ def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling
     sampling_params = SamplingParams(**sampling_params)
 
     prompts = []
-    prompt_token_ids = []
     for item in queries:
         query = item["question"]
         documents = ""
@@ -223,21 +217,18 @@ def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling
         if encoding is not None:
             prompt = format_inputs_gpt_oss(query, documents)
             prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT, config=RenderConversationConfig())
-            prompt_token_ids.append(prefill_ids)
+            prompts.append({"prompt_token_ids": prefill_ids})
         else:
             prompt = format_inputs_vllm(query, documents)
             prompts.append(prompt)
 
-    if not prompts:
-        prompts = [{"prompt_token_ids": prompt_token_ids}]
-        
     _ = generate(prompts, sampling_params=sampling_params)
     outputs = llm.wait_for_completion()
 
     if encoding is not None:
         output_tokens = [output.outputs[0].token_ids for output in outputs]
         responses = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
-        answers = [response.content[0].text for response in responses]
+        answers = [response[0].content[0].text for response in responses]
     else: 
         answers = [output.outputs[0].text for output in outputs]
 
