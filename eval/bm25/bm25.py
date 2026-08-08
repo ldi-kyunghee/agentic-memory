@@ -208,6 +208,7 @@ def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling
     sampling_params = SamplingParams(**sampling_params)
 
     prompts = []
+    prompt_token_ids = []
     for item in queries:
         query = item["question"]
         documents = ""
@@ -217,11 +218,14 @@ def generate_answers(queries: list[dict], generation_kwargs: dict = {}, sampling
         if encoding is not None:
             prompt = format_inputs_gpt_oss(query, documents)
             prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT, config=RenderConversationConfig())
-            prompts.append({"prompt_token_ids": prefill_ids})
+            prompt_token_ids.append(prefill_ids)
         else:
             prompt = format_inputs_vllm(query, documents)
             prompts.append(prompt)
 
+    if not prompts:
+        prompts = [{"prompt_token_ids": prompt_token_ids}]
+        
     _ = generate(prompts, sampling_params=sampling_params)
     outputs = llm.wait_for_completion()
 
