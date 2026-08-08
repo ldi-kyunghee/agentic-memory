@@ -84,7 +84,7 @@ def load_vllm(**model_kwargs):
     return llm
 
 def generate_answer_openai(queries: list[dict], **model_kwargs):
-    results = []
+    answers = []
     for item in tqdm(queries, desc="Generating..."):
         query = item["question"]
         documents = ""
@@ -98,17 +98,9 @@ def generate_answer_openai(queries: list[dict], **model_kwargs):
         )
 
         answer = response.output_text
-        results.append({
-            "question": item["question"],
-            "generated_answer": answer,
-            "reference": item["answer"],
-            "retrieved": item["retrieved"],
-            "evidence": item["evidence"],
-            "question_type": item["question_type"],
-            "difficulty": item["difficulty"],
-        })
-    return results
-
+        answers.append(answer)
+    return compile_outputs(queries, answers)
+        
 def embed_online(queries: list, memories: list):
     model = "Qwen/Qwen3-Embedding-4B"
     open_api_key = "EMPTY"
@@ -200,15 +192,34 @@ def format_inputs_gpt_oss(query, documents):
 
     return prompt
 
+def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
+    encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
+    stop_token_ids = encoding.stop_tokens_for_assistant_actions()
+    sampling_params['stop_token_ids'] = stop_token_ids
+    sampling_params = SamplingParams(**sampling_params)
+
+    prompts = []
+    for item in queries:
+        query = item["question"]
+        documents = ""
+        for doc in item['retrieved']:
+            documents += f" - {doc['memory_content']}"
+
+        prompt = format_inputs_gpt_oss(query, documents)
+        prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT)
+        prompts.append({
+            "prompt_token_ids": prefill_ids,
+            "prompt": encoding.decode(prefill_ids)
+        })
+
+    _ = llm.enqueue(prompts, sampling_params, **generation_kwargs)
+    outputs = llm.wait_for_completion()
+    output_tokens = [output.outputs[0].token_ids for output in outputs]
+    responses = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
+    answers = [response[0].content[0].text for response in responses]
+    return compile_outputs(queries, answers)
+    
 def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
-    if "openai" in model_kwargs['model']:
-        encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
-        stop_token_ids = encoding.stop_tokens_for_assistant_actions()
-        sampling_params['stop_token_ids'] = stop_token_ids
-        generate = partial(llm.enqueue, **generation_kwargs)
-    else:
-        encoding = None
-        generate = partial(llm.enqueue_chat, **generation_kwargs)
     sampling_params = SamplingParams(**sampling_params)
 
     prompts = []
@@ -217,28 +228,17 @@ def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sam
         documents = ""
         for doc in item["retrieved"]:
             documents += f" - {doc['memory_content']}"
+
+        prompt = format_inputs_vllm(query, documents)
+        prompts.append(prompt)
         
-        if encoding is not None:
-            prompt = format_inputs_gpt_oss(query, documents)
-            prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT)
-            prompts.append({
-                "prompt_token_ids": prefill_ids,
-                "prompt": encoding.decode(prefill_ids)
-            })
-        else:
-            prompt = format_inputs_vllm(query, documents)
-            prompts.append(prompt)
-        
-    _ = generate(prompts, sampling_params=sampling_params)
+    _ = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
     outputs = llm.wait_for_completion()
+    answers = [output.outputs[0].text for output in outputs]
 
-    if encoding is not None:
-        output_tokens = [output.outputs[0].token_ids for output in outputs]
-        responses = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
-        answers = [response[0].content[0].text for response in responses]
-    else: 
-        answers = [output.outputs[0].text for output in outputs]
+    return compile_outputs(queries, answers)
 
+def compile_outputs(queries: list[dict], answers: list[str]):
     results = []
     for item, answer in zip(queries, answers):
         results.append(
@@ -439,9 +439,14 @@ def run_qa(args, dataset, retrieval_results):
     llm_results = []
     for per_persona_results in retrieval_results:
         if args.backend == "vllm":
-            per_persona_llm_results = generate_answers_vllm(
-                per_persona_results, generation_kwargs, sampling_params
-            )
+            if "openai" in model_kwargs['model']:
+                per_persona_llm_results = generate_answers_gpt_oss(
+                    per_persona_results, generation_kwargs, sampling_params
+                )
+            else:
+                per_persona_llm_results = generate_answers_vllm(
+                    per_persona_results, generation_kwargs, sampling_params
+                )
         else:
             per_persona_llm_results = generate_answer_openai(
                 per_persona_results, **model_kwargs

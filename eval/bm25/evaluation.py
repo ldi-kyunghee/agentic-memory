@@ -14,6 +14,7 @@ from llms import llm_request_for_json
 from openai_harmony import (
     Conversation,
     DeveloperContent,
+    HarmonyEncoding,
     HarmonyEncodingName,
     Message,
     ReasoningEffort,
@@ -103,42 +104,60 @@ def evaluation_for_question_vllm(
     return prompt
 
 def parse_answers(outputs):
-    contents = [output.outputs[0].text for output in outputs]
     results = []
-    raw_output = []
-    os.makedirs("raw_outputs", exist_ok=True)
-    for content in tqdm(contents, desc="Parsing answers..."):
-        try:
-            result = json.loads(content)
-            results.append(result)
-        except JSONDecodeError:
-            if content is not None:
-                try:
-                    idx = content.lower().find("json")
-                    if idx >= 0:
-                        idx += len("json")
-                        response = content[idx:]
-                        result = json.loads(response)
-                        results.append(result)
-                    else:
-                        raw_output.append(content)
-                except JSONDecodeError:
-                    logger.warning("Cannot parse json: %s", content)
-                    raw_output.append(content)
-            else:
-                logger.error("Content is %s", content)
-                raw_output.append(content)
+    for output in tqdm(outputs, desc="Parsing answers..."):
+        content = output.outputs[0].text
+        result = json.loads(content)
+        results.append(result)
     return results
+
+def format_inputs_for_gps_oss(prompt: str):
+    system_prompt = SystemContent.new().with_model_identity(
+        EVALUATION_SYSTEM_PROMPT_FOR_QA
+    ).with_reasoning_effort(ReasoningEffort.HIGH)
+
+    developer_prompt = DeveloperContent.new().with_instructions(
+                        EVALUATION_DEVELOPER_PROMPT_FOR_QA
+                    ).with_function_tools(
+                        tools=[
+                            ToolDescription.new(
+                            name="QAEval",
+                            description="Evaluates Q&A abilities of an agentic memory system.",
+                            parameters=QAEval.model_json_schema()
+                            )
+                        ]
+                    )
+    
+    convo = Conversation.from_messages(
+        [
+            Message.from_role_and_content(
+                Role.SYSTEM,
+                system_prompt
+            ),
+            Message.from_role_and_content(
+                Role.DEVELOPER,
+                developer_prompt,
+            ),
+            Message.from_role_and_content(
+                Role.USER,
+                prompt,
+            )
+        ]
+    )
+    return convo
 
 def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
     stop_token_ids = encoding.stop_tokens_for_assistant_actions()
     structured_outputs_params = StructuredOutputsParams(json=QAEval.model_json_schema())
     
-    sampling_params = SamplingParams(stop_token_ids=stop_token_ids, structured_outputs=structured_outputs_params, **sampling_params)
+    sampling_params = SamplingParams(
+        stop_token_ids=stop_token_ids,
+        structured_outputs=structured_outputs_params,
+        **sampling_params
+    )
     
     prompts = []
-    os.makedirs("raw_outputs/", exist_ok=True)
     for result in qa_results:
         prompt = EVALUATION_USER_PROMPT_FOR_QA.format(
             question=result['question'],
@@ -147,31 +166,11 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
             response=result['generated_answer']
         )
 
-        convo = Conversation.from_messages(
-            [
-                Message.from_role_and_content(Role.SYSTEM, SystemContent.new().with_model_identity(EVALUATION_SYSTEM_PROMPT_FOR_QA).with_reasoning_effort(ReasoningEffort.HIGH)),
-                Message.from_role_and_content(
-                    Role.DEVELOPER,
-                    DeveloperContent.new().with_instructions(
-                        EVALUATION_DEVELOPER_PROMPT_FOR_QA
-                    ).with_function_tools(tools=[
-                        ToolDescription.new(
-                            name="QAEval",
-                            description="Evaluates Q&A abilities of an agentic memory system.",
-                            parameters=QAEval.model_json_schema()
-                        )
-                    ]),
-                ),
-                Message.from_role_and_content(
-                        Role.USER,
-                        prompt,
-                )
-            ]
-        )
-        
+        convo = format_inputs_for_gps_oss(prompt)
+        input_prompt = encoding.decode(prefill_ids)
         prefill_ids = encoding.render_conversation_for_completion(convo, Role.ASSISTANT)
         prompts.append({
-            "prompt": encoding.decode(prefill_ids),
+            "prompt": input_prompt,
             "prompt_token_ids": prefill_ids
         })
     
