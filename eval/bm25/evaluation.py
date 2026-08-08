@@ -167,8 +167,9 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
         )
 
         convo = format_inputs_for_gps_oss(prompt)
-        input_prompt = encoding.decode(prefill_ids)
         prefill_ids = encoding.render_conversation_for_completion(convo, Role.ASSISTANT)
+        input_prompt = encoding.decode(prefill_ids)
+        
         prompts.append({
             "prompt": input_prompt,
             "prompt_token_ids": prefill_ids
