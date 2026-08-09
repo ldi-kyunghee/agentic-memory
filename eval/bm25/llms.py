@@ -38,7 +38,7 @@ if os.getenv('OPENAI_TEMPERATURE'):
 if os.getenv('OPENAI_TIMEOUT'):
     common_params["timeout"] = int(os.getenv('OPENAI_TIMEOUT'))
 
-common_params["reasoning"] = {"effort": "minimal"}
+common_params["reasoning"] = {"effort": "low"}
 
 
 client = OpenAI(
