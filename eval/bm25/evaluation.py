@@ -118,14 +118,6 @@ def format_inputs_for_gps_oss(prompt: str):
 
     developer_prompt = DeveloperContent.new().with_instructions(
                         EVALUATION_DEVELOPER_PROMPT_FOR_QA
-                    ).with_function_tools(
-                        tools=[
-                            ToolDescription.new(
-                            name="QAEval",
-                            description="Evaluates Q&A abilities of an agentic memory system.",
-                            parameters=QAEval.model_json_schema()
-                            )
-                        ]
                     )
     
     convo = Conversation.from_messages(
