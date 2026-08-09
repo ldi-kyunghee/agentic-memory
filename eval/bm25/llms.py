@@ -22,7 +22,8 @@ WAIT_TIME_LOWER = int(os.getenv('WAIT_TIME_LOWER'))
 WAIT_TIME_UPPER = int(os.getenv('WAIT_TIME_UPPER'))
 
 OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') if OPENAI_BASE_URL is None else None
+
 MODEL = os.getenv('OPENAI_MODEL')
 
 
