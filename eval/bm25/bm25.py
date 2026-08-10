@@ -295,28 +295,40 @@ def qdrant_store(
 ):
     queries = [qa["question"] for qa in qas]
     
-    if embed_model is None:
-        corpus_embeddings, query_embeddings = embed_online(queries, memories)
-    else:
+    if embed_model is not None:
         corpus_embeddings, query_embeddings = embed_offline(queries, memories)
-
+    else:
+        corpus_embeddings, query_embeddings = None, None
+        
     ids = [i for i in range(len(memories))]
 
     payloads = [
         {"document": memory, "source": "HaluMem-Medium"}
         for memory in memories
     ]
-    
-    documents = [
-        {
-            "bm25": models.Document(
-                text=memory,
-                model="qdrant/bm25"
-            ),
-            "embeds": corpus_embedding
-        }
-        for memory, corpus_embedding in zip(memories, corpus_embeddings)
-    ]
+
+    if corpus_embeddings is not None:
+        documents = [
+            {
+                "bm25": models.Document(
+                    text=memory,
+                    model="qdrant/bm25"
+                ),
+                "embeds": corpus_embedding
+            }
+            for memory, corpus_embedding in zip(memories, corpus_embeddings)
+        ]
+
+    else:
+        documents = [
+            {
+                "bm25": models.Document(
+                    text=memory,
+                    model="qdrant/bm25"
+                )
+            }
+            for memory in memories
+        ]
 
     client.upsert(
         collection_name=collection_name,
