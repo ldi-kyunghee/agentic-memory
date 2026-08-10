@@ -44,7 +44,7 @@ def init_parser():
     parser.add_argument('--results_dir', type=str)
     parser.add_argument('--results_file', type=str)
     parser.add_argument('--backend', choices=['vllm', 'openai'], default='vllm')
-    parser.add_argument('--online_inference', action='store_true', default=False)
+    parser.add_argument('--use_online_inference', action='store_true', default=False)
     parser.add_argument('--config_file', type=str)
     return parser
 
