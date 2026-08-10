@@ -413,8 +413,8 @@ def run_retrieval(args, dataset):
         k = len(per_persona_memories) if k is None else k
         collection_name = f"{proj_name}_{i}"
         qdrant_config = {
-            "vectors_config": {},
-            "sparse_vectors_config": {}
+            "vectors_config": None,
+            "sparse_vectors_config": None
         }
         if args.hybrid:
             qdrant_config["vectors_config"] = {
@@ -480,11 +480,9 @@ if __name__ == "__main__":
     if args.embed_config:
         embed_kwargs = load_config(args.embed_config)
         embed_model = load_vllm(**embed_kwargs)
-        if args.vector_db == "qdrant":
-            proj_name = "naive-mem"
-            client = QdrantClient(":memory:")
-        else:
-            collection_name = None
+        proj_name = "naive-mem"
+        client = QdrantClient(":memory:")
+        
     else:
         embed_model = None
         client = None
