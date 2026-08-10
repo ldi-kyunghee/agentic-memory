@@ -409,10 +409,8 @@ def run_retrieval(args, dataset):
         )
         k = len(per_persona_memories) if k is None else k
         collection_name = f"{proj_name}_{i}"
-        qdrant_config = {
-            "vectors_config": None,
-            "sparse_vectors_config": None
-        }
+        qdrant_config = {}
+        
         if args.memory_type == 'hybrid':
             qdrant_config["vectors_config"] = {
                 "embeddings": models.VectorParams(size=2560, distance=models.Distance.COSINE),
@@ -422,17 +420,18 @@ def run_retrieval(args, dataset):
             }
         elif args.memory_type == 'embeddings':
             qdrant_config["vectors_config"] = {
-                "embeddings": models.VectorParams(size=2560, distance=models.Distance.COSINE),
+                args.memory_type: models.VectorParams(size=2560, distance=models.Distance.COSINE)
             }
         else:
             qdrant_config["sparse_vectors_config"] = {
-                "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
+                args.memory_type: models.SparseVectorParams(modifier=models.Modifier.IDF)
             }
 
         client.create_collection(
             collection_name=collection_name,
             **qdrant_config
             )
+        
         per_persona_results = qdrant_retrieval(
             qas, per_persona_memories, collection_name=collection_name, k=k
         )
