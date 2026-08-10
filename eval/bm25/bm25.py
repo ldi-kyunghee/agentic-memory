@@ -308,6 +308,9 @@ def qdrant_retrieve(
         collection_name: str,
         k: int = 5,
 ):
+
+    using = args.memory_type
+    
     if args.memory_type == 'hybrid':
         prefetch_queries = [
             [
@@ -327,6 +330,7 @@ def qdrant_retrieve(
         ]
 
         model_queries = [models.FusionQuery(fusion=models.Fusion.RRF)] * len(prefetch_queries)
+        using = None
         
     elif args.memory_type == 'embeddings':
         model_queries = [
@@ -353,6 +357,7 @@ def qdrant_retrieve(
             collection_name=collection_name,
             prefetch=prefetch,
             query=query,
+            using=using,
             limit=k
         ).points
 
