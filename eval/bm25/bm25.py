@@ -390,7 +390,7 @@ def qdrant_retrieve(
         model_queries = [
             models.Document(
                 text=query,
-                model='qdrant/bm25/'
+                model='qdrant/bm25'
             )
             for query in queries
         ]
