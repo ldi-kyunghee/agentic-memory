@@ -477,17 +477,11 @@ if __name__ == "__main__":
     if args.n_persona is not None:
         dataset = dataset[:args.n_persona]
 
-    if args.embed_config:
-        embed_kwargs = load_config(args.embed_config)
-        embed_model = load_vllm(**embed_kwargs)
-        proj_name = "naive-mem"
-        client = QdrantClient(":memory:")
-        
-    else:
-        embed_model = None
-        client = None
-        proj_name = None
-
+    embed_kwargs = load_config(args.embed_config)
+    embed_model = load_vllm(**embed_kwargs)
+    proj_name = "naive-mem"
+    client = QdrantClient(":memory:")
+    
     retrieval_results = run_retrieval(args, dataset)
 
     if embed_model is not None:
