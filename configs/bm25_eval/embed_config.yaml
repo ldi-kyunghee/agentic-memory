@@ -1,5 +1,6 @@
-model: Qwen/Qwen3-Embedding-4B
-runner: pooling
-quantization: bitsandbytes
-dtype: float16
-seed: 42
+model_kwargs:
+  model: Qwen/Qwen3-Embedding-4B
+  runner: pooling
+  quantization: bitsandbytes
+  dtype: float16
+  seed: 42
