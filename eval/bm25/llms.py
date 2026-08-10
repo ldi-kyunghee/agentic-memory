@@ -26,7 +26,6 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY') if OPENAI_BASE_URL is None else Non
 
 MODEL = os.getenv('OPENAI_MODEL')
 
-
 common_params = {}
 
 if os.getenv('OPENAI_MAX_TOKENS'):
@@ -40,7 +39,6 @@ if os.getenv('OPENAI_TIMEOUT'):
 
 common_params["reasoning"] = {"effort": "high"}
 
-
 client = OpenAI(
     base_url=OPENAI_BASE_URL,
     api_key=OPENAI_API_KEY
@@ -53,6 +51,7 @@ client = OpenAI(
     reraise=True,
     before_sleep=before_sleep_log(logger, logging.WARNING)
 )
+
 def llm_request(prompt):
     """
     Sends a request to the specified language model with a given prompt.
@@ -83,9 +82,9 @@ def llm_request(prompt):
     reraise=True,
     before_sleep=before_sleep_log(logger, logging.WARNING)
 )
-def llm_request_for_json(prompt):
+def llm_request_for_json(prompt, model, **common_params):
     response_obj = client.responses.parse(
-        model=MODEL,
+        model=model,
         input=[{'role': 'user', 'content': prompt}],
         text_format=QAEval,
         **common_params

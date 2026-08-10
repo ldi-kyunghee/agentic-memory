@@ -269,16 +269,20 @@ mem_template_with_prev = """[{}]
         User: {}
         Assistant: {}"""
 
-def load_config(config_file):
+def load_config(config_file, use_online_inference: bool = False):
     with open(f"configs/bm25_eval/{config_file}", "r") as file:
-        model_kwargs = yaml.safe_load(file)
+        kwargs = yaml.safe_load(file)
 
-    if model_kwargs.get('sampling_params'):
-      sampling_params = model_kwargs.pop("sampling_params")
+    model_kwargs = kwargs.pop("model_kwargs")
+    if use_online_inference:
+        online_kwargs = kwargs.pop("online_args")
+        return model_kwargs, online_kwargs
+    if kwargs.get('sampling_params'):
+      sampling_params = kwargs.pop("sampling_params")
       return model_kwargs, sampling_params
-    
-    if model_kwargs.get('generation_args'):
-      generation_args = model_kwargs.pop('generation_args')
+
+    if kwargs.get('generation_args'):
+      generation_args = kwargs.pop('generation_args')
       sampling_params = generation_args.pop('sampling_params')
       return model_kwargs, sampling_params, generation_args
     return model_kwargs

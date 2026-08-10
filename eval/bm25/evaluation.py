@@ -14,13 +14,11 @@ from llms import llm_request_for_json
 from openai_harmony import (
     Conversation,
     DeveloperContent,
-    HarmonyEncoding,
     HarmonyEncodingName,
     Message,
     ReasoningEffort,
     Role,
     SystemContent,
-    ToolDescription,
     load_harmony_encoding,
 )
 from tqdm import tqdm
@@ -33,7 +31,6 @@ from utils import (
     load_config,
 )
 from vllm import LLM, SamplingParams
-from vllm.config import ReasoningConfig
 from vllm.sampling_params import StructuredOutputsParams
 
 load_dotenv()
@@ -47,17 +44,11 @@ def init_parser():
     parser.add_argument('--results_dir', type=str)
     parser.add_argument('--results_file', type=str)
     parser.add_argument('--backend', choices=['vllm', 'openai'], default='vllm')
+    parser.add_argument('--online_inference', action='store_true', default=False)
     parser.add_argument('--config_file', type=str)
     return parser
 
 def load_vllm(model_kwargs: dict, enable_reasoning: bool = False):
-    # if enable_reasoning:
-    #     reasoning_config = ReasoningConfig(
-    #         reasoning_start_str="<think>",
-    #         reasoning_end_str="I have to answer based on my reasoning now.</think>"
-    #     )
-    #     model_kwargs['reasoning_config'] = reasoning_config
-        
     llm = LLM(
         max_num_seqs=128,
         **model_kwargs
@@ -69,7 +60,9 @@ def evaluation_for_question(
     question: str,
     reference_answer: str,
     key_memory_points: str,
-    response: str
+    response: str,
+    model: str,
+    **common_params
 ):
     """
     Question-Answering Evaluation
@@ -85,7 +78,7 @@ def evaluation_for_question(
         response=response
     )
 
-    result = llm_request_for_json(prompt)
+    result = llm_request_for_json(prompt, model=model, **common_params)
 
     return result
 
@@ -235,7 +228,7 @@ def compute_f1(precision: float, recall: float) -> float:
         return 0.0
     return 2 * (precision * recall) / (precision + recall)
 
-def llm_judge_eval(qa_results, max_workers: int = 10):
+def llm_judge_eval(qa_results, model: str, max_workers: int = 10, **common_params):
     # Question-Answering Evaluation
     eval_results = []
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
@@ -246,7 +239,9 @@ def llm_judge_eval(qa_results, max_workers: int = 10):
                 qa["question"], 
                 qa["reference"], 
                 "\n".join(evidence['memory_content'] for evidence in qa['evidence']), 
-                qa["generated_answer"]
+                qa["generated_answer"],
+                model,
+                **common_params
             )
             futures[future] = qa
 
@@ -303,10 +298,10 @@ def main(args, max_workers: int = 10):
     with open(data_file, "r") as file:
         data = json.load(file)
 
+    kwargs = load_config(args.config_file, args.use_online_inference)
     if args.backend == 'vllm':
         model_kwargs, sampling_params, generation_kwargs = None, None, None
         enable_reasoning = False
-        kwargs = load_config(args.config_file)
         if isinstance(kwargs, tuple):
             if len(kwargs) == 3:
                 model_kwargs, sampling_params, generation_kwargs = kwargs
@@ -317,15 +312,34 @@ def main(args, max_workers: int = 10):
                 model_kwargs, sampling_params = kwargs
         else:
             model_kwargs = kwargs
-        llm = load_vllm(model_kwargs, enable_reasoning)
-        if "gpt" in model_kwargs['model']:
-            eval_fn = partial(llm_judge_vllm_gpt_oss, llm=llm, sampling_params=sampling_params, generation_kwargs=generation_kwargs)
+            
+        if args.use_online_inference:
+            eval_fn = partial(
+                llm_judge_eval,
+                model=model_kwargs['model'],
+                max_workers=max_workers,
+                **sampling_params
+            )
         else:
-            eval_fn = partial(llm_judge_vllm, llm=llm, sampling_params=sampling_params, generation_kwargs=generation_kwargs)
+            llm = load_vllm(model_kwargs, enable_reasoning)
+            if "gpt" in model_kwargs['model']:
+                eval_fn = partial(
+                    llm_judge_vllm_gpt_oss,
+                    llm=llm,
+                    sampling_params=sampling_params,
+                    generation_kwargs=generation_kwargs
+                )
+            else:
+                eval_fn = partial(
+                    llm_judge_vllm,
+                    llm=llm,
+                    sampling_params=sampling_params,
+                    generation_kwargs=generation_kwargs
+                )
     elif args.backend == 'openai':
-        model_kwargs = load_config(args.config_file)
+        model_kwargs, online_kwargs = load_config(args.config_file, use_online_inference=True)
         os.environ['OPENAI_MODEL'] = model_kwargs['model']
-        eval_fn = partial(llm_judge_eval, max_workers=max_workers)
+        eval_fn = partial(llm_judge_eval, model=model_kwargs['model'], max_workers=max_workers, **online_kwargs)
 
     eval_results = {
         "per_persona_results": [],
