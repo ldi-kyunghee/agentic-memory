@@ -67,7 +67,6 @@ def init_parser():
     parser.add_argument("--hybrid", action="store_true", default=False)
     parser.add_argument("--embed_config", type=str, default=None)
     parser.add_argument("--memory_with_prior_question", type=with_prior, default=False)
-    parser.add_argument("--vector_db", type=str, default="qdrant")
     return parser
 
 
@@ -412,27 +411,35 @@ def run_retrieval(args, dataset):
             persona, args.memory_with_prior_question
         )
         k = len(per_persona_memories) if k is None else k
-        if client is not None:
-            collection_name = f"{proj_name}_{i}"
-            client.create_collection(
-                collection_name=collection_name,
-                vectors_config={
-                    "embeds": models.VectorParams(size=2560, distance=models.Distance.COSINE),
-                },
-                sparse_vectors_config={
-                    "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
-                },
-            )
-            per_persona_results = qdrant_retrieval(
-                qas, per_persona_memories, collection_name=collection_name, k=k
-            )
+        collection_name = f"{proj_name}_{i}"
+        qdrant_config = {
+            "vectors_config": {},
+            "sparse_vectors_config": {}
+        }
+        if args.hybrid:
+            qdrant_config["vectors_config"] = {
+                "embeds": models.VectorParams(size=2560, distance=models.Distance.COSINE),
+            }
+            qdrant_config["sparse_vectors_config"] = {
+                "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
+            }
+        elif args.embed_config is not None:
+            qdrant_config["vectors_config"] = {
+                "embeds": models.VectorParams(size=2560, distance=models.Distance.COSINE),
+            }
         else:
-            per_persona_results = faiss_retrieval(
-                qas, per_persona_memories, k, args.alpha, args.hybrid
+            qdrant_config["sparse_vectors_config"] = {
+                "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
+            }
+
+        client.create_collection(
+            collection_name=collection_name,
+            **qdrant_config
             )
-
+        per_persona_results = qdrant_retrieval(
+            qas, per_persona_memories, collection_name=collection_name, k=k
+        )
         retrieval_results.append(per_persona_results)
-
     return retrieval_results
 
 def run_qa(args, dataset, retrieval_results):
