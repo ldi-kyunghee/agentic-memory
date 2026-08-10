@@ -511,10 +511,14 @@ if __name__ == "__main__":
     print(args)
 
     exp_name = f"exp{args.exp_num}"
-    
-    retriever = BM25HF()
-    stemmer = Stemmer.Stemmer("english")
     dataset = load_dataset(args)
+
+    if args.hybrid:
+        memory_type = "hybrid"
+    elif args.embed_config:
+        memory_type = "embedding"
+    else:
+        memory_type = "bm25"
 
     if args.n_persona is not None:
         dataset = dataset[:args.n_persona]
@@ -559,14 +563,14 @@ if __name__ == "__main__":
     results_dir = f"results/bm25/{exp_name}/"
     bm25_results_dir = results_dir + "retrieval/"
     dataset_name = args.dataset.split("-")[-1].split(".")[0].lower()
-    bm25_results_file = f"bm25_retrieval_{dataset_name}_top_{args.top_k}_results.json"
+    bm25_results_file = f"{memory_type}_retrieval_{dataset_name}_top_{args.top_k}_results.json"
 
     os.makedirs(bm25_results_dir, exist_ok=True)
     with open(bm25_results_dir + bm25_results_file, "w") as file:
         json.dump(retrieval_results, file, indent=2)
 
     model_name = model_kwargs["model"].split("/")[-1].replace("-2507", "")
-    result_file = f"{model_name}_{dataset_name}_qa_top_{args.top_k}_results.json"
+    result_file = f"{model_name}_{dataset_name}_{memory_type}_qa_top_{args.top_k}_results.json"
 
     qa_results_dir = results_dir + "question_answering/"
     os.makedirs(qa_results_dir, exist_ok=True)
