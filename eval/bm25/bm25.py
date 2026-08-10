@@ -3,14 +3,11 @@ import gc
 import json
 import os
 import time
-from functools import partial
 
 import bm25s
 import faiss
 import numpy as np
-import Stemmer
 import torch
-from bm25s.hf import BM25HF
 from dotenv import load_dotenv
 from openai import Client, OpenAI
 from openai_harmony import (
@@ -64,7 +61,7 @@ def init_parser():
     parser.add_argument("--use_llm", action="store_true", default=False)
     parser.add_argument("--backend", choices=["vllm", "openai"], default="vllm")
     parser.add_argument("--llm_config", type=str, default=None)
-    parser.add_argument("--hybrid", action="store_true", default=False)
+    parser.add_argument("--memory_type", choices=['bm25', 'embeddings', 'hybrid'], default='hybrid')
     parser.add_argument("--embed_config", type=str, default=None)
     parser.add_argument("--memory_with_prior_question", type=with_prior, default=False)
     return parser
@@ -134,31 +131,6 @@ def sort_documents_original(I: np.ndarray, vector_scores: np.ndarray):
 
     sorted_Ds = [[distance[i] for i in range(I.shape[1])] for distance in distances]
     return np.array(sorted_Ds)
-
-
-def vector_retrieval(queries: list, memories: list):
-    if embed_model is None:
-        corpus_embeddings, query_embeddings = embed_online(queries, memories)
-    else:
-        corpus_embeddings, query_embeddings = embed_offline(queries, memories)
-
-    index = faiss.IndexFlatIP(corpus_embeddings.shape[1])
-    index.add(corpus_embeddings)
-    k = corpus_embeddings.shape[0]
-    D, I = index.search(np.expand_dims(query_embeddings, axis=0), k=k)
-    vector_scores = sort_documents_original(I, 1 - D)
-    return vector_scores
-
-
-def bm25_retrieval(queries, memories, k: int = 5, sorted: bool = False):
-    mem_tokenized = bm25s.tokenize(memories, stemmer=stemmer)
-    retriever.index(mem_tokenized)
-    queries_tokenized = bm25s.tokenize(queries, stemmer=stemmer)
-    k = len(memories)
-    documents, document_scores = retriever.retrieve(
-        queries_tokenized, corpus=memories, k=k, sorted=False
-    )
-    return documents, document_scores
 
 def format_inputs_vllm(query, documents):
     prompt = PROMPT.format(context=documents, question=query)
@@ -267,27 +239,6 @@ def fetch_results(qas, documents, ranked_results):
         results.append(res)
     return results
 
-
-def faiss_retrieval(
-    qas: list[dict],
-    memories: list,
-    k: int = 5,
-    alpha: float = 0.5,
-    sorted: bool = False,
-):
-    queries = [qa["question"] for qa in qas]
-    documents, bm25_scores = bm25_retrieval(queries, memories, k, sorted)
-    if sorted:
-        return fetch_results(qas, documents, bm25_scores)
-
-    vector_scores = vector_retrieval(queries, memories)
-    hybrid_scores = alpha * bm25_scores + (1 - alpha) * vector_scores
-    ranked_results = sorted(
-        zip(range(len(memories)), hybrid_scores), key=lambda x: x[1], reverse=True
-    )
-
-    return fetch_results(qas, documents, ranked_results)
-
 def qdrant_store(
         qas: list[dict],
         memories: list,
@@ -307,36 +258,35 @@ def qdrant_store(
         for memory in memories
     ]
 
-    if args.hybrid:
+    if args.memory_type == 'hybrid':
         documents = [
             {
                 "bm25": models.Document(
                     text=memory,
                     model="qdrant/bm25"
                 ),
-                "embeds": corpus_embedding
+                "embeddings": corpus_embedding
             }
             for memory, corpus_embedding in zip(memories, corpus_embeddings)
         ]
 
+    elif args.memory_type == 'embeddings':
+        documents = [
+            {
+                "embeddings": corpus_embedding
+            }
+            for corpus_embedding in corpus_embeddings
+        ]
     else:
-        if corpus_embeddings is not None:
-            documents = [
-                {
-                    "embeds": corpus_embedding
-                }
-                for corpus_embedding in corpus_embeddings
-            ]
-        else:
-            documents = [
-                {
-                    "bm25": models.Document(
-                        text=memory,
-                        model="qdrant/bm25"
-                    )
-                }
-                for memory in memories
-            ]
+        documents = [
+            {
+                "bm25": models.Document(
+                    text=memory,
+                    model="qdrant/bm25"
+                )
+            }
+            for memory in memories
+        ]
 
     client.upsert(
         collection_name=collection_name,
@@ -358,7 +308,7 @@ def qdrant_retrieve(
         collection_name: str,
         k: int = 5,
 ):
-    if args.hybrid:
+    if args.memory_type == 'hybrid':
         prefetch_queries = [
             [
                 models.Prefetch(
@@ -370,7 +320,7 @@ def qdrant_retrieve(
                 ),
                 models.Prefetch(
                     query=query_embedding,
-                    using="embeds"
+                    using="embeddings"
                 )
             ]
             for query, query_embedding in zip(queries, query_embeddings)
@@ -378,7 +328,7 @@ def qdrant_retrieve(
 
         model_queries = [models.FusionQuery(fusion=models.Fusion.RRF)] * len(prefetch_queries)
         
-    elif query_embeddings is not None:
+    elif args.memory_type == 'embeddings':
         model_queries = [
             query_embedding
             for query_embedding in query_embeddings
@@ -447,7 +397,7 @@ def qdrant_retrieval(
     
 def run_retrieval(args, dataset):
     retrieval_results = []
-    k = args.top_k if not args.hybrid else None
+    k = args.top_k if args.memory_type != 'hybrid' else None
     for i, persona in enumerate(dataset):
         qas, per_persona_memories = per_persona_dataset(
             persona, args.memory_with_prior_question
@@ -458,16 +408,16 @@ def run_retrieval(args, dataset):
             "vectors_config": None,
             "sparse_vectors_config": None
         }
-        if args.hybrid:
+        if args.memory_type == 'hybrid':
             qdrant_config["vectors_config"] = {
-                "embeds": models.VectorParams(size=2560, distance=models.Distance.COSINE),
+                "embeddings": models.VectorParams(size=2560, distance=models.Distance.COSINE),
             }
             qdrant_config["sparse_vectors_config"] = {
                 "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
             }
-        elif args.embed_config is not None:
+        elif args.memory_type == 'embeddings':
             qdrant_config["vectors_config"] = {
-                "embeds": models.VectorParams(size=2560, distance=models.Distance.COSINE),
+                "embeddings": models.VectorParams(size=2560, distance=models.Distance.COSINE),
             }
         else:
             qdrant_config["sparse_vectors_config"] = {
@@ -513,17 +463,10 @@ if __name__ == "__main__":
     exp_name = f"exp{args.exp_num}"
     dataset = load_dataset(args)
 
-    if args.hybrid:
-        memory_type = "hybrid"
-    elif args.embed_config:
-        memory_type = "embedding"
-    else:
-        memory_type = "bm25"
-
     if args.n_persona is not None:
         dataset = dataset[:args.n_persona]
 
-    if args.embed_config:
+    if args.memory_type != 'bm25':
         embed_kwargs = load_config(args.embed_config)
         embed_model = load_vllm(**embed_kwargs)
     else:
@@ -563,14 +506,14 @@ if __name__ == "__main__":
     results_dir = f"results/bm25/{exp_name}/"
     bm25_results_dir = results_dir + "retrieval/"
     dataset_name = args.dataset.split("-")[-1].split(".")[0].lower()
-    bm25_results_file = f"{memory_type}_retrieval_{dataset_name}_top_{args.top_k}_results.json"
+    bm25_results_file = f"{args.memory_type}_retrieval_{dataset_name}_top_{args.top_k}_results.json"
 
     os.makedirs(bm25_results_dir, exist_ok=True)
     with open(bm25_results_dir + bm25_results_file, "w") as file:
         json.dump(retrieval_results, file, indent=2)
 
     model_name = model_kwargs["model"].split("/")[-1].replace("-2507", "")
-    result_file = f"{model_name}_{dataset_name}_{memory_type}_qa_top_{args.top_k}_results.json"
+    result_file = f"{model_name}_{dataset_name}_{args.memory_type}_qa_top_{args.top_k}_results.json"
 
     qa_results_dir = results_dir + "question_answering/"
     os.makedirs(qa_results_dir, exist_ok=True)
