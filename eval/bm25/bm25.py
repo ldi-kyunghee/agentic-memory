@@ -307,7 +307,7 @@ def qdrant_store(
         for memory in memories
     ]
 
-    if corpus_embeddings is not None:
+    if args.hybrid:
         documents = [
             {
                 "bm25": models.Document(
@@ -320,15 +320,23 @@ def qdrant_store(
         ]
 
     else:
-        documents = [
-            {
-                "bm25": models.Document(
-                    text=memory,
-                    model="qdrant/bm25"
-                )
-            }
-            for memory in memories
-        ]
+        if corpus_embeddings is not None:
+            documents = [
+                {
+                    "embeds": corpus_embedding
+                }
+                for corpus_embedding in corpus_embeddings
+            ]
+        else:
+            documents = [
+                {
+                    "bm25": models.Document(
+                        text=memory,
+                        model="qdrant/bm25"
+                    )
+                }
+                for memory in memories
+            ]
 
     client.upsert(
         collection_name=collection_name,
@@ -350,29 +358,51 @@ def qdrant_retrieve(
         collection_name: str,
         k: int = 5,
 ):
-    prefetch_queries = [
-        [
-            models.Prefetch(
-                query=models.Document(
-                    text=query,
-                    model="qdrant/bm25"
+    if args.hybrid:
+        prefetch_queries = [
+            [
+                models.Prefetch(
+                    query=models.Document(
+                        text=query,
+                        model="qdrant/bm25"
+                    ),
+                    using="bm25"
                 ),
-                using="bm25"
-            ),
-            models.Prefetch(
-                query=query_embedding,
-                using="embeds"
-            )
+                models.Prefetch(
+                    query=query_embedding,
+                    using="embeds"
+                )
+            ]
+            for query, query_embedding in zip(queries, query_embeddings)
         ]
-        for query, query_embedding in zip(queries, query_embeddings)
-    ]
+
+        model_queries = [models.FusionQuery(fusion=models.Fusion.RRF)] * len(prefetch_queries)
+        
+    elif query_embeddings is not None:
+        model_queries = [
+            query_embedding
+            for query_embedding in query_embeddings
+        ]
+
+        prefetch_queries = [None] * len(model_queries)
+        
+    else:
+        model_queries = [
+            models.Document(
+                text=query,
+                model='qdrant/bm25/'
+            )
+            for query in queries
+        ]
+
+        prefetch_queries = [None] * len(model_queries)
 
     results = []
-    for prefetch in prefetch_queries:
+    for query, prefetch in zip(model_queries, prefetch_queries):
         query_results = client.query_points(
             collection_name=collection_name,
             prefetch=prefetch,
-            query=models.FusionQuery(fusion=models.Fusion.RRF),
+            query=query,
             limit=k
         ).points
 
