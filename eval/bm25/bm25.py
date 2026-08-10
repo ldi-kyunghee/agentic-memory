@@ -480,6 +480,8 @@ if __name__ == "__main__":
     if args.embed_config:
         embed_kwargs = load_config(args.embed_config)
         embed_model = load_vllm(**embed_kwargs)
+    else:
+        embed_kwargs, embed_model = None, None
 
     proj_name = "naive-mem"
     client = QdrantClient(":memory:")
