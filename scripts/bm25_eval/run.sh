@@ -8,20 +8,20 @@ wait_for_server() {
     local port=$1
     local name=$2
     local elapsed=0
-    log "Waiting for $name on port $port ..."
+    echo "Waiting for $name on port $port ..."
     while [ $elapsed -lt $HEALTH_TIMEOUT ]; do
         if curl -s "http://localhost:$port/health" >/dev/null 2>&1; then
-            log "$name is ready on port $port (took ${elapsed}s)"
+            echo "$name is ready on port $port (took ${elapsed}s)"
             return 0
         fi
         if curl -s "http://localhost:$port/v1/models" >/dev/null 2>&1; then
-            log "$name is ready on port $port via /v1/models (took ${elapsed}s)"
+            echo "$name is ready on port $port via /v1/models (took ${elapsed}s)"
             return 0
         fi
         sleep $HEALTH_INTERVAL
         elapsed=$((elapsed + HEALTH_INTERVAL))
     done
-    log "ERROR: $name failed to start on port $port after ${HEALTH_TIMEOUT}s"
+    echo "ERROR: $name failed to start on port $port after ${HEALTH_TIMEOUT}s"
     return 1
 }
 
