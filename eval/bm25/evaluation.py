@@ -287,15 +287,10 @@ def aggregate_results(eval_results):
 
     return eval_results
 
-def vllm_online_inference(kwargs, max_workers=10):
-    model_kwargs, online_kwargs = kwargs
-    common_params = online_kwargs.pop('common_params')
-    base_url = online_kwargs.pop('base_url')
-    port = online_kwargs.pop('port')
-    os.environ['OPENAI_BASE_URL'] = f"{base_url}:{port}"
+def vllm_online_inference(model, common_params, max_workers=10):
     return partial(
         llm_judge_eval,
-        model=model_kwargs['model'],
+        model=model,
         max_workers=max_workers,
         **common_params
     )
@@ -329,7 +324,10 @@ def main(args, max_workers: int = 10):
     kwargs = load_config(args.config_file, args.use_online_inference)
     if args.backend == 'vllm':
         if args.use_online_inference:
-            eval_fn = vllm_online_inference(kwargs)
+            model_kwargs, online_kwargs = kwargs
+            common_params = online_kwargs.pop('common_params')
+            os.environ['OPENAI_BASE_URL'] = '{base_url}:{port}'.format(**online_kwargs)
+            eval_fn = vllm_online_inference(model_kwargs['model'], common_params)
         else:
             model_kwargs, sampling_params, generation_kwargs = kwargs    
             llm = load_vllm(model_kwargs)
