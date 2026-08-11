@@ -3,6 +3,7 @@ t=$5
 
 if [[ $3 == "vllm" ]]; then
     OPENAI_BASE_URL=http://localhost:8000/v1
+    OPENAI_API_KEY=EMPTY
     CUDA_VISIBLE_DEVICES=$1 uv run vllm serve \
 			    openai/gpt-oss-120b \
 			    --port 8000 \
