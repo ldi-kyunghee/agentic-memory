@@ -287,6 +287,35 @@ def aggregate_results(eval_results):
 
     return eval_results
 
+def vllm_online_inference(kwargs, max_workers=10):
+    model_kwargs, online_kwargs = kwargs
+    common_params = online_kwargs.pop('common_params')
+    base_url = online_kwargs.pop('base_url')
+    port = online_kwargs.pop('port')
+    os.environ['OPENAI_BASE_URL'] = f"{base_url}:{port}"
+    return partial(
+        llm_judge_eval,
+        model=model_kwargs['model'],
+        max_workers=max_workers,
+        **common_params
+    )
+
+def vllm_offline_inference(llm, model_kwargs, sampling_params, generation_kwargs, max_workers=10):
+    if "gpt" in model_kwargs['model']:
+        return partial(
+            llm_judge_vllm_gpt_oss,
+            llm=llm,
+            sampling_params=sampling_params,
+            generation_kwargs=generation_kwargs
+        )
+    else:
+        return partial(
+            llm_judge_vllm,
+            llm=llm,
+            sampling_params=sampling_params,
+            generation_kwargs=generation_kwargs
+        )
+    
 def main(args, max_workers: int = 10):
     data_dir = args.results_dir
     data_file = data_dir + args.results_file
@@ -299,45 +328,18 @@ def main(args, max_workers: int = 10):
 
     kwargs = load_config(args.config_file, args.use_online_inference)
     if args.backend == 'vllm':
-        model_kwargs, sampling_params, generation_kwargs = None, None, None
-        enable_reasoning = False
-        if isinstance(kwargs, tuple):
-            if len(kwargs) == 3:
-                model_kwargs, sampling_params, generation_kwargs = kwargs
-                if generation_kwargs.get("chat_template_kwargs") and (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') != "none"):
-                        enable_reasoning = True          
-            else:
-                model_kwargs, sampling_params = kwargs
-        else:
-            model_kwargs = kwargs
-            
         if args.use_online_inference:
-            common_params = sampling_params.pop('common_params')
-            base_url = sampling_params.pop('base_url')
-            port = sampling_params.pop('port')
-            os.environ['OPENAI_BASE_URL'] = f"{base_url}:{port}"
-            eval_fn = partial(
-                llm_judge_eval,
-                model=model_kwargs['model'],
-                max_workers=max_workers,
-                **common_params
-            )
+            eval_fn = vllm_online_inference(kwargs)
         else:
-            llm = load_vllm(model_kwargs, enable_reasoning)
-            if "gpt" in model_kwargs['model']:
-                eval_fn = partial(
-                    llm_judge_vllm_gpt_oss,
-                    llm=llm,
-                    sampling_params=sampling_params,
-                    generation_kwargs=generation_kwargs
-                )
-            else:
-                eval_fn = partial(
-                    llm_judge_vllm,
-                    llm=llm,
-                    sampling_params=sampling_params,
-                    generation_kwargs=generation_kwargs
-                )
+            model_kwargs, sampling_params, generation_kwargs = kwargs    
+            llm = load_vllm(model_kwargs)
+            eval_fn = vllm_offline_inference(
+                llm,
+                model_kwargs=model_kwargs,
+                sampling_params=sampling_params,
+                generation_kwargs=generation_kwargs,
+            )
+            
     elif args.backend == 'openai':
         model_kwargs, online_kwargs = load_config(args.config_file, use_online_inference=True)
         os.environ['OPENAI_MODEL'] = model_kwargs['model']
