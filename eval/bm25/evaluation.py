@@ -326,7 +326,7 @@ def main(args, max_workers: int = 10):
         if args.use_online_inference:
             model_kwargs, online_kwargs = kwargs
             common_params = online_kwargs.pop('common_params')
-            os.environ['OPENAI_BASE_URL'] = '{base_url}:{port}'.format(**online_kwargs)
+            os.environ['OPENAI_BASE_URL'] = '{base_url}:{port}/v1'.format(**online_kwargs)
             eval_fn = vllm_online_inference(model_kwargs['model'], common_params)
         else:
             model_kwargs, sampling_params, generation_kwargs = kwargs    
