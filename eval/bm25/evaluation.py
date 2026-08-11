@@ -197,7 +197,7 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwarg
             }
         ])
 
-    request_ids = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
+    _ = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
     outputs = llm.wait_for_completion()
     results = parse_answers(outputs)
 
