@@ -14,8 +14,11 @@ generation_args:
   # chat_template_kwargs:
   #   reasoning_effort: high
 online_args:
-  max_output_tokens: 16384
-  temperature: 0.7
-  timeout: 180
-  reasoning:
-    effort: high
+  base_url: http://localhost
+  port: 8000
+  common_params:
+    max_output_tokens: 16384
+    temperature: 0.7
+    timeout: 180
+    reasoning:
+      effort: high

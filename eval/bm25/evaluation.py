@@ -1,5 +1,4 @@
 import argparse
-import datetime
 import gc
 import json
 import logging
@@ -305,8 +304,7 @@ def main(args, max_workers: int = 10):
         if isinstance(kwargs, tuple):
             if len(kwargs) == 3:
                 model_kwargs, sampling_params, generation_kwargs = kwargs
-                if generation_kwargs.get("chat_template_kwargs"):
-                    if (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') is not None) and (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') != "none"):
+                if generation_kwargs.get("chat_template_kwargs") and (generation_kwargs['chat_template_kwargs'].get('reasoning_effort') != "none"):
                         enable_reasoning = True          
             else:
                 model_kwargs, sampling_params = kwargs
@@ -314,11 +312,15 @@ def main(args, max_workers: int = 10):
             model_kwargs = kwargs
             
         if args.use_online_inference:
+            common_params = sampling_params.pop('common_params')
+            base_url = sampling_params.pop('base_url')
+            port = sampling_params.pop('port')
+            os.environ['OPENAI_BASE_URL'] = f"{base_url}:{port}"
             eval_fn = partial(
                 llm_judge_eval,
                 model=model_kwargs['model'],
                 max_workers=max_workers,
-                **sampling_params
+                **common_params
             )
         else:
             llm = load_vllm(model_kwargs, enable_reasoning)
