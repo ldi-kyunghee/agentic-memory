@@ -137,7 +137,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
     
     sampling_params = SamplingParams(
         stop_token_ids=stop_token_ids,
-        #structured_outputs=structured_outputs_params,
+        structured_outputs=structured_outputs_params,
         **sampling_params
     )
     
