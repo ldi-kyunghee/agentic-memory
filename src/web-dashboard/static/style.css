@@ -405,3 +405,9 @@ td:has(> .masked) { background: repeating-linear-gradient(135deg, transparent, t
   background: #fff8e8; border: 1px solid #f0dfae; color: #6b5320; }
 /* 오라클 주입이 만든 값 — 값은 읽되 실제 백본들과 같은 순위표에 놓지 않는다는 표시 */
 .oorank { color: #5b3b91; font-style: italic; }
+/* IAA 화면 — judge 판정의 정의를 표 위에서 먼저 못박는다 */
+.jbasis { margin: 10px 0 4px; padding: 8px 11px; border-radius: 7px; font-size: 11.5px; line-height: 1.7;
+  background: #eef4ff; border: 1px solid #cfdcf5; color: #2f4470; }
+.kci { font-size: 9.5px; font-weight: 600; color: #9a9aa8; }
+.confrow { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 4px; }
+.cf { background: #f4f4f7; border: 1px solid #e2e2ea; border-radius: 5px; padding: 1px 7px; white-space: nowrap; }

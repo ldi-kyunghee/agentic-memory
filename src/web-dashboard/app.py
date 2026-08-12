@@ -34,9 +34,21 @@ app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 # ---------- 레지스트리 / 사전 ----------
 
+_reg_cache: dict = {}
+
+
 def load_registry_doc() -> dict:
-    with open(HERE / "runs.yaml", encoding="utf-8") as f:
-        return yaml.safe_load(f)
+    """runs.yaml 파싱 결과 — 파일 mtime이 바뀔 때만 다시 읽는다.
+
+    ⚠ 매번 파싱하면(28ms) 항목 단위로 레인을 조회하는 경로에서 수천 번 호출돼 API가 분 단위로
+    느려진다(실측: /api/iaa 77초 → 캐시 후 1초 미만). mtime 기준이라 파일을 고치면 즉시 반영된다.
+    """
+    p = HERE / "runs.yaml"
+    mt = p.stat().st_mtime_ns
+    if _reg_cache.get("mt") != mt:
+        with open(p, encoding="utf-8") as f:
+            _reg_cache.update(mt=mt, doc=yaml.safe_load(f))
+    return _reg_cache["doc"]
 
 
 def load_registry() -> dict:
@@ -846,23 +858,135 @@ def delete_annotation(aid: int, annotator: str):
     return {"ok": True}
 
 
-def _kappa(pairs: list) -> dict:
-    """Cohen's κ + 단순 일치율. pairs: [(labelA, labelB), ...]"""
+LABEL_FIELDS = {
+    "integrity": ("memory_integrity_records", "memory_integrity_score", "memory_content"),
+    "accuracy": ("memory_accuracy_records", "memory_accuracy_score", "memory_content"),
+    "update": ("memory_update_records", "memory_update_type", "memory_content"),
+    "qa": ("question_answering_records", "result_type", "question"),
+}
+# 순서가 있는 라벨 — 분석가가 judge보다 관대/가혹한지(편향 방향)를 재려면 크기 비교가 가능해야 한다
+ORDINAL = {"integrity": {"0": 0, "1": 1, "2": 2}, "accuracy": {"0": 0, "1": 1, "2": 2}}
+
+
+def _item_target(run: str, uuid: str, rec_type: str, session_id: int, idx: int, generator: str):
+    """주석이 가리키는 항목의 텍스트 키를 찾는다 (judge 레코드는 텍스트로 조인된다)."""
+    for lane in [generator, "qwen4b", *gen_registry()]:
+        if not lane:
+            continue
+        try:
+            user = load_run_users(run, lane).get(uuid)
+        except HTTPException:
+            continue
+        if user is None:
+            continue
+        try:
+            s = user["sessions"][session_id]
+        except IndexError:
+            return None, None
+        try:
+            if rec_type in ("integrity", "update"):
+                return s["memory_points"][idx]["memory_content"], lane
+            if rec_type == "accuracy":
+                return s["extracted_memories"][idx], lane
+            if rec_type == "qa":
+                return s["questions"][idx]["question"], lane
+        except (IndexError, KeyError):
+            return None, None
+    return None, None
+
+
+def judge_votes(run: str, uuid: str, rec_type: str, session_id: int, idx: int,
+                generator: str, judge_name: str) -> dict | None:
+    """이 항목에 대한 judge 반복 채점 결과와 다수결.
+
+    ⚠ 단일 채점본이 아니라 **같은 judge로 동일 입력을 반복 채점한 다수결**을 'judge 판정'으로 본다.
+    재채점 불일치가 10~27%로 실측되므로(§16), 단일 회차와 대조하면 분석가 일치율이 judge 자기
+    노이즈만큼 깎여 과소평가된다. 동률이면 합의가 없다고 보고 대조에서 제외한다.
+    """
+    spec = LABEL_FIELDS.get(rec_type)
+    if not spec:
+        return None
+    field, key_name, id_field = spec
+    spec_cfg = (load_registry_doc().get("judge_consensus") or {}).get("sets", {}).get(judge_name)
+    if isinstance(spec_cfg, dict):
+        names = list(spec_cfg.get("all") or [judge_name])
+        if rec_type != "qa":     # 저장물 판정은 Stage A 입력만 쓰므로 배치가 달라도 같은 입력의 반복
+            names += [n for n in (spec_cfg.get("store_only") or []) if n not in names]
+    else:
+        names = list(spec_cfg or [judge_name])
+    target, lane = _item_target(run, uuid, rec_type, session_id, idx, generator)
+    if target is None:
+        return None
+    # judge 세트는 generator 레인에 매달려 있다 (예: oss120-rep1은 oss120 레인 소속).
+    # integrity/accuracy/update는 입력이 레인 무관 동일하므로 모든 레인을 뒤져 찾고,
+    # qa만 답변 레인에 종속되므로 해당 generator 레인으로 제한한다.
+    lanes = [generator] if (rec_type == "qa" and generator) else [generator, lane, *gen_registry()]
+    votes = {}
+    for jn in names:
+        for g in lanes:
+            if not g:
+                continue
+            jd = load_judge(run, jn, uuid, g)
+            if not jd:
+                continue
+            for r in jd.get(field, []):
+                if r.get("session_id") == session_id and r.get(id_field) == target:
+                    v = r.get(key_name)
+                    if v is not None:
+                        votes[jn] = str(v)
+                    break
+            if jn in votes:
+                break
+    if not votes:
+        return None
+    tally: dict = {}
+    for v in votes.values():
+        tally[v] = tally.get(v, 0) + 1
+    top = max(tally.values())
+    winners = [k for k, c in tally.items() if c == top]
+    return {"votes": votes, "tally": tally, "n_runs": len(votes),
+            "consensus": winners[0] if len(winners) == 1 else None,
+            "unanimous": len(tally) == 1, "tie": len(winners) > 1}
+
+
+def _kappa(pairs: list, ci: bool = False) -> dict:
+    """Cohen's κ + 단순 일치율. pairs: [(labelA, labelB), ...]
+    ci=True면 부트스트랩 95% 신뢰구간을 함께 낸다 (표본이 작을 때 κ 한 자리 비교를 막기 위함)."""
     n = len(pairs)
     if not n:
         return {"n": 0, "agree": None, "kappa": None}
+
+    def k_of(ps):
+        m = len(ps)
+        if not m:
+            return None
+        po = sum(1 for a, b in ps if a == b) / m
+        labs = {x for p in ps for x in p}
+        ca = {l: sum(1 for a, _ in ps if a == l) / m for l in labs}
+        cb = {l: sum(1 for _, b in ps if b == l) / m for l in labs}
+        pe = sum(ca[l] * cb[l] for l in labs)
+        return None if pe >= 1 else (po - pe) / (1 - pe)
+
     po = sum(1 for a, b in pairs if a == b) / n
-    labs = {x for p in pairs for x in p}
-    ca = {l: sum(1 for a, _ in pairs if a == l) / n for l in labs}
-    cb = {l: sum(1 for _, b in pairs if b == l) / n for l in labs}
-    pe = sum(ca[l] * cb[l] for l in labs)
-    k = None if pe >= 1 else round((po - pe) / (1 - pe), 3)
-    return {"n": n, "agree": round(po * 100, 1), "kappa": k}
+    k = k_of(pairs)
+    out = {"n": n, "agree": round(po * 100, 1), "kappa": None if k is None else round(k, 3)}
+    if ci and n >= 10 and k is not None:
+        import random
+        rnd = random.Random(20260807)     # 새로고침마다 값이 흔들리지 않도록 고정 시드
+        ks = sorted(x for _ in range(400)
+                    if (x := k_of([pairs[rnd.randrange(n)] for _ in range(n)])) is not None)
+        if len(ks) >= 40:
+            out["ci"] = [round(ks[int(len(ks) * 0.025)], 3), round(ks[int(len(ks) * 0.975)], 3)]
+    return out
 
 
 @app.get("/api/iaa")
 def api_iaa(run: str | None = None, uuid: str | None = None):
-    """분석가 간(IAA) · 분석가 vs judge 일치도. 항목 키는 (run,uuid,session,rec_type,idx,generator)."""
+    """분석가 간(IAA) · 분석가 vs judge 합의 일치도. 항목 키는 (run,uuid,session,rec_type,idx,generator).
+
+    'judge 판정'은 단일 채점본이 아니라 **반복 채점의 다수결**이다 (judge_consensus 참조).
+    반복 세트가 없는 항목은 저장된 스냅샷 라벨로 폴백하고, 그 비율을 함께 보고한다.
+    """
     rows = list_annotations(run=run, uuid=uuid)
     labeled = [r for r in rows if r["label"]]
     by_item: dict = {}
@@ -870,35 +994,119 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
         key = (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"], r["generator"])
         by_item.setdefault(key, {})[r["annotator"]] = r
 
+    # ── judge 합의 라벨 계산 (항목 단위 1회, 주석 여러 건이 같은 항목을 공유하므로) ──
+    consensus: dict = {}
+    n_multi = n_unan = n_tie = n_fallback = 0
+    for key in by_item:
+        r0 = next(iter(by_item[key].values()))
+        v = judge_votes(key[0], key[1], key[3], key[2], key[4], key[5], r0.get("judge_name") or "")
+        if v and v["n_runs"] > 1:
+            n_multi += 1
+            n_unan += 1 if v["unanimous"] else 0
+            n_tie += 1 if v["tie"] else 0
+        if not v or v["consensus"] is None:
+            snap = r0.get("judge_label")
+            if not v and snap not in (None, ""):
+                n_fallback += 1
+            consensus[key] = {"label": snap or None, "n_runs": (v or {}).get("n_runs", 0),
+                              "unanimous": (v or {}).get("unanimous"), "tie": bool(v and v["tie"]),
+                              "tally": (v or {}).get("tally", {}), "source": "snapshot" if not v else "tie"}
+        else:
+            consensus[key] = {"label": v["consensus"], "n_runs": v["n_runs"],
+                              "unanimous": v["unanimous"], "tie": False,
+                              "tally": v["tally"], "source": "consensus"}
+
+    def ikey(r):
+        return (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"], r["generator"])
+
+    def jlab(r):
+        return consensus.get(ikey(r), {}).get("label")
+
+    cmpable = [r for r in labeled if jlab(r) not in (None, "") and r["rec_type"] in LABEL_FIELDS]
+
     annotators = sorted({r["annotator"] for r in labeled})
-    # 분석가 쌍별 (같은 항목을 둘 다 라벨한 경우만)
+    # ── 분석가 쌍별 IAA (같은 항목을 둘 다 라벨한 경우만) ──
     pairs_out = []
     for i, a in enumerate(annotators):
         for b in annotators[i + 1:]:
-            pr = [(v[a]["label"], v[b]["label"]) for v in by_item.values() if a in v and b in v]
-            st = _kappa(pr)
+            shared = [v for v in by_item.values() if a in v and b in v]
+            st = _kappa([(v[a]["label"], v[b]["label"]) for v in shared], ci=True)
             if st["n"]:
+                by_t = {}
+                for v in shared:
+                    t = v[a]["rec_type"]
+                    by_t.setdefault(t, []).append((v[a]["label"], v[b]["label"]))
+                st["by_type"] = [{"rec_type": t, **_kappa(p)} for t, p in sorted(by_t.items())]
                 pairs_out.append({"a": a, "b": b, **st})
-    # 분석가 vs judge (라벨 스냅샷이 있는 항목만)
+
+    # ── 분석가 vs judge 합의 ──
     vs_judge = []
     for a in annotators:
-        pr = [(r["label"], r["judge_label"]) for r in labeled
-              if r["annotator"] == a and r["judge_label"] not in (None, "")]
-        st = _kappa(pr)
-        if st["n"]:
-            vs_judge.append({"annotator": a, **st})
-    # 레코드 타입별 분석가 vs judge
+        mine = [r for r in cmpable if r["annotator"] == a]
+        st = _kappa([(r["label"], jlab(r)) for r in mine], ci=True)
+        if not st["n"]:
+            continue
+        # 편향: 순서 라벨에서 분석가가 judge보다 얼마나 높게/낮게 주는가 (+면 관대)
+        diffs = [ORDINAL[r["rec_type"]][r["label"]] - ORDINAL[r["rec_type"]][jlab(r)]
+                 for r in mine if r["rec_type"] in ORDINAL
+                 and r["label"] in ORDINAL[r["rec_type"]] and jlab(r) in ORDINAL[r["rec_type"]]]
+        st["bias"] = round(sum(diffs) / len(diffs), 3) if diffs else None
+        st["bias_n"] = len(diffs)
+        st["done_types"] = {t: sum(1 for r in mine if r["rec_type"] == t)
+                            for t in ["integrity", "accuracy", "update", "qa"]}
+        vs_judge.append({"annotator": a, **st})
+
+    # ── 레코드 타입별 (전체 분석가 합산) + judge 만장일치/분열 분해 ──
     by_type = []
-    for t in ["integrity", "accuracy", "update", "qa"]:  # gold_qa는 judge 대조 축이 아니라 제외
-        pr = [(r["label"], r["judge_label"]) for r in labeled
-              if r["rec_type"] == t and r["judge_label"] not in (None, "")]
-        st = _kappa(pr)
-        if st["n"]:
-            by_type.append({"rec_type": t, **st})
+    for t in ["integrity", "accuracy", "update", "qa"]:   # gold_qa는 judge 대조 축이 아니라 제외
+        mine = [r for r in cmpable if r["rec_type"] == t]
+        st = _kappa([(r["label"], jlab(r)) for r in mine], ci=True)
+        if not st["n"]:
+            continue
+        firm = [r for r in mine if consensus[ikey(r)].get("unanimous") is True]
+        split = [r for r in mine if consensus[ikey(r)].get("unanimous") is False]
+        st["firm"] = _kappa([(r["label"], jlab(r)) for r in firm])
+        st["split"] = _kappa([(r["label"], jlab(r)) for r in split])
+        # 혼동 행렬 (분석가 라벨 → judge 합의 라벨), 불일치 상위만
+        conf: dict = {}
+        for r in mine:
+            conf[(r["label"], jlab(r))] = conf.get((r["label"], jlab(r)), 0) + 1
+        st["confusion"] = sorted(
+            ({"mine": a, "judge": j, "n": c} for (a, j), c in conf.items()),
+            key=lambda x: (-x["n"], x["mine"], x["judge"]))
+        by_type.append({"rec_type": t, **st})
+
+    # ── 큐 진척률 (분석가별) ──
+    progress = None
+    if QUEUE_PATH.exists():
+        with open(QUEUE_PATH, encoding="utf-8") as f:
+            q = json.load(f)
+        qkeys = {(x["run"], x["uuid"], x["session_id"], x["rec_type"], x["idx"]) for x in q["items"]}
+        qtypes: dict = {}
+        for x in q["items"]:
+            qtypes[x["rec_type"]] = qtypes.get(x["rec_type"], 0) + 1
+        per: dict = {}
+        for r in labeled:
+            k = (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"])
+            slot = per.setdefault(r["annotator"], {"in_queue": 0, "out": 0, "by_type": {}})
+            if k in qkeys:
+                slot["in_queue"] += 1
+                slot["by_type"][r["rec_type"]] = slot["by_type"].get(r["rec_type"], 0) + 1
+            else:
+                slot["out"] += 1
+        progress = {"queue_n": q["n"], "queue_types": qtypes,
+                    "annotators": [{"annotator": a, **v} for a, v in sorted(per.items())]}
+
+    cfg = load_registry_doc().get("judge_consensus") or {}
     return {
         "total": len(rows), "labeled": len(labeled), "annotators": annotators,
         "items": len(by_item), "overlap_items": sum(1 for v in by_item.values() if len(v) > 1),
+        "comparable": len(cmpable),
+        "judge_basis": {"label": cfg.get("label", ""), "note": cfg.get("note", ""),
+                        "multi_items": n_multi, "unanimous": n_unan, "tie": n_tie,
+                        "fallback_items": n_fallback},
         "annotator_pairs": pairs_out, "vs_judge": vs_judge, "by_type": by_type,
+        "progress": progress,
         "agree_clicks": {"agree": sum(1 for r in rows if r["agree"] == 1),
                          "disagree": sum(1 for r in rows if r["agree"] == 0)},
     }

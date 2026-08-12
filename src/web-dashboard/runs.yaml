@@ -40,6 +40,24 @@ generators:
     judges:
       oss120-genoss120-4u: "results/mem0-classic-oss/judge-oss120-genoss120-4u-{run}/judge"
 
+# judge 합의(다수결) 정의 — "judge 판정"은 단일 채점본이 아니라 **같은 모델로 동일 입력을 여러 번
+# 채점한 결과의 다수결**로 본다. 단일 채점본과 비교하면 judge가 그 회차에 우연히 흔들린 값과
+# 분석가를 대조하게 돼(재채점 불일치 10~27% 실측), 일치율이 judge 자기 노이즈만큼 깎인다.
+# key = 대표 judge 이름, value = 같은 모델·같은 입력의 반복 채점 세트들.
+judge_consensus:
+  label: "gpt-oss-120b (high)"
+  note: "동일 입력을 같은 judge로 반복 채점한 다수결. 동률이면 합의 없음으로 처리해 대조에서 제외한다."
+  sets:
+    oss120-genoss120:
+      all: [oss120-genoss120, oss120-rep1, oss120-rep2, oss120-rep3]
+      # ⚠ 저장물 판정(integrity·accuracy·update)의 입력은 Stage A 산출물뿐이라 4유저 배치도
+      #    '같은 입력의 2회차 채점'이다 (§16①·§17-2③에서 배치 효과가 아님을 확인).
+      #    QA는 답변이 재생성돼 입력 자체가 달라지므로(§15② 판정 21% 변동) 반복으로 세지 않는다.
+      store_only: [oss120-genoss120-4u]
+    oss120-genoss120-4u:
+      all: [oss120-genoss120-4u]
+      store_only: [oss120-genoss120, oss120-rep1, oss120-rep2, oss120-rep3]
+
 # 고정 레인 행 — Metrics 표(HaluMem Table 3)에 상단바 generator·judge 선택과 무관하게 항상 이 조합으로 집계해
 # 붙이는 행. 검색 오라클처럼 '답변 생성 레인 자체가 실험 조건'인 세팅은 일반 런으로는 표현할 수 없다.
 # oracle 값에 따라 읽을 수 없게 된 지표 칼럼은 화면에서 자동으로 '–' 처리된다 (app.py의 ORACLE_MASK).

@@ -1955,23 +1955,71 @@ async function jmStartQueue() {
   JM.queue = d.items; jmGo(0);
 }
 
+const kFmt = (o) => o.kappa == null ? "–"
+  : `${o.kappa}${o.ci ? ` <span class="kci">[${o.ci[0]}–${o.ci[1]}]</span>` : ""}`;
+const kGrade = (k) => k == null ? "" : k >= 0.8 ? "거의 완전" : k >= 0.6 ? "견고" : k >= 0.4 ? "보통" : k >= 0.2 ? "약함" : "거의 없음";
+const pctCell = (o) => o && o.n ? `${o.agree}% <span class="muted small">(${o.n})</span>` : `<span class="muted">–</span>`;
+
 async function jmIAA() {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
   const d = await api("/api/iaa");
-  const row = (o) => `<tr><td>${esc(o.label)}</td><td>${o.n}</td><td>${o.agree}%</td><td>${o.kappa ?? "–"}</td></tr>`;
+  const jb = d.judge_basis || {};
+  const pg = d.progress;
+  const TYPES = ["integrity", "accuracy", "update", "qa"];
+  const tName = (t) => (REC_NAMES[t] || t).replace(/\s*\(.*\)$/, "");
+
+  // 큐 진척 — 분석가별 완료 수 (큐 밖 개별 검토는 따로 표기)
+  const progressBlock = !pg ? "" : `
+    <h4 style="margin:14px 0 6px" data-desc="공유 표본 큐 ${pg.queue_n}건 중 몇 건을 라벨했는지. 분석가 간 일치도는 이 큐에서만 쌓입니다">큐 진척</h4>
+    <table class="cmp"><tr><th>분석가</th><th>큐 완료</th>${TYPES.map((t) => `<th>${esc(tName(t))}</th>`).join("")}<th data-desc="큐에 없는 항목을 개별 검토 버튼으로 라벨한 건수 — IAA에는 반영되지 않습니다">큐 밖</th></tr>
+      ${pg.annotators.map((a) => `<tr><td>${esc(a.annotator)}</td>
+        <td><b>${a.in_queue}</b> / ${pg.queue_n} <span class="muted small">(${(a.in_queue / pg.queue_n * 100).toFixed(0)}%)</span></td>
+        ${TYPES.map((t) => `<td class="small">${a.by_type[t] || 0} <span class="muted">/ ${pg.queue_types[t] || 0}</span></td>`).join("")}
+        <td class="muted small">${a.out}</td></tr>`).join("")}</table>`;
+
+  const row = (label, o, extra = "") => `<tr><td>${esc(label)}</td><td>${o.n}</td><td>${o.agree}%</td>
+    <td>${kFmt(o)} <span class="muted small">${kGrade(o.kappa)}</span></td>${extra}</tr>`;
+
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
     <h4 style="margin:0 0 6px">라벨링 현황</h4>
-    <p class="small muted">주석 ${d.total}건 · 라벨 완료 ${d.labeled}건 · 항목 ${d.items}개 (2인 이상 겹친 항목 <b>${d.overlap_items}</b>개) · 👍${d.agree_clicks.agree} 👎${d.agree_clicks.disagree}</p>
-    <h4 style="margin:14px 0 6px" data-desc="같은 항목을 두 분석가가 모두 라벨한 경우만 집계됩니다. κ는 우연 일치를 보정한 값 — 0.6 이상이면 견고한 편">분석가 간 일치도 (IAA)</h4>
-    <table class="cmp"><tr><th>쌍</th><th>공통 항목</th><th>일치율</th><th>Cohen κ</th></tr>
-      ${d.annotator_pairs.map((p) => row({ label: `${p.a} ↔ ${p.b}`, ...p })).join("") || `<tr><td colspan="4" class="muted">겹친 항목 없음 — 공유 큐로 라벨하면 채워집니다</td></tr>`}</table>
-    <h4 style="margin:14px 0 6px" data-desc="분석가를 정답으로 봤을 때 judge가 얼마나 맞추는가">분석가 vs judge</h4>
-    <table class="cmp"><tr><th>분석가</th><th>항목</th><th>일치율</th><th>Cohen κ</th></tr>
-      ${d.vs_judge.map((p) => row({ label: p.annotator, ...p })).join("") || `<tr><td colspan="4" class="muted">아직 없음</td></tr>`}</table>
-    <h4 style="margin:14px 0 6px">판정 유형별 (전체 분석가 합산 vs judge)</h4>
-    <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th></tr>
-      ${d.by_type.map((p) => row({ label: REC_NAMES[p.rec_type] || p.rec_type, ...p })).join("") || `<tr><td colspan="4" class="muted">아직 없음</td></tr>`}</table>
+    <p class="small muted">주석 ${d.total}건 · 라벨 완료 ${d.labeled}건 · 항목 ${d.items}개 (2인 이상 겹친 항목 <b>${d.overlap_items}</b>개) · judge와 대조 가능 ${d.comparable}건 · 👍${d.agree_clicks.agree} 👎${d.agree_clicks.disagree}</p>
+
+    <div class="jbasis" data-desc="${esc(jb.note || "")}">
+      <b>⚖ 'judge 판정'의 정의</b> — 단일 채점본이 아니라 <b>${esc(jb.label || "judge")}로 동일 입력을 반복 채점한 결과의 다수결</b>입니다.
+      단일 회차와 대조하면 그 회차에 judge가 우연히 흔들린 값과 분석가를 비교하게 돼 일치율이 깎입니다.
+      <span class="small">반복 2회 이상인 항목 <b>${jb.multi_items || 0}</b>개 — 그중 만장일치 ${jb.unanimous || 0}, <b>동률이라 합의 없음 ${jb.tie || 0}</b>(대조에서 제외).
+      반복본이 없는 항목 ${jb.fallback_items || 0}개는 단일 채점본으로 대조합니다.</span>
+    </div>
+    ${progressBlock}
+
+    <h4 style="margin:14px 0 6px" data-desc="같은 항목을 두 분석가가 모두 라벨한 경우만 집계됩니다. κ는 우연 일치를 보정한 값 — 대괄호는 부트스트랩 95% 신뢰구간">분석가 간 일치도 (IAA)</h4>
+    <table class="cmp"><tr><th>쌍</th><th>공통 항목</th><th>일치율</th><th>Cohen κ</th><th>유형별 일치율</th></tr>
+      ${d.annotator_pairs.map((p) => row(`${p.a} ↔ ${p.b}`, p,
+        `<td class="small">${(p.by_type || []).map((b) => `${esc(tName(b.rec_type))} ${b.agree}%<span class="muted">(${b.n})</span>`).join(" · ") || "–"}</td>`)).join("")
+        || `<tr><td colspan="5" class="muted">겹친 항목 없음 — 공유 큐로 라벨하면 채워집니다</td></tr>`}</table>
+
+    <h4 style="margin:14px 0 6px" data-desc="분석가 라벨과 judge 합의 라벨의 일치. 편향은 순서 라벨(0/1/2)에서 분석가가 judge보다 얼마나 높게 주는지 — 양수면 분석가가 더 관대">분석가 vs judge 합의</h4>
+    <table class="cmp"><tr><th>분석가</th><th>항목</th><th>일치율</th><th>Cohen κ</th><th data-desc="분석가 라벨 − judge 라벨의 평균 (0/1/2 척도). +면 분석가가 관대, −면 가혹">편향</th><th>유형별 라벨 수</th></tr>
+      ${d.vs_judge.map((p) => row(p.annotator, p, `
+        <td>${p.bias == null ? `<span class="muted">–</span>`
+          : `<b class="${p.bias > 0.05 ? "up" : p.bias < -0.05 ? "down" : ""}">${p.bias > 0 ? "+" : ""}${p.bias}</b>
+             <span class="muted small">${p.bias > 0.05 ? "관대" : p.bias < -0.05 ? "가혹" : "중립"} (${p.bias_n})</span>`}</td>
+        <td class="small">${TYPES.map((t) => `${esc(tName(t))} ${p.done_types[t] || 0}`).join(" · ")}</td>`)).join("")
+        || `<tr><td colspan="6" class="muted">아직 없음</td></tr>`}</table>
+
+    <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다">판정 유형별 (전체 분석가 합산 vs judge 합의)</h4>
+    <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th>
+      <th data-desc="judge가 반복 채점에서 전부 같은 라벨을 준 항목에서의 분석가 일치율">judge 만장일치 구간</th>
+      <th data-desc="judge가 반복 채점에서 갈렸던 항목에서의 분석가 일치율 — 여기가 낮으면 '경계선 항목'이 진짜 애매한 것">judge 분열 구간</th></tr>
+      ${d.by_type.map((p) => row(tName(p.rec_type), p,
+        `<td>${pctCell(p.firm)}</td><td>${pctCell(p.split)}</td>`)).join("")
+        || `<tr><td colspan="6" class="muted">아직 없음</td></tr>`}</table>
+
+    ${d.by_type.filter((p) => (p.confusion || []).some((c) => c.mine !== c.judge)).map((p) => `
+      <h4 style="margin:12px 0 4px" data-desc="분석가가 어느 방향으로 judge와 어긋나는지 — 한쪽으로 쏠려 있으면 체계적 이견, 흩어져 있으면 경계선 흔들림입니다">${esc(tName(p.rec_type))} 불일치 방향</h4>
+      <p class="small confrow">${p.confusion.filter((c) => c.mine !== c.judge).slice(0, 8)
+        .map((c) => `<span class="cf"><b>분석가 ${esc(c.mine)}</b> → judge ${esc(c.judge)} <span class="muted">${c.n}건</span></span>`).join("")}</p>`).join("")}
     <h4 style="margin:18px 0 6px" data-desc="완전히 동일한 입력을 같은 judge로 여러 번 채점했을 때의 결과 — judge 자체의 재현성입니다 (분석가와 무관)">judge 자기 일관성 (동일 입력 반복 채점)</h4>
     <div id="jc-box" class="small muted">집계 중…</div>
     <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
