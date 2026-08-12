@@ -1067,13 +1067,14 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
         split = [r for r in mine if consensus[ikey(r)].get("unanimous") is False]
         st["firm"] = _kappa([(r["label"], jlab(r)) for r in firm])
         st["split"] = _kappa([(r["label"], jlab(r)) for r in split])
-        # 혼동 행렬 (분석가 라벨 → judge 합의 라벨), 불일치 상위만
+        # 혼동 행렬 (분석가 라벨 → judge 합의 라벨). 누가 어느 방향으로 어긋나는지 보려고
+        # 분석가 아이디까지 키에 넣는다 — 합산만 보면 체계적 이견인지 개인차인지 구분이 안 된다.
         conf: dict = {}
         for r in mine:
-            conf[(r["label"], jlab(r))] = conf.get((r["label"], jlab(r)), 0) + 1
+            conf[(r["annotator"], r["label"], jlab(r))] = conf.get((r["annotator"], r["label"], jlab(r)), 0) + 1
         st["confusion"] = sorted(
-            ({"mine": a, "judge": j, "n": c} for (a, j), c in conf.items()),
-            key=lambda x: (-x["n"], x["mine"], x["judge"]))
+            ({"annotator": w, "mine": a, "judge": j, "n": c} for (w, a, j), c in conf.items()),
+            key=lambda x: (-x["n"], x["annotator"], x["mine"], x["judge"]))
         by_type.append({"rec_type": t, **st})
 
     # ── 큐 진척률 (분석가별) ──

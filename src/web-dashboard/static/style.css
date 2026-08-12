@@ -411,3 +411,10 @@ td:has(> .masked) { background: repeating-linear-gradient(135deg, transparent, t
 .kci { font-size: 9.5px; font-weight: 600; color: #9a9aa8; }
 .confrow { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 4px; }
 .cf { background: #f4f4f7; border: 1px solid #e2e2ea; border-radius: 5px; padding: 1px 7px; white-space: nowrap; }
+.cf .who { color: #2f4470; }
+.cf .arr { color: #a0a0ac; }
+/* judge 라벨 — 숫자만 두면 분석가 번호로 오독되므로 항상 뜻을 붙인다 */
+.lab { font-weight: 800; }
+.lab i { font-style: normal; font-weight: 600; font-size: 9.5px; color: #7a7a8c; margin-left: 2px; }
+/* 채점 유형 이름 (한글·영문 병기) — 호버하면 무엇을 묻는 항목인지 설명 */
+.rectag { border-bottom: 1px dotted #b9b9c4; cursor: help; white-space: nowrap; }
