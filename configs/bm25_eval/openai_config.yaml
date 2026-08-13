@@ -1,8 +1,0 @@
-model_kwargs:
-  model: gpt-5-mini
-online_args:
-  max_output_tokens: 16384
-  temperature: 1
-  timeout: 180
-  reasoning:
-    effort: minimal
