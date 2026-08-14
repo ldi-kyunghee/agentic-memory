@@ -270,7 +270,7 @@ mem_template_with_prev = """[{}]
         Assistant: {}"""
 
 def load_config(config_file, use_online_inference: bool = False):
-    with open(f"configs/bm25_eval/{config_file}", "r") as file:
+    with open(f"configs/naive/{config_file}", "r") as file:
         kwargs = yaml.safe_load(file)
 
     model_kwargs = kwargs.pop("model_kwargs")
@@ -278,13 +278,13 @@ def load_config(config_file, use_online_inference: bool = False):
         online_kwargs = kwargs.pop("online_args")
         return model_kwargs, online_kwargs
     if kwargs.get('sampling_params'):
-      sampling_params = kwargs.pop("sampling_params")
-      return model_kwargs, sampling_params
+        sampling_params = kwargs.pop("sampling_params")
+        return model_kwargs, sampling_params
 
     if kwargs.get('generation_args'):
-      generation_args = kwargs.pop('generation_args')
-      sampling_params = generation_args.pop('sampling_params')
-      return model_kwargs, sampling_params, generation_args
+        generation_args = kwargs.pop('generation_args')
+        sampling_params = generation_args.pop('sampling_params')
+        return model_kwargs, sampling_params, generation_args
     return model_kwargs
 
 def add_memory_from_dialogue(session_dialogue):
