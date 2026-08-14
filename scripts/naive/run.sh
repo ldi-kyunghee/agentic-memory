@@ -1,5 +1,4 @@
 CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_naive.sh $2 $3 $4 $5
-t=$5
 
 HEALTH_TIMEOUT=300
 HEALTH_INTERVAL=5
