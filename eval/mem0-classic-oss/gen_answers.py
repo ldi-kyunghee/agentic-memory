@@ -56,19 +56,54 @@ def _toks(t: str) -> set:
     return set(re.findall(r"[a-z0-9]{4,}", (t or "").lower()))
 
 
-def oracle_context(qa: dict, user_name: str) -> str:
+_TS_RE = re.compile(r"^(.{3} \d{2}, \d{4}, \d{2}:\d{2}:\d{2}): (.*)$", re.S)
+
+
+def build_ts_map(user: dict) -> dict:
+    """메모리 원문 -> 검색 context에 실제로 실렸던 '시각: 원문' 문자열.
+
+    ⚠ 검색 context 항목은 `Sep 04, 2025, 18:42:18: <원문>` 처럼 **시각 접두사**를 달고 있는데
+    dataset의 evidence는 접두사 없는 원문이다. 이를 그대로 끼워넣으면 오라클 컨텍스트에서
+    **정답 근거만 시각 정보를 잃고 낡은 방해 항목들은 시각을 유지**하게 되어, 시점이 맞는
+    버전을 고르는 능력을 정답 쪽에서만 빼앗는 꼴이 된다(§13 '검색 계층의 시간 인지'가 역으로 작동).
+    그래서 evidence도 동일 포맷으로 복원한다.
+
+    1순위: 이 유저의 검색 context 어딘가에 실린 원문 그대로 (실측 커버리지 95.3%)
+    2순위: 골든 MP의 timestamp로 합성 (mem0 저장 시각과 44~150분 차이라 세션 간 순서는 보존)
+    """
+    out: dict = {}
+    for s in user.get("sessions", []):
+        for qa in s.get("questions", []) or []:
+            for item in _parse_context(qa.get("context", "")):
+                m = _TS_RE.match(item)
+                if m:
+                    out.setdefault(m.group(2), item)
+    for s in user.get("sessions", []):
+        for mp in s.get("memory_points", []) or []:
+            txt, ts = mp.get("memory_content"), mp.get("timestamp")
+            if txt and ts and txt not in out:
+                out[txt] = f"{ts}: {txt}"
+    return out
+
+
+def oracle_context(qa: dict, user_name: str, ts_map: dict | None = None) -> str:
     """evidence(정답 근거 골든)로 검색 context와 동일한 포맷을 구성.
 
     ANSWER_ORACLE_PAD=N이면 실제 검색 결과 중 evidence와 겹치지 않는 항목으로 N개까지 채운다.
     -> '정답이 항상 포함되되 주변 잡음은 실제와 동일한' 조건이 된다.
     """
-    mems = [e["memory_content"] for e in qa.get("evidence", [])]
+    ts_map = ts_map or {}
+    raw = [e["memory_content"] for e in qa.get("evidence", [])]
+    mems = [ts_map.get(t, t) for t in raw]          # 시각 접두사 복원 (없으면 원문 그대로)
     if ORACLE_PAD:
-        ev_toks = [_toks(m) for m in mems]
+        # ⚠ 중복 판정은 **접두사 없는 원문** 기준으로 한다 — 접두사를 포함하면 연도 토큰이
+        #    섞여 같은 메모리를 다른 것으로 보고 중복을 통과시킨다.
+        ev_toks = [_toks(m) for m in raw]
         for item in _parse_context(qa.get("context", "")):
             if len(mems) >= ORACLE_PAD:
                 break
-            it = _toks(item)
+            m = _TS_RE.match(item)
+            it = _toks(m.group(2) if m else item)
             # 이미 넣은 evidence와 사실상 같은 내용이면 건너뜀 (중복 방지)
             if any(et and len(et & it) / len(et) >= 0.8 for et in ev_toks):
                 continue
@@ -120,9 +155,10 @@ def main(results_path: str, max_workers: int, out_path: str | None = None, regen
     if ORACLE:
         # 유저별 이름을 붙여 오라클 context를 미리 계산 (검색 context는 건드리지 않고 별도 키에 보관)
         for user in users:
+            ts_map = build_ts_map(user)   # evidence에 검색 context와 같은 시각 접두사를 붙이기 위한 맵
             for s in user["sessions"]:
                 for qa in s.get("questions", []):
-                    qa["_oracle_context"] = oracle_context(qa, user.get("user_name", ""))
+                    qa["_oracle_context"] = oracle_context(qa, user.get("user_name", ""), ts_map)
         n_ev = sum(1 for qa in pending if qa.get("evidence"))
         print(f"⚠ 오라클 모드: 검색 context 대신 정답 근거 골든만 제공 (evidence 보유 {n_ev}/{len(pending)})")
     print(f"답변 생성 대상: {len(pending)}개 질문")

@@ -1057,16 +1057,17 @@ const METRIC_COLS = [
 ];
 const metricsCache = new Map();
 S.metricsScope = "first4";
+S.showHidden = false;   // custom 프롬프트 축은 기본 숨김 (데이터는 보존 — 토글로 복원)
 // 행/열 하이라이트 선택 — 행은 run 이름, 열은 칼럼 키. 재렌더에도 유지 (탭 이탈해도 세션 내 유지)
 S.metricsSelRows = new Set(); S.metricsSelCols = new Set(); S.metricsSelCells = new Set();
 S.metricsColRows = new Set(); S.metricsColCols = new Set();   // 접힌 행/열
 
 async function renderMetrics() {
   // generator·judge는 상단바 선택을 그대로 따른다 (별도 선택기 없음 — 화면 전체가 한 조합)
-  const key = `${S.generator}|${S.judge}|${S.metricsScope}`;
+  const key = `${S.generator}|${S.judge}|${S.metricsScope}|${S.showHidden ? 1 : 0}`;
   if (!metricsCache.has(key)) {
     busy(true, "지표 집계 중 (공식 집계 함수)…");
-    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.judge}&scope=${S.metricsScope}&generator=${S.generator}`)); }
+    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.judge}&scope=${S.metricsScope}&generator=${S.generator}${S.showHidden ? "&include_hidden=1" : ""}`)); }
     finally { busy(false); }
   }
   const data = metricsCache.get(key);
@@ -1082,8 +1083,12 @@ async function renderMetrics() {
       <option value="all" ${S.metricsScope === "all" ? "selected" : ""}>런별 전체 유저</option>
       ${data.first4.map((u) => `<option value="${u}" ${S.metricsScope === u ? "selected" : ""}>${esc(nameOf(u))}</option>`).join("")}
     </select>
+    <p class="small muted" style="margin-top:10px"><b>숨긴 세팅</b></p>
+    <label class="small" style="display:flex;gap:6px;align-items:flex-start;cursor:pointer" data-desc="custom 프롬프트 축은 정성분석 결과 품질이 낮아 기본적으로 표에서 뺍니다. 산출물과 이미 기록된 주석은 그대로 남아 있어, 켜면 이전 수치가 그대로 재현됩니다.">
+      <input type="checkbox" id="metrics-hidden" ${S.showHidden ? "checked" : ""}> custom 프롬프트 행도 보기</label>
     <p class="small muted" style="margin-top:10px">굵은 값 = 열별 최고(방향 반영). 셀 호버 = 순위·해석, 행 첫 칸 호버 = 런 요약 노트. 이 조합의 라벨이 없는 런은 표에서 제외됨 (레인마다 채점 유저 수가 다름).</p></div>`;
   $("#metrics-scope").onchange = () => { S.metricsScope = $("#metrics-scope").value; renderMetrics(); };
+  $("#metrics-hidden").onchange = () => { S.showHidden = $("#metrics-hidden").checked; renderMetrics(); };
 
   const allRows = data.rows.filter((r) => r.metrics);
   const rows = allRows;   // 접기는 DOM에 남겨두고 클래스로만 처리 (재렌더 없이 토글하기 위함)
@@ -2002,6 +2007,7 @@ async function jmIAA() {
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
     <h4 style="margin:0 0 6px">라벨링 현황</h4>
     <p class="small muted">주석 ${d.total}건 · 라벨 완료 ${d.labeled}건 · 항목 ${d.items}개 (2인 이상 겹친 항목 <b>${d.overlap_items}</b>개) · judge와 대조 가능 ${d.comparable}건 · 👍${d.agree_clicks.agree} 👎${d.agree_clicks.disagree}</p>
+    ${d.hidden_labeled ? `<p class="small muted" data-desc="custom 프롬프트 축은 정성분석 결과 품질이 낮아 화면에서 숨겼지만, 이미 완료된 판정 검토 작업이 걸려 있어 주석은 지우지 않았습니다. 아래 집계에는 그대로 포함되며, 이전에 보고한 수치가 그대로 재현됩니다.">ℹ 이 중 <b>${d.hidden_labeled}건</b>은 화면에서 숨긴 런(${esc(d.hidden_runs.join(", "))})의 주석입니다 — 보고 수치 재현을 위해 집계에는 그대로 포함됩니다.</p>` : ""}
 
     <div class="jbasis" data-desc="${esc(jb.note || "")}">
       <b>⚖ 'judge 판정'의 정의</b> — 단일 채점본이 아니라 <b>${esc(jb.label || "judge")}로 동일 입력을 반복 채점한 결과의 다수결</b>입니다.

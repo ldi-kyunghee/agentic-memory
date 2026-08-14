@@ -51,8 +51,17 @@ def load_registry_doc() -> dict:
     return _reg_cache["doc"]
 
 
-def load_registry() -> dict:
-    return load_registry_doc()["runs"]
+def load_registry(include_hidden: bool = False) -> dict:
+    """런 레지스트리. hidden: true 인 런은 기본적으로 화면·집계에서 제외한다.
+
+    ⚠ 숨김은 '삭제'가 아니다 — 산출물과 이미 기록된 정성분석 주석은 그대로 두고 노출만 막는다.
+    (custom 프롬프트 축은 정성분석 결과 품질이 낮아 제외했으나, 이미 완료된 판정 검토 큐 작업이
+     걸려 있어 데이터를 지우면 안 된다.) include_hidden=True로 언제든 되살릴 수 있다.
+    """
+    runs = load_registry_doc()["runs"]
+    if include_hidden:
+        return runs
+    return {k: v for k, v in runs.items() if not v.get("hidden")}
 
 
 def gen_registry() -> dict:
@@ -61,8 +70,9 @@ def gen_registry() -> dict:
 
 
 def resolve_lane(run: str, generator: str):
-    """run×generator -> (results_path, judges{name: dir상대경로}). 미지의 run/generator면 404."""
-    reg = load_registry()
+    """run×generator -> (results_path, judges{name: dir상대경로}). 미지의 run/generator면 404.
+    ⚠ 숨김 런도 열어준다 — 이미 기록된 주석·trace를 직접 조회하는 경로이므로 막으면 과거 작업이 깨진다."""
+    reg = load_registry(include_hidden=True)
     if run not in reg:
         raise HTTPException(404, f"unknown run: {run}")
     g = gen_registry().get(generator)
@@ -203,8 +213,8 @@ def build_bundle(run: str, uuid: str, judge_name: str, generator: str = "qwen4b"
 # ---------- API ----------
 
 @app.get("/api/runs")
-def api_runs():
-    reg = load_registry()
+def api_runs(include_hidden: int = 0):
+    reg = load_registry(include_hidden=bool(include_hidden))
     gens = gen_registry()
     out = []
     for name, r in reg.items():
@@ -245,7 +255,7 @@ def api_bundle(run: str, uuid: str, judge: str = "nano", generator: str = "qwen4
 
 @app.get("/api/trace/{run}/{uuid}")
 def api_trace(run: str, uuid: str, session: int | None = None):
-    reg = load_registry()
+    reg = load_registry(include_hidden=True)   # 과거 주석에서 열던 trace가 막히면 안 된다
     if run not in reg:
         raise HTTPException(404, f"unknown run: {run}")
     path = ROOT / reg[run]["traces"] / f"{uuid}.jsonl"
@@ -391,8 +401,9 @@ def api_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: in
 
 @lru_cache(maxsize=1)
 def first4_uuids() -> tuple:
-    """모든 실험이 공유하는 데이터셋 첫 4유저 — 4u 런의 judge 디렉토리 파일 목록에서 확보."""
-    reg = load_registry()
+    """모든 실험이 공유하는 데이터셋 첫 4유저 — 4u 런의 judge 디렉토리 파일 목록에서 확보.
+    ⚠ 숨김과 무관해야 한다 — 런을 숨겼다고 유저 범위가 달라지면 과거 수치가 재현되지 않는다."""
+    reg = load_registry(include_hidden=True)
     for r in reg.values():
         if r.get("users") == 4:
             d = ROOT / list(r["judges"].values())[0]
@@ -549,6 +560,26 @@ def oracle_masked(oracle: str) -> list:
     return sorted(set(out))
 
 
+def repeat_qa(tpl: str, run: str, scope: str, n_rep: int) -> tuple:
+    """반복 회차 judge 디렉토리들에서 QA 지표 평균과 표본표준편차.
+
+    같은 행이 표(단일 회차)와 사다리(반복 평균)에서 다른 값으로 보이면 안 되므로,
+    반복 산출물이 있는 런은 표에서도 평균을 대표값으로 쓴다. 반환: (metrics|None, 회차값들, sd)
+    """
+    stats = [s for i in range(1, n_rep + 1)
+             if (s := _qa_stats_from_dir(ROOT / tpl.format(i=i, run=run), scope))]
+    if not stats:
+        return None, [], None
+    reps = [s["qa_c"] for s in stats]
+    mean = lambda k: round(sum(s[k] for s in stats) / len(stats), 2)
+    sd = None
+    if len(reps) > 1:
+        mu = sum(reps) / len(reps)
+        sd = round((sum((x - mu) ** 2 for x in reps) / (len(reps) - 1)) ** 0.5, 2)
+    return ({"n_users": stats[0]["n_users"], "qa_c": mean("qa_c"),
+             "qa_h": mean("qa_h"), "qa_o": mean("qa_o")}, reps, sd)
+
+
 def _metrics_row(name: str, r: dict, scope: str, metrics: dict, extra: dict | None = None) -> dict:
     row = {
         "run": name, "label": r.get("label", name),
@@ -631,13 +662,22 @@ def noise_floor() -> dict | None:
 
 
 @app.get("/api/metrics")
-def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qwen4b"):
-    reg = load_registry()
+def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qwen4b",
+                include_hidden: int = 0):
+    reg = load_registry(include_hidden=bool(include_hidden))
     rows = []
     for name, r in reg.items():
         if not (ROOT / r["results"]).exists():
             continue
-        rows.append(_metrics_row(name, r, scope, compute_metrics(name, judge, scope, generator)))
+        m = compute_metrics(name, judge, scope, generator)
+        # 반복 산출물이 있으면 QA만 평균으로 덮어쓴다 (메모리측 지표는 Stage A 산출이라 회차 무관)
+        reps, sd = [], None
+        tpl = r.get("repeat_judge")
+        if m and tpl:
+            rm, reps, sd = repeat_qa(tpl, name, scope, int(r.get("repeats", 5)))
+            if rm:
+                m = {**m, **{k: rm[k] for k in ("qa_c", "qa_h", "qa_o")}}
+        rows.append(_metrics_row(name, r, scope, m, extra={"repeats": reps, "sd": sd} if reps else None))
 
     # 고정 레인 행 — generator·judge 드롭다운을 따르지 않고 runs.yaml에 박아둔 조합으로만 집계한다.
     # 검색 오라클처럼 '답변 생성 레인 자체가 실험 조건'인 세팅은 일반 런으로 표현할 수 없어서 필요하다.
@@ -1098,8 +1138,14 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
         progress = {"queue_n": q["n"], "queue_types": qtypes,
                     "annotators": [{"annotator": a, **v} for a, v in sorted(per.items())]}
 
+    # 숨긴 런(custom 프롬프트 축)에 달린 주석은 지우지 않고 그대로 센다 — 이미 보고된 수치의
+    # 재현성을 지키기 위함. 대신 얼마나 섞여 있는지는 화면에 밝힌다.
+    hidden_runs = set(load_registry_doc()["runs"]) - set(load_registry())
+    n_hidden = sum(1 for r in labeled if r["run"] in hidden_runs)
+
     cfg = load_registry_doc().get("judge_consensus") or {}
     return {
+        "hidden_runs": sorted(hidden_runs), "hidden_labeled": n_hidden,
         "total": len(rows), "labeled": len(labeled), "annotators": annotators,
         "items": len(by_item), "overlap_items": sum(1 for v in by_item.values() if len(v) > 1),
         "comparable": len(cmpable),
