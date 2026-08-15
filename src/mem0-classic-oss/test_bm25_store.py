@@ -96,6 +96,9 @@ with tempfile.TemporaryDirectory() as td:
     S.insert(vectors=[[0.0] * 4], ids=[str(uuid.uuid4())], payloads=[payload("Martin Mark returned to Columbus")])
     check("reset 후에도 재사용 가능", len(S.search(query="Columbus", vectors=None, limit=5)) == 1)
 
+    # 인터프리터 종료 중에 __del__이 불리면 무해하지만 시끄러운 ImportError가 난다 — 명시적으로 닫는다
+    S.client.close()
+
 print()
 if fails:
     print(f"실패 {len(fails)}건: {fails}")
