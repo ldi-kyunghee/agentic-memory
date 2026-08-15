@@ -137,7 +137,9 @@ class TracingVectorStore:
             for r in results
         ]
         
-        self._tracer.log("retrieval", duration_ms=duration, retrieval={"method": "dense", "query": query, "limit": limit, "hits": hits})
+        # retriever 종류를 trace에 남긴다 — BM25 레인과 임베딩 레인의 trace를 나중에 구분해야 한다
+        method = "bm25" if type(self._inner).__name__ == "BM25Store" else "dense"
+        self._tracer.log("retrieval", duration_ms=duration, retrieval={"method": method, "query": query, "limit": limit, "hits": hits})
         return results
     
     def __getattr__(self, name):

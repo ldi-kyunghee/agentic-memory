@@ -22,6 +22,7 @@ sys.path.insert(0, "src/mem0-classic-oss")  # tracing.py import를 위해 src를
 from tracing import TraceLogger, TracingLLM, TracingVectorStore
 from custom_prompt import CUSTOM_FACT_EXTRACTION_PROMPT
 from oracle import OracleLLM
+from bm25_store import build_bm25_store
 
 from mem0 import Memory
 # mem0 0.1.118 텔레메트리 무력화:
@@ -157,6 +158,15 @@ def process_user(user_data: dict, top_k: int, save_path: str, collection_name: s
             collection_name=f"{collection_name}_{uuid}",
             history_db_path=os.path.join(save_path, "tmp", f"history_{uuid}.db"),
         )
+
+        # retriever 교체: 임베딩(Qdrant dense) -> BM25(Qdrant sparse + IDF). mem0 코드는 무수정.
+        # ⚠ 순서가 중요하다: delete_all보다 먼저 와야 새 스토어가 초기화되고,
+        #    TracingVectorStore보다 먼저 와야 BM25 검색이 trace에 남는다.
+        # ⚠ mem0는 여전히 embedding_model.embed()를 호출하지만 BM25Store가 벡터를 버린다
+        #    -> 지표에는 영향 없고 ingest 시간만 늘어난다 (시간 비교 시 명시할 것).
+        if os.getenv("MEM0_RETRIEVER") == "bm25":
+            memory.vector_store = build_bm25_store(f"{collection_name}_{uuid}")
+
         memory.delete_all(user_id=user_id)  # 재실행 대비 초기화 작업임
 
         # 단계별 오라클: 해당 단계의 LLM 응답을 정답으로 대체함 (mem0 코드는 무수정)
@@ -281,6 +291,7 @@ def main(data_path: str, version: str, top_k: int=20, user_num: int | None = Non
     collection_name = f"halumem_{version}"
     print(f"fact extraction prompt: {'halumem-custom' if os.getenv('MEM0_CUSTOM_FACT_PROMPT') == 'halumem' else 'mem0-default'}")
     print(f"reasoning effort override: {os.getenv('MEM0_REASONING_EFFORT') or '없음 (모델 기본값)'}")
+    print(f"retriever: {'BM25 (Qdrant sparse + IDF)' if os.getenv('MEM0_RETRIEVER') == 'bm25' else '임베딩 (Qdrant dense)'}")
     _orc = [n for n, e in (("추출", "MEM0_ORACLE_EXTRACTION"), ("갱신결정", "MEM0_ORACLE_UPDATE")) if os.getenv(e) == "1"]
     print(f"oracle 단계: {' + '.join(_orc) if _orc else '없음 (전 단계 실제 수행)'}")
     trace_dir = None
