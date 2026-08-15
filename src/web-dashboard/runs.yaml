@@ -67,12 +67,12 @@ extra_rows:
     generator: oraclepad
     judge: oraclepad-oss120
     repeat_judge: "results/mem0-classic-oss/judge-oraclepad-4u-r{i}-{run}/judge"
-    label: "오라클 ③ 추출+갱신+검색 · 잡음 유지 (4u) 🔴재측정 대기"
+    label: "오라클 ③ 추출+갱신+검색 · 잡음 유지 (4u)"
     backbone: gpt-oss-120b
     backbone_effort: "해당 없음 — 추출·갱신 오라클, 답변은 정답 근거+실제 검색 잡음으로 top-20 구성"
     prompt: default
     oracle: extraction+update+retrieval
-    note: "🔴 무효 — 재측정 대기. 이 행은 evidence를 검색 context와 달리 **시각 접두사 없이** 끼워넣는 버그가 있었다(gen_answers.oracle_context). dedup이 같은 내용의 시각 붙은 항목을 지우는 바람에 정답 근거만 시각 정보를 잃고 낡은 방해 항목은 시각을 유지해, 시점이 맞는 버전을 고르는 능력을 정답 쪽에서만 빼앗았다(§13의 검색 시간 인지가 역으로 작동). 그래서 4유저 5회에서 E2 대비 -6.64p라는 구조상 불가능한 값이 나왔다. 버그는 수정됐고 재측정 전까지 이 행의 수치는 인용 금지"
+    note: "QA 76.91 ±0.63 (4유저 5회, 버그 수정 후). E2(74.44)와의 +2.47p (p=0.0014)가 **순수 검색 정확도**의 기여, E3(84.71)와의 +7.80p (p<0.0001)가 **컨텍스트 축약**의 기여다. ⚠ 이력: evidence를 검색 context와 달리 시각 접두사 없이 끼워넣는 버그로 한때 67.80(E2보다 낮은 불가능한 값)이 나왔다 — 수정으로 +9.11p 회복. 버그본은 *-buggy 디렉토리에 보존"
   - key: "full-traced:oracle"
     run: oss120b4
     generator: oracle
@@ -83,7 +83,7 @@ extra_rows:
     backbone_effort: "해당 없음 — 메모리 시스템 미사용, 정답 근거(evidence)만 직접 제공"
     prompt: default
     oracle: extraction+update+retrieval
-    note: "QA 84.71 ±1.24 (4유저 5회). ⚠ 이는 '완벽한 검색'이 아니라 '정답 근거만 남기고 나머지를 전부 제거한' 조건이다 — 평균 1.4개 항목(실제 검색은 top-20). E2와의 +10.27p에는 검색 정확도와 컨텍스트 축약이 섞여 있고, 이를 분해할 대조군(③)이 현재 무효라 분해는 보류 상태다. carrier run은 oss120b4로 옮겨 사다리 기준선과 저장소를 일치시켰다 — 이제 실측 행의 엄밀한 ablation(저장소 동일, 답변 입력만 다름)"
+    note: "QA 84.71 ±1.24 (4유저 5회). ⚠ 이는 '완벽한 검색'이 아니라 '정답 근거만 남기고 나머지를 전부 제거한' 조건이다 — 평균 1.4개 항목(실제 검색은 top-20). ③(잡음 유지)과의 +7.80p는 검색 정확도가 아니라 **컨텍스트 축약** 효과이며, 메모리 시스템이 top-k를 유지하는 한 얻을 수 없는 몫이다. carrier run은 oss120b4라 실측 행의 엄밀한 ablation(저장소 동일, 답변 입력만 다름)"
 
 # 단계별 오라클 상한 사다리 — mem0 파이프라인의 각 단계를 차례로 '완벽'하게 만들며 QA 상한을 잰다.
 # 아직 안 돌린 단계는 화면에서 '미실행'으로 표시되고, 산출물이 생기면 자동으로 채워진다.
@@ -92,7 +92,7 @@ oracle_ladder:
   # 반복 회차 산출물은 레인으로 등록하지 않고 경로 템플릿으로 직접 읽는다 (드롭다운을 붐비게 하지 않음).
   # 개별 회차를 화면에서 열어보고 싶어지면 generators에 레인으로 추가하면 된다 — 산출물 경로는 동일.
   repeats: 5
-  note: "4유저(공통 705문항) · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 각 행 5회 반복 평균±표본표준편차. 판독: 추출 +12.37(p<0.0001)이 압도적이고 갱신 +2.55(p=0.0014)도 작지만 유의하다 — 1유저에서 갱신이 ns(+1.46)였던 것은 표본 부족이었다. ⚠ E2pad(잡음 유지) 행은 시각 접두사 버그로 무효이며 재측정 대기 중이라, 검색 정확도와 컨텍스트 축약의 분해는 아직 못 한다. 지금 말할 수 있는 것은 E2→E3 = +10.27(둘의 합계)뿐"
+  note: "4유저(공통 705문항) · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 각 행 5회 반복 평균±표본표준편차. 확정 분해: 추출 +12.37(49%) · 갱신 +2.55(10%) · 순수 검색 정확도 +2.47(10%) · 컨텍스트 축약 +7.80(31%) — 네 구간 모두 유의(p<0.002). 마지막 축약분은 메모리 시스템의 능력이 아니라 '생성기에게 정답만 주고 나머지를 치운' 효과이므로, 시스템이 실제로 가져갈 몫은 25.19p 중 17.39p(69%)이고 그중 추출이 절반을 차지한다"
   steps:
     - key: actual
       repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
@@ -120,13 +120,13 @@ oracle_ladder:
       desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐 — 백본 무관"
     - key: e2pad
       repeat_judge: "results/mem0-classic-oss/judge-oraclepad-4u-r{i}-{run}/judge"
-      label: "추출+갱신+검색 오라클 (잡음 유지) 🔴재측정 대기"
+      label: "추출+갱신+검색 오라클 (잡음 유지)"
       stages: [extraction, update, retrieval]
       run: oe2
       generator: oraclepad
       judge: oraclepad-oss120
       run_display: "정답 근거 + 실제 검색 잡음으로 top-20"
-      desc: "🔴 이 행의 수치는 무효다 — evidence를 검색 context와 달리 시각 접두사 없이 끼워넣는 버그로, 정답 근거만 시간 정보를 잃고 낡은 방해 항목은 시각을 유지했다(§13의 검색 시간 인지가 정답 쪽에서만 무력화). 그래서 정답을 추가했는데도 E2보다 -6.64p 낮은 구조상 불가능한 값이 나왔다. 버그 수정 완료, A′+judge 5회 재측정 대기 중. 원래 목적: E2와의 차이=순수 검색 정확도, 아래 행과의 차이=컨텍스트 축약"
+      desc: "정답 근거를 반드시 포함시키되 나머지는 실제 검색 결과로 채워 컨텍스트 규모를 top-20으로 맞춘 대조군. 위 행(E2)과의 차이 +2.47p가 순수 검색 정확도, 아래 행과의 차이 +7.80p가 컨텍스트 축약의 기여다 (둘 다 p<0.002). ⚠ 이 대조군은 evidence에도 검색 context와 동일한 시각 접두사를 붙여야 성립한다 — 한때 접두사 누락으로 부호가 뒤집혔다"
     - key: retrieval
       repeat_judge: "results/mem0-classic-oss/judge-oracle-4u-r{i}-{run}/judge"
       label: "추출+갱신+검색 오라클 (근거만)"
