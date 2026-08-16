@@ -583,7 +583,7 @@ function renderSessions() {
       ${compBar(gC.g, goldSegs(gC))}</div>
     ${extBlock("추출 A", "a-h", S.run, eA)}
     ${S.bundleB ? extBlock("추출 B", "b-h", S.runB, extComp(realSessions(S.bundleB))) : ""}
-    <div class="qstart"><button class="jbtn" id="btn-queue" data-desc="모든 분석가에게 동일한 순서로 제공되는 표본을 순서대로 라벨합니다 — 분석가 간 일치도(IAA)는 이 겹치는 항목들로 계산됩니다">⚖ 판정 검토 큐 시작</button>
+    <div class="qstart"><button class="jbtn" id="btn-queue" data-desc="모든 분석가에게 동일한 순서로 제공되는 표본을 순서대로 라벨합니다 — 분석가 간 일치도(IAA)는 이 겹치는 항목들로 계산됩니다">⚖ 검토 시작 (공유 표본)</button>
       <button class="jbtn" id="btn-iaa" data-desc="라벨링 현황과 분석가 간·분석가 vs judge 일치도">📊 IAA</button></div>
   </div>`;
   sb.innerHTML = compHTML + S.bundle.sessions.map((s) => {
@@ -601,7 +601,7 @@ function renderSessions() {
   }).join("");
   $$(".side-item", sb).forEach((el) => (el.onclick = () => { S.session = +el.dataset.sid; renderSessions(); }));
   $("#btn-queue") && ($("#btn-queue").onclick = jmStartQueue);
-  $("#btn-iaa") && ($("#btn-iaa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>판정 주석 현황</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmIAA(); });
+  $("#btn-iaa") && ($("#btn-iaa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>사람 판정 vs judge — 검토 결과</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmIAA(); });
 
   const s = S.bundle.sessions.find((x) => x.session_id === S.session);
   if (!s || s.generated_qa_session) { $("#content").innerHTML = "<p class='muted'>세션을 선택하세요</p>"; return; }
@@ -1998,7 +1998,7 @@ const pctCell = (o) => o && o.n ? `${o.agree}% <span class="muted small">(${o.n}
 async function jmIAA() {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
-  const d = await api(`/api/iaa?scope=${JM.iaaScope || "all"}`);
+  const d = await api("/api/iaa");
   const jb = d.judge_basis || {};
   const pg = d.progress;
   const TYPES = ["integrity", "accuracy", "update", "qa"];
@@ -2017,13 +2017,8 @@ async function jmIAA() {
   const row = (label, o, extra = "") => rowHTML(esc(label), o, extra);
 
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
-    <h4 style="margin:0 0 6px">라벨링 현황</h4>
+    <h4 style="margin:0 0 6px">진행 현황</h4>
     <p class="small muted">주석 ${d.total}건 · 라벨 완료 ${d.labeled}건 · 항목 ${d.items}개 (2인 이상 겹친 항목 <b>${d.overlap_items}</b>개) · judge와 대조 가능 ${d.comparable}건 · 👍${d.agree_clicks.agree} 👎${d.agree_clicks.disagree}</p>
-    <p class="small scopesw" data-desc="아래 집계의 <b>대상 범위</b>입니다. '공통 교집합'으로 맞추면 「유형 × 모델」 표와 <b>같은 항목</b>을 쓰게 되어 두 표의 수치가 정합합니다.<br>기본값 '전체'는 개별 검토로 라벨한 항목까지 포함해 표본을 최대로 씁니다 — judge 품질의 절대 수준을 볼 때 적합합니다.">
-      <b>집계 범위</b>
-      <button class="ctx-toggle${(JM.iaaScope || "all") === "all" ? "" : " btn-off"}" data-scope="all">전체 주석</button>
-      <button class="ctx-toggle${JM.iaaScope === "common" ? "" : " btn-off"}" data-scope="common">공통 교집합 (${d.common_n}건)</button>
-      <span class="small muted">— '공통 교집합'으로 맞추면 아래 표들이 「유형 × 모델」 표와 같은 항목을 씁니다.</span></p>
     ${d.hidden_labeled ? `<p class="small muted" data-desc="custom 프롬프트 축은 정성분석 결과 품질이 낮아 화면에서 숨겼지만, 이미 완료된 판정 검토 작업이 걸려 있어 주석은 지우지 않았습니다. 아래 집계에는 그대로 포함되며, 이전에 보고한 수치가 그대로 재현됩니다.">ℹ 이 중 <b>${d.hidden_labeled}건</b>은 화면에서 숨긴 런(${esc(d.hidden_runs.join(", "))})의 주석입니다 — 보고 수치 재현을 위해 집계에는 그대로 포함됩니다.</p>` : ""}
 
     <div class="jbasis" data-desc="${esc(jb.note || "")}">
@@ -2065,33 +2060,26 @@ async function jmIAA() {
           <br><span class="kap">κ ${s.kappa ?? "–"}</span>${
           v ? ` <span class="vs">${v.better}:${v.worse}${v.p < 0.05 ? " ✦" : ""}</span>` : ""}</td>`;
       };
-      const row = (t) => `<tr><td>${t ? recTag(t) : "<b>전체</b>"}</td>${[baseM, ...others].map((m) => cell(m, t)).join("")}</tr>`;
+      const fs = (s) => !s || !s.n ? `<td class="muted">–</td>`
+        : `<td data-desc="일치 ${s.ok}/${s.n} · κ ${s.kappa ?? "–"}">${s.agree}% <span class="muted small">(${s.n})</span></td>`;
+      const row = (t) => `<tr><td>${t ? recTag(t) : "<b>전체</b>"}</td>${[baseM, ...others].map((m) => cell(m, t)).join("")}${
+        t ? fs(baseM.by_type[t]?.firm) + fs(baseM.by_type[t]?.split) : `<td class="muted">–</td><td class="muted">–</td>`}</tr>`;
       return `
-      <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">judge 모델 교체 — 유형 × 모델 <span class="unit">항목 단위 · 공통 교집합</span></h4>
+      <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">사람 판정 vs judge — 유형 × 모델</h4>
       <div class="jbasis" data-desc="같은 항목을 여러 모델이 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI는 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로 McNemar 정확검정으로 판정합니다.">
         <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
+        분석가에게 배정된 <b>공유 표본</b>에서, 3인 <b>합의 라벨</b>을 기준으로 각 judge 모델의 판정을 대조합니다.
         <span class="small">칸의 <b>a:b</b>는 기준(gpt-oss-120b) 대비 <b>개선 : 악화</b> 건수, <b>✦</b>는 McNemar p&lt;0.05.
         초록=유의하게 개선, 빨강=유의하게 악화. <b>순위 판정은 κ가 아니라 이 값으로</b> 합니다 — κ는 우연 일치를 보정한 절대 수준(0.6↑ 견고)을 볼 때 씁니다.</span>
       </div>
       <table class="cmp jm"><tr><th>판정 유형</th>${[baseM, ...others].map((m) =>
-        `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/ — 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}</tr>
+        `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/ — 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}
+        <th data-desc="기준 judge가 반복 채점에서 <b>매번 같은 라벨</b>을 준 항목에서의 사람 일치율 — judge가 확신한 구간">judge 확신 구간</th>
+        <th data-desc="기준 judge가 반복 채점에서 <b>갈렸던</b> 항목에서의 사람 일치율 — 여기가 낮으면 그 항목이 사람에게도 애매하다는 뜻">judge 흔들린 구간</th></tr>
         ${["integrity", "accuracy", "update", "qa"].filter((t) => baseM.by_type[t]).map(row).join("")}
         <tr class="jm-tot">${row("").slice(4)}</tr></table>
-      <p class="small dif" data-desc="예: 갱신(Update)은 이 표에서 61.1%/κ0.469, 아래 표에서 63.0%/κ0.492입니다. 실측 분해 결과 차이의 대부분은 <b>항목 집합</b>에서 옵니다 — 아래 표 방식을 이 표의 36건으로만 제한하면 60.8%/κ0.459로 내려오고, 거기서 사람을 합의로 축약해도 61.1%/κ0.469로 거의 그대로입니다.">
-        ⚠ <b>아래 「판정 유형별」 표와 수치가 다릅니다 — 둘 다 맞고, 재는 대상이 다릅니다.</b><br>
-        <b>이 표</b>: <u>모델 비교</u>용 — 재채점 모델 전부가 커버하는 <b>공통 교집합 ${baseM.n}건</b>을 <b>항목</b> 단위(3인 합의 1표)로. 모델마다 다른 항목으로 재면 비교가 성립하지 않습니다.<br>
-        <b>아래 표</b>: <u>judge 품질의 절대 수준</u>용 — <b>주석 전체</b>를 <b>주석 행</b> 단위(3명이 라벨한 항목은 3번)로, judge는 반복 채점 <b>다수결</b>.<br>
-        <span class="small">집합이 갈린 주된 이유는 <b>재채점을 판정 검토 큐 항목만 돌렸기</b> 때문입니다 — 개별 검토로 라벨한 항목(Integrity의 83%)은 재채점 대상에 없었습니다.
-        <b>위의 「집계 범위」를 '공통 교집합'으로 바꾸면</b> 아래 표가 같은 항목을 써서 정합합니다.</span></p>`;
+      <p class="small muted" style="margin-top:5px">개별 검토(큐 밖)로 라벨한 주석 ${d.outside_queue}건은 이 집계에서 제외됩니다 — 분석가가 의심스러운 항목을 골라 누른 <b>기회 표본</b>이라 섞으면 지표가 왜곡됩니다.</p>`;
     })()}
-
-    <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다.<br>⚠ 단위가 위 표와 다릅니다: <b>주석 행</b> 기준이라 3명이 라벨한 항목은 3번 세지고, 대상은 <b>주석 전체</b>입니다.">판정 유형별 <span class="unit">주석 행 단위 · ${(JM.iaaScope || "all") === "common" ? "공통 교집합" : "전체"}</span> (분석가 개별 판정 vs judge 합의)</h4>
-    <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th>
-      <th data-desc="judge가 반복 채점에서 전부 같은 라벨을 준 항목에서의 분석가 일치율">judge 만장일치 구간</th>
-      <th data-desc="judge가 반복 채점에서 갈렸던 항목에서의 분석가 일치율 — 여기가 낮으면 '경계선 항목'이 진짜 애매한 것">judge 분열 구간</th></tr>
-      ${d.by_type.map((p) => rowHTML(recTag(p.rec_type), p,
-        `<td>${pctCell(p.firm)}</td><td>${pctCell(p.split)}</td>`)).join("")
-        || `<tr><td colspan="6" class="muted">아직 없음</td></tr>`}</table>
 
     ${d.by_type.filter((p) => (p.confusion || []).some((c) => c.mine !== c.judge)).map((p) => `
       <h4 style="margin:12px 0 4px" data-desc="분석가가 어느 방향으로 judge와 어긋나는지 — 한 방향으로 쏠려 있으면 체계적 이견(기준 차이), 흩어져 있으면 경계선 흔들림입니다">${recTag(p.rec_type)} 불일치 방향</h4>
@@ -2101,9 +2089,6 @@ async function jmIAA() {
     <div id="jc-box" class="small muted">집계 중…</div>
     <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
   $("#jm-back").onclick = jmRender;
-  $$("#jmodal-body .scopesw button").forEach((b) => (b.onclick = () => {
-    JM.iaaScope = b.dataset.scope; jmIAA();
-  }));
   try {
     const jc = await api("/api/judge-consistency");
     $("#jc-box").innerHTML = !jc.rows.length ? `<p class="small muted">${esc(jc.note || "반복 채점 세트 없음")}</p>` : `

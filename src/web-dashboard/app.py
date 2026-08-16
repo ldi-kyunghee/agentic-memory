@@ -998,31 +998,13 @@ def judge_votes(run: str, uuid: str, rec_type: str, session_id: int, idx: int,
 REJUDGE_DIR = ROOT / "results/mem0-classic-oss/rejudge-update"
 
 
-def _common_model_keys(labeled: list) -> set:
-    """'유형 × 모델' 표가 쓰는 공통 교집합 — 사람 합의 성립 + 재채점 모델 전부가 커버한 항목.
-
-    ⚠ 모델 비교는 **같은 항목**에서 재야 성립한다. 다만 재채점을 큐 항목만 돌렸기 때문에
-    개별 검토로 라벨한 항목(integrity의 83%)은 여기 들어오지 못한다 — 이 집합이 작은 것은
-    방법론적 필연이 아니라 **커버리지 제약**이다. 화면의 범위 토글로 두 표를 같은 기준에
-    놓고 볼 수 있게 한다.
-    """
-    from collections import Counter as _C
-    hc: dict = {}
-    for r in labeled:
-        hc.setdefault((r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"]), {})[
-            r["annotator"]] = r["label"]
-    rj = load_rejudge()
-    if not rj:
+def queue_keys() -> set:
+    """판정 검토 큐에 담긴 항목 키 — 분석가에게 실제로 배정된 표본."""
+    if not QUEUE_PATH.exists():
         return set()
-    out = set()
-    for k, labs in hc.items():
-        t = _C(labs.values())
-        top = max(t.values())
-        if sum(1 for v in t.values() if v == top) != 1:      # 사람 합의 불성립
-            continue
-        if all(k in m for m in rj.values()):
-            out.add(k)
-    return out
+    with open(QUEUE_PATH, encoding="utf-8") as f:
+        return {(x["run"], x["uuid"], x["session_id"], x["rec_type"], x["idx"])
+                for x in json.load(f)["items"]}
 
 
 def load_rejudge() -> dict:
@@ -1086,21 +1068,22 @@ def _kappa(pairs: list, ci: bool = False) -> dict:
 
 
 @app.get("/api/iaa")
-def api_iaa(run: str | None = None, uuid: str | None = None, scope: str = "all"):
+def api_iaa(run: str | None = None, uuid: str | None = None):
     """분석가 간(IAA) · 분석가 vs judge 합의 일치도. 항목 키는 (run,uuid,session,rec_type,idx,generator).
 
     'judge 판정'은 단일 채점본이 아니라 **반복 채점의 다수결**이다 (judge_consensus 참조).
     반복 세트가 없는 항목은 저장된 스냅샷 라벨로 폴백하고, 그 비율을 함께 보고한다.
     """
     rows = list_annotations(run=run, uuid=uuid)
-    labeled = [r for r in rows if r["label"]]
-    # scope='common' 이면 아래 집계도 '유형 × 모델' 표와 **같은 항목 집합**으로 맞춘다.
-    # 두 표가 같은 양(사람↔judge 일치)을 다른 숫자로 보여주면 안 되기 때문이다.
-    # 기본 'all'은 개별 검토까지 포함해 표본을 최대로 쓴다 (judge 품질의 절대 수준용).
-    common_keys = _common_model_keys(labeled)
-    if scope == "common":
-        labeled = [r for r in labeled
-                   if (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"]) in common_keys]
+    all_labeled = [r for r in rows if r["label"]]
+    # ⚠ 집계는 **판정 검토 큐 항목만** 쓴다. 분석가에게 배정된 표본이 그것이고, 층화 추출이라
+    #    라벨 분포가 통제돼 있다. 개별 검토(큐 밖)는 '이건 judge가 틀린 것 같다' 싶을 때 누른
+    #    기회 표본이라 어려운 항목에 쏠려 있어(integrity 195건) 섞으면 지표가 왜곡된다.
+    #    같은 양을 두 표가 다른 숫자로 보여주는 문제도 여기서 비롯됐다.
+    qk = queue_keys()
+    labeled = [r for r in all_labeled
+               if (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"]) in qk]
+    n_outside = len(all_labeled) - len(labeled)
     by_item: dict = {}
     for r in labeled:
         key = (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"], r["generator"])
@@ -1250,13 +1233,9 @@ def api_iaa(run: str | None = None, uuid: str | None = None, scope: str = "all")
             if k in hcon and r.get("judge_label"):
                 base_lab[k] = str(r["judge_label"])
 
-        # ⚠ 모든 행을 **같은 항목 집합**에서 재야 나란히 놓을 수 있다. 기준 judge는 큐 밖 개별
-        #    검토까지 라벨이 있어 그대로 재면 n이 훨씬 크고 쉬운 항목(accuracy 94.9%)이 섞여
-        #    유리하게 보인다. 재채점 모델 전부가 커버하는 교집합으로 통일한다.
-        common = set(hcon) & set(base_lab)
-        for m in rj.values():
-            common &= set(m)
-        common = sorted(common)
+        # 큐 항목 중 사람 합의가 성립한 것 전부가 대상. 모델별 커버리지가 다르면 그 칸의 n으로
+        # 드러나며(재채점이 안 된 항목은 그 모델 칸에서만 빠진다), 기준 judge는 항상 전량이다.
+        common = sorted(set(hcon) & set(base_lab))
         for name, m in [("gpt-oss-120b (high) — 기존", base_lab)] + sorted(rj.items()):
             keys = [k for k in common if k in m]
             if not keys:
@@ -1269,6 +1248,13 @@ def api_iaa(run: str | None = None, uuid: str | None = None, scope: str = "all")
                 if not kk:
                     continue
                 st["by_type"][t] = _kappa([(hcon[k], m[k]) for k in kk])
+                if is_base:
+                    # judge가 반복 채점에서 흔들리지 않은 항목 / 갈린 항목으로 나눠 본다.
+                    # '확신 구간에서도 사람과 안 맞는가'가 판정 품질의 핵심이라 기준 judge에만 붙인다.
+                    firm = [k for k in kk if consensus.get(k + ("",), {}).get("unanimous") is True]
+                    split = [k for k in kk if consensus.get(k + ("",), {}).get("unanimous") is False]
+                    st["by_type"][t]["firm"] = _kappa([(hcon[k], m[k]) for k in firm])
+                    st["by_type"][t]["split"] = _kappa([(hcon[k], m[k]) for k in split])
                 # ⚠ 유형별 대응표본 검정 — 전체만 보면 'Update에서 번 걸 나머지에서 잃는' 구조를
                 #    놓친다(§18③: 부분집합만 보면 정반대 결론이 나온다).
                 if not is_base:
@@ -1289,7 +1275,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None, scope: str = "all")
     return {
         "hidden_runs": sorted(hidden_runs), "hidden_labeled": n_hidden,
         "judge_models": judge_models,
-        "scope": scope, "common_n": len(common_keys),
+        "outside_queue": n_outside,
         "total": len(rows), "labeled": len(labeled), "annotators": annotators,
         "items": len(by_item), "overlap_items": sum(1 for v in by_item.values() if len(v) > 1),
         "comparable": len(cmpable),
