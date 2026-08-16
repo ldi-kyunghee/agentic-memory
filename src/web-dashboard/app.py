@@ -1193,78 +1193,87 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
         progress = {"queue_n": q["n"], "queue_types": qtypes,
                     "annotators": [{"annotator": a, **v} for a, v in sorted(per.items())]}
 
-    # ── judge 모델 교체 대조 (§18) ──
-    # 같은 항목을 다른 judge 모델로 재채점한 결과가 있으면, 사람 합의와의 일치를 모델별로 낸다.
-    # 기존 judge와의 비교는 **대응표본**(같은 항목)이므로 독립 CI가 아니라 McNemar로 판정한다 —
-    # 독립표본 CI로 보면 CI가 크게 겹쳐 '구분 불가'로 오판하게 된다(§18①).
+    # ── 사람 판정 vs judge (§18) ──
+    # 같은 항목을 여러 judge 모델로 재채점한 결과를, **사람 쪽 기준을 바꿔가며** 대조한다.
+    #   기준 '합의' : 3인 다수결 (동률 제외)  — 대표값
+    #   기준 '개인' : 그 분석가의 라벨 그대로 — 사람마다 judge와 얼마나 맞는지
+    # 기준 judge와의 비교는 **대응표본**(같은 항목)이므로 독립 CI가 아니라 McNemar로 판정한다 —
+    # 독립표본 CI로 보면 크게 겹쳐 '구분 불가'로 오판하게 된다(§18①).
     rj = load_rejudge()
-    judge_models = []
+    matrices: dict = {}
     if rj:
-        def human_consensus(item_labs: dict):
+        by_key: dict = {}
+        for r in labeled:
+            by_key.setdefault((r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"]), {})[
+                r["annotator"]] = r["label"]
+
+        def _consensus(d: dict):
             t: dict = {}
-            for v in item_labs.values():
+            for v in d.values():
                 t[v] = t.get(v, 0) + 1
             top = max(t.values())
             win = [k for k, v in t.items() if v == top]
             return win[0] if len(win) == 1 else None
 
-        # 항목별 사람 합의 (rec_type 포함 키)
-        hcon = {}
-        for r in labeled:
-            hcon.setdefault((r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"]), {})[
-                r["annotator"]] = r["label"]
-        hcon = {k: c for k in hcon if (c := human_consensus(hcon[k])) is not None}
-
-        def mcnemar(a: dict, b: dict, keys: list):
-            """대응표본 정확검정 — b가 맞고 a가 틀린 수 vs 그 반대."""
-            bo = sum(1 for k in keys if a.get(k) != hcon[k] and b.get(k) == hcon[k])
-            ao = sum(1 for k in keys if a.get(k) == hcon[k] and b.get(k) != hcon[k])
-            n = bo + ao
-            if n == 0:
-                return bo, ao, 1.0
-            import math
-            mn = min(bo, ao)
-            return bo, ao, min(2 * sum(math.comb(n, i) for i in range(mn + 1)) / 2 ** n, 1.0)
-
-        # 기존 judge 라벨은 주석에 저장된 스냅샷을 쓴다 (재채점 파일의 base_label과 동일 값)
+        # 기존 judge 라벨 — 주석에 저장된 스냅샷 (재채점 파일의 base_label과 같은 값)
         base_lab = {}
         for r in labeled:
             k = (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"])
-            if k in hcon and r.get("judge_label"):
+            if r.get("judge_label"):
                 base_lab[k] = str(r["judge_label"])
 
-        # 큐 항목 중 사람 합의가 성립한 것 전부가 대상. 모델별 커버리지가 다르면 그 칸의 n으로
-        # 드러나며(재채점이 안 된 항목은 그 모델 칸에서만 빠진다), 기준 judge는 항상 전량이다.
-        common = sorted(set(hcon) & set(base_lab))
-        for name, m in [("gpt-oss-120b (high) — 기존", base_lab)] + sorted(rj.items()):
-            keys = [k for k in common if k in m]
-            if not keys:
-                continue
-            st = _kappa([(hcon[k], m[k]) for k in keys], ci=True)
-            st.update(model=name, by_type={})
-            is_base = name.startswith("gpt-oss-120b")
-            for t in ["integrity", "accuracy", "update", "qa"]:
-                kk = [k for k in keys if k[3] == t]
-                if not kk:
+        def build(href: dict) -> list:
+            """href: 항목키 -> 사람 라벨. 모델별 × 유형별 일치/κ/McNemar를 낸다."""
+            def mcnemar(a, b, keys):
+                bo = sum(1 for k in keys if a.get(k) != href[k] and b.get(k) == href[k])
+                ao = sum(1 for k in keys if a.get(k) == href[k] and b.get(k) != href[k])
+                n = bo + ao
+                if n == 0:
+                    return bo, ao, 1.0
+                import math
+                mn = min(bo, ao)
+                return bo, ao, min(2 * sum(math.comb(n, i) for i in range(mn + 1)) / 2 ** n, 1.0)
+
+            common = sorted(set(href) & set(base_lab))
+            out = []
+            for name, m in [("gpt-oss-120b (high) — 기존", base_lab)] + sorted(rj.items()):
+                keys = [k for k in common if k in m]
+                if not keys:
                     continue
-                st["by_type"][t] = _kappa([(hcon[k], m[k]) for k in kk])
-                if is_base:
-                    # judge가 반복 채점에서 흔들리지 않은 항목 / 갈린 항목으로 나눠 본다.
-                    # '확신 구간에서도 사람과 안 맞는가'가 판정 품질의 핵심이라 기준 judge에만 붙인다.
-                    firm = [k for k in kk if consensus.get(k + ("",), {}).get("unanimous") is True]
-                    split = [k for k in kk if consensus.get(k + ("",), {}).get("unanimous") is False]
-                    st["by_type"][t]["firm"] = _kappa([(hcon[k], m[k]) for k in firm])
-                    st["by_type"][t]["split"] = _kappa([(hcon[k], m[k]) for k in split])
-                # ⚠ 유형별 대응표본 검정 — 전체만 보면 'Update에서 번 걸 나머지에서 잃는' 구조를
-                #    놓친다(§18③: 부분집합만 보면 정반대 결론이 나온다).
+                st = _kappa([(href[k], m[k]) for k in keys], ci=True)
+                st.update(model=name, by_type={})
+                is_base = name.startswith("gpt-oss-120b")
+                for t in ["integrity", "accuracy", "update", "qa"]:
+                    kk = [k for k in keys if k[3] == t]
+                    if not kk:
+                        continue
+                    st["by_type"][t] = _kappa([(href[k], m[k]) for k in kk])
+                    if is_base:
+                        # judge가 반복 채점에서 흔들리지 않은 항목 / 갈린 항목으로 나눠 본다.
+                        firm = [k for k in kk if consensus.get(k + ("",), {}).get("unanimous") is True]
+                        split = [k for k in kk if consensus.get(k + ("",), {}).get("unanimous") is False]
+                        st["by_type"][t]["firm"] = _kappa([(href[k], m[k]) for k in firm])
+                        st["by_type"][t]["split"] = _kappa([(href[k], m[k]) for k in split])
+                    else:
+                        bo, ao, p = mcnemar(base_lab, m, [k for k in kk if k in base_lab])
+                        st["by_type"][t]["vs_base"] = {"better": bo, "worse": ao, "p": round(p, 4)}
+                    # 순서 라벨에서 사람이 judge보다 얼마나 높게 주는가 (+면 사람이 관대)
+                    d = [ORDINAL[t][href[k]] - ORDINAL[t][m[k]] for k in kk
+                         if t in ORDINAL and href[k] in ORDINAL[t] and m[k] in ORDINAL[t]]
+                    if d:
+                        st["by_type"][t]["bias"] = round(sum(d) / len(d), 3)
                 if not is_base:
-                    bo, ao, p = mcnemar(base_lab, m, [k for k in kk if k in base_lab])
-                    st["by_type"][t]["vs_base"] = {"better": bo, "worse": ao, "p": round(p, 4)}
-            if not is_base:
-                shared = [k for k in keys if k in base_lab]
-                bo, ao, p = mcnemar(base_lab, m, shared)
-                st["vs_base"] = {"n": len(shared), "better": bo, "worse": ao, "p": round(p, 4)}
-            judge_models.append(st)
+                    shared = [k for k in keys if k in base_lab]
+                    bo, ao, p = mcnemar(base_lab, m, shared)
+                    st["vs_base"] = {"n": len(shared), "better": bo, "worse": ao, "p": round(p, 4)}
+                out.append(st)
+            return out
+
+        matrices["합의"] = build({k: c for k in by_key if (c := _consensus(by_key[k])) is not None})
+        for a in sorted({r["annotator"] for r in labeled}):
+            href = {k: v[a] for k, v in by_key.items() if a in v}
+            if href:
+                matrices[a] = build(href)
 
     # 숨긴 런(custom 프롬프트 축)에 달린 주석은 지우지 않고 그대로 센다 — 이미 보고된 수치의
     # 재현성을 지키기 위함. 대신 얼마나 섞여 있는지는 화면에 밝힌다.
@@ -1274,7 +1283,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
     cfg = load_registry_doc().get("judge_consensus") or {}
     return {
         "hidden_runs": sorted(hidden_runs), "hidden_labeled": n_hidden,
-        "judge_models": judge_models,
+        "matrices": matrices, "matrix_refs": list(matrices),
         "outside_queue": n_outside,
         "total": len(rows), "labeled": len(labeled), "annotators": annotators,
         "items": len(by_item), "overlap_items": sum(1 for v in by_item.values() if len(v) > 1),

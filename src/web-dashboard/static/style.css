@@ -392,6 +392,28 @@ table.ladder tr.pend { opacity: .55; }
 /* 버튼을 감추되 자리는 유지 — display:none이면 줄바꿈이 바뀌며 스크롤 위치가 밀린다 */
 .btn-off { visibility: hidden; }
 /* Oracle 단계 표기 (프롬프트 종류와 독립된 축) */
+.hrefsw { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin: 4px 0 6px; cursor: help; }
+.hrefsw button { font-size: 11px; }
+/* 큐 진척 — 유형별 몫으로 칸을 나눈 막대 (표를 줄이고 한눈에 보이게) */
+.qprog { margin: 2px 0 4px; }
+.qrow { display: flex; align-items: center; gap: 9px; padding: 3px 0; }
+.qwho { width: 54px; font-weight: 700; font-size: 12px; flex: none; }
+.qbar { display: flex; gap: 2px; flex: 1; height: 13px; }
+.qseg { position: relative; background: var(--chip); border-radius: 3px; overflow: hidden; cursor: help; }
+.qseg i { display: block; height: 100%; }
+.qnum { font-size: 11.5px; white-space: nowrap; flex: none; width: 96px; text-align: right; }
+.qpct { font-weight: 800; color: var(--dim); }
+.qpct.done { color: var(--ok); }
+.qout { font-size: 10px; color: var(--dim); background: var(--chip); border-radius: 4px; padding: 0 5px; cursor: help; flex: none; }
+.qleg { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0 63px; font-size: 10px; }
+.qk { border-radius: 4px; padding: 0 5px; font-weight: 700; }
+.qk i { font-style: normal; opacity: .7; margin-left: 3px; }
+/* 유형별 색 — 판정 배지 체계(초록/주황/빨강/보라)와 겹치지 않는 계열 */
+.qs-integrity i { background: #4c6ef5; } .qk.qs-integrity { background: #e7ecff; color: #2b3ea8; }
+.qs-accuracy  i { background: #0c8599; } .qk.qs-accuracy  { background: #e0f5f8; color: #075a68; }
+.qs-update    i { background: #c9920e; } .qk.qs-update    { background: #fbf3de; color: #7a5c04; }
+.qs-qa        i { background: #7048a8; } .qk.qs-qa        { background: #f0e9fa; color: #5b3b91; }
+
 /* judge 모델 교체 매트릭스 — 유형(행) × 모델(열) */
 table.jm td.mcell { text-align: center; cursor: help; }
 table.jm td.mcell .vs { font-size: 9.5px; font-weight: 800; color: #8a8a9a; }

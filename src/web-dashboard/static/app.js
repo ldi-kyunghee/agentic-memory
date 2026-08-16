@@ -2003,14 +2003,26 @@ async function jmIAA() {
   const pg = d.progress;
   const TYPES = ["integrity", "accuracy", "update", "qa"];
 
-  // 큐 진척 — 분석가별 완료 수 (큐 밖 개별 검토는 따로 표기)
+  // 큐 진척 — 표 대신 막대. 유형별 몫만큼 칸을 나누고 그 안을 완료분으로 채운다.
+  // (표가 많아 화면이 답답해지므로, 진척처럼 한눈에 볼 값은 그래픽으로 둔다)
   const progressBlock = !pg ? "" : `
-    <h4 style="margin:14px 0 6px" data-desc="공유 표본 큐 ${pg.queue_n}건 중 몇 건을 라벨했는지. 분석가 간 일치도는 이 큐에서만 쌓입니다">큐 진척</h4>
-    <table class="cmp"><tr><th>분석가</th><th>큐 완료</th>${TYPES.map((t) => `<th>${recTag(t)}</th>`).join("")}<th data-desc="큐에 없는 항목을 개별 검토 버튼으로 라벨한 건수 — IAA에는 반영되지 않습니다">큐 밖</th></tr>
-      ${pg.annotators.map((a) => `<tr><td>${esc(a.annotator)}</td>
-        <td><b>${a.in_queue}</b> / ${pg.queue_n} <span class="muted small">(${(a.in_queue / pg.queue_n * 100).toFixed(0)}%)</span></td>
-        ${TYPES.map((t) => `<td class="small">${a.by_type[t] || 0} <span class="muted">/ ${pg.queue_types[t] || 0}</span></td>`).join("")}
-        <td class="muted small">${a.out}</td></tr>`).join("")}</table>`;
+    <h4 style="margin:14px 0 6px" data-desc="공유 표본 큐 ${pg.queue_n}건 중 몇 건을 라벨했는지. 분석가 간 일치도는 이 큐에서만 쌓입니다. 막대는 유형별 몫만큼 칸이 나뉘고, 칸 안의 채워진 부분이 완료분입니다">큐 진척</h4>
+    <div class="qprog">${pg.annotators.map((a) => {
+      const pct = a.in_queue / pg.queue_n * 100;
+      return `<div class="qrow">
+        <span class="qwho">${esc(a.annotator)}</span>
+        <div class="qbar">${TYPES.map((t) => {
+          const tot = pg.queue_types[t] || 0, done = a.by_type[t] || 0;
+          if (!tot) return "";
+          return `<span class="qseg qs-${t}" style="width:${tot / pg.queue_n * 100}%"
+            data-desc="${esc(`<b>${REC_NAMES[t]}</b><br>${done} / ${tot}건 완료 (${(done / tot * 100).toFixed(0)}%)`)}"><i style="width:${done / tot * 100}%"></i></span>`;
+        }).join("")}</div>
+        <span class="qnum"><b>${a.in_queue}</b><span class="muted">/${pg.queue_n}</span> <span class="qpct${pct >= 99.5 ? " done" : ""}">${pct.toFixed(0)}%</span></span>
+        ${a.out ? `<span class="qout" data-desc="큐에 없는 항목을 개별 검토로 라벨한 건수 — 기회 표본이라 위 집계에서는 제외됩니다">큐 밖 ${a.out}</span>` : ""}
+      </div>`;
+    }).join("")}
+      <div class="qleg">${TYPES.map((t) => `<span class="qk qs-${t}">${esc((REC_NAMES[t] || t).replace(/\s*\(.*\)$/, ""))} <i>${pg.queue_types[t] || 0}</i></span>`).join("")}</div>
+    </div>`;
 
   const rowHTML = (labelHTML, o, extra = "") => `<tr><td>${labelHTML}</td><td>${o.n}</td><td>${o.agree}%</td>
     <td>${kFmt(o)} <span class="muted small">${kGrade(o.kappa)}</span></td>${extra}</tr>`;
@@ -2035,17 +2047,10 @@ async function jmIAA() {
         `<td class="small">${(p.by_type || []).map((b) => `${recTag(b.rec_type)} ${b.agree}%<span class="muted">(${b.n})</span>`).join(" · ") || "–"}</td>`)).join("")
         || `<tr><td colspan="5" class="muted">겹친 항목 없음 — 공유 큐로 라벨하면 채워집니다</td></tr>`}</table>
 
-    <h4 style="margin:14px 0 6px" data-desc="분석가 라벨과 judge 합의 라벨의 일치. 편향은 순서 라벨(0/1/2)에서 분석가가 judge보다 얼마나 높게 주는지 — 양수면 분석가가 더 관대">분석가 vs judge 합의</h4>
-    <table class="cmp"><tr><th>분석가</th><th>항목</th><th>일치율</th><th>Cohen κ</th><th data-desc="분석가 라벨 − judge 라벨의 평균 (0/1/2 척도). +면 분석가가 관대, −면 가혹">편향</th><th>유형별 라벨 수</th></tr>
-      ${d.vs_judge.map((p) => row(p.annotator, p, `
-        <td>${p.bias == null ? `<span class="muted">–</span>`
-          : `<b class="${p.bias > 0.05 ? "up" : p.bias < -0.05 ? "down" : ""}">${p.bias > 0 ? "+" : ""}${p.bias}</b>
-             <span class="muted small">${p.bias > 0.05 ? "관대" : p.bias < -0.05 ? "가혹" : "중립"} (${p.bias_n})</span>`}</td>
-        <td class="small">${TYPES.map((t) => `${recTag(t)} ${p.done_types[t] || 0}`).join(" · ")}</td>`)).join("")
-        || `<tr><td colspan="6" class="muted">아직 없음</td></tr>`}</table>
-
-    ${!(d.judge_models || []).length ? "" : (() => {
-      const MM = d.judge_models, baseM = MM[0], others = MM.slice(1);
+    ${!(d.matrix_refs || []).length ? "" : (() => {
+      const ref = d.matrices[JM.href] ? JM.href : d.matrix_refs[0];
+      const MM = d.matrices[ref], baseM = MM[0], others = MM.slice(1);
+      const isCons = ref === d.matrix_refs[0];
       // ⚠ 유형 × 모델 매트릭스로 본다. 모델을 행으로 두면 '한 유형에서 번 것을 다른 유형에서
       //    잃는' 상쇄 구조가 안 보인다 — 그걸 놓치면 정반대 결론을 내게 된다.
       // 행(판정 유형)별 최고 일치율 — 색(McNemar 유의)과 의미가 겹치지 않게 테두리로 구분한다
@@ -2060,6 +2065,7 @@ async function jmIAA() {
         const sig = v && v.p < 0.05 ? (v.better > v.worse ? " tw" : " tl") : "";
         const best = s.agree === rowBest(t) ? " best" : "";
         const desc = `<b>${esc(m.model)}</b> · ${t ? esc(REC_NAMES[t]) : "전체"}<br>일치 ${s.ok}/${s.n} (${s.agree}%) · κ ${s.kappa ?? "–"}`
+          + (s.bias != null ? `<br>편향 ${s.bias > 0 ? "+" : ""}${s.bias} — 사람이 judge보다 ${s.bias > 0.05 ? "<b>관대</b>" : s.bias < -0.05 ? "<b>가혹</b>" : "중립"} (0/1/2 척도)` : "")
           + (s.agree === rowBest(t) ? `<br><b>이 유형에서 최고 일치율</b>` : "")
           + (v ? `<br>기준 대비 개선 <b>${v.better}</b> : 악화 <b>${v.worse}</b> · p=${v.p}`
                  + (v.p < 0.05 ? (v.better > v.worse ? " — <b>유의하게 개선</b>" : " — <b>유의하게 악화</b>") : " — 구분 불가") : "");
@@ -2073,9 +2079,11 @@ async function jmIAA() {
         t ? fs(baseM.by_type[t]?.firm) + fs(baseM.by_type[t]?.split) : `<td class="muted">–</td><td class="muted">–</td>`}</tr>`;
       return `
       <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">사람 판정 vs judge — 유형 × 모델</h4>
+      <p class="small hrefsw" data-desc="사람 쪽 기준을 고릅니다. <b>3인 합의</b>는 다수결(동률 제외)이고, 개인을 고르면 그 분석가의 라벨을 그대로 정답으로 놓습니다 — 사람마다 judge와 얼마나 맞는지, 그리고 그 순위가 분석가에 따라 바뀌는지를 볼 수 있습니다.">
+        <b>사람 기준</b>${d.matrix_refs.map((r) => `<button class="ctx-toggle${r === ref ? "" : " btn-off"}" data-href="${esc(r)}">${r === d.matrix_refs[0] ? "3인 합의" : esc(r)}</button>`).join("")}</p>
       <div class="jbasis" data-desc="같은 항목을 여러 모델이 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI는 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로 McNemar 정확검정으로 판정합니다.">
         <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
-        분석가에게 배정된 <b>공유 표본</b>에서, 3인 <b>합의 라벨</b>을 기준으로 각 judge 모델의 판정을 대조합니다.
+        분석가에게 배정된 <b>공유 표본</b>에서 ${isCons ? "3인 <b>합의 라벨</b>" : `<b>${esc(ref)}</b> 님의 라벨`}을 기준으로 각 judge 모델의 판정을 대조합니다.
         <span class="small">칸의 <b>a:b</b>는 기준(gpt-oss-120b) 대비 <b>개선 : 악화</b> 건수, <b>✦</b>는 McNemar p&lt;0.05.
         초록=유의하게 개선, 빨강=유의하게 악화. <b>굵은 테두리</b>는 그 유형에서 <b>최고 일치율</b>입니다(색과 별개 — 최고여도 기준 대비 유의하지 않을 수 있습니다). <b>순위 판정은 κ가 아니라 개선:악화로</b> 합니다 — κ는 우연 일치를 보정한 절대 수준(0.6↑ 견고)을 볼 때 씁니다.</span>
       </div>
@@ -2096,6 +2104,7 @@ async function jmIAA() {
     <div id="jc-box" class="small muted">집계 중…</div>
     <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
   $("#jm-back").onclick = jmRender;
+  $$("#jmodal-body .hrefsw button").forEach((b) => (b.onclick = () => { JM.href = b.dataset.href; jmIAA(); }));
   try {
     const jc = await api("/api/judge-consistency");
     $("#jc-box").innerHTML = !jc.rows.length ? `<p class="small muted">${esc(jc.note || "반복 채점 세트 없음")}</p>` : `
