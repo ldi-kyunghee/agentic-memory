@@ -2096,7 +2096,15 @@ async function jmGoldQA() {
 async function jmIAA() {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
-  const d = await api("/api/iaa");
+  let d;
+  // 실패를 삼키면 '집계 중…'에서 영원히 멈춘 것처럼 보인다 — 원인을 화면에 그대로 띄운다
+  try {
+    d = await api("/api/iaa");
+  } catch (e) {
+    el.innerHTML = `<div style="padding:20px"><p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>
+      <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
+    $("#jm-back").onclick = jmRender; return;
+  }
   const jb = d.judge_basis || {};
   const pg = d.progress;
   const TYPES = ["integrity", "accuracy", "update", "qa"];
