@@ -2048,15 +2048,22 @@ async function jmIAA() {
       const MM = d.judge_models, baseM = MM[0], others = MM.slice(1);
       // ⚠ 유형 × 모델 매트릭스로 본다. 모델을 행으로 두면 '한 유형에서 번 것을 다른 유형에서
       //    잃는' 상쇄 구조가 안 보인다 — 그걸 놓치면 정반대 결론을 내게 된다.
+      // 행(판정 유형)별 최고 일치율 — 색(McNemar 유의)과 의미가 겹치지 않게 테두리로 구분한다
+      const rowBest = (t) => {
+        const vals = [baseM, ...others].map((m) => (t ? m.by_type[t] : m)).filter(Boolean).map((s) => s.agree);
+        return vals.length ? Math.max(...vals) : null;
+      };
       const cell = (m, t) => {
         const s = t ? m.by_type[t] : m;
         if (!s) return `<td class="muted">–</td>`;
         const v = s.vs_base;
         const sig = v && v.p < 0.05 ? (v.better > v.worse ? " tw" : " tl") : "";
+        const best = s.agree === rowBest(t) ? " best" : "";
         const desc = `<b>${esc(m.model)}</b> · ${t ? esc(REC_NAMES[t]) : "전체"}<br>일치 ${s.ok}/${s.n} (${s.agree}%) · κ ${s.kappa ?? "–"}`
+          + (s.agree === rowBest(t) ? `<br><b>이 유형에서 최고 일치율</b>` : "")
           + (v ? `<br>기준 대비 개선 <b>${v.better}</b> : 악화 <b>${v.worse}</b> · p=${v.p}`
                  + (v.p < 0.05 ? (v.better > v.worse ? " — <b>유의하게 개선</b>" : " — <b>유의하게 악화</b>") : " — 구분 불가") : "");
-        return `<td class="mcell${sig}" data-desc="${esc(desc)}"><b>${s.agree}%</b> <span class="muted small">${s.ok}/${s.n}</span>
+        return `<td class="mcell${sig}${best}" data-desc="${esc(desc)}"><b>${s.agree}%</b> <span class="muted small">${s.ok}/${s.n}</span>
           <br><span class="kap">κ ${s.kappa ?? "–"}</span>${
           v ? ` <span class="vs">${v.better}:${v.worse}${v.p < 0.05 ? " ✦" : ""}</span>` : ""}</td>`;
       };
@@ -2070,7 +2077,7 @@ async function jmIAA() {
         <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
         분석가에게 배정된 <b>공유 표본</b>에서, 3인 <b>합의 라벨</b>을 기준으로 각 judge 모델의 판정을 대조합니다.
         <span class="small">칸의 <b>a:b</b>는 기준(gpt-oss-120b) 대비 <b>개선 : 악화</b> 건수, <b>✦</b>는 McNemar p&lt;0.05.
-        초록=유의하게 개선, 빨강=유의하게 악화. <b>순위 판정은 κ가 아니라 이 값으로</b> 합니다 — κ는 우연 일치를 보정한 절대 수준(0.6↑ 견고)을 볼 때 씁니다.</span>
+        초록=유의하게 개선, 빨강=유의하게 악화. <b>굵은 테두리</b>는 그 유형에서 <b>최고 일치율</b>입니다(색과 별개 — 최고여도 기준 대비 유의하지 않을 수 있습니다). <b>순위 판정은 κ가 아니라 개선:악화로</b> 합니다 — κ는 우연 일치를 보정한 절대 수준(0.6↑ 견고)을 볼 때 씁니다.</span>
       </div>
       <table class="cmp jm"><tr><th>판정 유형</th>${[baseM, ...others].map((m) =>
         `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/ — 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}
