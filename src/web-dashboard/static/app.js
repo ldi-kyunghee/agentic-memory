@@ -2105,6 +2105,8 @@ async function jmIAA() {
       <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
     $("#jm-back").onclick = jmRender; return;
   }
+  // 렌더 중 예외도 화면에 띄운다 — 안 그러면 innerHTML이 안 채워져 '집계 중…'에 갇힌다
+  try {
   const jb = d.judge_basis || {};
   const pg = d.progress;
   const TYPES = ["integrity", "accuracy", "update", "qa"];
@@ -2170,6 +2172,12 @@ async function jmIAA() {
     bindHref();
   }));
   bindHref();
+  } catch (e) {
+    el.innerHTML = `<div style="padding:20px"><p><b>화면 구성 실패</b> <span class="small muted">(데이터 수신은 정상)</span></p><p class="small">${esc(e.message)}</p><pre class="small" style="white-space:pre-wrap;max-height:240px;overflow:auto">${esc(e.stack || "")}</pre><p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
+    $("#jm-back").onclick = jmRender;
+    console.error("jmIAA render failed", e, d);
+    return;
+  }
   try {
     const jc = await api("/api/judge-consistency");
     $("#jc-box").innerHTML = !jc.rows.length ? `<p class="small muted">${esc(jc.note || "반복 채점 세트 없음")}</p>` : `
