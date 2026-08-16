@@ -147,7 +147,16 @@ def main():
 
     if not MODEL and not args.dry_run:
         sys.exit("REJUDGE_MODEL env가 필요합니다")
+
+    base = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1 (기본)"
     print(f"모델: {MODEL} · effort: {EFFORT or '없음'} · scope: {args.scope}")
+    print(f"base_url: {base}")
+    # ⚠ .env에 OPENAI_BASE_URL=http://localhost:8000/v1 이 들어 있다. load_dotenv는 override=False라
+    #    셸에서 명시하지 않으면 그 값이 그대로 쓰인다. OpenAI 모델명으로 로컬 엔드포인트에 쏘면
+    #    조용히 **다른 모델의 판정**이 그 태그로 저장돼 실험이 오염된다 — 아예 막는다.
+    if not args.dry_run and MODEL.startswith("gpt-") and ("localhost" in base or "127.0.0.1" in base):
+        sys.exit(f"❌ OpenAI 모델({MODEL})인데 base_url이 로컬({base})입니다.\n"
+                 f"   OPENAI_BASE_URL=https://api.openai.com/v1 을 커맨드 앞에 명시하세요.")
 
     reg = load_registry()
     items = collect_queue(reg) if args.scope == "queue" else collect_run(reg, args.run, args.user_num)
