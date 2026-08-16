@@ -1087,6 +1087,13 @@ def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: st
     target_uuid = uuid or rows[0]["uuid"]
     rows = [r for r in rows if r["uuid"] == target_uuid]
 
+    # 구 라벨 접기 — 'ambiguous'(정답이 여럿)는 조치가 'wrong'과 같아 라벨을 합쳤다.
+    # 이미 달린 주석은 지우지 않고(분석가 작업 보존) 집계에서만 접는다. 원본은 DB에 그대로 남는다.
+    LEGACY = {"ambiguous": "wrong"}
+    for r in rows:
+        r["label"] = LEGACY.get(r["label"], r["label"])
+
+
     # 문항 총수 — 이 유저의 QA 문항 (생성된 QA 세션 제외)
     total_q, qtext = 0, {}
     user = None
@@ -1156,7 +1163,7 @@ def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: st
 
     live_runs = sorted({r for v in qa_ok.values() for r in v})
     cross = []
-    for lab in ["valid", "ambiguous", "unanswerable", "wrong"]:
+    for lab in ["valid", "wrong", "unanswerable"]:
         keys = [k for k, v in by_item.items() if consensus(v) == lab]
         if not keys:
             continue

@@ -1759,13 +1759,14 @@ const LABEL_SETS = {
   accuracy: [["2", "전부 근거 있음", "이 메모리의 모든 내용이 대화·골든에 근거"], ["1", "부분 근거", "일부만 근거 있음"], ["0", "근거 없음/모순", "대화에 없거나 모순됨"]],
   update: [["Correct", "Correct", "갱신본의 모든 원자 정보·수치가 정확"], ["Hallucination", "Hallucination", "틀린 값을 만들어냄"], ["Omission", "Omission", "디테일을 누락"], ["Other", "Other", "위 셋 중 어디에도 명확히 속하지 않는 갱신 실패 (judge 프롬프트의 4번째 분류)"]],
   qa: [["Correct", "Correct", "정답과 의미가 완전히 동등. ⚠ 정답이 '알 수 없음'인데 시스템도 추측 없이 모른다고 답하면 Correct"], ["Hallucination", "Hallucination", "날조·모순. 정답이 '알 수 없음'인데 단정적 사실을 답한 경우도 포함"], ["Omission", "Omission", "날조는 없으나 필요한 요소를 누락 (다요소 질문은 하나만 빠져도 Omission)"]],
-  // 벤치마크 자체 검수 축 — judge 판정이 아니라 '이 문항의 골든 정답이 타당한가'를 본다
-  // ⚠ 네 라벨은 '문제 있음'을 세 가지 서로 다른 **원인**으로 가른다 — 고치는 방법이 다르기 때문이다.
-  //    근거 없음 -> 문항을 빼야 함 / 표현 자의적 -> 채점 방식을 고쳐야 함 / 오답 -> 정답을 고쳐야 함
-  gold_qa: [["valid", "타당", "대화에 근거가 있고, 정답 표현도 이것 하나로 좁혀진다. 채점 기준으로 쓸 수 있다"],
-            ["ambiguous", "정답이 여럿 (표현 자의적)", "<b>근거는 대화에 있다.</b> 다만 같은 내용을 다르게 요약해도 맞는데, 골든이 그중 하나를 임의로 골랐다.<br>실제 사례(§13 s23/qa0): 저장된 메모리 \"alternating crowded and remote destinations\" vs 골든 \"crowded tourist spots for cultural enrichment\" — 둘 다 같은 대화의 타당한 요약인데 골든과 표현이 달라 오답 처리됐다.<br><b>→ 문항은 살리되 채점이 동등 표현을 인정해야 한다.</b>"],
-            ["unanswerable", "대화에 근거 없음", "<b>근거가 대화에 아예 없다.</b> 어떤 메모리 시스템도 원리적으로 맞힐 수 없다.<br>실제 사례(§13 s52/qa3): 골든 \"From 20000 to 23000 yuan\" — 이 수치는 <b>64개 세션 대화 전체에 0회 등장</b>하고 persona_info에도 없다. 구조화 프로필 필드에만 존재한다.<br><b>→ 문항 자체를 벤치마크에서 빼야 한다.</b>"],
-            ["wrong", "오답", "근거도 있고 표현도 좁혀지는데, <b>골든 정답이 그냥 틀렸다.</b><br>실제 사례(§13 s7/qa3): 정답이 \"Unknown\"인데 12개 세팅이 전부 \"No siblings mentioned\"로 답해 전부 오답 처리됐다 — QA 프롬프트 자체가 '시스템도 모른다고 답하면 Correct일 수 있다'고 명시하는데 judge 3종이 모두 자기 지시를 어겼다.<br><b>→ 정답 또는 채점 규칙을 고쳐야 한다.</b>"]],
+  // 벤치마크 자체 검수 축 — judge 판정이 아니라 '이 문항의 골든 정답이 타당한가'를 본다.
+  // ⚠ 세 라벨의 갈림점은 '얼마나 나쁜가'가 아니라 **조치**다:
+  //    그대로 씀 / 정답·채점을 고침 / 문항을 뺌.
+  //    '근거 없음'만 유일하게 달성 가능한 QA 상한을 깎으므로 반드시 따로 센다.
+  //    (구 라벨 ambiguous는 wrong으로 접어 집계한다 — 조치가 같아 쪼갤 실익이 없었음)
+  gold_qa: [["valid", "타당", "대화에 근거가 있고, 정답 표현도 이것 하나로 좁혀진다. 이대로 채점 기준으로 쓸 수 있다"],
+            ["wrong", "골든 정답이 잘못됨", "<b>문항은 멀쩡한데 정답 쪽이 문제다.</b> 두 경우를 모두 포함한다:<br>① 골든 값이 그냥 틀렸다 — §13 s7/qa3: 정답이 \"Unknown\"인데 12개 세팅이 전부 \"No siblings mentioned\"로 답해 오답 처리됐다.<br>② 똑같이 타당한 다른 표현도 정답인데 골든이 그중 하나만 인정한다 — §13 s23/qa0: \"alternating crowded and remote destinations\" vs 골든 \"crowded tourist spots for cultural enrichment\".<br><b>→ 옆의 대안 정답 칸에 올바른(또는 함께 인정해야 할) 답을 적어주세요.</b>"],
+            ["unanswerable", "대화에 근거 없음", "<b>그 정보가 대화에 아예 없다.</b> 어떤 메모리 시스템도 원리적으로 맞힐 수 없다.<br>§13 s52/qa3: 골든 \"From 20000 to 23000 yuan\" — 이 수치는 <b>64개 세션 대화 전체에 0회 등장</b>하고 persona_info에도 없다. 구조화 프로필 필드에만 존재한다.<br><b>→ 문항 자체를 벤치마크에서 빼야 한다. 이 라벨만 달성 가능한 QA 상한을 깎는다.</b>"]],
 };
 // 오라클로 대체한 파이프라인 단계 — 추출 프롬프트 종류(default/custom)와는 독립된 축
 const ORACLE_STAGE_NAMES = {
@@ -2003,64 +2004,12 @@ const pctCell = (o) => o && o.n ? `${o.agree}% <span class="muted small">(${o.n}
 // IAA 화면과 묻는 것이 다르다: 저쪽은 "judge 채점이 맞았나", 여기는 **"문항이 채점 기준으로 쓸 만한가"**.
 // 핵심은 라벨 × 시스템 정답률 교차표다 — 분석가가 '근거 없음'이라 한 문항을 실제로 모든 시스템이
 // 틀렸다면 그 진단이 데이터로 확인되고, 동시에 QA 점수 중 벤치마크 결함 몫이 정량화된다.
-const GQ_LAB = { valid: "타당", ambiguous: "정답이 여럿", unanswerable: "근거 없음", wrong: "오답", "동률": "동률(합의 없음)" };
+const GQ_LAB = { valid: "타당", wrong: "골든 정답이 잘못됨", unanswerable: "대화에 근거 없음", "동률": "동률(합의 없음)" };
 const GQ_FIX = {
-  valid: "채점 기준으로 쓸 수 있음",
-  ambiguous: "<b>채점을 고쳐야 함</b> — 문항은 살리되 동등 표현을 정답으로 인정",
-  unanswerable: "<b>문항을 빼야 함</b> — 대화에 근거가 없어 어떤 시스템도 원리적으로 못 맞힘",
-  wrong: "<b>정답을 고쳐야 함</b> — 골든 자체가 틀렸거나 채점 규칙이 자기 지시를 어김",
+  valid: "그대로 채점 기준으로 쓸 수 있음",
+  wrong: "<b>정답·채점을 고쳐야 함</b> — 문항은 살리되 올바른 답(또는 함께 인정할 동등 표현)으로 교정",
+  unanswerable: "<b>문항을 빼야 함</b> — 대화에 근거가 없어 어떤 시스템도 원리적으로 못 맞힘. 이 라벨만 달성 가능한 QA 상한을 깎는다",
 };
-// 사람 기준(3인 합의 / 개별 분석가)을 바꿀 때 화면 전체를 다시 그리면 스크롤이 튀고 느리다.
-// 필요한 데이터는 이미 응답 안에 다 들어 있으므로, 이 표만 다시 만들어 갈아끼운다.
-function iaaMatrixHTML(d) {
-      const ref = d.matrices[JM.href] ? JM.href : d.matrix_refs[0];
-      const MM = d.matrices[ref], baseM = MM[0], others = MM.slice(1);
-      const isCons = ref === d.matrix_refs[0];
-      // ⚠ 유형 × 모델 매트릭스로 본다. 모델을 행으로 두면 '한 유형에서 번 것을 다른 유형에서
-      //    잃는' 상쇄 구조가 안 보인다 — 그걸 놓치면 정반대 결론을 내게 된다.
-      // 행(판정 유형)별 최고 일치율 — 색(McNemar 유의)과 의미가 겹치지 않게 테두리로 구분한다
-      const rowBest = (t) => {
-        const vals = [baseM, ...others].map((m) => (t ? m.by_type[t] : m)).filter(Boolean).map((s) => s.agree);
-        return vals.length ? Math.max(...vals) : null;
-      };
-      const cell = (m, t) => {
-        const s = t ? m.by_type[t] : m;
-        if (!s) return `<td class="muted">–</td>`;
-        const v = s.vs_base;
-        const sig = v && v.p < 0.05 ? (v.better > v.worse ? " tw" : " tl") : "";
-        const best = s.agree === rowBest(t) ? " best" : "";
-        const desc = `<b>${esc(m.model)}</b> · ${t ? esc(REC_NAMES[t]) : "전체"}<br>일치 ${s.ok}/${s.n} (${s.agree}%) · κ ${s.kappa ?? "–"}`
-          + (s.bias != null ? `<br>편향 ${s.bias > 0 ? "+" : ""}${s.bias} — 사람이 judge보다 ${s.bias > 0.05 ? "<b>관대</b>" : s.bias < -0.05 ? "<b>가혹</b>" : "중립"} (0/1/2 척도)` : "")
-          + (s.agree === rowBest(t) ? `<br><b>이 유형에서 최고 일치율</b>` : "")
-          + (v ? `<br>기준 대비 개선 <b>${v.better}</b> : 악화 <b>${v.worse}</b> · p=${v.p}`
-                 + (v.p < 0.05 ? (v.better > v.worse ? " — <b>유의하게 개선</b>" : " — <b>유의하게 악화</b>") : " — 구분 불가") : "");
-        return `<td class="mcell${sig}${best}" data-desc="${esc(desc)}"><b>${s.agree}%</b> <span class="muted small">${s.ok}/${s.n}</span>
-          <br><span class="kap">κ ${s.kappa ?? "–"}</span>${
-          v ? ` <span class="vs">${v.better}:${v.worse}${v.p < 0.05 ? " ✦" : ""}</span>` : ""}</td>`;
-      };
-      const fs = (s) => !s || !s.n ? `<td class="muted">–</td>`
-        : `<td data-desc="일치 ${s.ok}/${s.n} · κ ${s.kappa ?? "–"}">${s.agree}% <span class="muted small">(${s.n})</span></td>`;
-      const row = (t) => `<tr><td>${t ? recTag(t) : "<b>전체</b>"}</td>${[baseM, ...others].map((m) => cell(m, t)).join("")}${
-        t ? fs(baseM.by_type[t]?.firm) + fs(baseM.by_type[t]?.split) : `<td class="muted">–</td><td class="muted">–</td>`}</tr>`;
-      return `
-      <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">사람 판정 vs judge — 유형 × 모델</h4>
-      <p class="small hrefsw" data-desc="사람 쪽 기준을 고릅니다. <b>3인 합의</b>는 다수결(동률 제외)이고, 개인을 고르면 그 분석가의 라벨을 그대로 정답으로 놓습니다 — 사람마다 judge와 얼마나 맞는지, 그리고 그 순위가 분석가에 따라 바뀌는지를 볼 수 있습니다.">
-        <b>사람 기준</b>${d.matrix_refs.map((r) => `<button class="seg${r === ref ? " on" : ""}" data-href="${esc(r)}">${r === d.matrix_refs[0] ? "3인 합의" : esc(r)}</button>`).join("")}</p>
-      <div class="jbasis" data-desc="같은 항목을 여러 모델이 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI는 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로 McNemar 정확검정으로 판정합니다.">
-        <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
-        분석가에게 배정된 <b>공유 표본</b>에서 ${isCons ? "3인 <b>합의 라벨</b>" : `<b>${esc(ref)}</b> 님의 라벨`}을 기준으로 각 judge 모델의 판정을 대조합니다.
-        <span class="small">칸의 <b>a:b</b>는 기준(gpt-oss-120b) 대비 <b>개선 : 악화</b> 건수, <b>✦</b>는 McNemar p&lt;0.05.
-        초록=유의하게 개선, 빨강=유의하게 악화. <b>굵은 테두리</b>는 그 유형에서 <b>최고 일치율</b>입니다(색과 별개 — 최고여도 기준 대비 유의하지 않을 수 있습니다). <b>순위 판정은 κ가 아니라 개선:악화로</b> 합니다 — κ는 우연 일치를 보정한 절대 수준(0.6↑ 견고)을 볼 때 씁니다.</span>
-      </div>
-      <table class="cmp jm"><tr><th>판정 유형</th>${[baseM, ...others].map((m) =>
-        `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/ — 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}
-        <th data-desc="기준 judge가 반복 채점에서 <b>매번 같은 라벨</b>을 준 항목에서의 사람 일치율 — judge가 확신한 구간">judge 확신 구간</th>
-        <th data-desc="기준 judge가 반복 채점에서 <b>갈렸던</b> 항목에서의 사람 일치율 — 여기가 낮으면 그 항목이 사람에게도 애매하다는 뜻">judge 흔들린 구간</th></tr>
-        ${["integrity", "accuracy", "update", "qa"].filter((t) => baseM.by_type[t]).map(row).join("")}
-        <tr class="jm-tot">${row("").slice(4)}</tr></table>
-      <p class="small muted" style="margin-top:5px">개별 검토(큐 밖)로 라벨한 주석 ${d.outside_queue}건은 이 집계에서 제외됩니다 — 분석가가 의심스러운 항목을 골라 누른 <b>기회 표본</b>이라 섞으면 지표가 왜곡됩니다.</p>`;
-}
-
 async function jmGoldQA() {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
@@ -2079,7 +2028,7 @@ async function jmGoldQA() {
       <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
     $("#jm-back").onclick = jmRender; return;
   }
-  const ORDER = ["valid", "ambiguous", "unanswerable", "wrong"];
+  const ORDER = ["valid", "wrong", "unanswerable"];
   const chip = (l) => `<span class="gq gq-${l}" data-desc="${esc(GQ_FIX[l] || "")}">${esc(GQ_LAB[l] || l)}</span>`;
   const done = d.n_items, tot = d.total_q || 0;
 
