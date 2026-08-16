@@ -91,9 +91,14 @@ def judge_one(item: dict) -> dict:
         label = json.loads(raw).get("evaluation_result")
     except json.JSONDecodeError:
         label = None
+    # ⚠ 비용은 completion_tokens로 과금되며 reasoning 토큰이 여기 포함되는지 반드시 확인해야 한다.
+    #    포함 여부를 가정하지 말고 details를 그대로 기록해 사후 검증이 가능하게 둔다.
+    det = getattr(r.usage, "completion_tokens_details", None)
+    reasoning = getattr(det, "reasoning_tokens", None) if det else None
     return {**{k: v for k, v in item.items() if k != "prompt"},
             "new_label": label, "raw": raw[:400],
-            "usage": {"in": r.usage.prompt_tokens, "out": r.usage.completion_tokens},
+            "usage": {"in": r.usage.prompt_tokens, "out": r.usage.completion_tokens,
+                      "reasoning": reasoning, "total": r.usage.total_tokens},
             "duration_ms": round((time.time() - start) * 1000)}
 
 
@@ -185,8 +190,13 @@ def main():
     bad = sum(1 for r in results if r["new_label"] is None)
     ti = sum(r["usage"]["in"] for r in results)
     to = sum(r["usage"]["out"] for r in results)
+    tr = sum(r["usage"]["reasoning"] or 0 for r in results)
+    tt = sum(r["usage"]["total"] or 0 for r in results)
     print(f"done -> {path}")
-    print(f"  파싱 실패 {bad}건 · 토큰 입력 {ti:,} / 출력 {to:,}")
+    print(f"  파싱 실패 {bad}건")
+    print(f"  토큰 입력 {ti:,} / 출력 {to:,} (그중 reasoning {tr:,}) / total {tt:,}")
+    if tt and tt != ti + to:
+        print(f"  ⚠ total != 입력+출력 — 과금 토큰이 따로 잡힙니다. 차 {tt - ti - to:,}")
     if args.scope == "queue":
         same = sum(1 for r in results if r["base_label"] and r["new_label"] == r["base_label"])
         cmp_n = sum(1 for r in results if r["base_label"] and r["new_label"])
