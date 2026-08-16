@@ -50,6 +50,16 @@ generators:
     judges:
       oss120-genoss120-4u: "results/mem0-classic-oss/judge-oss120-genoss120-4u-{run}/judge"
 
+# 숨김 그룹 — 축 하나를 통째로 접었다 편다. Metrics 사이드바에 그룹당 체크박스 하나.
+# ⚠ 숨김은 삭제가 아니다: 산출물·주석은 그대로 두고 노출만 막는다.
+hide_groups:
+  custom:
+    label: "custom 프롬프트 행"
+    desc: "custom 프롬프트 축은 정성분석 결과 품질이 낮아 기본적으로 표에서 뺍니다. 산출물과 이미 기록된 주석은 그대로 남아 있어, 켜면 이전 수치가 그대로 재현됩니다."
+  bm25:
+    label: "BM25 검색기 행"
+    desc: "retriever 축(BM25)은 기본 그리드와 변인이 달라 기본적으로 뺍니다. 켜면 <b>같은 오라클 단계끼리 임베딩 바로 아래에</b> BM25 행이 붙어, 검색기 차이를 행 단위로 대조할 수 있습니다 (판독은 backbone-experiment.md §19)."
+
 # UI 표시용 judge 이름 — 내부 키가 화면에 새어 나가지 않게 한다 (CLAUDE.md 규약).
 # app.js의 기본 표(JUDGE_NAMES)를 이 값으로 덮어쓴다. 새 레인은 여기만 추가하면 된다.
 judge_names:
@@ -233,7 +243,8 @@ runs:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u/judge
 
   full-custom:
-    hidden: true   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    hidden: true
+    hide_group: custom   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
     label: "Qwen3-4B × custom (20u)"
     note: "R/F1 급등하나 FMR 급락(지침 무시 오염 커버리지), QA 정체 — 병목이 초장문 활용(생성)으로 이동"
     backbone: Qwen3-4B-Instruct-2507
@@ -260,7 +271,8 @@ runs:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-nano/judge
 
   nano4-custom:
-    hidden: true   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    hidden: true
+    hide_group: custom   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
     label: "GPT-5-Nano × custom (4u)"
     note: "지침 과잉 준수로 커버리지 부족 — QA 최저 셀"
     backbone: gpt-5-nano
@@ -287,7 +299,8 @@ runs:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-mini/judge
 
   mini4-custom:
-    hidden: true   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    hidden: true
+    hide_group: custom   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
     label: "GPT-5-Mini × custom (4u)"
     note: "선별 정밀형 — Acc·Target P 전 셀 최고, 빈 세션 다수로 QA는 default에 밀림"
     backbone: gpt-5-mini
@@ -313,7 +326,8 @@ runs:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-30b4/judge
 
   30b4-custom:
-    hidden: true   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    hidden: true
+    hide_group: custom   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
     label: "Qwen3-30B-A3B × custom (4u)"
     note: "custom 프롬프트 QA 기준 4백본 전패 패턴 유지"
     backbone: Qwen3-30B-A3B-Instruct-2507
@@ -339,7 +353,8 @@ runs:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-think4/judge
 
   think4-custom:
-    hidden: true   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    hidden: true
+    hide_group: custom   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
     label: "Qwen3-4B-Thinking × custom (4u)"
     note: "과잉 절제의 붕괴 — 세션 58%에서 명시적 {facts:[]} 반환(잘림 아님, trace 검증), 그 세션들에 골든 62%가 소재. thinking이 '서사' 지침을 문자 그대로 적용해 사실형 세션을 통째 기각. QA C 34.18 최저 셀"
     backbone: Qwen3-4B-Thinking-2507
@@ -367,7 +382,8 @@ runs:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-oss120b4/judge
 
   oss120b4-custom:
-    hidden: true   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    hidden: true
+    hide_group: custom   # custom 프롬프트 축 — 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
     label: "gpt-oss-120b × custom (4u)"
     note: "custom 전패 패턴 6번째 백본에서도 유지(QA 55.5<58.5) — 문단형 ADD 87%가 부분(1점) 판정. FMR·Upd C는 상승(oss120 judge·1u 기준)"
     backbone: gpt-oss-120b
@@ -382,6 +398,9 @@ runs:
 
   # ── BM25 retriever 레인 (retriever 단일 변수 교체) ──
   oss120b4-bm25:
+    hidden: true
+    hide_group: bm25
+    pair_with: oss120b4   # 켜면 이 런 바로 아래에 붙는다
     repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
     label: "gpt-oss-120b × default × BM25 (4u)"
     note: "retriever만 Qwen3-Embedding-4B → BM25(Qdrant sparse+IDF)로 교체. 추출 fact는 3496으로 임베딩(3508)과 사실상 동일해 통제 확인. 차이는 갱신 결정과 검색에만 나타남: UPDATE 878→757(-14%), 검색 context 평균 19.96→13.83. ⚠ ingest 시간은 임베딩 레인이 단일 GPU, BM25가 TP=2 환경이라 비교 불가"
@@ -397,6 +416,9 @@ runs:
       oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oss120b4-bm25/judge
 
   oe1-bm25:
+    hidden: true
+    hide_group: bm25
+    pair_with: oe1   # 켜면 이 런 바로 아래에 붙는다
     repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
     label: "BM25 오라클 ① 추출 (4u)"
     note: "BM25 레인의 추출 오라클. ⚠ 오라클 저장소에서는 BM25도 context를 19.89개로 거의 다 채운다(실측 저장소는 13.83) — 골든 원문이 질문과 어휘가 겹치기 때문. 즉 BM25의 컨텍스트 부족은 '재작성된 fact'에서만 생긴다"
@@ -412,6 +434,9 @@ runs:
       oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oe1-bm25/judge
 
   oe2-bm25:
+    hidden: true
+    hide_group: bm25
+    pair_with: oe2   # 켜면 이 런 바로 아래에 붙는다
     repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
     label: "BM25 오라클 ② 추출+갱신 (4u)"
     note: "BM25 레인의 추출+갱신 오라클. 추출 fact 2451로 임베딩 레인과 완전히 동일. ⚠ 갱신 오라클도 검색 결과에 의존한다 — OracleLLM이 프롬프트에 실린 후보에서 원본을 매칭하므로 후보가 달라지면 결과가 달라진다 (UPDATE 269→323)"

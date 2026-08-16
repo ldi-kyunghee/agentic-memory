@@ -51,17 +51,27 @@ def load_registry_doc() -> dict:
     return _reg_cache["doc"]
 
 
-def load_registry(include_hidden: bool = False) -> dict:
+def hide_groups() -> dict:
+    """숨김 그룹 정의 — 축 하나를 통째로 접었다 펴는 단위. runs.yaml의 hide_groups 섹션."""
+    return load_registry_doc().get("hide_groups", {}) or {}
+
+
+def load_registry(include_hidden: bool = False, show: set | None = None) -> dict:
     """런 레지스트리. hidden: true 인 런은 기본적으로 화면·집계에서 제외한다.
 
     ⚠ 숨김은 '삭제'가 아니다 — 산출물과 이미 기록된 정성분석 주석은 그대로 두고 노출만 막는다.
     (custom 프롬프트 축은 정성분석 결과 품질이 낮아 제외했으나, 이미 완료된 판정 검토 큐 작업이
      걸려 있어 데이터를 지우면 안 된다.) include_hidden=True로 언제든 되살릴 수 있다.
+
+    show: 켜진 숨김 그룹 이름들. 축이 여러 개라 단일 토글로는 부족해서
+          (custom 프롬프트 / BM25 검색기) 그룹 단위로 켠다.
     """
     runs = load_registry_doc()["runs"]
     if include_hidden:
         return runs
-    return {k: v for k, v in runs.items() if not v.get("hidden")}
+    on = show or set()
+    return {k: v for k, v in runs.items()
+            if not (v.get("hidden") and v.get("hide_group", "custom") not in on)}
 
 
 def gen_registry() -> dict:
@@ -697,8 +707,9 @@ def api_labels():
 
 @app.get("/api/metrics")
 def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qwen4b",
-                include_hidden: int = 0):
-    reg = load_registry(include_hidden=bool(include_hidden))
+                include_hidden: int = 0, show: str = ""):
+    on = {g.strip() for g in show.split(",") if g.strip()}
+    reg = load_registry(include_hidden=bool(include_hidden), show=on)
     rows = []
     for name, r in reg.items():
         if not (ROOT / r["results"]).exists():
@@ -772,8 +783,23 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
             "repeats": reps, "sd": sd,
             "pinned_lane": {"generator": gen, "judge": jd, "run": run},
         }))
+    # 짝 재배열 — pair_with가 있는 행(BM25)을 짝(임베딩) 바로 아래로 옮긴다.
+    # 같은 오라클 단계끼리 임베딩/BM25가 붙어 있어야 검색기 축을 눈으로 비교할 수 있다.
+    idx = {r["run"]: i for i, r in enumerate(rows)}
+    paired = [r for r in rows if reg.get(r["run"], {}).get("pair_with") in idx]
+    if paired:
+        rest = [r for r in rows if r not in paired]
+        out = []
+        for r in rest:
+            out.append(r)
+            out.extend(p for p in paired if reg[p["run"]]["pair_with"] == r["run"])
+        placed = {id(x) for x in out}
+        out.extend(p for p in paired if id(p) not in placed)   # 짝이 숨겨진 경우 뒤에 붙인다
+        rows = out
+
     return {"judge": judge, "scope": scope, "generator": generator, "first4": list(first4_uuids()),
-            "noise": noise_floor(), "rows": rows}
+            "noise": noise_floor(), "rows": rows,
+            "hide_groups": [{"key": k, **v} for k, v in hide_groups().items()]}
 
 
 # ---------- 코멘트 ----------

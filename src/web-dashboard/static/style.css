@@ -438,7 +438,16 @@ table.jm tr.jm-tot td { border-top: 2px solid var(--line); background: #fafafc; 
 .tcell.tw { background: #e5f6e9; color: #1c6b30; }
 .tcell.tl { background: #fdecec; color: var(--bad); }
 .lkey { text-transform: none; font-size: 11px; font-weight: 800; background: var(--chip); color: var(--ink); border-radius: 5px; padding: 1px 7px; }
-.rtr { background: #e6f4ea; color: #1e6b3a; border-radius: 4px; padding: 0 5px; font-size: 10.5px; font-weight: 800; white-space: nowrap; }
+/* Retriever 칼럼 — 이 칼럼만의 국소 색 스케일이다. 두 축 모두 색을 줘야 한쪽만
+   강조돼 보이지 않는다. 다른 칼럼에서는 이 두 색을 retriever 뜻으로 쓰지 않는다. */
+.rtr { border-radius: 4px; padding: 0 6px; font-size: 10.5px; font-weight: 800;
+  white-space: nowrap; line-height: 1.5; display: inline-block; }
+.rtr.bm  { background: #e6f4ea; color: #1e6b3a; }   /* BM25 = 초록 */
+.rtr.emb { background: #e8ecfb; color: #33478f; }   /* 임베딩 = 남색 */
+/* 길이 통제 행 — 임베딩이지만 컨텍스트를 잘랐다는 표시(점선) */
+.rtr.emb.cut { background: #eef0f4; color: #5a5a68; border: 1px dashed #b9b9c4; padding: 0 5px; }
+/* 숨김 그룹 토글 */
+.hgrp { display: flex; gap: 6px; align-items: flex-start; cursor: pointer; margin-bottom: 4px; }
 .orc { background: #f0e9fa; color: #5b3b91; border-radius: 4px; padding: 0 5px; font-size: 10.5px; font-weight: 800; white-space: nowrap; }
 /* 오라클로 읽을 수 없게 된 지표 칸 — 빈칸(미실행)과 구분되게 옅은 사선 바탕을 깔고 호버 시 이유를 띄운다 */
 td .masked { color: #b9b9c4; font-weight: 700; }

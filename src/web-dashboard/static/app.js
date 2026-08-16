@@ -1062,6 +1062,7 @@ const METRIC_COLS = [
 ];
 const metricsCache = new Map();
 S.metricsScope = "first4";
+S.showGroups = new Set();   // 켜진 숨김 그룹 (custom / bm25 …) — runs.yaml의 hide_groups
 S.showHidden = false;   // custom 프롬프트 축은 기본 숨김 (데이터는 보존 — 토글로 복원)
 // 행/열 하이라이트 선택 — 행은 run 이름, 열은 칼럼 키. 재렌더에도 유지 (탭 이탈해도 세션 내 유지)
 S.metricsSelRows = new Set(); S.metricsSelCols = new Set(); S.metricsSelCells = new Set();
@@ -1069,10 +1070,11 @@ S.metricsColRows = new Set(); S.metricsColCols = new Set();   // 접힌 행/열
 
 async function renderMetrics() {
   // generator·judge는 상단바 선택을 그대로 따른다 (별도 선택기 없음 — 화면 전체가 한 조합)
-  const key = `${S.generator}|${S.judge}|${S.metricsScope}|${S.showHidden ? 1 : 0}`;
+  const groupsParam = [...S.showGroups].sort().join(",");
+  const key = `${S.generator}|${S.judge}|${S.metricsScope}|${groupsParam}`;
   if (!metricsCache.has(key)) {
     busy(true, "지표 집계 중 (공식 집계 함수)…");
-    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.judge}&scope=${S.metricsScope}&generator=${S.generator}${S.showHidden ? "&include_hidden=1" : ""}`)); }
+    try { metricsCache.set(key, await api(`/api/metrics?judge=${S.judge}&scope=${S.metricsScope}&generator=${S.generator}${groupsParam ? `&show=${encodeURIComponent(groupsParam)}` : ""}`)); }
     finally { busy(false); }
   }
   const data = metricsCache.get(key);
@@ -1089,11 +1091,15 @@ async function renderMetrics() {
       ${data.first4.map((u) => `<option value="${u}" ${S.metricsScope === u ? "selected" : ""}>${esc(nameOf(u))}</option>`).join("")}
     </select>
     <p class="small muted" style="margin-top:10px"><b>숨긴 세팅</b></p>
-    <label class="small" style="display:flex;gap:6px;align-items:flex-start;cursor:pointer" data-desc="custom 프롬프트 축은 정성분석 결과 품질이 낮아 기본적으로 표에서 뺍니다. 산출물과 이미 기록된 주석은 그대로 남아 있어, 켜면 이전 수치가 그대로 재현됩니다.">
-      <input type="checkbox" id="metrics-hidden" ${S.showHidden ? "checked" : ""}> custom 프롬프트 행도 보기</label>
+    ${(data.hide_groups || []).map((g) => `
+    <label class="small hgrp" data-desc="${esc(g.desc || "")}">
+      <input type="checkbox" data-group="${esc(g.key)}" ${S.showGroups.has(g.key) ? "checked" : ""}> ${esc(g.label || g.key)}도 보기</label>`).join("")}
     <p class="small muted" style="margin-top:10px">굵은 값 = 열별 최고(방향 반영). 셀 호버 = 순위·해석, 행 첫 칸 호버 = 런 요약 노트. 이 조합의 라벨이 없는 런은 표에서 제외됨 (레인마다 채점 유저 수가 다름).</p></div>`;
   $("#metrics-scope").onchange = () => { S.metricsScope = $("#metrics-scope").value; renderMetrics(); };
-  $("#metrics-hidden").onchange = () => { S.showHidden = $("#metrics-hidden").checked; renderMetrics(); };
+  $$("#sidebar input[data-group]").forEach((el) => (el.onchange = () => {
+    el.checked ? S.showGroups.add(el.dataset.group) : S.showGroups.delete(el.dataset.group);
+    renderMetrics();
+  }));
 
   const allRows = data.rows.filter((r) => r.metrics);
   const rows = allRows;   // 접기는 DOM에 남겨두고 클래스로만 처리 (재렌더 없이 토글하기 위함)
@@ -1212,8 +1218,11 @@ async function renderMetrics() {
     if (c.k === "backbone") return { html: `${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted">${esc(effortShort(r.backbone_effort))}</span>` : ""}`, desc: r.backbone_effort ? `reasoning effort: ${r.backbone_effort}` : c.desc };
     if (c.k === "prompt") return { html: esc(r.prompt), desc: c.desc };
     if (c.k === "retriever") {
-      const bm = /bm25/i.test(r.retriever || "");
-      return { html: bm ? `<span class="rtr">BM25</span>` : `<span class="muted">임베딩</span>`, desc: `<b>${esc(r.retriever)}</b><br>${c.desc}` };
+      const v = r.retriever || "";
+      const bm = /bm25/i.test(v), cut = /절단/.test(v);
+      const html = bm ? `<span class="rtr bm">BM25</span>`
+        : `<span class="rtr emb${cut ? " cut" : ""}">임베딩${cut ? "·절단" : ""}</span>`;
+      return { html, desc: `<b>${esc(v)}</b><br>${c.desc}` };
     }
     if (c.k === "oracle") return { html: r.oracle ? `<span class="orc">${esc(oracleLabel(r.oracle))}</span>` : `<span class="muted">없음</span>`, desc: c.desc };
     if (c.k === "judge") {
