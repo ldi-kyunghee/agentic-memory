@@ -2044,6 +2044,23 @@ async function jmIAA() {
         <td class="small">${TYPES.map((t) => `${recTag(t)} ${p.done_types[t] || 0}`).join(" · ")}</td>`)).join("")
         || `<tr><td colspan="6" class="muted">아직 없음</td></tr>`}</table>
 
+    ${!(d.judge_models || []).length ? "" : `
+    <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 행을 <b>같은 항목 집합</b>에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">judge 모델 교체 — 사람 합의와의 일치</h4>
+    <div class="jbasis" data-desc="같은 항목을 두 모델이 각각 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI로 보면 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로, 판정은 McNemar 정확검정으로 합니다.">
+      <b>⚠ CI가 아니라 McNemar로 읽으세요</b> — 같은 항목을 여러 모델이 판정한 <b>대응표본</b>이라 독립 CI는 겹쳐 보입니다.
+      <span class="small">'개선 : 악화'는 기준 judge 대비 새로 맞힌 수 : 새로 틀린 수입니다. <b>악화가 0</b>이면 포함관계라 우연으로 보기 어렵습니다.</span>
+    </div>
+    <table class="cmp"><tr><th>judge 모델</th><th>항목</th><th>일치율</th><th>Cohen κ</th>
+      <th data-desc="기준 judge(gpt-oss-120b) 대비 대응표본 정확검정 — 같은 항목에서 새로 맞힌 수 : 새로 틀린 수">vs 기준 (McNemar)</th>
+      <th>유형별 일치율</th></tr>
+      ${d.judge_models.map((m) => `<tr${m.vs_base && m.vs_base.p < 0.05 ? ' style="background:#f2fbf4"' : ""}>
+        <td><b>${esc(m.model)}</b></td><td>${m.n}</td><td>${m.agree}%</td>
+        <td>${kFmt(m)} <span class="muted small">${kGrade(m.kappa)}</span></td>
+        <td>${!m.vs_base ? `<span class="muted">기준</span>`
+          : `개선 <b class="up">${m.vs_base.better}</b> : 악화 <b class="${m.vs_base.worse ? "down" : ""}">${m.vs_base.worse}</b>
+             <span class="muted small">p=${m.vs_base.p}</span> ${m.vs_base.p < 0.05 ? `<b style="color:var(--ok)">유의</b>` : `<span class="muted small">ns</span>`}`}</td>
+        <td class="small">${Object.entries(m.by_type).map(([t, s]) => `${recTag(t)} ${s.agree}%<span class="muted">(${s.n})</span>`).join(" · ") || "-"}</td></tr>`).join("")}</table>`}
+
     <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다">판정 유형별 (전체 분석가 합산 vs judge 합의)</h4>
     <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th>
       <th data-desc="judge가 반복 채점에서 전부 같은 라벨을 준 항목에서의 분석가 일치율">judge 만장일치 구간</th>

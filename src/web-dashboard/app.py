@@ -995,6 +995,37 @@ def judge_votes(run: str, uuid: str, rec_type: str, session_id: int, idx: int,
             "unanimous": len(tally) == 1, "tie": len(winners) > 1}
 
 
+REJUDGE_DIR = ROOT / "results/mem0-classic-oss/rejudge-update"
+
+
+def load_rejudge() -> dict:
+    """judge 모델을 바꿔 재채점한 결과 — 큐 항목만 (사람 대조가 가능한 집합).
+
+    반환: {모델표시명: {(run,uuid,session_id,rec_type,idx): 라벨}}
+    ⚠ 채점 프롬프트는 원본 judge와 동일하게 조립돼 있다 (rejudge_update.py). 모델만 다르다.
+    """
+    out: dict = {}
+    if not REJUDGE_DIR.exists():
+        return out
+    for f in sorted(os.listdir(REJUDGE_DIR)):
+        if not f.endswith(".json"):
+            continue
+        try:
+            d = json.load(open(REJUDGE_DIR / f, encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        if d.get("scope") != "queue":
+            continue
+        name = f"{d['model']} ({d.get('effort') or 'none'})"
+        m = out.setdefault(name, {})
+        for it in d.get("items", []):
+            if it.get("new_label") is None:
+                continue
+            m[(it["run"], it["uuid"], it["session_id"], it.get("rec_type", "update"), it["idx"])] = \
+                str(it["new_label"])
+    return out
+
+
 def _kappa(pairs: list, ci: bool = False) -> dict:
     """Cohen's κ + 단순 일치율. pairs: [(labelA, labelB), ...]
     ci=True면 부트스트랩 95% 신뢰구간을 함께 낸다 (표본이 작을 때 κ 한 자리 비교를 막기 위함)."""
@@ -1144,6 +1175,69 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
         progress = {"queue_n": q["n"], "queue_types": qtypes,
                     "annotators": [{"annotator": a, **v} for a, v in sorted(per.items())]}
 
+    # ── judge 모델 교체 대조 (§18) ──
+    # 같은 항목을 다른 judge 모델로 재채점한 결과가 있으면, 사람 합의와의 일치를 모델별로 낸다.
+    # 기존 judge와의 비교는 **대응표본**(같은 항목)이므로 독립 CI가 아니라 McNemar로 판정한다 —
+    # 독립표본 CI로 보면 CI가 크게 겹쳐 '구분 불가'로 오판하게 된다(§18①).
+    rj = load_rejudge()
+    judge_models = []
+    if rj:
+        def human_consensus(item_labs: dict):
+            t: dict = {}
+            for v in item_labs.values():
+                t[v] = t.get(v, 0) + 1
+            top = max(t.values())
+            win = [k for k, v in t.items() if v == top]
+            return win[0] if len(win) == 1 else None
+
+        # 항목별 사람 합의 (rec_type 포함 키)
+        hcon = {}
+        for r in labeled:
+            hcon.setdefault((r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"]), {})[
+                r["annotator"]] = r["label"]
+        hcon = {k: c for k in hcon if (c := human_consensus(hcon[k])) is not None}
+
+        def mcnemar(a: dict, b: dict, keys: list):
+            """대응표본 정확검정 — b가 맞고 a가 틀린 수 vs 그 반대."""
+            bo = sum(1 for k in keys if a.get(k) != hcon[k] and b.get(k) == hcon[k])
+            ao = sum(1 for k in keys if a.get(k) == hcon[k] and b.get(k) != hcon[k])
+            n = bo + ao
+            if n == 0:
+                return bo, ao, 1.0
+            import math
+            mn = min(bo, ao)
+            return bo, ao, min(2 * sum(math.comb(n, i) for i in range(mn + 1)) / 2 ** n, 1.0)
+
+        # 기존 judge 라벨은 주석에 저장된 스냅샷을 쓴다 (재채점 파일의 base_label과 동일 값)
+        base_lab = {}
+        for r in labeled:
+            k = (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"])
+            if k in hcon and r.get("judge_label"):
+                base_lab[k] = str(r["judge_label"])
+
+        # ⚠ 모든 행을 **같은 항목 집합**에서 재야 나란히 놓을 수 있다. 기준 judge는 큐 밖 개별
+        #    검토까지 라벨이 있어 그대로 재면 n이 훨씬 크고 쉬운 항목(accuracy 94.9%)이 섞여
+        #    유리하게 보인다. 재채점 모델 전부가 커버하는 교집합으로 통일한다.
+        common = set(hcon) & set(base_lab)
+        for m in rj.values():
+            common &= set(m)
+        common = sorted(common)
+        for name, m in [("gpt-oss-120b (high) — 기존", base_lab)] + sorted(rj.items()):
+            keys = [k for k in common if k in m]
+            if not keys:
+                continue
+            st = _kappa([(hcon[k], m[k]) for k in keys], ci=True)
+            st.update(model=name, by_type={})
+            for t in ["integrity", "accuracy", "update", "qa"]:
+                kk = [k for k in keys if k[3] == t]
+                if kk:
+                    st["by_type"][t] = _kappa([(hcon[k], m[k]) for k in kk])
+            if name != "gpt-oss-120b (high) — 기존":
+                shared = [k for k in keys if k in base_lab]
+                bo, ao, p = mcnemar(base_lab, m, shared)
+                st["vs_base"] = {"n": len(shared), "better": bo, "worse": ao, "p": round(p, 4)}
+            judge_models.append(st)
+
     # 숨긴 런(custom 프롬프트 축)에 달린 주석은 지우지 않고 그대로 센다 — 이미 보고된 수치의
     # 재현성을 지키기 위함. 대신 얼마나 섞여 있는지는 화면에 밝힌다.
     hidden_runs = set(load_registry_doc()["runs"]) - set(load_registry())
@@ -1152,6 +1246,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
     cfg = load_registry_doc().get("judge_consensus") or {}
     return {
         "hidden_runs": sorted(hidden_runs), "hidden_labeled": n_hidden,
+        "judge_models": judge_models,
         "total": len(rows), "labeled": len(labeled), "annotators": annotators,
         "items": len(by_item), "overlap_items": sum(1 for v in by_item.values() if len(v) > 1),
         "comparable": len(cmpable),
