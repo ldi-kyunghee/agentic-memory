@@ -1171,13 +1171,18 @@ async function renderMetrics() {
     if (c.metric) {
       if (isMasked(r, c.k)) return { html: `<span class="masked">–</span>`, desc: maskDesc(r, c.k) };
       const v = m[c.k];
+      // ⚠ QA만 측정한 행(반복 채점을 --only qa로 돌린 고정 레인 등)은 나머지 지표가 null이다.
+      //    오라클 행은 masked 경로로 걸러지지만 오라클이 아닌 QA 전용 행은 여기까지 온다.
+      //    가드가 없으면 null.toFixed()로 Metrics 탭 전체가 렌더에 실패한다.
+      if (v == null) return { html: `<span class="masked">–</span>`,
+        desc: `<b>${esc(c.label)}</b> — 이 행은 <b>QA만 측정</b>했습니다. 답변 생성 레인 자체가 실험 조건이라 반복 채점을 QA로만 돌렸고, 저장물 지표(R·Acc·Upd 등)는 carrier 런의 값과 같습니다.` };
       const rk = rank[c.k].sorted.indexOf(v) + 1;
       const bestRow = bestRowOf(c.k);
       if (isInjected(r, c.k)) return {
         html: `<span class="oorank">${v.toFixed(2)}</span>`,
         desc: `<b>${esc(c.label)}</b> = ${v} <span class="small">(순위 비교 제외)</span><br>이 행은 <b>${esc(oracleLabel(r.oracle))}</b>을(를) 정답으로 주입한 실험이라, 이 값은 백본의 능력이 아니라 <b>주입된 정답이 다음 단계를 얼마나 통과했는지</b>를 뜻합니다. 실제 백본 행들과 같은 순위표에 놓지 않습니다.<br>${esc(METRIC_DEFS[c.k])}`,
       };
-      const nTxt = c.metric.n ? ` <span class="small muted">(${m[c.metric.n].toLocaleString()})</span>` : "";
+      const nTxt = c.metric.n && m[c.metric.n] != null ? ` <span class="small muted">(${m[c.metric.n].toLocaleString()})</span>` : "";
       // 흔들림 폭을 값 옆에 붙인다. 반복을 실제로 돌린 행은 실측 SD(±), 나머지는 유저 수로 환산한 추정치(~±).
       const band = QA_KEYS.includes(c.k) ? bandFor(r, c.k) : null;
       const own = ownSd(r, c.k);
