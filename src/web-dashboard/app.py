@@ -724,6 +724,7 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
             "backbone": er.get("backbone", base.get("backbone")),
             "prompt": er.get("prompt", base.get("prompt")),
             "oracle": er.get("oracle", ""),
+            "retriever": er.get("retriever") or base.get("retriever") or "Qwen3-Embedding-4B",
             "backbone_effort": er.get("backbone_effort", ""),
             "note": er.get("note", ""),
             "metrics": m,
