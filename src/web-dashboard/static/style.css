@@ -398,6 +398,8 @@ table.jm td.mcell .vs { font-size: 9.5px; font-weight: 800; color: #8a8a9a; }
 table.jm td.mcell .kap { font-size: 10px; font-weight: 700; color: #7a7a8c; }
 table.jm td.mcell.tw { background: #e5f6e9; } table.jm td.mcell.tw .vs { color: #1c6b30; }
 table.jm td.mcell.tl { background: #fdecec; } table.jm td.mcell.tl .vs { color: var(--bad); }
+.unit { text-transform: none; font-size: 10px; font-weight: 700; color: var(--dim); background: var(--chip); border-radius: 4px; padding: 0 6px; }
+.dif { margin: 5px 0 0; padding: 6px 10px; border-left: 3px solid var(--warn); background: #fffaf0; border-radius: 0 5px 5px 0; line-height: 1.7; color: #6b5320; cursor: help; }
 table.jm tr.jm-tot td { border-top: 2px solid var(--line); background: #fafafc; }
 .tcell { display: inline-block; margin: 0 3px 2px 0; padding: 0 4px; border-radius: 4px; cursor: help; white-space: nowrap; }
 .tcell i { font-style: normal; font-weight: 800; font-size: 9.5px; margin-left: 3px; opacity: .8; }

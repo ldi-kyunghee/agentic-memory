@@ -2062,7 +2062,7 @@ async function jmIAA() {
       };
       const row = (t) => `<tr><td>${t ? recTag(t) : "<b>전체</b>"}</td>${[baseM, ...others].map((m) => cell(m, t)).join("")}</tr>`;
       return `
-      <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">judge 모델 교체 — 유형 × 모델</h4>
+      <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">judge 모델 교체 — 유형 × 모델 <span class="unit">항목 단위 · 공통 교집합</span></h4>
       <div class="jbasis" data-desc="같은 항목을 여러 모델이 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI는 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로 McNemar 정확검정으로 판정합니다.">
         <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
         <span class="small">칸의 <b>a:b</b>는 기준(gpt-oss-120b) 대비 <b>개선 : 악화</b> 건수, <b>✦</b>는 McNemar p&lt;0.05.
@@ -2072,10 +2072,14 @@ async function jmIAA() {
         `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/ — 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}</tr>
         ${["integrity", "accuracy", "update", "qa"].filter((t) => baseM.by_type[t]).map(row).join("")}
         <tr class="jm-tot">${row("").slice(4)}</tr></table>
-      <p class="small muted" style="margin-top:5px">⚠ 아래 <b>판정 유형별</b> 표와 항목 수가 다릅니다 — 이 표는 <b>모델 비교를 위한 공통 교집합</b>(${baseM.n}건)이고, 아래 표는 <b>주석 전체</b>를 씁니다.</p>`;
+      <p class="small dif" data-desc="예: 갱신(Update)은 이 표에서 61.1%/κ0.469, 아래 표에서 63.0%/κ0.492입니다. 실측 분해 결과 차이의 대부분은 <b>항목 집합</b>에서 옵니다 — 아래 표 방식을 이 표의 36건으로만 제한하면 60.8%/κ0.459로 내려오고, 거기서 사람을 합의로 축약해도 61.1%/κ0.469로 거의 그대로입니다.">
+        ⚠ <b>아래 「판정 유형별」 표와 수치가 다릅니다 — 둘 다 맞고, 재는 대상이 다릅니다.</b><br>
+        <b>이 표</b>: <u>모델 비교</u>용 — 재채점 모델 전부가 커버하는 <b>공통 교집합 ${baseM.n}건</b>을 <b>항목</b> 단위(3인 합의 1표)로. 모델마다 다른 항목으로 재면 비교가 성립하지 않습니다.<br>
+        <b>아래 표</b>: <u>judge 품질의 절대 수준</u>용 — <b>주석 전체</b>를 <b>주석 행</b> 단위(3명이 라벨한 항목은 3번)로, judge는 반복 채점 <b>다수결</b>.<br>
+        <span class="small">차이의 대부분은 <b>항목 집합</b>에서 옵니다 (교집합에 빠진 항목이 상대적으로 쉬운 축). 세는 단위·judge 정의의 기여는 미미합니다.</span></p>`;
     })()}
 
-    <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다">판정 유형별 (전체 분석가 합산 vs judge 합의)</h4>
+    <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다.<br>⚠ 단위가 위 표와 다릅니다: <b>주석 행</b> 기준이라 3명이 라벨한 항목은 3번 세지고, 대상은 <b>주석 전체</b>입니다.">판정 유형별 <span class="unit">주석 행 단위 · 전체</span> (분석가 개별 판정 vs judge 합의)</h4>
     <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th>
       <th data-desc="judge가 반복 채점에서 전부 같은 라벨을 준 항목에서의 분석가 일치율">judge 만장일치 구간</th>
       <th data-desc="judge가 반복 채점에서 갈렸던 항목에서의 분석가 일치율 — 여기가 낮으면 '경계선 항목'이 진짜 애매한 것">judge 분열 구간</th></tr>
