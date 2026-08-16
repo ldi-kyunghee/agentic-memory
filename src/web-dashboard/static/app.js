@@ -60,6 +60,9 @@ async function boot() {
     S.fielddict = await api("/api/fielddict");
     S.runs = (await api("/api/runs")).filter((r) => r.available);
     S.first4 = await api("/api/first4");  // nano judge 라벨 보유 유저 (★ 표시용)
+    // runs.yaml의 사람용 judge 이름으로 기본 표를 보강한다 — 새 레인을 추가할 때
+    // app.js를 고치지 않아도 내부 키(ctxmatch-4u 등)가 화면에 노출되지 않는다
+    try { Object.assign(JUDGE_NAMES, (await api("/api/labels")).judge_names || {}); } catch (e) {}
   } finally { busy(false); }
 
   const backbones = [...new Set(S.runs.map((r) => r.backbone))];

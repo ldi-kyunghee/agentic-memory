@@ -50,6 +50,11 @@ generators:
     judges:
       oss120-genoss120-4u: "results/mem0-classic-oss/judge-oss120-genoss120-4u-{run}/judge"
 
+# UI 표시용 judge 이름 — 내부 키가 화면에 새어 나가지 않게 한다 (CLAUDE.md 규약).
+# app.js의 기본 표(JUDGE_NAMES)를 이 값으로 덮어쓴다. 새 레인은 여기만 추가하면 된다.
+judge_names:
+  ctxmatch-4u: "gpt-oss-120b (high · 길이 통제)"
+
 # judge 합의(다수결) 정의 — "judge 판정"은 단일 채점본이 아니라 **같은 모델로 동일 입력을 여러 번
 # 채점한 결과의 다수결**로 본다. 단일 채점본과 비교하면 judge가 그 회차에 우연히 흔들린 값과
 # 분석가를 대조하게 돼(재채점 불일치 10~27% 실측), 일치율이 judge 자기 노이즈만큼 깎인다.
@@ -377,6 +382,7 @@ runs:
 
   # ── BM25 retriever 레인 (retriever 단일 변수 교체) ──
   oss120b4-bm25:
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
     label: "gpt-oss-120b × default × BM25 (4u)"
     note: "retriever만 Qwen3-Embedding-4B → BM25(Qdrant sparse+IDF)로 교체. 추출 fact는 3496으로 임베딩(3508)과 사실상 동일해 통제 확인. 차이는 갱신 결정과 검색에만 나타남: UPDATE 878→757(-14%), 검색 context 평균 19.96→13.83. ⚠ ingest 시간은 임베딩 레인이 단일 GPU, BM25가 TP=2 환경이라 비교 불가"
     backbone: gpt-oss-120b
@@ -391,6 +397,7 @@ runs:
       oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oss120b4-bm25/judge
 
   oe1-bm25:
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
     label: "BM25 오라클 ① 추출 (4u)"
     note: "BM25 레인의 추출 오라클. ⚠ 오라클 저장소에서는 BM25도 context를 19.89개로 거의 다 채운다(실측 저장소는 13.83) — 골든 원문이 질문과 어휘가 겹치기 때문. 즉 BM25의 컨텍스트 부족은 '재작성된 fact'에서만 생긴다"
     backbone: gpt-oss-120b
@@ -405,6 +412,7 @@ runs:
       oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oe1-bm25/judge
 
   oe2-bm25:
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
     label: "BM25 오라클 ② 추출+갱신 (4u)"
     note: "BM25 레인의 추출+갱신 오라클. 추출 fact 2451로 임베딩 레인과 완전히 동일. ⚠ 갱신 오라클도 검색 결과에 의존한다 — OracleLLM이 프롬프트에 실린 후보에서 원본을 매칭하므로 후보가 달라지면 결과가 달라진다 (UPDATE 269→323)"
     backbone: gpt-oss-120b

@@ -667,6 +667,34 @@ def noise_floor() -> dict | None:
     return out
 
 
+def available_lane(run: str) -> tuple[str, str] | None:
+    """이 런이 실제로 채점본을 가진 (generator, judge)를 하나 찾는다.
+
+    BM25 레인처럼 4유저 배치로만 채점된 런은 기본 레인(1유저)에 judge가 없어
+    compute_metrics가 None을 돌려주고, 그러면 Metrics 표에서 **행이 통째로 사라진다**.
+    사라지면 Retriever 같은 칼럼이 영영 한 값만 보이게 되므로, 자기 레인으로
+    대체해 보여주고 UI에는 📌로 '고정 레인'임을 밝힌다.
+    """
+    for gname in gen_registry():
+        try:
+            path, judges = resolve_lane(run, gname)
+        except HTTPException:
+            continue
+        if not path.exists():
+            continue
+        for jname, jdir in judges.items():
+            if (ROOT / jdir).exists():
+                return gname, jname
+    return None
+
+
+@app.get("/api/labels")
+def api_labels():
+    """UI 표시용 라벨. 내부 키(ctxmatch-4u 등)가 화면에 새어 나가지 않도록
+    runs.yaml에서 사람용 이름을 받아 프런트의 기본 표와 병합한다."""
+    return {"judge_names": load_registry_doc().get("judge_names", {}) or {}}
+
+
 @app.get("/api/metrics")
 def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qwen4b",
                 include_hidden: int = 0):
@@ -676,6 +704,14 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
         if not (ROOT / r["results"]).exists():
             continue
         m = compute_metrics(name, judge, scope, generator)
+        lane_gen, lane_jd, pinned = generator, judge, None
+        if not m:
+            alt = available_lane(name)
+            if alt:
+                lane_gen, lane_jd = alt
+                m = compute_metrics(name, lane_jd, scope, lane_gen)
+                if m:
+                    pinned = {"generator": lane_gen, "judge": lane_jd, "run": name}
         # 반복 산출물이 있으면 QA만 평균으로 덮어쓴다 (메모리측 지표는 Stage A 산출이라 회차 무관)
         reps, sd = [], None
         tpl = r.get("repeat_judge")
@@ -683,7 +719,12 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
             rm, reps, sd = repeat_qa(tpl, name, scope, int(r.get("repeats", 5)))
             if rm:
                 m = {**m, **{k: rm[k] for k in ("qa_c", "qa_h", "qa_o")}}
-        rows.append(_metrics_row(name, r, scope, m, extra={"repeats": reps, "sd": sd} if reps else None))
+        extra = {}
+        if reps:
+            extra.update({"repeats": reps, "sd": sd})
+        if pinned:
+            extra["pinned_lane"] = pinned
+        rows.append(_metrics_row(name, r, scope, m, extra=extra or None))
 
     # 고정 레인 행 — generator·judge 드롭다운을 따르지 않고 runs.yaml에 박아둔 조합으로만 집계한다.
     # 검색 오라클처럼 '답변 생성 레인 자체가 실험 조건'인 세팅은 일반 런으로 표현할 수 없어서 필요하다.
