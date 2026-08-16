@@ -1234,7 +1234,10 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
                 mn = min(bo, ao)
                 return bo, ao, min(2 * sum(math.comb(n, i) for i in range(mn + 1)) / 2 ** n, 1.0)
 
-            common = sorted(set(href) & set(base_lab))
+            # ⚠ 모든 열을 **같은 항목**에서 재야 나란히 놓을 수 있다. 재채점 모델이 커버하지 못한
+            #    항목(추출 메모리가 0개라 judge.py가 LLM 없이 0점 처리하는 케이스 — judge.py:127)은
+            #    기준 judge만 갖고 있어, 빼지 않으면 기준 쪽 분모만 커지고 쉬운 항목이 섞인다.
+            common = sorted(set(href) & set(base_lab) & set.intersection(*(set(m) for m in rj.values())))
             out = []
             for name, m in [("gpt-oss-120b (high) — 기존", base_lab)] + sorted(rj.items()):
                 keys = [k for k in common if k in m]
