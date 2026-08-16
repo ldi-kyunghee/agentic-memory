@@ -1067,6 +1067,129 @@ def _kappa(pairs: list, ci: bool = False) -> dict:
     return out
 
 
+@app.get("/api/gold-qa")
+def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: str = "oss120-genoss120-4u"):
+    """골든 정답 검수 결과 — 벤치마크 문항 자체의 품질을 사람이 판정한 것.
+
+    judge 판정 검토와 축이 다르다: 저쪽은 '채점이 맞았나', 이쪽은 **'문항이 채점 기준으로
+    쓸 만한가'**를 묻는다. 네 라벨은 문제의 **원인**을 가르며 고치는 방법이 각각 다르다
+    (근거 없음 -> 문항 제외 / 표현 자의적 -> 채점 완화 / 오답 -> 정답 수정).
+
+    핵심 산출물은 **라벨 × 시스템 정답률 교차표**다. 분석가가 '대화에 근거 없음'으로 표시한
+    문항에서 실제로 모든 시스템이 틀렸다면, 그 진단이 데이터로 확인되고 동시에
+    '현재 QA 점수 중 몇 %가 벤치마크 결함 탓인지'가 정량화된다 (§13의 추정을 실측으로 대체).
+    """
+    rows = [r for r in list_annotations(uuid=uuid) if r["rec_type"] == "gold_qa" and r["label"]]
+    if not rows:
+        return {"n": 0, "annotators": [], "items": [], "by_label": {}, "runs": [], "cross": [],
+                "total_q": 0, "progress": []}
+
+    target_uuid = uuid or rows[0]["uuid"]
+    rows = [r for r in rows if r["uuid"] == target_uuid]
+
+    # 문항 총수 — 이 유저의 QA 문항 (생성된 QA 세션 제외)
+    total_q, qtext = 0, {}
+    try:
+        user = load_run_users("oss120b4", generator).get(target_uuid)
+    except HTTPException:
+        user = None
+    if user:
+        for si, sess in enumerate(user["sessions"]):
+            if sess.get("is_generated_qa_session"):
+                continue
+            for qi, q in enumerate(sess.get("questions") or []):
+                total_q += 1
+                qtext[(si, qi)] = {"question": q.get("question", ""), "answer": q.get("answer", ""),
+                                   "n_evidence": len(q.get("evidence") or [])}
+
+    by_item: dict = {}
+    for r in rows:
+        by_item.setdefault((r["session_id"], r["idx"]), {})[r["annotator"]] = {
+            "label": r["label"], "gt": r.get("gt_answer") or "", "note": r.get("note") or ""}
+
+    def consensus(d: dict):
+        c: dict = {}
+        for v in d.values():
+            c[v["label"]] = c.get(v["label"], 0) + 1
+        top = max(c.values())
+        win = [k for k, v in c.items() if v == top]
+        return win[0] if len(win) == 1 else None
+
+    annotators = sorted({r["annotator"] for r in rows})
+    progress = [{"annotator": a, "n": sum(1 for r in rows if r["annotator"] == a)} for a in annotators]
+
+    # 분석가 간 일치도 (gold_qa 라벨 기준)
+    pairs_out = []
+    for i, a in enumerate(annotators):
+        for b2 in annotators[i + 1:]:
+            pr = [(v[a]["label"], v[b2]["label"]) for v in by_item.values() if a in v and b2 in v]
+            st = _kappa(pr)
+            if st["n"]:
+                pairs_out.append({"a": a, "b": b2, **st})
+
+    # 라벨 × 시스템 정답률 — 각 런이 그 문항을 맞혔는지
+    reg = load_registry()
+    runs = [r for r in reg if reg[r].get("users") == 4 and not reg[r].get("oracle")]
+    qa_ok: dict = {}
+    for run in runs:
+        jd = load_judge(run, judge, target_uuid, generator)
+        if not jd:
+            continue
+        idx_of = {}
+        try:
+            u2 = load_run_users(run, generator).get(target_uuid)
+        except HTTPException:
+            u2 = None
+        if not u2:
+            continue
+        for si, sess in enumerate(u2["sessions"]):
+            for qi, q in enumerate(sess.get("questions") or []):
+                idx_of[(si, q["question"])] = qi
+        for rec in jd.get("question_answering_records", []):
+            k = idx_of.get((rec.get("session_id"), rec.get("question")))
+            if k is not None:
+                qa_ok.setdefault((rec["session_id"], k), {})[run] = rec.get("result_type") == "Correct"
+
+    live_runs = sorted({r for v in qa_ok.values() for r in v})
+    cross = []
+    for lab in ["valid", "ambiguous", "unanswerable", "wrong"]:
+        keys = [k for k, v in by_item.items() if consensus(v) == lab]
+        if not keys:
+            continue
+        row = {"label": lab, "n": len(keys), "runs": {}}
+        for run in live_runs:
+            got = [qa_ok.get(k, {}).get(run) for k in keys]
+            got = [g for g in got if g is not None]
+            if got:
+                row["runs"][run] = {"ok": sum(got), "n": len(got),
+                                    "pct": round(sum(got) / len(got) * 100, 1)}
+        # 어떤 시스템도 못 맞힌 문항 수 — '원리적으로 불가'의 직접 증거
+        row["none_solved"] = sum(1 for k in keys
+                                 if qa_ok.get(k) and not any(qa_ok[k].values()))
+        cross.append(row)
+
+    items = []
+    for (si, qi), v in sorted(by_item.items()):
+        c = consensus(v)
+        items.append({"session_id": si, "idx": qi, "consensus": c,
+                      "labels": {a: d["label"] for a, d in v.items()},
+                      "gt": next((d["gt"] for d in v.values() if d["gt"]), ""),
+                      "note": next((d["note"] for d in v.values() if d["note"]), ""),
+                      "solved_by": sorted(r for r, ok in (qa_ok.get((si, qi)) or {}).items() if ok),
+                      "n_systems": len(qa_ok.get((si, qi)) or {}),
+                      **(qtext.get((si, qi)) or {})})
+
+    by_label: dict = {}
+    for v in by_item.values():
+        c = consensus(v)
+        by_label[c or "동률"] = by_label.get(c or "동률", 0) + 1
+
+    return {"uuid": target_uuid, "user_name": (user or {}).get("user_name", ""),
+            "n": len(rows), "n_items": len(by_item), "total_q": total_q,
+            "annotators": annotators, "progress": progress, "pairs": pairs_out,
+            "by_label": by_label, "runs": live_runs, "cross": cross, "items": items}
+
+
 @app.get("/api/iaa")
 def api_iaa(run: str | None = None, uuid: str | None = None):
     """분석가 간(IAA) · 분석가 vs judge 합의 일치도. 항목 키는 (run,uuid,session,rec_type,idx,generator).

@@ -465,3 +465,15 @@ td:has(> .masked) { background: repeating-linear-gradient(135deg, transparent, t
 .lab i { font-style: normal; font-weight: 600; font-size: 9.5px; color: #7a7a8c; margin-left: 2px; }
 /* 채점 유형 이름 (한글·영문 병기) — 호버하면 무엇을 묻는 항목인지 설명 */
 .rectag { border-bottom: 1px dotted #b9b9c4; cursor: help; white-space: nowrap; }
+
+/* 골든 정답 검수 화면 — 라벨 칩은 '고치는 방법'별로 색을 나눈다
+   (초록=쓸 수 있음 / 노랑=채점을 고침 / 빨강=문항을 뺌 / 보라=정답을 고침) */
+.gq { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 11px; font-weight: 700;
+      white-space: nowrap; cursor: help; }
+.gq-valid        { background: #e5f6e9; color: #1c6b30; }
+.gq-ambiguous    { background: #fff4e6; color: #8a5600; }
+.gq-unanswerable { background: #fdecec; color: var(--bad); }
+.gq-wrong        { background: #f3edff; color: #5f3dc4; }
+.gq-동률          { background: var(--chip); color: #666; }
+table.gqi td.qtxt { max-width: 300px; font-size: 12px; line-height: 1.4; white-space: normal; }
+table.gqi td { vertical-align: top; }

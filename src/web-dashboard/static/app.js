@@ -584,7 +584,8 @@ function renderSessions() {
     ${extBlock("추출 A", "a-h", S.run, eA)}
     ${S.bundleB ? extBlock("추출 B", "b-h", S.runB, extComp(realSessions(S.bundleB))) : ""}
     <div class="qstart"><button class="jbtn" id="btn-queue" data-desc="모든 분석가에게 동일한 순서로 제공되는 표본을 순서대로 라벨합니다 — 분석가 간 일치도(IAA)는 이 겹치는 항목들로 계산됩니다">⚖ 검토 시작 (공유 표본)</button>
-      <button class="jbtn" id="btn-iaa" data-desc="라벨링 현황과 분석가 간·분석가 vs judge 일치도">📊 IAA</button></div>
+      <button class="jbtn" id="btn-iaa" data-desc="라벨링 현황과 분석가 간·분석가 vs judge 일치도">📊 IAA</button>
+      <button class="jbtn" id="btn-gqa" data-desc="골든 정답 검수 결과 — 벤치마크 문항 자체의 품질. judge 판정과 별개 축입니다">📝 정답검수</button></div>
   </div>`;
   sb.innerHTML = compHTML + S.bundle.sessions.map((s) => {
     if (s.generated_qa_session) return "";
@@ -602,6 +603,7 @@ function renderSessions() {
   $$(".side-item", sb).forEach((el) => (el.onclick = () => { S.session = +el.dataset.sid; renderSessions(); }));
   $("#btn-queue") && ($("#btn-queue").onclick = jmStartQueue);
   $("#btn-iaa") && ($("#btn-iaa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>사람 판정 vs judge — 검토 결과</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmIAA(); });
+  $("#btn-gqa") && ($("#btn-gqa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>골든 정답 검수 — 벤치마크 품질</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmGoldQA(); });
 
   const s = S.bundle.sessions.find((x) => x.session_id === S.session);
   if (!s || s.generated_qa_session) { $("#content").innerHTML = "<p class='muted'>세션을 선택하세요</p>"; return; }
@@ -1758,10 +1760,12 @@ const LABEL_SETS = {
   update: [["Correct", "Correct", "갱신본의 모든 원자 정보·수치가 정확"], ["Hallucination", "Hallucination", "틀린 값을 만들어냄"], ["Omission", "Omission", "디테일을 누락"], ["Other", "Other", "위 셋 중 어디에도 명확히 속하지 않는 갱신 실패 (judge 프롬프트의 4번째 분류)"]],
   qa: [["Correct", "Correct", "정답과 의미가 완전히 동등. ⚠ 정답이 '알 수 없음'인데 시스템도 추측 없이 모른다고 답하면 Correct"], ["Hallucination", "Hallucination", "날조·모순. 정답이 '알 수 없음'인데 단정적 사실을 답한 경우도 포함"], ["Omission", "Omission", "날조는 없으나 필요한 요소를 누락 (다요소 질문은 하나만 빠져도 Omission)"]],
   // 벤치마크 자체 검수 축 — judge 판정이 아니라 '이 문항의 골든 정답이 타당한가'를 본다
-  gold_qa: [["valid", "타당", "질문·근거에 비추어 이 골든 정답이 맞다"],
-            ["ambiguous", "모호/임의적", "정답이 여러 개일 수 있거나 요약 방식이 임의적이라 채점 기준이 되기 어렵다"],
-            ["unanswerable", "답변 불가", "대화에 근거가 없어 어떤 메모리 시스템도 맞힐 수 없다 (프로필 필드 등 대화 밖 정보)"],
-            ["wrong", "오답", "골든 정답 자체가 틀렸다"]],
+  // ⚠ 네 라벨은 '문제 있음'을 세 가지 서로 다른 **원인**으로 가른다 — 고치는 방법이 다르기 때문이다.
+  //    근거 없음 -> 문항을 빼야 함 / 표현 자의적 -> 채점 방식을 고쳐야 함 / 오답 -> 정답을 고쳐야 함
+  gold_qa: [["valid", "타당", "대화에 근거가 있고, 정답 표현도 이것 하나로 좁혀진다. 채점 기준으로 쓸 수 있다"],
+            ["ambiguous", "정답이 여럿 (표현 자의적)", "<b>근거는 대화에 있다.</b> 다만 같은 내용을 다르게 요약해도 맞는데, 골든이 그중 하나를 임의로 골랐다.<br>실제 사례(§13 s23/qa0): 저장된 메모리 \"alternating crowded and remote destinations\" vs 골든 \"crowded tourist spots for cultural enrichment\" — 둘 다 같은 대화의 타당한 요약인데 골든과 표현이 달라 오답 처리됐다.<br><b>→ 문항은 살리되 채점이 동등 표현을 인정해야 한다.</b>"],
+            ["unanswerable", "대화에 근거 없음", "<b>근거가 대화에 아예 없다.</b> 어떤 메모리 시스템도 원리적으로 맞힐 수 없다.<br>실제 사례(§13 s52/qa3): 골든 \"From 20000 to 23000 yuan\" — 이 수치는 <b>64개 세션 대화 전체에 0회 등장</b>하고 persona_info에도 없다. 구조화 프로필 필드에만 존재한다.<br><b>→ 문항 자체를 벤치마크에서 빼야 한다.</b>"],
+            ["wrong", "오답", "근거도 있고 표현도 좁혀지는데, <b>골든 정답이 그냥 틀렸다.</b><br>실제 사례(§13 s7/qa3): 정답이 \"Unknown\"인데 12개 세팅이 전부 \"No siblings mentioned\"로 답해 전부 오답 처리됐다 — QA 프롬프트 자체가 '시스템도 모른다고 답하면 Correct일 수 있다'고 명시하는데 judge 3종이 모두 자기 지시를 어겼다.<br><b>→ 정답 또는 채점 규칙을 고쳐야 한다.</b>"]],
 };
 // 오라클로 대체한 파이프라인 단계 — 추출 프롬프트 종류(default/custom)와는 독립된 축
 const ORACLE_STAGE_NAMES = {
@@ -1994,6 +1998,92 @@ const kFmt = (o) => o.kappa == null ? "–"
   : `${o.kappa}${o.ci ? ` <span class="kci">[${o.ci[0]}–${o.ci[1]}]</span>` : ""}`;
 const kGrade = (k) => k == null ? "" : k >= 0.8 ? "거의 완전" : k >= 0.6 ? "견고" : k >= 0.4 ? "보통" : k >= 0.2 ? "약함" : "거의 없음";
 const pctCell = (o) => o && o.n ? `${o.agree}% <span class="muted small">(${o.n})</span>` : `<span class="muted">–</span>`;
+
+// 골든 정답 검수 결과 화면.
+// IAA 화면과 묻는 것이 다르다: 저쪽은 "judge 채점이 맞았나", 여기는 **"문항이 채점 기준으로 쓸 만한가"**.
+// 핵심은 라벨 × 시스템 정답률 교차표다 — 분석가가 '근거 없음'이라 한 문항을 실제로 모든 시스템이
+// 틀렸다면 그 진단이 데이터로 확인되고, 동시에 QA 점수 중 벤치마크 결함 몫이 정량화된다.
+const GQ_LAB = { valid: "타당", ambiguous: "정답이 여럿", unanswerable: "근거 없음", wrong: "오답", "동률": "동률(합의 없음)" };
+const GQ_FIX = {
+  valid: "채점 기준으로 쓸 수 있음",
+  ambiguous: "<b>채점을 고쳐야 함</b> — 문항은 살리되 동등 표현을 정답으로 인정",
+  unanswerable: "<b>문항을 빼야 함</b> — 대화에 근거가 없어 어떤 시스템도 원리적으로 못 맞힘",
+  wrong: "<b>정답을 고쳐야 함</b> — 골든 자체가 틀렸거나 채점 규칙이 자기 지시를 어김",
+};
+async function jmGoldQA() {
+  const el = $("#jmodal-body");
+  el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
+  const d = await api("/api/gold-qa?uuid=" + encodeURIComponent(S.uuid || ""));
+  if (!d.n) {
+    el.innerHTML = `<div style="padding:20px"><p class="muted">아직 골든 정답 검수 주석이 없습니다.</p>
+      <p class="small muted">세션 화면의 QA 항목마다 붙은 <b>정답검수</b> 버튼으로 라벨하면 여기에 쌓입니다.</p>
+      <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
+    $("#jm-back").onclick = jmRender; return;
+  }
+  const ORDER = ["valid", "ambiguous", "unanswerable", "wrong"];
+  const chip = (l) => `<span class="gq gq-${l}" data-desc="${esc(GQ_FIX[l] || "")}">${esc(GQ_LAB[l] || l)}</span>`;
+  const done = d.n_items, tot = d.total_q || 0;
+
+  // 문제 있음으로 합의된 문항 비율 — §13의 '벤치마크 노이즈' 추정을 실측으로 바꾸는 값
+  const bad = ORDER.slice(1).reduce((a, l) => a + (d.by_label[l] || 0), 0);
+
+  el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
+    <div class="jbasis" data-desc="judge 판정 검토는 '채점이 맞았나'를 묻고, 이 축은 '문항이 애초에 채점 기준으로 쓸 만한가'를 묻습니다. 그래서 IAA 집계와 섞지 않고 따로 봅니다.">
+      <b>📝 이 화면이 묻는 것</b> — judge가 잘 채점했는지가 아니라, <b>골든 정답 자체가 채점 기준으로 타당한지</b>입니다.
+      <span class="small">라벨 셋은 '문제 있음'을 <b>원인별로</b> 가릅니다 — 고치는 방법이 각각 다르기 때문입니다:
+      ${ORDER.slice(1).map((l) => `${chip(l)} ${GQ_FIX[l].replace(/<b>|<\/b>/g, "")}`).join(" · ")}</span>
+    </div>
+
+    <h4 style="margin:14px 0 6px" data-desc="대상은 ${esc(d.user_name)} 님의 QA 문항 전수입니다 (생성 QA 세션 제외). 분석가별 막대는 각자 라벨한 문항 수">진행 현황 — ${esc(d.user_name)} · 문항 ${tot}개</h4>
+    <p class="small muted">라벨된 문항 <b>${done}</b>개 (${tot ? (done / tot * 100).toFixed(0) : 0}%) · 주석 ${d.n}건 · 2인 이상 겹친 문항 ${d.pairs.reduce((a, p) => Math.max(a, p.n), 0)}개</p>
+    <div class="qprog">${d.progress.map((a) => `<div class="qrow">
+      <span class="qwho">${esc(a.annotator)}</span>
+      <div class="qbar"><span class="qseg qs-qa" style="width:100%"><i style="width:${tot ? a.n / tot * 100 : 0}%"></i></span></div>
+      <span class="qnum"><b>${a.n}</b><span class="muted">/${tot}</span> <span class="qpct${tot && a.n >= tot ? " done" : ""}">${tot ? (a.n / tot * 100).toFixed(0) : 0}%</span></span>
+    </div>`).join("")}</div>
+
+    <h4 style="margin:16px 0 6px" data-desc="여러 분석가가 라벨한 문항은 다수결(동률이면 '동률')로 합의 라벨을 정합니다">합의 라벨 분포</h4>
+    <p class="confrow">${Object.entries(d.by_label).sort((a, b2) => ORDER.indexOf(a[0]) - ORDER.indexOf(b2[0]))
+      .map(([l, n]) => `<span class="cf">${chip(l)} <b>${n}</b><span class="muted">건 ${(n / done * 100).toFixed(0)}%</span></span>`).join("")}</p>
+    ${bad ? `<p class="small" data-desc="이 비율이 벤치마크 자체의 결함 몫입니다. 라벨된 문항이 적을 때는 표본 편향(분석가가 의심스러운 문항부터 볼 수 있음)에 주의하세요">
+      → 라벨된 ${done}개 중 <b>${bad}개(${(bad / done * 100).toFixed(0)}%)</b>가 문항 결함으로 합의됐습니다.
+      ${done < 30 ? `<span class="muted">⚠ 아직 표본이 작습니다 (${done}/${tot}) — 전수 대비 비율로 읽지 마세요.</span>` : ""}</p>` : ""}
+
+    ${!d.pairs.length ? "" : `
+    <h4 style="margin:16px 0 6px" data-desc="같은 문항을 두 분석가가 모두 라벨한 경우만 집계됩니다. κ는 우연 일치 보정값">분석가 간 일치도</h4>
+    <table class="cmp"><tr><th>쌍</th><th>공통 문항</th><th>일치율</th><th>Cohen κ</th></tr>
+      ${d.pairs.map((p) => `<tr><td>${esc(p.a)} ↔ ${esc(p.b)}</td><td>${p.n}</td><td>${p.agree}%</td>
+        <td>${kFmt(p)} <span class="muted small">${kGrade(p.kappa)}</span></td></tr>`).join("")}</table>`}
+
+    ${!d.cross.length ? "" : `
+    <h4 style="margin:18px 0 6px" data-desc="사람이 매긴 문항 품질 라벨과, 그 문항에서 실제 시스템들이 맞혔는지를 교차한 표입니다. '근거 없음'인데 모든 시스템이 틀렸다면 그 진단이 데이터로 확인된 것입니다.">라벨 × 시스템 정답률</h4>
+    <div class="jbasis" data-desc="정답률은 각 런의 judge 채점(Correct 비율)입니다. '전멸'은 그 문항을 맞힌 런이 하나도 없는 경우 — 원리적으로 불가하다는 주장의 직접 증거입니다.">
+      <b>왜 보는가</b> — 라벨이 <b>주관적 인상이 아님</b>을 확인하는 대조입니다.
+      <span class="small">'근거 없음'으로 본 문항의 정답률이 '타당' 문항보다 뚜렷이 낮고 <b>전멸</b> 건수가 몰려 있다면, 사람 판정과 시스템 실패가 같은 곳을 가리키는 것입니다.
+      반대로 차이가 없다면 그 라벨은 재검토 대상입니다.</span>
+    </div>
+    <table class="cmp"><tr><th>합의 라벨</th><th>문항</th>${d.runs.map((r) => `<th data-desc="${esc(runLabel(r))}">${esc(runLabel(r))}</th>`).join("")}
+      <th data-desc="모든 런이 틀린 문항 수 — 시스템 성능이 아니라 문항 자체의 문제일 가능성">전멸</th></tr>
+      ${d.cross.map((c) => `<tr><td>${chip(c.label)}</td><td>${c.n}</td>${d.runs.map((r) => {
+        const v = c.runs[r];
+        return !v ? `<td class="muted">–</td>` : `<td data-desc="${esc(`${runLabel(r)} · ${GQ_LAB[c.label]} 문항 ${v.n}개 중 ${v.ok}개 정답`)}">${v.pct}% <span class="muted small">${v.ok}/${v.n}</span></td>`;
+      }).join("")}<td>${c.none_solved ? `<b>${c.none_solved}</b>` : "0"}<span class="muted small">/${c.n}</span></td></tr>`).join("")}</table>`}
+
+    <h4 style="margin:18px 0 6px" data-desc="문항을 클릭하면 검토 화면이 열립니다">검수한 문항 (${d.items.length})</h4>
+    <table class="cmp gqi"><tr><th>세션</th><th>질문</th><th>골든 정답</th><th>합의</th><th>분석가</th>
+      <th data-desc="이 문항을 맞힌 런 수 / 채점된 런 수">시스템</th><th></th></tr>
+      ${d.items.map((it) => `<tr><td>S${it.session_id}<span class="muted small">·q${it.idx}</span></td>
+        <td class="qtxt">${esc(it.question || "")}</td>
+        <td class="qtxt">${esc(it.answer || "")}${it.gt ? `<br><span class="small" data-desc="분석가가 제안한 대안 정답">✎ ${esc(it.gt)}</span>` : ""}${it.note ? `<br><span class="small muted">${esc(it.note)}</span>` : ""}</td>
+        <td>${it.consensus ? chip(it.consensus) : `<span class="muted small">동률</span>`}</td>
+        <td class="small">${Object.entries(it.labels).map(([a, l]) => `${esc(a)} ${chip(l)}`).join(" ")}</td>
+        <td>${it.n_systems ? `${it.solved_by.length}/${it.n_systems}${it.solved_by.length === 0 ? ' <span class="gq gq-unanswerable">전멸</span>' : ""}` : `<span class="muted">–</span>`}</td>
+        <td>${jmBtn({ run: S.run, uuid: d.uuid, session_id: it.session_id, rec_type: "gold_qa", idx: it.idx, generator: S.generator })}</td></tr>`).join("")}</table>
+
+    <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
+  $("#jm-back").onclick = jmRender;
+  bindJmButtons(el);
+}
 
 async function jmIAA() {
   const el = $("#jmodal-body");
