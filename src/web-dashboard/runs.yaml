@@ -88,54 +88,105 @@ extra_rows:
 # 단계별 오라클 상한 사다리 — mem0 파이프라인의 각 단계를 차례로 '완벽'하게 만들며 QA 상한을 잰다.
 # 아직 안 돌린 단계는 화면에서 '미실행'으로 표시되고, 산출물이 생기면 자동으로 채워진다.
 # stages: 그 행에서 오라클로 대체된 단계 (extraction=fact 추출, update=갱신 결정, retrieval=저장·검색)
-oracle_ladder:
-  # 반복 회차 산출물은 레인으로 등록하지 않고 경로 템플릿으로 직접 읽는다 (드롭다운을 붐비게 하지 않음).
-  # 개별 회차를 화면에서 열어보고 싶어지면 generators에 레인으로 추가하면 된다 — 산출물 경로는 동일.
-  repeats: 5
-  note: "4유저(공통 705문항) · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 각 행 5회 반복 평균±표본표준편차. 확정 분해: 추출 +12.37(49%) · 갱신 +2.55(10%) · 순수 검색 정확도 +2.47(10%) · 컨텍스트 축약 +7.80(31%) — 네 구간 모두 유의(p<0.002). 마지막 축약분은 메모리 시스템의 능력이 아니라 '생성기에게 정답만 주고 나머지를 치운' 효과이므로, 시스템이 실제로 가져갈 몫은 25.19p 중 17.39p(69%)이고 그중 추출이 절반을 차지한다"
-  steps:
-    - key: actual
-      repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
-      label: "실측 (오라클 없음)"
-      stages: []
-      run: oss120b4
-      generator: oss120-4u
-      judge: oss120-genoss120-4u
-      desc: "gpt-oss-120b 백본이 실제로 추출·갱신·검색한 결과 — 사다리의 기준선"
-    - key: e1
-      repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
-      label: "추출 오라클"
-      stages: [extraction]
-      run: oe1
-      generator: oss120-4u
-      judge: oss120-genoss120-4u
-      desc: "골든 메모리(미끼 제외)를 추출 결과로 주입. 갱신 결정·저장·검색은 실제 로직"
-    - key: e2
-      repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
-      label: "추출+갱신 오라클"
-      stages: [extraction, update]
-      run: oe2
-      generator: oss120-4u
-      judge: oss120-genoss120-4u
-      desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐 — 백본 무관"
-    - key: e2pad
-      repeat_judge: "results/mem0-classic-oss/judge-oraclepad-4u-r{i}-{run}/judge"
-      label: "추출+갱신+검색 오라클 (잡음 유지)"
-      stages: [extraction, update, retrieval]
-      run: oe2
-      generator: oraclepad
-      judge: oraclepad-oss120
-      run_display: "정답 근거 + 실제 검색 잡음으로 top-20"
-      desc: "정답 근거를 반드시 포함시키되 나머지는 실제 검색 결과로 채워 컨텍스트 규모를 top-20으로 맞춘 대조군. 위 행(E2)과의 차이 +2.47p가 순수 검색 정확도, 아래 행과의 차이 +7.80p가 컨텍스트 축약의 기여다 (둘 다 p<0.002). ⚠ 이 대조군은 evidence에도 검색 context와 동일한 시각 접두사를 붙여야 성립한다 — 한때 접두사 누락으로 부호가 뒤집혔다"
-    - key: retrieval
-      repeat_judge: "results/mem0-classic-oss/judge-oracle-4u-r{i}-{run}/judge"
-      label: "추출+갱신+검색 오라클 (근거만)"
-      stages: [extraction, update, retrieval]
-      run: oss120b4
-      generator: oracle
-      judge: oracle-oss120
-      desc: "메모리 시스템을 전혀 쓰지 않고 정답 근거(evidence)만 직접 제공. ⚠ 이는 '완벽한 검색'이 아니라 '정답 근거만 남기고 나머지를 전부 제거한' 조건이다 — 평균 1.4개 항목(실제 검색은 top-20). 검색 정확도와 컨텍스트 축약 효과가 섞여 있어 이 구간의 증가분은 검색의 기여를 과대평가한다"
-      run_display: "메모리 시스템 미사용 (evidence 직접 제공)"
+# 오라클 상한 사다리 — retriever 축마다 한 벌씩. 화면에 나란히 그려 구간별 기여를 비교한다.
+# 아직 안 돌린 단계는 '미실행'으로 표시되고 산출물이 생기면 자동으로 채워진다.
+oracle_ladders:
+  - key: embed
+    label: "임베딩 (Qwen3-Embedding-4B)"
+    repeats: 5
+    note: "4유저(공통 705문항) · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 각 행 5회 반복 평균±표본표준편차. 확정 분해: 추출 +12.37(49%) · 갱신 +2.55(10%) · 순수 검색 정확도 +2.47(10%) · 컨텍스트 축약 +7.80(31%) — 네 구간 모두 유의(p<0.002). 마지막 축약분은 메모리 시스템의 능력이 아니라 '생성기에게 정답만 주고 나머지를 치운' 효과이므로, 시스템이 실제로 가져갈 몫은 25.19p 중 17.39p(69%)이고 그중 추출이 절반을 차지한다"
+    steps:
+      - key: actual
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "실측 (오라클 없음)"
+        stages: []
+        run: oss120b4
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "gpt-oss-120b 백본이 실제로 추출·갱신·검색한 결과 — 사다리의 기준선"
+      - key: e1
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "추출 오라클"
+        stages: [extraction]
+        run: oe1
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "골든 메모리(미끼 제외)를 추출 결과로 주입. 갱신 결정·저장·검색은 실제 로직"
+      - key: e2
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "추출+갱신 오라클"
+        stages: [extraction, update]
+        run: oe2
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐 — 백본 무관"
+      - key: e2pad
+        repeat_judge: "results/mem0-classic-oss/judge-oraclepad-4u-r{i}-{run}/judge"
+        label: "추출+갱신+검색 오라클 (잡음 유지)"
+        stages: [extraction, update, retrieval]
+        run: oe2
+        generator: oraclepad
+        judge: oraclepad-oss120
+        run_display: "정답 근거 + 실제 검색 잡음으로 top-20"
+        desc: "정답 근거를 반드시 포함시키되 나머지는 실제 검색 결과로 채워 컨텍스트 규모를 top-20으로 맞춘 대조군. 위 행(E2)과의 차이 +2.47p가 순수 검색 정확도, 아래 행과의 차이 +7.80p가 컨텍스트 축약의 기여다 (둘 다 p<0.002). ⚠ 이 대조군은 evidence에도 검색 context와 동일한 시각 접두사를 붙여야 성립한다 — 한때 접두사 누락으로 부호가 뒤집혔다"
+      - key: retrieval
+        repeat_judge: "results/mem0-classic-oss/judge-oracle-4u-r{i}-{run}/judge"
+        label: "추출+갱신+검색 오라클 (근거만)"
+        stages: [extraction, update, retrieval]
+        run: oss120b4
+        generator: oracle
+        judge: oracle-oss120
+        desc: "메모리 시스템을 전혀 쓰지 않고 정답 근거(evidence)만 직접 제공. ⚠ 이는 '완벽한 검색'이 아니라 '정답 근거만 남기고 나머지를 전부 제거한' 조건이다 — 평균 1.4개 항목(실제 검색은 top-20). 검색 정확도와 컨텍스트 축약 효과가 섞여 있어 이 구간의 증가분은 검색의 기여를 과대평가한다"
+        run_display: "메모리 시스템 미사용 (evidence 직접 제공)"
+
+  - key: bm25
+    label: "BM25 (Qdrant sparse + IDF)"
+    repeats: 5
+    note: "retriever만 BM25로 교체한 사다리. 나머지 변인(agent=gpt-oss-120b medium · default 프롬프트 · top-k 20 · gen=judge=gpt-oss-120b high · 4유저)은 임베딩 사다리와 동일. ⚠ 실측 행은 검색 context가 13.83개로 임베딩(19.96)보다 적다 — 컨텍스트 축약만으로 QA가 오르므로 '길이 통제 대조군'(임베딩 top-20을 BM25 길이로 절단)과 함께 읽어야 랭킹 품질을 분리할 수 있다. 오라클 저장소(E1/E2)에서는 BM25도 19.89개로 차이가 없다. ⚠ 마지막 행(근거만)은 저장소를 거치지 않으므로 임베딩 사다리 것을 그대로 재사용한다"
+    steps:
+      - key: actual
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "실측 (오라클 없음)"
+        stages: []
+        run: oss120b4-bm25
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "gpt-oss-120b 백본이 실제로 추출·갱신·검색한 결과 — 사다리의 기준선"
+      - key: e1
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "추출 오라클"
+        stages: [extraction]
+        run: oe1-bm25
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "골든 메모리(미끼 제외)를 추출 결과로 주입. 갱신 결정·저장·검색은 실제 로직"
+      - key: e2
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "추출+갱신 오라클"
+        stages: [extraction, update]
+        run: oe2-bm25
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐 — 백본 무관"
+      - key: e2pad
+        repeat_judge: "results/mem0-classic-oss/judge-oraclepad-4u-r{i}-{run}/judge"
+        label: "추출+갱신+검색 오라클 (잡음 유지)"
+        stages: [extraction, update, retrieval]
+        run: oe2-bm25
+        generator: oraclepad
+        judge: oraclepad-oss120
+        run_display: "정답 근거 + 실제 검색 잡음으로 top-20"
+        desc: "정답 근거를 반드시 포함시키되 나머지는 실제 검색 결과로 채워 컨텍스트 규모를 top-20으로 맞춘 대조군. 위 행(E2)과의 차이 +2.47p가 순수 검색 정확도, 아래 행과의 차이 +7.80p가 컨텍스트 축약의 기여다 (둘 다 p<0.002). ⚠ 이 대조군은 evidence에도 검색 context와 동일한 시각 접두사를 붙여야 성립한다 — 한때 접두사 누락으로 부호가 뒤집혔다"
+      - key: retrieval
+        repeat_judge: "results/mem0-classic-oss/judge-oracle-4u-r{i}-{run}/judge"
+        label: "추출+갱신+검색 오라클 (근거만)"
+        stages: [extraction, update, retrieval]
+        run: oss120b4
+        generator: oracle
+        judge: oracle-oss120
+        desc: "메모리 시스템을 전혀 쓰지 않고 정답 근거(evidence)만 직접 제공. ⚠ 이는 '완벽한 검색'이 아니라 '정답 근거만 남기고 나머지를 전부 제거한' 조건이다 — 평균 1.4개 항목(실제 검색은 top-20). 검색 정확도와 컨텍스트 축약 효과가 섞여 있어 이 구간의 증가분은 검색의 기여를 과대평가한다"
+        run_display: "메모리 시스템 미사용 (evidence 직접 제공)"
+
 
 runs:
   full-traced:

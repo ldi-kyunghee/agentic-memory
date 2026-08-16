@@ -1152,6 +1152,7 @@ async function renderMetrics() {
     { k: "users", label: "#Users", desc: "이 행의 지표가 집계된 유저 수" },
     { k: "backbone", label: "Agent LLM", desc: "memory agent 백본 — fact 추출·update 결정을 담당하는 LLM" },
     { k: "prompt", label: "Prompt", desc: "fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형)" },
+    { k: "retriever", label: "Retriever", desc: "메모리 검색기 — <b>백본·프롬프트와 독립된 축</b>입니다. 기본은 임베딩(Qwen3-Embedding-4B + Qdrant dense), BM25는 Qdrant sparse + IDF.<br>⚠ retriever는 QA 검색만 바꾸지 않습니다 — mem0는 <b>갱신 결정 전에도 search로 후보를 가져오므로</b>(main.py:378) 저장 내용 자체가 달라집니다.<br>⚠ BM25는 질의어와 토큰이 겹치지 않는 문서를 아예 반환하지 않아 <b>context 개수가 줄어듭니다</b>(실측 19.96→13.83). 컨텍스트 축약만으로 QA가 오르므로 길이 통제 대조군과 함께 읽어야 합니다" },
     { k: "oracle", label: "Oracle 단계", desc: "해당 단계를 '완벽한 정답'으로 대체한 실험인지 — <b>프롬프트 종류와는 독립된 축</b>입니다. '없음'=모든 단계를 시스템이 실제로 수행. 오라클 행은 저장물이 골든 자체라 R·Acc·FMR 비교가 무의미하고 QA C만 읽습니다" },
     { k: "lat", label: "Ingest/세션↓", desc: "세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용" },
     { k: "judge", label: "Judge LLM", desc: "채점 LLM — 행 간 비교는 동일 judge에서만 유효" },
@@ -1200,6 +1201,10 @@ async function renderMetrics() {
     if (c.k === "users") return { html: String(m.n_users), desc: c.desc };
     if (c.k === "backbone") return { html: `${esc(r.backbone)}${r.backbone_effort ? `<br><span class="small muted">${esc(effortShort(r.backbone_effort))}</span>` : ""}`, desc: r.backbone_effort ? `reasoning effort: ${r.backbone_effort}` : c.desc };
     if (c.k === "prompt") return { html: esc(r.prompt), desc: c.desc };
+    if (c.k === "retriever") {
+      const bm = /bm25/i.test(r.retriever || "");
+      return { html: bm ? `<span class="rtr">BM25</span>` : `<span class="muted">임베딩</span>`, desc: `<b>${esc(r.retriever)}</b><br>${c.desc}` };
+    }
     if (c.k === "oracle") return { html: r.oracle ? `<span class="orc">${esc(oracleLabel(r.oracle))}</span>` : `<span class="muted">없음</span>`, desc: c.desc };
     if (c.k === "judge") {
       const p = r.pinned_lane;
@@ -1402,11 +1407,15 @@ async function renderLadder() {
   //    그 노드에 쓰면 화면에는 아무것도 안 보인다 — 반드시 await '이후' 다시 조회한다.
   const box = $("#ladder-card");
   if (!box) return;
-  if (!d.rows.length) { box.innerHTML = ""; return; }
+  const lads = d.ladders || [{ key: "", label: "", note: d.note, n_repeats: d.n_repeats, rows: d.rows }];
+  if (!lads.length || !lads.some((L) => L.rows.length)) { box.innerHTML = ""; return; }
+  // 사다리를 retriever 축마다 한 벌씩 그린다. 막대 스케일은 전 사다리 공통이라야 눈으로 비교된다.
+  const allDone = lads.flatMap((L) => L.rows).filter((r) => r.qa_c != null);
+  const max = Math.max(...allDone.map((r) => r.qa_c), 100);
 
-  const done = d.rows.filter((r) => r.qa_c != null);
-  const max = Math.max(...done.map((r) => r.qa_c), 100);
-  const rows = d.rows.map((r, i) => {
+  const ladderTable = (L) => {
+  const done = L.rows.filter((r) => r.qa_c != null);
+  const rows = L.rows.map((r, i) => {
     const stages = LADDER_STAGES.map((s) => {
       const on = r.stages.includes(s);
       return `<td class="lst ${on ? "on" : ""}" data-desc="${esc(d.stage_names[s])} 단계 — ${on ? "이 행에서는 정답으로 대체됨(오라클)" : "실제 시스템이 수행"}">${on ? "오라클" : "실측"}</td>`;
@@ -1425,19 +1434,22 @@ async function renderLadder() {
 
   const first = done[0], last = done[done.length - 1];
   const gap = first && last && first !== last ? (last.qa_c - first.qa_c).toFixed(2) : null;
-  box.innerHTML = `
+  return `
     <div class="card"><h4 data-desc="mem0 파이프라인의 각 단계를 차례로 '완벽한 정답'으로 대체하며 QA 상한을 잽니다. 행 사이의 증가분이 곧 그 단계의 기여분입니다">
-        단계별 오라클 상한 사다리${gap ? ` <span class="small" style="text-transform:none;color:var(--accent);font-weight:800">실측 → 상한 +${gap}p</span>` : ""}</h4>
+        단계별 오라클 상한 사다리${L.label ? ` <span class="lkey">${esc(L.label)}</span>` : ""}${gap ? ` <span class="small" style="text-transform:none;color:var(--accent);font-weight:800">실측 → 상한 +${gap}p</span>` : ""}</h4>
       <div class="body">
         <table class="cmp ladder"><tr>
           <th>세팅</th><th data-desc="fact 추출 단계">추출</th><th data-desc="ADD/UPDATE/DELETE 갱신 결정 단계">갱신</th>
           <th data-desc="저장소에서 답변 재료를 찾아오는 단계">저장·검색</th>
           <th data-desc="QA Correct — 이 사다리에서 유일하게 의미 있는 지표. 오라클 행은 저장물이 골든 자체라 R·Acc는 100 근처로 붙어 무의미합니다">QA C↑</th>
           <th>직전 대비</th></tr>${rows}</table>
-        <p class="small muted" style="margin-top:8px">${d.n_repeats ? `반복 ${d.n_repeats}회 설계 (A′ 생성·judge 채점을 매번 새로 수행, 평균±표준편차) · ` : ""}${esc(d.note)} · 남은 구간(상한 → 100)은 generator 자체와 문항·정답 결함의 몫입니다.</p>
+        <p class="small muted" style="margin-top:8px">${L.n_repeats ? `반복 ${L.n_repeats}회 설계 (A′ 생성·judge 채점을 매번 새로 수행, 평균±표준편차) · ` : ""}${esc(L.note)} · 남은 구간(상한 → 100)은 generator 자체와 문항·정답 결함의 몫입니다.</p>
         <p class="small" style="margin-top:4px;color:#8a5600;background:#fff4e6;border-left:3px solid var(--warn);padding:5px 9px;border-radius:0 5px 5px 0" data-desc="마지막 행은 검색 결과 대신 정답 근거(evidence)만 제공합니다. 평균 1.4개 항목으로, 실제 검색(top-20)보다 훨씬 짧고 깨끗한 컨텍스트입니다. 따라서 이 구간의 증가분에는 '검색 정확도'와 '컨텍스트 축약·무관정보 제거' 효과가 섞여 있습니다">
           ⚠ 마지막 행은 <b>정답 근거만 남긴 조건</b>(평균 1.4개 항목)이라 실제 검색(top-20)과 컨텍스트 조건이 다릅니다 — 이 구간 증가분은 검색의 기여를 <b>과대평가</b>합니다.</p>
       </div></div>`;
+  };
+
+  box.innerHTML = lads.map(ladderTable).join("");
 }
 
 /* ----- Digest ----- */

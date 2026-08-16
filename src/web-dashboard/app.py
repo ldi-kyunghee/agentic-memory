@@ -233,6 +233,7 @@ def api_runs(include_hidden: int = 0):
             "run": name, "label": r.get("label", name),
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
             "oracle": r.get("oracle", ""),   # 오라클로 대체한 단계 (프롬프트 종류와 직교하는 축)
+            "retriever": r.get("retriever") or "Qwen3-Embedding-4B",
             "backbone_effort": r.get("backbone_effort"),
             "embedder": r.get("embedder"),
             "users": r.get("users"), "judges": list(r.get("judges", {}).keys()),
@@ -585,6 +586,8 @@ def _metrics_row(name: str, r: dict, scope: str, metrics: dict, extra: dict | No
         "run": name, "label": r.get("label", name),
         "backbone": r.get("backbone"), "prompt": r.get("prompt"),
         "oracle": r.get("oracle", ""),
+        # retriever 축 — 미기재면 기존 전 실험의 기본값(임베딩). BM25 레인과 구분하기 위한 칼럼
+        "retriever": r.get("retriever") or "Qwen3-Embedding-4B",
         "backbone_effort": r.get("backbone_effort"),
         "note": r.get("note", ""),
         "metrics": metrics,
@@ -630,7 +633,10 @@ def noise_floor() -> dict | None:
     그래서 **base 패스(별도 배치) + 반복 회차 전부를 한 표본으로 묶어** 통합 표준편차를 낸다.
     배치 내부 값(*_within)도 함께 돌려주어 둘의 차이를 화면에서 드러낸다.
     """
-    cfg = load_registry_doc().get("oracle_ladder") or {}
+    doc = load_registry_doc()
+    # 노이즈 바닥은 기준선(임베딩 실측)에서 잰다 — 첫 번째 사다리의 actual 행
+    lads = doc.get("oracle_ladders") or ([doc["oracle_ladder"]] if doc.get("oracle_ladder") else [])
+    cfg = lads[0] if lads else {}
     step = next((s for s in cfg.get("steps", []) if s.get("key") == "actual"), None)
     if not step or not step.get("repeat_judge"):
         return None
@@ -1191,7 +1197,17 @@ def _qa_correct_from_dir(jdir: Path, scope: str) -> float | None:
 def api_oracle_ladder(scope: str = "first4"):
     """단계별 오라클 상한 사다리 — 각 단계를 완벽하게 만들었을 때의 QA 상한과 구간별 기여분.
     아직 안 돌린 단계는 metrics=None으로 내려가 화면에서 '미실행'으로 표시된다."""
-    cfg = load_registry_doc().get("oracle_ladder") or {}
+    doc = load_registry_doc()
+    ladders = doc.get("oracle_ladders") or ([doc["oracle_ladder"]] if doc.get("oracle_ladder") else [])
+    out = [_ladder_rows(cfg, scope) for cfg in ladders]
+    # 첫 사다리를 rows로도 내려 기존 소비자(및 noise_floor)의 계약을 유지한다
+    return {"ladders": out, "scope": scope,
+            "stage_names": {"extraction": "추출", "update": "갱신", "retrieval": "저장·검색"},
+            "note": out[0]["note"] if out else "", "n_repeats": out[0]["n_repeats"] if out else 0,
+            "rows": out[0]["rows"] if out else []}
+
+
+def _ladder_rows(cfg: dict, scope: str) -> dict:
     reg = load_registry()
     rows, prev = [], None
     for st in cfg.get("steps", []):
@@ -1230,9 +1246,8 @@ def api_oracle_ladder(scope: str = "first4"):
         })
         if qa is not None:
             prev = qa
-    return {"note": cfg.get("note", ""), "scope": scope, "n_repeats": int(cfg.get("repeats", 0)),
-            "stage_names": {"extraction": "추출", "update": "갱신", "retrieval": "저장·검색"},
-            "rows": rows}
+    return {"key": cfg.get("key", ""), "label": cfg.get("label", ""),
+            "note": cfg.get("note", ""), "n_repeats": int(cfg.get("repeats", 0)), "rows": rows}
 
 
 @app.get("/api/judge-consistency")
