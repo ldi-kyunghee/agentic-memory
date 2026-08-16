@@ -392,8 +392,14 @@ table.ladder tr.pend { opacity: .55; }
 /* 버튼을 감추되 자리는 유지 — display:none이면 줄바꿈이 바뀌며 스크롤 위치가 밀린다 */
 .btn-off { visibility: hidden; }
 /* Oracle 단계 표기 (프롬프트 종류와 독립된 축) */
-.hrefsw { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin: 4px 0 6px; cursor: help; }
-.hrefsw button { font-size: 11px; }
+/* 사람 기준 선택기 — 세그먼티드 컨트롤. ⚠ .btn-off(visibility:hidden)를 쓰면 안 된다,
+   그건 Metrics의 '해제' 버튼을 숨기는 용도라 선택 안 된 항목이 통째로 사라진다. */
+.hrefsw { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; margin: 4px 0 6px; cursor: help; }
+.hrefsw b { margin-right: 4px; }
+.hrefsw .seg { border: 1px solid var(--line); background: #fff; color: var(--dim);
+  border-radius: 6px; padding: 2px 10px; cursor: pointer; font-size: 11px; font-weight: 600; }
+.hrefsw .seg:hover { background: var(--chip); color: var(--ink); }
+.hrefsw .seg.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 800; }
 /* 큐 진척 — 유형별 몫으로 칸을 나눈 막대 (표를 줄이고 한눈에 보이게) */
 .qprog { margin: 2px 0 4px; }
 .qrow { display: flex; align-items: center; gap: 9px; padding: 3px 0; }

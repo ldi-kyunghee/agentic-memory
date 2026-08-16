@@ -2080,7 +2080,7 @@ async function jmIAA() {
       return `
       <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">사람 판정 vs judge — 유형 × 모델</h4>
       <p class="small hrefsw" data-desc="사람 쪽 기준을 고릅니다. <b>3인 합의</b>는 다수결(동률 제외)이고, 개인을 고르면 그 분석가의 라벨을 그대로 정답으로 놓습니다 — 사람마다 judge와 얼마나 맞는지, 그리고 그 순위가 분석가에 따라 바뀌는지를 볼 수 있습니다.">
-        <b>사람 기준</b>${d.matrix_refs.map((r) => `<button class="ctx-toggle${r === ref ? "" : " btn-off"}" data-href="${esc(r)}">${r === d.matrix_refs[0] ? "3인 합의" : esc(r)}</button>`).join("")}</p>
+        <b>사람 기준</b>${d.matrix_refs.map((r) => `<button class="seg${r === ref ? " on" : ""}" data-href="${esc(r)}">${r === d.matrix_refs[0] ? "3인 합의" : esc(r)}</button>`).join("")}</p>
       <div class="jbasis" data-desc="같은 항목을 여러 모델이 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI는 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로 McNemar 정확검정으로 판정합니다.">
         <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
         분석가에게 배정된 <b>공유 표본</b>에서 ${isCons ? "3인 <b>합의 라벨</b>" : `<b>${esc(ref)}</b> 님의 라벨`}을 기준으로 각 judge 모델의 판정을 대조합니다.
