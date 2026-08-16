@@ -2059,7 +2059,13 @@ async function jmIAA() {
         <td>${!m.vs_base ? `<span class="muted">기준</span>`
           : `개선 <b class="up">${m.vs_base.better}</b> : 악화 <b class="${m.vs_base.worse ? "down" : ""}">${m.vs_base.worse}</b>
              <span class="muted small">p=${m.vs_base.p}</span> ${m.vs_base.p < 0.05 ? `<b style="color:var(--ok)">유의</b>` : `<span class="muted small">ns</span>`}`}</td>
-        <td class="small">${Object.entries(m.by_type).map(([t, s]) => `${recTag(t)} ${s.agree}%<span class="muted">(${s.n})</span>`).join(" · ") || "-"}</td></tr>`).join("")}</table>`}
+        <td class="small">${Object.entries(m.by_type).map(([t, s]) => {
+          const v = s.vs_base;
+          const sig = v && v.p < 0.05 ? (v.better > v.worse ? "tw" : "tl") : "";
+          return `<span class="tcell ${sig}" data-desc="${esc(`<b>${REC_NAMES[t]}</b> ${s.agree}% (${s.n}건)` + (v ? `<br>기준 대비 개선 ${v.better} : 악화 ${v.worse} · p=${v.p}` + (v.p < 0.05 ? (v.better > v.worse ? " — <b>유의하게 개선</b>" : " — <b>유의하게 악화</b>") : " — 구분 불가") : ""))}">${recTag(t)} ${s.agree}%${v ? `<i>${v.better}:${v.worse}</i>` : ""}</span>`;
+        }).join(" ") || "-"}</td></tr>`).join("")}</table>
+    <p class="small muted" style="margin-top:5px">유형별 칸의 <b>a:b</b>는 기준 judge 대비 <b>개선 : 악화</b> 건수입니다. 초록=유의하게 개선, 빨강=유의하게 악화(p&lt;0.05).
+      ⚠ 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 구조</b>를 놓칩니다.</p>`}
 
     <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다">판정 유형별 (전체 분석가 합산 vs judge 합의)</h4>
     <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th>

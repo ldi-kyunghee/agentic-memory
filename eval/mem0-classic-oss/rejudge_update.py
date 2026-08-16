@@ -84,8 +84,12 @@ def user_record(reg: dict, run: str, uuid: str, lane: str | None = None):
     return _users_cache[path].get(uuid)
 
 
-# judge가 실제로 뽑는 라벨 키 (judge.py의 결과 매핑과 동일)
-LABEL_KEY = {"integrity": "memory_integrity_score", "accuracy": "memory_accuracy_score",
+# ⚠ LLM이 반환하는 JSON 키 — 레코드 필드명(memory_*_score)과 다르다. judge.py:150~162 기준:
+#     integrity -> r.get("score")            (record: memory_integrity_score)
+#     accuracy  -> r.get("accuracy_score")   (record: memory_accuracy_score)
+#     update/qa -> r.get("evaluation_result")
+#   레코드 필드명으로 착각하면 integrity/accuracy가 전부 파싱 실패한다 (실제로 겪음).
+LABEL_KEY = {"integrity": "score", "accuracy": "accuracy_score",
              "update": "evaluation_result", "qa": "evaluation_result"}
 
 
@@ -155,7 +159,7 @@ def judge_one(item: dict) -> dict:
     det = getattr(r.usage, "completion_tokens_details", None)
     reasoning = getattr(det, "reasoning_tokens", None) if det else None
     return {**{k: v for k, v in item.items() if k != "prompt"},
-            "new_label": label, "raw": raw[:400],
+            "new_label": label, "raw": raw[:4000],
             "usage": {"in": r.usage.prompt_tokens, "out": r.usage.completion_tokens,
                       "reasoning": reasoning, "total": r.usage.total_tokens},
             "duration_ms": round((time.time() - start) * 1000)}

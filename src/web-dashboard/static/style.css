@@ -392,6 +392,10 @@ table.ladder tr.pend { opacity: .55; }
 /* 버튼을 감추되 자리는 유지 — display:none이면 줄바꿈이 바뀌며 스크롤 위치가 밀린다 */
 .btn-off { visibility: hidden; }
 /* Oracle 단계 표기 (프롬프트 종류와 독립된 축) */
+.tcell { display: inline-block; margin: 0 3px 2px 0; padding: 0 4px; border-radius: 4px; cursor: help; white-space: nowrap; }
+.tcell i { font-style: normal; font-weight: 800; font-size: 9.5px; margin-left: 3px; opacity: .8; }
+.tcell.tw { background: #e5f6e9; color: #1c6b30; }
+.tcell.tl { background: #fdecec; color: var(--bad); }
 .lkey { text-transform: none; font-size: 11px; font-weight: 800; background: var(--chip); color: var(--ink); border-radius: 5px; padding: 1px 7px; }
 .rtr { background: #e6f4ea; color: #1e6b3a; border-radius: 4px; padding: 0 5px; font-size: 10.5px; font-weight: 800; white-space: nowrap; }
 .orc { background: #f0e9fa; color: #5b3b91; border-radius: 4px; padding: 0 5px; font-size: 10.5px; font-weight: 800; white-space: nowrap; }

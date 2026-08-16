@@ -1228,11 +1228,18 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
                 continue
             st = _kappa([(hcon[k], m[k]) for k in keys], ci=True)
             st.update(model=name, by_type={})
+            is_base = name.startswith("gpt-oss-120b")
             for t in ["integrity", "accuracy", "update", "qa"]:
                 kk = [k for k in keys if k[3] == t]
-                if kk:
-                    st["by_type"][t] = _kappa([(hcon[k], m[k]) for k in kk])
-            if name != "gpt-oss-120b (high) — 기존":
+                if not kk:
+                    continue
+                st["by_type"][t] = _kappa([(hcon[k], m[k]) for k in kk])
+                # ⚠ 유형별 대응표본 검정 — 전체만 보면 'Update에서 번 걸 나머지에서 잃는' 구조를
+                #    놓친다(§18③: 부분집합만 보면 정반대 결론이 나온다).
+                if not is_base:
+                    bo, ao, p = mcnemar(base_lab, m, [k for k in kk if k in base_lab])
+                    st["by_type"][t]["vs_base"] = {"better": bo, "worse": ao, "p": round(p, 4)}
+            if not is_base:
                 shared = [k for k in keys if k in base_lab]
                 bo, ao, p = mcnemar(base_lab, m, shared)
                 st["vs_base"] = {"n": len(shared), "better": bo, "worse": ao, "p": round(p, 4)}
