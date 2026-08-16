@@ -299,6 +299,46 @@ runs:
     judges:
       nano: results/mem0-classic-oss/judge-gpt5nano-4u-oss120b4-custom/judge
 
+  # ── BM25 retriever 레인 (retriever 단일 변수 교체) ──
+  oss120b4-bm25:
+    label: "gpt-oss-120b × default × BM25 (4u)"
+    note: "retriever만 Qwen3-Embedding-4B → BM25(Qdrant sparse+IDF)로 교체. 추출 fact는 3496으로 임베딩(3508)과 사실상 동일해 통제 확인. 차이는 갱신 결정과 검색에만 나타남: UPDATE 878→757(-14%), 검색 context 평균 19.96→13.83. ⚠ ingest 시간은 임베딩 레인이 단일 GPU, BM25가 TP=2 환경이라 비교 불가"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium) — 기존 그리드와 통제 일치"
+    prompt: default
+    retriever: BM25 (Qdrant sparse + IDF)
+    embedder: "미사용 (mem0가 호출은 하나 BM25 store가 벡터를 버림)"
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oss120b4-bm25/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oss120b4-bm25
+    judges: {}
+
+  oe1-bm25:
+    label: "BM25 오라클 ① 추출 (4u)"
+    note: "BM25 레인의 추출 오라클. ⚠ 오라클 저장소에서는 BM25도 context를 19.89개로 거의 다 채운다(실측 저장소는 13.83) — 골든 원문이 질문과 어휘가 겹치기 때문. 즉 BM25의 컨텍스트 부족은 '재작성된 fact'에서만 생긴다"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium) — 남은 LLM 호출은 갱신 결정뿐"
+    prompt: default
+    oracle: extraction
+    retriever: BM25 (Qdrant sparse + IDF)
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oe1-bm25/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oe1-bm25
+    judges: {}
+
+  oe2-bm25:
+    label: "BM25 오라클 ② 추출+갱신 (4u)"
+    note: "BM25 레인의 추출+갱신 오라클. 추출 fact 2451로 임베딩 레인과 완전히 동일. ⚠ 갱신 오라클도 검색 결과에 의존한다 — OracleLLM이 프롬프트에 실린 후보에서 원본을 매칭하므로 후보가 달라지면 결과가 달라진다 (UPDATE 269→323)"
+    backbone: gpt-oss-120b
+    backbone_effort: "해당 없음 — 추출·갱신 모두 오라클이라 LLM 호출 없음"
+    prompt: default
+    oracle: extraction+update
+    retriever: BM25 (Qdrant sparse + IDF)
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oe2-bm25/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oe2-bm25
+    judges: {}
+
   # ── 단계별 오라클 사다리 전용 런 (전부 gpt-oss-120b · effort=high · Martin 1유저) ──
   oe1:
     repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균을 표에도 그대로 쓴다 (사다리와 동일 값)

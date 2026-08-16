@@ -29,6 +29,9 @@ ORACLE = os.getenv("ANSWER_ORACLE_CONTEXT") == "1"
 # evidence만 주면 '검색 정확도'와 '무관정보 제거' 효과가 섞이므로, 실제 검색 결과에서
 # 무관 항목을 끌어와 같은 규모로 맞춘 대조군을 만든다 -> 두 효과를 분리 측정.
 ORACLE_PAD = int(os.getenv("ANSWER_ORACLE_PAD", "0"))
+# 길이 통제 대조군: 지정한 레인의 jsonl에서 문항별 context 개수를 읽어 그 길이로 자른다.
+# retriever 비교에서 '랭킹 품질'과 '컨텍스트 축약 효과'를 분리하기 위한 옵션.
+CTX_MATCH = os.getenv("ANSWER_CTX_MATCH")
 
 TEMPLATE_MEM0 = """Memories for user {user_id}:
 
@@ -111,6 +114,43 @@ def oracle_context(qa: dict, user_name: str, ts_map: dict | None = None) -> str:
     return TEMPLATE_MEM0.format(user_id=user_name, memories=json.dumps(mems, indent=4))
 
 
+def match_context_lengths(users: list, ref_path: str) -> tuple[int, int]:
+    """검색 context를 다른 레인의 문항별 개수에 맞춰 앞에서부터 자른다.
+
+    ⚠ retriever를 바꾸면 반환 개수가 달라진다 — BM25는 질의어와 토큰이 하나도 안 겹치는 문서를
+    아예 반환하지 않아 실측 저장소에서 평균 13.8개(임베딩은 20.0개)가 된다. 그런데 컨텍스트를
+    줄이는 것만으로 QA가 오르므로(오라클 사다리에서 축약 효과 +7.80p 실측), 그대로 비교하면
+    '랭킹이 좋아서'인지 '방해 항목이 적어서'인지 분리할 수 없다.
+    -> 많이 주는 쪽(임베딩)을 적게 주는 쪽(BM25)의 길이로 잘라 **길이를 통제한 대조군**을 만든다.
+       이 대조군과 BM25의 차이가 '순수 랭킹 품질'이다.
+
+    문항 매칭 키는 (uuid, 세션 인덱스, 질문 원문).
+    """
+    ref = {}
+    for line in open(ref_path, encoding="utf-8"):
+        if not line.strip():
+            continue
+        u = json.loads(line)
+        for si, s in enumerate(u.get("sessions", [])):
+            for q in s.get("questions", []) or []:
+                ref[(u["uuid"], si, q["question"])] = len(_parse_context(q.get("context", "")))
+
+    cut = miss = 0
+    for u in users:
+        for si, s in enumerate(u.get("sessions", [])):
+            for q in s.get("questions", []) or []:
+                n = ref.get((u["uuid"], si, q["question"]))
+                if n is None:
+                    miss += 1
+                    continue
+                items = _parse_context(q.get("context", ""))
+                if len(items) > n:
+                    cut += 1
+                q["context"] = TEMPLATE_MEM0.format(
+                    user_id=u.get("user_name", ""), memories=json.dumps(items[:n], indent=4))
+    return cut, miss
+
+
 @retry(wait=wait_random_exponential(min=5, max=30), stop=stop_after_attempt(3), reraise=True)
 def answer_one(qa: dict) -> dict:
     context = qa["_oracle_context"] if ORACLE else qa["context"]
@@ -143,6 +183,11 @@ def main(results_path: str, max_workers: int, out_path: str | None = None, regen
         by_uuid = {u["uuid"]: u for u in users}
         users = [by_uuid[uid] for uid in order if uid in by_uuid]
         print(f"user-num={user_num}: 데이터셋 순서 기준 {len(users)}명 선별")
+
+    # 길이 통제 대조군: 다른 레인의 문항별 context 개수에 맞춰 자른다 (오라클 계산보다 먼저)
+    if CTX_MATCH:
+        cut, miss = match_context_lengths(users, CTX_MATCH)
+        print(f"⚠ context 길이 맞춤: {CTX_MATCH} 기준 · 잘린 문항 {cut}개 · 기준에 없는 문항 {miss}개")
 
     # 답변 없는 질문만 수집 (재실행 시 자동 resume). --regen이면 기존 답변 무시하고 전부 재생성
     pending = [
