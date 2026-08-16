@@ -1998,7 +1998,7 @@ const pctCell = (o) => o && o.n ? `${o.agree}% <span class="muted small">(${o.n}
 async function jmIAA() {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
-  const d = await api("/api/iaa");
+  const d = await api(`/api/iaa?scope=${JM.iaaScope || "all"}`);
   const jb = d.judge_basis || {};
   const pg = d.progress;
   const TYPES = ["integrity", "accuracy", "update", "qa"];
@@ -2019,6 +2019,11 @@ async function jmIAA() {
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
     <h4 style="margin:0 0 6px">라벨링 현황</h4>
     <p class="small muted">주석 ${d.total}건 · 라벨 완료 ${d.labeled}건 · 항목 ${d.items}개 (2인 이상 겹친 항목 <b>${d.overlap_items}</b>개) · judge와 대조 가능 ${d.comparable}건 · 👍${d.agree_clicks.agree} 👎${d.agree_clicks.disagree}</p>
+    <p class="small scopesw" data-desc="아래 집계의 <b>대상 범위</b>입니다. '공통 교집합'으로 맞추면 「유형 × 모델」 표와 <b>같은 항목</b>을 쓰게 되어 두 표의 수치가 정합합니다.<br>기본값 '전체'는 개별 검토로 라벨한 항목까지 포함해 표본을 최대로 씁니다 — judge 품질의 절대 수준을 볼 때 적합합니다.">
+      <b>집계 범위</b>
+      <button class="ctx-toggle${(JM.iaaScope || "all") === "all" ? "" : " btn-off"}" data-scope="all">전체 주석</button>
+      <button class="ctx-toggle${JM.iaaScope === "common" ? "" : " btn-off"}" data-scope="common">공통 교집합 (${d.common_n}건)</button>
+      <span class="small muted">— '공통 교집합'으로 맞추면 아래 표들이 「유형 × 모델」 표와 같은 항목을 씁니다.</span></p>
     ${d.hidden_labeled ? `<p class="small muted" data-desc="custom 프롬프트 축은 정성분석 결과 품질이 낮아 화면에서 숨겼지만, 이미 완료된 판정 검토 작업이 걸려 있어 주석은 지우지 않았습니다. 아래 집계에는 그대로 포함되며, 이전에 보고한 수치가 그대로 재현됩니다.">ℹ 이 중 <b>${d.hidden_labeled}건</b>은 화면에서 숨긴 런(${esc(d.hidden_runs.join(", "))})의 주석입니다 — 보고 수치 재현을 위해 집계에는 그대로 포함됩니다.</p>` : ""}
 
     <div class="jbasis" data-desc="${esc(jb.note || "")}">
@@ -2076,10 +2081,11 @@ async function jmIAA() {
         ⚠ <b>아래 「판정 유형별」 표와 수치가 다릅니다 — 둘 다 맞고, 재는 대상이 다릅니다.</b><br>
         <b>이 표</b>: <u>모델 비교</u>용 — 재채점 모델 전부가 커버하는 <b>공통 교집합 ${baseM.n}건</b>을 <b>항목</b> 단위(3인 합의 1표)로. 모델마다 다른 항목으로 재면 비교가 성립하지 않습니다.<br>
         <b>아래 표</b>: <u>judge 품질의 절대 수준</u>용 — <b>주석 전체</b>를 <b>주석 행</b> 단위(3명이 라벨한 항목은 3번)로, judge는 반복 채점 <b>다수결</b>.<br>
-        <span class="small">차이의 대부분은 <b>항목 집합</b>에서 옵니다 (교집합에 빠진 항목이 상대적으로 쉬운 축). 세는 단위·judge 정의의 기여는 미미합니다.</span></p>`;
+        <span class="small">집합이 갈린 주된 이유는 <b>재채점을 판정 검토 큐 항목만 돌렸기</b> 때문입니다 — 개별 검토로 라벨한 항목(Integrity의 83%)은 재채점 대상에 없었습니다.
+        <b>위의 「집계 범위」를 '공통 교집합'으로 바꾸면</b> 아래 표가 같은 항목을 써서 정합합니다.</span></p>`;
     })()}
 
-    <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다.<br>⚠ 단위가 위 표와 다릅니다: <b>주석 행</b> 기준이라 3명이 라벨한 항목은 3번 세지고, 대상은 <b>주석 전체</b>입니다.">판정 유형별 <span class="unit">주석 행 단위 · 전체</span> (분석가 개별 판정 vs judge 합의)</h4>
+    <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다.<br>⚠ 단위가 위 표와 다릅니다: <b>주석 행</b> 기준이라 3명이 라벨한 항목은 3번 세지고, 대상은 <b>주석 전체</b>입니다.">판정 유형별 <span class="unit">주석 행 단위 · ${(JM.iaaScope || "all") === "common" ? "공통 교집합" : "전체"}</span> (분석가 개별 판정 vs judge 합의)</h4>
     <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th>
       <th data-desc="judge가 반복 채점에서 전부 같은 라벨을 준 항목에서의 분석가 일치율">judge 만장일치 구간</th>
       <th data-desc="judge가 반복 채점에서 갈렸던 항목에서의 분석가 일치율 — 여기가 낮으면 '경계선 항목'이 진짜 애매한 것">judge 분열 구간</th></tr>
@@ -2095,6 +2101,9 @@ async function jmIAA() {
     <div id="jc-box" class="small muted">집계 중…</div>
     <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
   $("#jm-back").onclick = jmRender;
+  $$("#jmodal-body .scopesw button").forEach((b) => (b.onclick = () => {
+    JM.iaaScope = b.dataset.scope; jmIAA();
+  }));
   try {
     const jc = await api("/api/judge-consistency");
     $("#jc-box").innerHTML = !jc.rows.length ? `<p class="small muted">${esc(jc.note || "반복 채점 세트 없음")}</p>` : `

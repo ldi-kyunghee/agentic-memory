@@ -998,6 +998,33 @@ def judge_votes(run: str, uuid: str, rec_type: str, session_id: int, idx: int,
 REJUDGE_DIR = ROOT / "results/mem0-classic-oss/rejudge-update"
 
 
+def _common_model_keys(labeled: list) -> set:
+    """'유형 × 모델' 표가 쓰는 공통 교집합 — 사람 합의 성립 + 재채점 모델 전부가 커버한 항목.
+
+    ⚠ 모델 비교는 **같은 항목**에서 재야 성립한다. 다만 재채점을 큐 항목만 돌렸기 때문에
+    개별 검토로 라벨한 항목(integrity의 83%)은 여기 들어오지 못한다 — 이 집합이 작은 것은
+    방법론적 필연이 아니라 **커버리지 제약**이다. 화면의 범위 토글로 두 표를 같은 기준에
+    놓고 볼 수 있게 한다.
+    """
+    from collections import Counter as _C
+    hc: dict = {}
+    for r in labeled:
+        hc.setdefault((r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"]), {})[
+            r["annotator"]] = r["label"]
+    rj = load_rejudge()
+    if not rj:
+        return set()
+    out = set()
+    for k, labs in hc.items():
+        t = _C(labs.values())
+        top = max(t.values())
+        if sum(1 for v in t.values() if v == top) != 1:      # 사람 합의 불성립
+            continue
+        if all(k in m for m in rj.values()):
+            out.add(k)
+    return out
+
+
 def load_rejudge() -> dict:
     """judge 모델을 바꿔 재채점한 결과 — 큐 항목만 (사람 대조가 가능한 집합).
 
@@ -1059,7 +1086,7 @@ def _kappa(pairs: list, ci: bool = False) -> dict:
 
 
 @app.get("/api/iaa")
-def api_iaa(run: str | None = None, uuid: str | None = None):
+def api_iaa(run: str | None = None, uuid: str | None = None, scope: str = "all"):
     """분석가 간(IAA) · 분석가 vs judge 합의 일치도. 항목 키는 (run,uuid,session,rec_type,idx,generator).
 
     'judge 판정'은 단일 채점본이 아니라 **반복 채점의 다수결**이다 (judge_consensus 참조).
@@ -1067,6 +1094,13 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
     """
     rows = list_annotations(run=run, uuid=uuid)
     labeled = [r for r in rows if r["label"]]
+    # scope='common' 이면 아래 집계도 '유형 × 모델' 표와 **같은 항목 집합**으로 맞춘다.
+    # 두 표가 같은 양(사람↔judge 일치)을 다른 숫자로 보여주면 안 되기 때문이다.
+    # 기본 'all'은 개별 검토까지 포함해 표본을 최대로 쓴다 (judge 품질의 절대 수준용).
+    common_keys = _common_model_keys(labeled)
+    if scope == "common":
+        labeled = [r for r in labeled
+                   if (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"]) in common_keys]
     by_item: dict = {}
     for r in labeled:
         key = (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"], r["generator"])
@@ -1255,6 +1289,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
     return {
         "hidden_runs": sorted(hidden_runs), "hidden_labeled": n_hidden,
         "judge_models": judge_models,
+        "scope": scope, "common_n": len(common_keys),
         "total": len(rows), "labeled": len(labeled), "annotators": annotators,
         "items": len(by_item), "overlap_items": sum(1 for v in by_item.values() if len(v) > 1),
         "comparable": len(cmpable),
