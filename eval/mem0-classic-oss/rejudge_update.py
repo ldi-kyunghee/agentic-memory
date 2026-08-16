@@ -1,7 +1,7 @@
-"""Memory Update 판정만 다른 judge 모델로 재채점한다.
+"""판정 검토 큐의 항목을 다른 judge 모델로 재채점한다 (4종 전부 지원).
 
-왜 update만인가
----------------
+왜 update에서 출발했나
+----------------------
 판정 검토 큐(분석가 3명 완료) 결과, 사람과 gpt-oss-120b(high)의 판단이 가장 크게 벌어지는
 항목이 Memory Update다. judge 자기 일관성도 update가 최악이고(Fleiss κ 0.384, §17-2),
 judge 간 순위 상관도 update만 ρ 0.47로 유일하게 낮다(§10). 그래서 "더 나은 judge를 쓰면
@@ -9,10 +9,15 @@ judge 간 순위 상관도 update만 ρ 0.47로 유일하게 낮다(§10). 그�
 
 두 단계
 -------
-  --scope queue : 큐에 든 update 항목만 재채점 (기본). 사람 라벨이 있는 항목이라
-                  '사람 대조'가 가능한 유일한 집합. 40건 · 입력 ~76K 토큰으로 매우 싸다.
-  --scope run   : 지정 런의 update 레코드 전체 재채점. 사람 라벨은 없지만 judge 간 일치도와
-                  Upd C 지표가 얼마나 달라지는지를 본다. oss120b4 기준 595건 · 입력 ~459K 토큰.
+  --scope queue --types ... : 큐 항목만 재채점. 사람 라벨이 있는 항목이라 '사람 대조'가
+                  가능한 유일한 집합이다. 실측: integrity 35건/35K · accuracy 39건/166K ·
+                  update 40건/76K · qa 39건/35K 토큰. accuracy가 대화 전문을 담아 가장 비싸다.
+  --scope run   : 지정 런의 update 레코드 전체 재채점 (update 전용). 사람 라벨은 없지만
+                  judge 간 일치도와 Upd C 지표 변화를 본다. oss120b4 기준 595건 · ~459K 토큰.
+
+⚠ 추출 메모리가 빈 integrity 항목은 judge.py가 LLM 호출 없이 0점 처리하므로(judge.py:127)
+  재채점 대상에서 제외한다 — 큐에서 4건.
+⚠ QA만 답변 생성 레인에 종속된다. 큐 항목의 generator 레인에서 system_response를 읽는다.
 
 채점 프로토콜은 HaluMem 원본 프롬프트를 그대로 import 한다 (무수정 원칙).
 모델만 바뀌고 입력은 기존 judge와 비트 단위로 같아야 대조가 성립한다.
@@ -38,7 +43,12 @@ load_dotenv()
 
 # 채점 프롬프트는 서브모듈 원본 그대로 (프로토콜 무수정)
 sys.path.insert(0, "HaluMem/eval")
-from eval_tools import EVALUATION_PROMPT_FOR_UPDATE_MEMORY  # noqa: E402
+from eval_tools import (  # noqa: E402
+    EVALUATION_PROMPT_FOR_MEMORY_INTEGRITY,
+    EVALUATION_PROMPT_FOR_MEMORY_ACCURACY,
+    EVALUATION_PROMPT_FOR_UPDATE_MEMORY,
+    EVALUATION_PROMPT_FOR_QUESTION,
+)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REG = os.path.join(HERE, "..", "..", "src", "web-dashboard", "runs.yaml")
@@ -57,21 +67,70 @@ def load_registry() -> dict:
         return yaml.safe_load(f)["runs"]
 
 
-def user_record(reg: dict, run: str, uuid: str):
-    if run not in _users_cache:
+def user_record(reg: dict, run: str, uuid: str, lane: str | None = None):
+    """lane이 주어지면 그 generator 레인의 jsonl에서 읽는다 (QA는 답변이 레인 종속)."""
+    doc = yaml.safe_load(open(REG, encoding="utf-8"))
+    if lane and lane != "qwen4b":
+        g = (doc.get("generators") or {}).get(lane) or {}
+        path = g["results"].format(run=run) if g.get("results") else reg[run]["results"]
+    else:
         path = reg[run]["results"]
-        _users_cache[run] = {u["uuid"]: u for u in
-                             (json.loads(l) for l in open(path, encoding="utf-8") if l.strip())}
-    return _users_cache[run].get(uuid)
+    if path not in _users_cache:
+        if not os.path.exists(path):
+            _users_cache[path] = {}
+        else:
+            _users_cache[path] = {u["uuid"]: u for u in
+                                  (json.loads(l) for l in open(path, encoding="utf-8") if l.strip())}
+    return _users_cache[path].get(uuid)
 
 
-def build_prompt(mp: dict) -> str:
-    """judge.py:137과 완전히 동일한 조립 — 입력이 다르면 대조가 성립하지 않는다."""
-    return EVALUATION_PROMPT_FOR_UPDATE_MEMORY.format(
-        memories="\n".join(mp.get("memories_from_system") or []),
-        updated_memory=mp["memory_content"],
-        original_memory="\n".join(mp.get("original_memories") or []),
-    )
+# judge가 실제로 뽑는 라벨 키 (judge.py의 결과 매핑과 동일)
+LABEL_KEY = {"integrity": "memory_integrity_score", "accuracy": "memory_accuracy_score",
+             "update": "evaluation_result", "qa": "evaluation_result"}
+
+
+def _dialogue_str(session: dict) -> str:
+    """judge.py build_inputs와 동일한 대화 직렬화 — 한 글자라도 다르면 대조가 깨진다."""
+    out = []
+    for t in session["dialogue"]:
+        out.append(f'[{t["timestamp"]}]{t["role"]}: {t["content"]}')
+        if t["role"] == "assistant":
+            out.append("")
+    return "\n".join(out)
+
+
+def build_prompt(rec_type: str, session: dict, idx: int) -> str | None:
+    """judge.py:126~139와 완전히 동일한 조립 — 입력이 다르면 대조가 성립하지 않는다."""
+    golden = session.get("memory_points") or []
+    extracted = session.get("extracted_memories") or []
+    if rec_type == "integrity":
+        mp = golden[idx]
+        if not "\n".join(extracted).strip():
+            return None          # judge.py는 LLM 호출 없이 0점 처리 — 재채점 대상이 아니다
+        return EVALUATION_PROMPT_FOR_MEMORY_INTEGRITY.format(
+            memories="\n".join(extracted), expected_memory_point=mp["memory_content"])
+    if rec_type == "accuracy":
+        golden_str = "\n".join(m["memory_content"] for m in golden
+                               if m.get("memory_source") != "interference")
+        return EVALUATION_PROMPT_FOR_MEMORY_ACCURACY.format(
+            dialogue=_dialogue_str(session), golden_memories=golden_str,
+            candidate_memory=extracted[idx])
+    if rec_type == "update":
+        mp = golden[idx]
+        return EVALUATION_PROMPT_FOR_UPDATE_MEMORY.format(
+            memories="\n".join(mp.get("memories_from_system") or []),
+            updated_memory=mp["memory_content"],
+            original_memory="\n".join(mp.get("original_memories") or []))
+    if rec_type == "qa":
+        q = (session.get("questions") or [])[idx]
+        # ⚠ QA만 답변 생성 레인에 종속된다 — system_response가 없으면 그 레인 A′가 없다는 뜻
+        if not q.get("system_response"):
+            return None
+        return EVALUATION_PROMPT_FOR_QUESTION.format(
+            question=q["question"], reference_answer=q["answer"],
+            key_memory_points="\n".join(e["memory_content"] for e in q.get("evidence") or []),
+            response=q["system_response"])
+    return None
 
 
 @retry(wait=wait_random_exponential(min=5, max=60), stop=stop_after_attempt(4), reraise=True)
@@ -88,7 +147,7 @@ def judge_one(item: dict) -> dict:
     r = client.chat.completions.create(**kwargs)
     raw = r.choices[0].message.content or ""
     try:
-        label = json.loads(raw).get("evaluation_result")
+        label = json.loads(raw).get(LABEL_KEY[item["rec_type"]])
     except json.JSONDecodeError:
         label = None
     # ⚠ 비용은 completion_tokens로 과금되며 reasoning 토큰이 여기 포함되는지 반드시 확인해야 한다.
@@ -102,20 +161,28 @@ def judge_one(item: dict) -> dict:
             "duration_ms": round((time.time() - start) * 1000)}
 
 
-def collect_queue(reg: dict) -> list:
+def collect_queue(reg: dict, types: list) -> list:
     with open(QUEUE, encoding="utf-8") as f:
         q = json.load(f)["items"]
-    out = []
+    out, skipped = [], 0
     for x in q:
-        if x["rec_type"] != "update":
+        if x["rec_type"] not in types:
             continue
-        u = user_record(reg, x["run"], x["uuid"])
+        # QA는 답변 생성 레인에 종속 — 큐 항목에 기록된 generator 레인으로 읽어야 한다
+        lane = x.get("generator") or "qwen4b"
+        u = user_record(reg, x["run"], x["uuid"], lane if x["rec_type"] == "qa" else None)
         if u is None:
+            skipped += 1
             continue
-        mp = u["sessions"][x["session_id"]]["memory_points"][x["idx"]]
+        p = build_prompt(x["rec_type"], u["sessions"][x["session_id"]], x["idx"])
+        if p is None:
+            skipped += 1
+            continue
         out.append({"run": x["run"], "uuid": x["uuid"], "session_id": x["session_id"],
-                    "idx": x["idx"], "memory_content": mp["memory_content"],
-                    "base_label": x.get("judge_label"), "prompt": build_prompt(mp)})
+                    "idx": x["idx"], "rec_type": x["rec_type"], "generator": x.get("generator", ""),
+                    "base_label": x.get("judge_label"), "prompt": p})
+    if skipped:
+        print(f"⚠ 프롬프트 복원 불가로 제외 {skipped}건")
     return out
 
 
@@ -135,14 +202,16 @@ def collect_run(reg: dict, run: str, user_num: int) -> list:
                 if str(mp.get("is_update", "")).lower() != "true" or not mp.get("memories_from_system"):
                     continue
                 out.append({"run": run, "uuid": uid, "session_id": si, "idx": idx,
-                            "memory_content": mp["memory_content"],
-                            "base_label": None, "prompt": build_prompt(mp)})
+                            "rec_type": "update", "generator": "",
+                            "base_label": None, "prompt": build_prompt("update", s, idx)})
     return out
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--scope", choices=["queue", "run"], default="queue")
+    ap.add_argument("--types", default="update",
+                    help="재채점할 레코드 종류 (쉼표: integrity,accuracy,update,qa). --scope run은 update만")
     ap.add_argument("--run", default="oss120b4", help="--scope run 일 때 대상 런")
     ap.add_argument("--user-num", type=int, default=4)
     ap.add_argument("--tag", required=True, help="산출물 파일명 (모델·effort를 알아볼 수 있게)")
@@ -164,14 +233,24 @@ def main():
                  f"   OPENAI_BASE_URL=https://api.openai.com/v1 을 커맨드 앞에 명시하세요.")
 
     reg = load_registry()
-    items = collect_queue(reg) if args.scope == "queue" else collect_run(reg, args.run, args.user_num)
+    types = [t.strip() for t in args.types.split(",") if t.strip()]
+    items = (collect_queue(reg, types) if args.scope == "queue"
+             else collect_run(reg, args.run, args.user_num))
     print(f"대상 {len(items)}건")
 
     if args.dry_run:
         import tiktoken
         enc = tiktoken.get_encoding("o200k_base")
-        tot = sum(len(enc.encode(i["prompt"])) for i in items)
-        print(f"입력 토큰 합계 {tot:,} (평균 {tot // max(len(items),1):,})")
+        from collections import Counter
+        per = Counter()
+        cnt = Counter()
+        for i in items:
+            per[i["rec_type"]] += len(enc.encode(i["prompt"]))
+            cnt[i["rec_type"]] += 1
+        for t in ["integrity", "accuracy", "update", "qa"]:
+            if cnt[t]:
+                print(f"  {t:10s} {cnt[t]:>4d}건 · 입력 {per[t]:>9,} tok (평균 {per[t]//cnt[t]:>6,})")
+        print(f"  {'합계':10s} {sum(cnt.values()):>4d}건 · 입력 {sum(per.values()):>9,} tok")
         return
 
     results = []
