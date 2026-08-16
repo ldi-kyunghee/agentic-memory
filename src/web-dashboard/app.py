@@ -1089,10 +1089,15 @@ def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: st
 
     # 문항 총수 — 이 유저의 QA 문항 (생성된 QA 세션 제외)
     total_q, qtext = 0, {}
-    try:
-        user = load_run_users("oss120b4", generator).get(target_uuid)
-    except HTTPException:
-        user = None
+    user = None
+    # 문항 원문은 어느 런에서 읽어도 같다 (골든 질문·정답은 데이터셋 고유) — 열리는 레인 아무거나 쓴다
+    for cand in ["oss120b4", *[r for r in load_registry() if load_registry()[r].get("users") == 4]]:
+        try:
+            user = load_run_users(cand, generator).get(target_uuid)
+        except Exception:
+            user = None
+        if user:
+            break
     if user:
         for si, sess in enumerate(user["sessions"]):
             if sess.get("is_generated_qa_session"):
@@ -1132,16 +1137,15 @@ def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: st
     runs = [r for r in reg if reg[r].get("users") == 4 and not reg[r].get("oracle")]
     qa_ok: dict = {}
     for run in runs:
-        jd = load_judge(run, judge, target_uuid, generator)
-        if not jd:
+        # ⚠ 한 런만 레인이 없어도 resolve_lane이 404를 던져 화면 전체가 못 뜬다 — 런 단위로 격리한다
+        try:
+            jd = load_judge(run, judge, target_uuid, generator)
+            u2 = load_run_users(run, generator).get(target_uuid) if jd else None
+        except Exception:
+            continue
+        if not jd or not u2:
             continue
         idx_of = {}
-        try:
-            u2 = load_run_users(run, generator).get(target_uuid)
-        except HTTPException:
-            u2 = None
-        if not u2:
-            continue
         for si, sess in enumerate(u2["sessions"]):
             for qi, q in enumerate(sess.get("questions") or []):
                 idx_of[(si, q["question"])] = qi
