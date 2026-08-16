@@ -395,6 +395,7 @@ table.ladder tr.pend { opacity: .55; }
 /* judge 모델 교체 매트릭스 — 유형(행) × 모델(열) */
 table.jm td.mcell { text-align: center; cursor: help; }
 table.jm td.mcell .vs { font-size: 9.5px; font-weight: 800; color: #8a8a9a; }
+table.jm td.mcell .kap { font-size: 10px; font-weight: 700; color: #7a7a8c; }
 table.jm td.mcell.tw { background: #e5f6e9; } table.jm td.mcell.tw .vs { color: #1c6b30; }
 table.jm td.mcell.tl { background: #fdecec; } table.jm td.mcell.tl .vs { color: var(--bad); }
 table.jm tr.jm-tot td { border-top: 2px solid var(--line); background: #fafafc; }

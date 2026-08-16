@@ -2056,8 +2056,9 @@ async function jmIAA() {
         const desc = `<b>${esc(m.model)}</b> · ${t ? esc(REC_NAMES[t]) : "전체"}<br>일치 ${s.ok}/${s.n} (${s.agree}%) · κ ${s.kappa ?? "–"}`
           + (v ? `<br>기준 대비 개선 <b>${v.better}</b> : 악화 <b>${v.worse}</b> · p=${v.p}`
                  + (v.p < 0.05 ? (v.better > v.worse ? " — <b>유의하게 개선</b>" : " — <b>유의하게 악화</b>") : " — 구분 불가") : "");
-        return `<td class="mcell${sig}" data-desc="${esc(desc)}"><b>${s.agree}%</b> <span class="muted small">${s.ok}/${s.n}</span>${
-          v ? `<br><span class="vs">${v.better}:${v.worse}${v.p < 0.05 ? " ✦" : ""}</span>` : ""}</td>`;
+        return `<td class="mcell${sig}" data-desc="${esc(desc)}"><b>${s.agree}%</b> <span class="muted small">${s.ok}/${s.n}</span>
+          <br><span class="kap">κ ${s.kappa ?? "–"}</span>${
+          v ? ` <span class="vs">${v.better}:${v.worse}${v.p < 0.05 ? " ✦" : ""}</span>` : ""}</td>`;
       };
       const row = (t) => `<tr><td>${t ? recTag(t) : "<b>전체</b>"}</td>${[baseM, ...others].map((m) => cell(m, t)).join("")}</tr>`;
       return `
@@ -2065,7 +2066,7 @@ async function jmIAA() {
       <div class="jbasis" data-desc="같은 항목을 여러 모델이 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI는 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로 McNemar 정확검정으로 판정합니다.">
         <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
         <span class="small">칸의 <b>a:b</b>는 기준(gpt-oss-120b) 대비 <b>개선 : 악화</b> 건수, <b>✦</b>는 McNemar p&lt;0.05.
-        초록=유의하게 개선, 빨강=유의하게 악화. CI가 아니라 이 값으로 판단합니다.</span>
+        초록=유의하게 개선, 빨강=유의하게 악화. <b>순위 판정은 κ가 아니라 이 값으로</b> 합니다 — κ는 우연 일치를 보정한 절대 수준(0.6↑ 견고)을 볼 때 씁니다.</span>
       </div>
       <table class="cmp jm"><tr><th>판정 유형</th>${[baseM, ...others].map((m) =>
         `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/ — 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}</tr>
