@@ -362,7 +362,8 @@ runs:
     users: 4
     results: results/mem0-classic-oss/memzero-oss-oss120b4-bm25/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/oss120b4-bm25
-    judges: {}
+    judges:
+      oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oss120b4-bm25/judge
 
   oe1-bm25:
     label: "BM25 오라클 ① 추출 (4u)"
@@ -375,7 +376,8 @@ runs:
     users: 4
     results: results/mem0-classic-oss/memzero-oss-oe1-bm25/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/oe1-bm25
-    judges: {}
+    judges:
+      oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oe1-bm25/judge
 
   oe2-bm25:
     label: "BM25 오라클 ② 추출+갱신 (4u)"
@@ -388,7 +390,8 @@ runs:
     users: 4
     results: results/mem0-classic-oss/memzero-oss-oe2-bm25/memzero-oss_eval_results.jsonl
     traces: traces/mem0-classic-oss/oe2-bm25
-    judges: {}
+    judges:
+      oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oe2-bm25/judge
 
   # ── 단계별 오라클 사다리 전용 런 (전부 gpt-oss-120b · effort=high · Martin 1유저) ──
   oe1:
