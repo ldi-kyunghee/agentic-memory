@@ -1046,7 +1046,8 @@ def _kappa(pairs: list, ci: bool = False) -> dict:
 
     po = sum(1 for a, b in pairs if a == b) / n
     k = k_of(pairs)
-    out = {"n": n, "agree": round(po * 100, 1), "kappa": None if k is None else round(k, 3)}
+    out = {"n": n, "ok": sum(1 for a, b in pairs if a == b),
+           "agree": round(po * 100, 1), "kappa": None if k is None else round(k, 3)}
     if ci and n >= 10 and k is not None:
         import random
         rnd = random.Random(20260807)     # 새로고침마다 값이 흔들리지 않도록 고정 시드

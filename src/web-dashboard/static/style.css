@@ -392,6 +392,12 @@ table.ladder tr.pend { opacity: .55; }
 /* 버튼을 감추되 자리는 유지 — display:none이면 줄바꿈이 바뀌며 스크롤 위치가 밀린다 */
 .btn-off { visibility: hidden; }
 /* Oracle 단계 표기 (프롬프트 종류와 독립된 축) */
+/* judge 모델 교체 매트릭스 — 유형(행) × 모델(열) */
+table.jm td.mcell { text-align: center; cursor: help; }
+table.jm td.mcell .vs { font-size: 9.5px; font-weight: 800; color: #8a8a9a; }
+table.jm td.mcell.tw { background: #e5f6e9; } table.jm td.mcell.tw .vs { color: #1c6b30; }
+table.jm td.mcell.tl { background: #fdecec; } table.jm td.mcell.tl .vs { color: var(--bad); }
+table.jm tr.jm-tot td { border-top: 2px solid var(--line); background: #fafafc; }
 .tcell { display: inline-block; margin: 0 3px 2px 0; padding: 0 4px; border-radius: 4px; cursor: help; white-space: nowrap; }
 .tcell i { font-style: normal; font-weight: 800; font-size: 9.5px; margin-left: 3px; opacity: .8; }
 .tcell.tw { background: #e5f6e9; color: #1c6b30; }

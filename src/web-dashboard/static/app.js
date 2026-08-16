@@ -2044,28 +2044,35 @@ async function jmIAA() {
         <td class="small">${TYPES.map((t) => `${recTag(t)} ${p.done_types[t] || 0}`).join(" · ")}</td>`)).join("")
         || `<tr><td colspan="6" class="muted">아직 없음</td></tr>`}</table>
 
-    ${!(d.judge_models || []).length ? "" : `
-    <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 행을 <b>같은 항목 집합</b>에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">judge 모델 교체 — 사람 합의와의 일치</h4>
-    <div class="jbasis" data-desc="같은 항목을 두 모델이 각각 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI로 보면 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로, 판정은 McNemar 정확검정으로 합니다.">
-      <b>⚠ CI가 아니라 McNemar로 읽으세요</b> — 같은 항목을 여러 모델이 판정한 <b>대응표본</b>이라 독립 CI는 겹쳐 보입니다.
-      <span class="small">'개선 : 악화'는 기준 judge 대비 새로 맞힌 수 : 새로 틀린 수입니다. <b>악화가 0</b>이면 포함관계라 우연으로 보기 어렵습니다.</span>
-    </div>
-    <table class="cmp"><tr><th>judge 모델</th><th>항목</th><th>일치율</th><th>Cohen κ</th>
-      <th data-desc="기준 judge(gpt-oss-120b) 대비 대응표본 정확검정 — 같은 항목에서 새로 맞힌 수 : 새로 틀린 수">vs 기준 (McNemar)</th>
-      <th>유형별 일치율</th></tr>
-      ${d.judge_models.map((m) => `<tr${m.vs_base && m.vs_base.p < 0.05 ? ' style="background:#f2fbf4"' : ""}>
-        <td><b>${esc(m.model)}</b></td><td>${m.n}</td><td>${m.agree}%</td>
-        <td>${kFmt(m)} <span class="muted small">${kGrade(m.kappa)}</span></td>
-        <td>${!m.vs_base ? `<span class="muted">기준</span>`
-          : `개선 <b class="up">${m.vs_base.better}</b> : 악화 <b class="${m.vs_base.worse ? "down" : ""}">${m.vs_base.worse}</b>
-             <span class="muted small">p=${m.vs_base.p}</span> ${m.vs_base.p < 0.05 ? `<b style="color:var(--ok)">유의</b>` : `<span class="muted small">ns</span>`}`}</td>
-        <td class="small">${Object.entries(m.by_type).map(([t, s]) => {
-          const v = s.vs_base;
-          const sig = v && v.p < 0.05 ? (v.better > v.worse ? "tw" : "tl") : "";
-          return `<span class="tcell ${sig}" data-desc="${esc(`<b>${REC_NAMES[t]}</b> ${s.agree}% (${s.n}건)` + (v ? `<br>기준 대비 개선 ${v.better} : 악화 ${v.worse} · p=${v.p}` + (v.p < 0.05 ? (v.better > v.worse ? " — <b>유의하게 개선</b>" : " — <b>유의하게 악화</b>") : " — 구분 불가") : ""))}">${recTag(t)} ${s.agree}%${v ? `<i>${v.better}:${v.worse}</i>` : ""}</span>`;
-        }).join(" ") || "-"}</td></tr>`).join("")}</table>
-    <p class="small muted" style="margin-top:5px">유형별 칸의 <b>a:b</b>는 기준 judge 대비 <b>개선 : 악화</b> 건수입니다. 초록=유의하게 개선, 빨강=유의하게 악화(p&lt;0.05).
-      ⚠ 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 구조</b>를 놓칩니다.</p>`}
+    ${!(d.judge_models || []).length ? "" : (() => {
+      const MM = d.judge_models, baseM = MM[0], others = MM.slice(1);
+      // ⚠ 유형 × 모델 매트릭스로 본다. 모델을 행으로 두면 '한 유형에서 번 것을 다른 유형에서
+      //    잃는' 상쇄 구조가 안 보인다 — 그걸 놓치면 정반대 결론을 내게 된다.
+      const cell = (m, t) => {
+        const s = t ? m.by_type[t] : m;
+        if (!s) return `<td class="muted">–</td>`;
+        const v = s.vs_base;
+        const sig = v && v.p < 0.05 ? (v.better > v.worse ? " tw" : " tl") : "";
+        const desc = `<b>${esc(m.model)}</b> · ${t ? esc(REC_NAMES[t]) : "전체"}<br>일치 ${s.ok}/${s.n} (${s.agree}%) · κ ${s.kappa ?? "–"}`
+          + (v ? `<br>기준 대비 개선 <b>${v.better}</b> : 악화 <b>${v.worse}</b> · p=${v.p}`
+                 + (v.p < 0.05 ? (v.better > v.worse ? " — <b>유의하게 개선</b>" : " — <b>유의하게 악화</b>") : " — 구분 불가") : "");
+        return `<td class="mcell${sig}" data-desc="${esc(desc)}"><b>${s.agree}%</b> <span class="muted small">${s.ok}/${s.n}</span>${
+          v ? `<br><span class="vs">${v.better}:${v.worse}${v.p < 0.05 ? " ✦" : ""}</span>` : ""}</td>`;
+      };
+      const row = (t) => `<tr><td>${t ? recTag(t) : "<b>전체</b>"}</td>${[baseM, ...others].map((m) => cell(m, t)).join("")}</tr>`;
+      return `
+      <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">judge 모델 교체 — 유형 × 모델</h4>
+      <div class="jbasis" data-desc="같은 항목을 여러 모델이 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI는 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로 McNemar 정확검정으로 판정합니다.">
+        <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
+        <span class="small">칸의 <b>a:b</b>는 기준(gpt-oss-120b) 대비 <b>개선 : 악화</b> 건수, <b>✦</b>는 McNemar p&lt;0.05.
+        초록=유의하게 개선, 빨강=유의하게 악화. CI가 아니라 이 값으로 판단합니다.</span>
+      </div>
+      <table class="cmp jm"><tr><th>판정 유형</th>${[baseM, ...others].map((m) =>
+        `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/ — 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}</tr>
+        ${["integrity", "accuracy", "update", "qa"].filter((t) => baseM.by_type[t]).map(row).join("")}
+        <tr class="jm-tot">${row("").slice(4)}</tr></table>
+      <p class="small muted" style="margin-top:5px">⚠ 아래 <b>판정 유형별</b> 표와 항목 수가 다릅니다 — 이 표는 <b>모델 비교를 위한 공통 교집합</b>(${baseM.n}건)이고, 아래 표는 <b>주석 전체</b>를 씁니다.</p>`;
+    })()}
 
     <h4 style="margin:14px 0 6px" data-desc="judge가 반복 채점에서 흔들리지 않은 항목(만장일치)과 갈린 항목을 나눠 봅니다 — 분석가가 judge의 '확신 구간'에서 얼마나 동의하는지가 판정 품질의 핵심입니다">판정 유형별 (전체 분석가 합산 vs judge 합의)</h4>
     <table class="cmp"><tr><th>유형</th><th>항목</th><th>일치율</th><th>Cohen κ</th>
