@@ -6,7 +6,7 @@
 >
 > 상태: **v1 확정 + mem0-classic-oss 참조 구현 검증 완료** (2026-07-16, 1-user trace smoke: 이벤트 1,279건, ref 부착 100%, omission 역추적 리허설 통과). `event` enum 변경은 이 문서 개정을 통해서만.
 
-## 1. 설계 원칙 — 2층 구조
+## 1. 설계 원칙: 2층 구조
 
 확장성의 핵심은 **닫힌 층과 열린 층의 분리**다:
 
@@ -15,7 +15,7 @@
 - **열린 층** (`purpose`, `detail`): 시스템별 자유. 시스템 고유 연산 이름·부가정보는 여기 싣는다.
   대시보드 공통 뷰는 읽지 않고, drill-down 화면에서만 노출된다.
 
-새 시스템을 추가할 때 **`event` 값을 새로 만들면 안 된다** — 필요하다고 느껴지면 대부분 `purpose`로 표현 가능하다. 정말 새 연산 범주가 필요하면 이 문서를 개정하고 대시보드 영향을 검토한다.
+새 시스템을 추가할 때 **`event` 값을 새로 만들면 안 된다**: 필요하다고 느껴지면 대부분 `purpose`로 표현 가능하다. 정말 새 연산 범주가 필요하면 이 문서를 개정하고 대시보드 영향을 검토한다.
 
 ## 2. 레코드 명세
 
@@ -41,7 +41,7 @@ trace 한 줄(JSONL) = 이벤트 하나.
 
 ### 이벤트별 페이로드 (event 값에 따라 정확히 하나)
 
-**`llm_call`** — 시스템 내부의 모든 LLM 호출:
+**`llm_call`**: 시스템 내부의 모든 LLM 호출:
 
 ```jsonc
 "llm": {"messages": [{"role": "...", "content": "..."}], "response": "..."}
@@ -49,7 +49,7 @@ trace 한 줄(JSONL) = 이벤트 하나.
 
 프롬프트/응답은 **전문 저장** (대시보드 drill-down 원료. 자르지 말 것).
 
-**`retrieval`** — 저장소 조회 (방식 불문):
+**`retrieval`**: 저장소 조회 (방식 불문):
 
 ```jsonc
 "retrieval": {
@@ -59,7 +59,7 @@ trace 한 줄(JSONL) = 이벤트 하나.
 }
 ```
 
-**`memory_write`** — 메모리 상태 변화 (정규화):
+**`memory_write`**: 메모리 상태 변화 (정규화):
 
 ```jsonc
 "writes": [
@@ -71,7 +71,7 @@ trace 한 줄(JSONL) = 이벤트 하나.
 
 시스템 API의 반환 형식이 무엇이든 이 형태로 변환해서 기록한다 (mem0의 event 리스트, BM25의 청크 저장 등).
 
-## 3. `stage` — HaluMem 프로토콜 층
+## 3. `stage`: HaluMem 프로토콜 층
 
 시스템 내부 연산이 아니라 **벤치마크 러너가 지금 뭘 하는 중인지**를 나타낸다. 러너가 컨텍스트로 주입하며, 시스템 무관하게 동일하다:
 
@@ -83,7 +83,7 @@ trace 한 줄(JSONL) = 이벤트 하나.
 
 ## 4. 파일 배치
 
-- 경로: `traces/mem0-classic-oss/{run}/{user_uuid}.jsonl` — 유저당 1파일 (병렬 워커 격리 목적)
+- 경로: `traces/mem0-classic-oss/{run}/{user_uuid}.jsonl`: 유저당 1파일 (병렬 워커 격리 목적)
 - gitignore 영역 (용량 큼). 서버↔로컬 이동은 rsync/scp
 - 크래시 대비 라인 단위 flush 권장
 
@@ -91,7 +91,7 @@ trace 한 줄(JSONL) = 이벤트 하나.
 
 참조 구현: `src/mem0-classic-oss/tracing.py` (TraceLogger + 래퍼) 및 `eval/mem0-classic-oss/eval_memzero_oss.py`의 통합 지점.
 
-1. **TraceLogger는 그대로 재사용** — `system=` 식별자만 자기 것으로.
+1. **TraceLogger는 그대로 재사용**: `system=` 식별자만 자기 것으로.
 2. **관측 지점 매핑표부터 작성**: 내 시스템의 어떤 함수 호출이 `llm_call` / `retrieval` / `memory_write`에 해당하는가. 예시:
 
    | | mem0-classic | mem0 2.x (additive) | BM25 naive |
@@ -119,7 +119,7 @@ trace는 **메모리 시스템 자신의 동작**만 담는다. 채점(judge)과
 | judge 판정 | `results/.../judge/{uuid}.json` | `uuid`, `session_id`, `index`/`question` |
 
 이 경계 덕에 judge를 교체·재채점해도 trace는 불변이고, 시스템 간 trace 비교가 공정해진다.
-(답변 생성을 trace에 포함하고 싶어지면 `stage=qa_answer` + `purpose=answer_generation`으로 스키마 변경 없이 수용 가능 — 현재는 보류.)
+(답변 생성을 trace에 포함하고 싶어지면 `stage=qa_answer` + `purpose=answer_generation`으로 스키마 변경 없이 수용 가능: 현재는 보류.)
 
 ## 7. 대시보드 계약
 

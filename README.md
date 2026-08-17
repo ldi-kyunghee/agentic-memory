@@ -31,11 +31,11 @@ HaluMem 원본은 2단계(시스템 구동 → 채점)인데, 우리는 답변 �
 
 | 파일 | 역할 |
 |---|---|
-| `eval/mem0-classic-oss/eval_memzero_oss.py` | Stage A — 세션 투입, 메모리 추출/업데이트, 검색 context 수집 (유저 병렬, `--trace` 지원) |
-| `eval/mem0-classic-oss/gen_answers.py` | Stage A' — 저장된 context로 QA 답변 일괄 생성 |
-| `eval/mem0-classic-oss/judge.py` | Stage B — 4종 judge 채점 + 집계 (공식 evaluation.py의 structured-output 강건판) |
-| `src/mem0-classic-oss/tracing.py` | trace 기록 계층 — mem0 내부 LLM/검색/상태변화를 스키마 v1로 기록 |
-| `src/mem0-classic-oss/analyze_trace.py` | trace 소비 계층 — 유실 액션 정량화, Omission/QA 실패 원인 분류 (다유저 집계) |
+| `eval/mem0-classic-oss/eval_memzero_oss.py` | Stage A: 세션 투입, 메모리 추출/업데이트, 검색 context 수집 (유저 병렬, `--trace` 지원) |
+| `eval/mem0-classic-oss/gen_answers.py` | Stage A': 저장된 context로 QA 답변 일괄 생성 |
+| `eval/mem0-classic-oss/judge.py` | Stage B: 4종 judge 채점 + 집계 (공식 evaluation.py의 structured-output 강건판) |
+| `src/mem0-classic-oss/tracing.py` | trace 기록 계층: mem0 내부 LLM/검색/상태변화를 스키마 v1로 기록 |
+| `src/mem0-classic-oss/analyze_trace.py` | trace 소비 계층: 유실 액션 정량화, Omission/QA 실패 원인 분류 (다유저 집계) |
 | `scripts/mem0-classic-oss/serve.sh` | Qdrant docker + vLLM 서빙 2종(LLM/임베딩) 원커맨드 기동·종료 |
 | `gpu/mem0-classic-oss/` | vLLM 전용 독립 uv 프로젝트 (루트와 openai 버전 충돌로 분리) |
 
@@ -46,23 +46,23 @@ HaluMem 원본은 2단계(시스템 구동 → 채점)인데, 우리는 답변 �
 git clone --recurse-submodules https://github.com/ldi-kyunghee/agentic-memory.git && cd agentic-memory
 uv sync                          # 루트 (mem0 러너/judge)
 (cd gpu/mem0-classic-oss && uv sync)              # vLLM 설치 (괄호=서브셸: 실행 후 cwd는 루트 유지)
-# 리포 루트에 .env 생성 — 아래 "서버 .env 핵심값" 블록을 그대로 복사해서 저장
+# 리포 루트에 .env 생성: 아래 "서버 .env 핵심값" 블록을 그대로 복사해서 저장
 #   (스크립트/러너 모두 루트에서 실행하며 루트의 .env를 읽음. gpu/에는 .env 불필요)
 
 # 1) 서빙 기동 (Qdrant + vLLM LLM/임베딩, ready까지 대기)
 scripts/mem0-classic-oss/serve.sh <빈_GPU_번호>    # 예: scripts/mem0-classic-oss/serve.sh 2 / 로그: tmux attach -t vllm-serve
 
-# 2) Stage A — 스모크(1유저) 먼저, 이상 없으면 풀런(20유저). trace가 필요하면 --trace
+# 2) Stage A: 스모크(1유저) 먼저, 이상 없으면 풀런(20유저). trace가 필요하면 --trace
 uv run python eval/mem0-classic-oss/eval_memzero_oss.py --user-num 1 --version srv-smoke 2>&1 | tee logs/srv-smoke.log
 uv run python eval/mem0-classic-oss/eval_memzero_oss.py --max-workers 10 --version full --trace 2>&1 | tee logs/full-run.log
 
-# 3) Stage A' — 답변 생성
+# 3) Stage A': 답변 생성
 uv run python eval/mem0-classic-oss/gen_answers.py --results results/mem0-classic-oss/memzero-oss-full/memzero-oss_eval_results.jsonl --max-workers 32
 
-# 4) Stage B — 채점 + 집계
+# 4) Stage B: 채점 + 집계
 uv run python eval/mem0-classic-oss/judge.py --results results/mem0-classic-oss/memzero-oss-full/memzero-oss_eval_results.jsonl --max-workers 32
 
-# 5) (선택) trace 인과 분석 — 임베딩 서버(:8001)가 떠 있어야 함
+# 5) (선택) trace 인과 분석: 임베딩 서버(:8001)가 떠 있어야 함
 uv run python src/mem0-classic-oss/analyze_trace.py --trace traces/mem0-classic-oss/full --judge results/mem0-classic-oss/memzero-oss-full/judge \
   --matcher embed --out reports/mem0-classic-oss/trace_analysis_full.json
 
@@ -76,7 +76,7 @@ scripts/mem0-classic-oss/serve.sh stop            # Qdrant는 유지됨. 내리�
 
 ```
 agentic-memory/
-├── dataset/HaluMem-Medium.jsonl          # 입력 (벤치마크 원본 — 골든의 원출처)
+├── dataset/HaluMem-Medium.jsonl          # 입력 (벤치마크 원본: 골든의 원출처)
 │
 ├── results/mem0-classic-oss/memzero-oss-full/             # Stage A/A'/B 산출물 (gitignore)
 │   ├── tmp/
@@ -88,12 +88,12 @@ agentic-memory/
 │   ├── judge/{uuid}.json                 #   ★ judge 레코드별 판정 (유저 캐시 겸용)
 │   └── eval_stat_result.json             #   집계 성적표 (12개 지표)
 │
-├── traces/mem0-classic-oss/full/                          # ★ trace — --trace 켰을 때만 (gitignore)
+├── traces/mem0-classic-oss/full/                          # ★ trace: --trace 켰을 때만 (gitignore)
 │   └── {uuid}.jsonl                      #   내부 동작 기록 (docs/mem0-classic-oss/trace-schema.md 스키마 v1)
 │
 ├── reports/mem0-classic-oss/trace_analysis_*.json         # 인과 분석 결과 (git 커밋 대상)
 ├── logs/*.log                            # 실행 로그 (gitignore)
-└── (docker) qdrant_storage 볼륨          # 벡터 저장소 실체 — 컬렉션 halumem_full_{uuid}
+└── (docker) qdrant_storage 볼륨          # 벡터 저장소 실체: 컬렉션 halumem_full_{uuid}
 ```
 
 데이터 흐름:
@@ -112,9 +112,9 @@ traces + judge + eval_results ─analyze_trace─> reports/mem0-classic-oss/trac
 | 평가 산출물 | 대화 원문 + 골든(메모리·이전버전·evidence) + 시스템 추출/이벤트/검색/답변 | `results/.../memzero-oss_eval_results.jsonl` | Stage A 생성, A'가 답변 추가 |
 | judge 라벨 | 레코드별 판정 (실패 케이스 선정 필터) | `results/.../judge/{uuid}.json` | Stage B |
 
-조인 키: `user(uuid)` + `session` + (`mp index` 또는 `question`) — 상세는 [docs/mem0-classic-oss/trace-schema.md](docs/mem0-classic-oss/trace-schema.md) §6.
+조인 키: `user(uuid)` + `session` + (`mp index` 또는 `question`): 상세는 [docs/mem0-classic-oss/trace-schema.md](docs/mem0-classic-oss/trace-schema.md) §6.
 
-- 골든 데이터(memory_points, original_memories, evidence)는 dataset에서 `*_eval_results.jsonl` 안으로 복사돼 내장됨 — 분석 단계에서 dataset을 다시 읽을 필요 없음
+- 골든 데이터(memory_points, original_memories, evidence)는 dataset에서 `*_eval_results.jsonl` 안으로 복사돼 내장됨. 분석 단계에서 dataset을 다시 읽을 필요 없음
 - git 커밋 대상은 `reports/`와 `docs/`뿐. `results/`·`traces/`·`logs/`는 gitignore이며 서버↔로컬 이동은 scp
 - 서버에서 생성한 리포트를 scp로 가져와 로컬에서 커밋한 뒤에는, 서버 쪽 사본을 `git checkout -- reports/...`로 원복해둘 것 (다음 pull 충돌 방지)
 
