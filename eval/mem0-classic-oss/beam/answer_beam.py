@@ -77,19 +77,21 @@ def answer_one(job: dict) -> dict:
     kwargs = dict(model=MODEL, messages=[{"role": "user", "content": prompt}])
     if REASONING_EFFORT:
         kwargs["reasoning_effort"] = REASONING_EFFORT
-        kwargs["max_completion_tokens"] = 4096
+        kwargs["max_completion_tokens"] = 32768
     else:
         kwargs["temperature"] = 0.0
         kwargs["max_tokens"] = 1024
     start = time.time()
     resp = client.chat.completions.create(**kwargs)
-    text = resp.choices[0].message.content or ""
+    choice = resp.choices[0]
+    text = choice.message.content or ""
     if "ANSWER:" in text:   # 모델이 프롬프트 꼬리를 따라 쓰는 경우 잘라냄
         text = text.rsplit("ANSWER:", 1)[-1].strip()
     return {
         "conv": job["conv"], "ability": job["ability"], "idx": job["idx"],
         "cutoff": job["cutoff"], "used": job["used"], "stored": job["stored"],
         "system_response": text,
+        "finish_reason": choice.finish_reason,   # length 면 예산 부족, stop 이면 정상 종료
         "response_duration_ms": (time.time() - start) * 1000,
     }
 
@@ -105,7 +107,8 @@ def main(results_path: str, out_path: str, max_workers: int, regen: bool):
         for q in c["questions"]:
             have = q.get("answers") or {}
             for k in CUTOFFS:
-                if not regen and str(k) in have:
+                # 빈 답변은 있으나 마나이므로 재생성 대상으로 둠
+                if not regen and (have.get(str(k)) or {}).get("system_response", "").strip():
                     continue
                 ctx, used = build_context(q["retrieved"], k)
                 jobs.append({
@@ -128,7 +131,7 @@ def main(results_path: str, out_path: str, max_workers: int, regen: bool):
     by_key = {(d["conv"], d["ability"], d["idx"]): {} for d in done}
     for d in done:
         by_key[(d["conv"], d["ability"], d["idx"])][str(d["cutoff"])] = {
-            k: d[k] for k in ("system_response", "used", "stored", "response_duration_ms")
+            k: d[k] for k in ("system_response", "used", "stored", "finish_reason", "response_duration_ms")
         }
     for c in convs:
         for q in c["questions"]:
@@ -149,7 +152,13 @@ def main(results_path: str, out_path: str, max_workers: int, regen: bool):
                    if str(k) in (q.get("answers") or {}) and q["answers"][str(k)]["used"] < k)
         if used:
             print(f"  top-{k:<3d} 평균 {sum(used)/len(used):6.1f}개 · 저장소가 모자라 다 못 채운 문항 {full}/{len(used)}")
+    empty = [(c["conv_id"], q["ability"], k) for c in convs for q in c["questions"]
+             for k, a in (q.get("answers") or {}).items() if not (a.get("system_response") or "").strip()]
+    if empty:
+        print(f"\n⚠ 빈 답변 {len(empty)}건. 이대로 채점하면 전부 0점이 됨. 예산을 올리고 다시 돌릴 것")
+        print(f"   예: {empty[:3]}")
     print(f"done -> {out_path}")
+
 
 
 if __name__ == "__main__":
