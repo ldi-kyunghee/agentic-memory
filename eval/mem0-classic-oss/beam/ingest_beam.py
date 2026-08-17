@@ -22,6 +22,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import logging
+logging.getLogger("posthog").setLevel(logging.CRITICAL)  # mem0가 만드는 잡음. 진행 줄을 가린다
+
 # 기존 Stage A의 mem0 설정/재시도 래퍼 그대로 재사용
 sys.path.insert(0, "eval/mem0-classic-oss")
 sys.path.insert(0, "src/mem0-classic-oss")
@@ -137,7 +140,7 @@ def process_conversation(conv_dir: str, bucket: str, top_k: int, save_path: str,
                 done += 1
                 if bar:
                     bar.update(1)
-                elif done % 50 == 0:
+                elif done % 10 == 0:
                     print(f"[{key}] {done}/{total} chunks", flush=True)
         if bar:
             bar.close()
