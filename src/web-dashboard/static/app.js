@@ -1,4 +1,4 @@
-/* mem0×HaluMem 정성분석 SPA — 빌드 스텝 없는 vanilla JS */
+/* mem0×HaluMem 정성분석 SPA: 빌드 스텝 없는 vanilla JS */
 "use strict";
 
 const $ = (s, el = document) => el.querySelector(s);
@@ -60,7 +60,7 @@ async function boot() {
     S.fielddict = await api("/api/fielddict");
     S.runs = (await api("/api/runs")).filter((r) => r.available);
     S.first4 = await api("/api/first4");  // nano judge 라벨 보유 유저 (★ 표시용)
-    // runs.yaml의 사람용 judge 이름으로 기본 표를 보강한다 — 새 레인을 추가할 때
+    // runs.yaml의 사람용 judge 이름으로 기본 표를 보강한다. 새 레인을 추가할 때
     // app.js를 고치지 않아도 내부 키(ctxmatch-4u 등)가 화면에 노출되지 않는다
     try { Object.assign(JUDGE_NAMES, (await api("/api/labels")).judge_names || {}); } catch (e) {}
   } finally { busy(false); }
@@ -155,7 +155,7 @@ async function applyRun() {
   busy(true, "유저 목록…");
   try { S.users = await api(`/api/runs/${S.run}/users?generator=${S.generator}`); } finally { busy(false); }
   const prev = S.uuid;
-  // ★ = nano judge 라벨 보유 유저 (데이터셋 첫 4명) — 맨 위로 정렬해 기본 선택도 ★에서 시작
+  // ★ = nano judge 라벨 보유 유저 (데이터셋 첫 4명): 맨 위로 정렬해 기본 선택도 ★에서 시작
   const isF4 = (u) => (S.first4 || []).includes(u.uuid);
   const ordered = [...S.users].sort((a, b) => isF4(b) - isF4(a));
   $("#sel-user").innerHTML = ordered.map((u) =>
@@ -287,7 +287,7 @@ function initDescBar() {
     else {
       const k = el.dataset.k;
       const d = S.fielddict[k];
-      tip.innerHTML = d ? `<b>${esc(k)}</b> — ${esc(d)}` : `<b>${esc(k)}</b>`;
+      tip.innerHTML = d ? `<b>${esc(k)}</b>: ${esc(d)}` : `<b>${esc(k)}</b>`;
     }
     tip.classList.remove("hidden");
     place(e);
@@ -358,7 +358,7 @@ function setAnchor(anchor, obj, focusDetail = true) {
 
 /* ---------- 배지 ---------- */
 
-const scoreBadge = (v) => v == null ? `<span class="badge bnull" data-desc="judge 라벨 없음 — 이 judge 세트가 이 유저를 안 덮거나 무효 판정">–</span>` : `<span class="badge b${v}" data-desc="judge 점수 ${v} — 2=완전 포함(골든)/전부 근거(추출), 1=부분, 0=미포함/비지지·모순">${v}</span>`;
+const scoreBadge = (v) => v == null ? `<span class="badge bnull" data-desc="judge 라벨 없음. 이 judge 세트가 이 유저를 안 덮거나 무효 판정">–</span>` : `<span class="badge b${v}" data-desc="judge 점수 ${v}: 2=완전 포함(골든)/전부 근거(추출), 1=부분, 0=미포함/비지지·모순">${v}</span>`;
 const verdictBadge = (v) => {
   if (!v) return `<span class="badge bnull">–</span>`;
   const c = v[0] === "C" ? "bC" : v[0] === "H" ? "bH" : "bO";
@@ -368,11 +368,11 @@ const opChip = (op) => op ? `<span class="op ${esc(op)}" data-desc="이 메모�
 // 무효 UPDATE(no-op): 갱신 지시를 받고 이전 메모리와 완전히 동일한 텍스트를 반환한 경우.
 // non-reasoning Qwen 계열의 지배적 실패 모드 (4B 97% / 30B 97% vs Thinking 0.6% / Mini 0.1% / oss120 0%)
 const isNoop = (m) => m?.origin === "UPDATE" && (m.previous_memory || "").trim() === (m.text || "").trim() && (m.text || "").trim() !== "";
-const NOOP_DESC = "무효 UPDATE (no-op) — 에이전트가 갱신을 지시받고 <b>이전 메모리와 글자까지 동일한 텍스트</b>를 반환했습니다. 내용이 바뀌지 않아 낡은 정보가 그대로 남고, 이 세션의 추출 목록에 재등록돼 accuracy 채점에서 불리해집니다. 백본별 no-op 비율: Qwen3-4B 97% · Qwen3-30B 97% · GPT-5-Nano 14% · 4B-Thinking 0.6% · GPT-5-Mini 0.1% · gpt-oss-120b 0%";
+const NOOP_DESC = "무효 UPDATE (no-op): 에이전트가 갱신을 지시받고 <b>이전 메모리와 글자까지 동일한 텍스트</b>를 반환했습니다. 내용이 바뀌지 않아 낡은 정보가 그대로 남고, 이 세션의 추출 목록에 재등록돼 accuracy 채점에서 불리해집니다. 백본별 no-op 비율: Qwen3-4B 97% · Qwen3-30B 97% · GPT-5-Nano 14% · 4B-Thinking 0.6% · GPT-5-Mini 0.1% · gpt-oss-120b 0%";
 const memOps = (m) => opChip(m.origin) + (isNoop(m) ? `<span class="op noop" data-desc="${NOOP_DESC}">= 무변경</span>` : "");
-// reasoning effort 축약 표시: "default(medium) — …" -> "effort=default", "항상 사고 (…)" -> "항상 사고"
+// reasoning effort 축약 표시: "default(medium): …" -> "effort=default", "항상 사고 (…)" -> "항상 사고"
 const effortShort = (e) => {
-  const s = e.split("(")[0].split("—")[0].trim();
+  const s = e.split("(")[0].split(":")[0].split(". ")[0].trim();
   return /^[a-z]/.test(s) ? `effort=${s}` : s;
 };
 
@@ -385,14 +385,14 @@ const JUDGE_NAMES = {
   //    이름이 겹치면 "상세는 1인데 검토는 0" 같은 혼선이 생기므로 배치를 반드시 병기한다.
   "oss120-genoss120": "gpt-oss-120b (high · 1유저 배치)",
   "oss120-genoss120-4u": "gpt-oss-120b (high · 4유저 배치)",
-  // 동일 입력 반복 채점 — 항목별로 나란히 보면 judge가 어디서 흔들리는지 바로 드러난다
+  // 동일 입력 반복 채점: 항목별로 나란히 보면 judge가 어디서 흔들리는지 바로 드러난다
   "oss120-rep1": "gpt-oss-120b (high · 반복 1)",
   "oss120-rep2": "gpt-oss-120b (high · 반복 2)",
   "oss120-rep3": "gpt-oss-120b (high · 반복 3)",
   "oracle-oss120": "gpt-oss-120b (high · 오라클)",
   "oraclepad-oss120": "gpt-oss-120b (high · 오라클+잡음)",
 };
-// 같은 모델을 동일 입력으로 반복 채점한 세트 — 이 사이의 라벨 차이가 곧 judge 자기 비일관성
+// 같은 모델을 동일 입력으로 반복 채점한 세트: 이 사이의 라벨 차이가 곧 judge 자기 비일관성
 const REPEAT_JUDGES = ["oss120-genoss120", "oss120-rep1", "oss120-rep2", "oss120-rep3"];
 // 라벨 비교는 대소문자·공백·숫자/문자열 차이를 흡수해서 (거짓 불일치 방지)
 const normLab = (v) => String(v ?? "").trim().toLowerCase();
@@ -408,18 +408,18 @@ const genLabel = (g) => S.runs[0]?.generators?.[g]?.label || g;
 const verdictFull = (v) => v ? `<span class="badge ${v[0] === "C" ? "bC" : v[0] === "H" ? "bH" : "bO"}">${esc(v)}</span>` : `<span class="badge bnull">판정 없음</span>`;
 // 미끼(interference) 골든은 포함 점수의 좋고 나쁨이 반전됨: 0=미포함=저항 성공(FMR 기여), 2=흡수=감점
 const intfBadge = (v) => v == null ? `<span class="badge bnull" data-desc="judge 라벨 없음">–</span>`
-  : v === 0 ? `<span class="badge b2" data-desc="미끼 차단 (포함 점수 0) — 시스템이 이 미끼를 흡수하지 않음 = 저항 성공, FMR에 긍정 기여">차단</span>`
-  : v === 1 ? `<span class="badge b1" data-desc="미끼 일부 흡수 (포함 점수 1) — 미끼 내용 일부가 추출 메모리에 들어감">일부흡수</span>`
-  : `<span class="badge b0" data-desc="미끼 흡수 (포함 점수 2) — 시스템이 미끼를 통째로 기억함 = FMR 감점">흡수</span>`;
+  : v === 0 ? `<span class="badge b2" data-desc="미끼 차단 (포함 점수 0): 시스템이 이 미끼를 흡수하지 않음 = 저항 성공, FMR에 긍정 기여">차단</span>`
+  : v === 1 ? `<span class="badge b1" data-desc="미끼 일부 흡수 (포함 점수 1): 미끼 내용 일부가 추출 메모리에 들어감">일부흡수</span>`
+  : `<span class="badge b0" data-desc="미끼 흡수 (포함 점수 2): 시스템이 미끼를 통째로 기억함 = FMR 감점">흡수</span>`;
 const initials = (name) => esc((name || "?").trim().slice(0, 2));
-// 골든 1건의 judge 배지 (update/미끼/일반 분기 공통화 — 세션 카드·턴 패널·A/B 페어에서 재사용)
+// 골든 1건의 judge 배지 (update/미끼/일반 분기 공통화: 세션 카드·턴 패널·A/B 페어에서 재사용)
 const goldenBadge = (mp) => {
   const j = mp?.judge || {};
   return j.kind === "update" ? verdictBadge(j.label)
     : mp?.memory_source === "interference" ? intfBadge(j.score)
     : scoreBadge(j.score);
 };
-// A/B 페어 배지 — 앞에 소속 문자(A 파랑 / B 진회색)
+// A/B 페어 배지: 앞에 소속 문자(A 파랑 / B 진회색)
 const abPair = (badgeA, badgeB) => `<i class="ab a">A</i>${badgeA}<i class="ab b">B</i>${badgeB}`;
 // B 번들에서 같은 세션의 같은 골든 찾기 (인덱스 우선, 텍스트 매칭 폴백)
 function bGolden(sid, i, content) {
@@ -437,7 +437,7 @@ function anchorHuman(anchor) {
   const names = { mp: "골든", ext: "A추출", extb: "B추출", qa: "QA", turn: "턴" };
   return `S${m[1]} · ${names[m[2]] || m[2]}#${m[3]}`;
 }
-// 앵커가 가리키는 세팅 칩 — A/B 요소면 해당 런, 공통 요소(골든·턴·세션)면 없음
+// 앵커가 가리키는 세팅 칩: A/B 요소면 해당 런, 공통 요소(골든·턴·세션)면 없음
 function anchorSideChip(anchor) {
   if (anchor.includes("/extb:")) return `<span class="tagchip" style="color:var(--bcol);font-weight:800">B: ${esc(runLabel(S.runB || "?"))}</span>`;
   if (anchor.includes("/ext:") || anchor.includes("/qa:")) return `<span class="tagchip" style="color:var(--accent);font-weight:800">A: ${esc(runLabel(S.run))}</span>`;
@@ -505,7 +505,7 @@ function goldComp(sessions) {
   return { g, upd, updJ, intf, plain: g - upd - intf };
 }
 
-// 추출 구성: mem0의 연산 기록(events)이 원본 — extracted는 DELETE가 빠져 있어 연산 구성 계산 불가
+// 추출 구성: mem0의 연산 기록(events)이 원본: extracted는 DELETE가 빠져 있어 연산 구성 계산 불가
 function extComp(sessions) {
   const list = [].concat(sessions);
   let ops = 0, add = 0, upd = 0, noop = 0, del = 0, stored = 0;
@@ -537,15 +537,15 @@ function compBar(total, segs) {
 }
 
 const goldSegs = (c) => [
-  { n: c.plain, cls: "s-plain", label: "일반", desc: "일반 골든 — 포함(2점)이 성공인 표준 평가 대상" },
-  { n: c.upd, cls: "s-upd", label: "↻ 갱신", desc: `갱신 골든(is_update=True) — 과거 정보의 갱신본. Update(C/H/O)로 채점 (이 범위에서 실제 채점 대상 ${c.updJ}건)` },
-  { n: c.intf, cls: "s-intf", label: "⚠ 미끼", desc: "미끼 골든(interference) — AI 발화에만 있고 user가 확정하지 않은 내용. 흡수하지 않아야 좋음(FMR)" },
+  { n: c.plain, cls: "s-plain", label: "일반", desc: "일반 골든: 포함(2점)이 성공인 표준 평가 대상" },
+  { n: c.upd, cls: "s-upd", label: "↻ 갱신", desc: `갱신 골든(is_update=True): 과거 정보의 갱신본. Update(C/H/O)로 채점 (이 범위에서 실제 채점 대상 ${c.updJ}건)` },
+  { n: c.intf, cls: "s-intf", label: "⚠ 미끼", desc: "미끼 골든(interference): AI 발화에만 있고 user가 확정하지 않은 내용. 흡수하지 않아야 좋음(FMR)" },
 ];
 const extSegs = (c) => [
-  { n: c.add, cls: "s-add", label: "ADD", desc: "신규 추출 — 기존에 없던 사실을 새로 저장" },
-  { n: c.updReal, cls: "s-updr", label: "UPDATE", desc: "실질 UPDATE — 기존 메모리를 실제로 다른 내용으로 재작성" },
+  { n: c.add, cls: "s-add", label: "ADD", desc: "신규 추출: 기존에 없던 사실을 새로 저장" },
+  { n: c.updReal, cls: "s-updr", label: "UPDATE", desc: "실질 UPDATE: 기존 메모리를 실제로 다른 내용으로 재작성" },
   { n: c.noop, cls: "s-noop", label: "= 무변경", desc: NOOP_DESC },
-  { n: c.del, cls: "s-del", label: "DELETE", desc: "삭제 — 기존 메모리를 제거 (저장 목록에서 빠짐)" },
+  { n: c.del, cls: "s-del", label: "DELETE", desc: "삭제: 기존 메모리를 제거 (저장 목록에서 빠짐)" },
 ];
 
 function sessionSummary(s) {
@@ -568,8 +568,8 @@ function renderSessions() {
     ? new Map(S.bundleB.sessions.filter((x) => !x.generated_qa_session).map((x) => [x.session_id, x]))
     : null;
   const flagsOf = (m, bSide) => [
-    m.g0 ? `<span class="flag flag-g${bSide ? " bflag" : ""}" data-desc="G✗ (마젠타) — ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}에서 judge가 미포함(0점) 판정한 골든 수 (미끼 제외). 판정 배지가 아니라 세션 문제 카운트">G✗${m.g0}</span>` : "",
-    m.qaBad ? `<span class="flag flag-q${bSide ? " bflag" : ""}" data-desc="Q✗ (브라운) — ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}의 오답(H/O) QA 수. 판정 배지가 아니라 세션 문제 카운트">Q✗${m.qaBad}</span>` : "",
+    m.g0 ? `<span class="flag flag-g${bSide ? " bflag" : ""}" data-desc="G✗ (마젠타): ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}에서 judge가 미포함(0점) 판정한 골든 수 (미끼 제외). 세션 문제 카운트이고, 판정 배지와는 다릅니다">G✗${m.g0}</span>` : "",
+    m.qaBad ? `<span class="flag flag-q${bSide ? " bflag" : ""}" data-desc="Q✗ (브라운): ${bSide ? "B 세팅" : S.bundleB ? "A 세팅" : "이 세션"}의 오답(H/O) QA 수. 세션 문제 카운트이고, 판정 배지와는 다릅니다">Q✗${m.qaBad}</span>` : "",
   ].join("");
   // ── 유저 전체 구성 (사이드바 상단): 골든(데이터셋 공통) + 추출 A/B(모델 산출물)
   const rsA = realSessions(S.bundle);
@@ -577,18 +577,18 @@ function renderSessions() {
   const nQA = rsA.reduce((n, s) => n + s.questions.length, 0);
   const extBlock = (label, cls, run, c) => `
     <div class="ub"><div class="h ${cls}">${label} <span class="rn">${esc(runLabel(run))}</span>
-      <span class="tot" data-desc="mem0가 이 유저에게 수행한 메모리 연산 총수 (ADD+UPDATE+DELETE). 저장돼 남은 것은 ${c.stored.toLocaleString()}개 — DELETE는 목록에서 빠짐">연산 ${c.ops.toLocaleString()}</span></div>
+      <span class="tot" data-desc="mem0가 이 유저에게 수행한 메모리 연산 총수 (ADD+UPDATE+DELETE). 저장돼 남은 것은 ${c.stored.toLocaleString()}개. DELETE는 목록에서 빠짐">연산 ${c.ops.toLocaleString()}</span></div>
       ${compBar(c.ops, extSegs(c))}</div>`;
   const compHTML = `<div class="ucomp">
     <div class="t">${esc(S.bundle.user_name)} <span class="muted">· 세션 ${rsA.length} · QA ${nQA}</span></div>
     <div class="ub"><div class="h gold-h">골든 <span class="rn">데이터셋 공통</span>
-      <span class="tot" data-desc="이 유저의 골든 메모리 총수 — 데이터셋 고유 속성이라 Agent·Generator·Judge 설정과 무관하게 동일합니다">${gC.g.toLocaleString()}</span></div>
+      <span class="tot" data-desc="이 유저의 골든 메모리 총수: 데이터셋 고유 속성이라 Agent·Generator·Judge 설정과 무관하게 동일합니다">${gC.g.toLocaleString()}</span></div>
       ${compBar(gC.g, goldSegs(gC))}</div>
     ${extBlock("추출 A", "a-h", S.run, eA)}
     ${S.bundleB ? extBlock("추출 B", "b-h", S.runB, extComp(realSessions(S.bundleB))) : ""}
-    <div class="qstart"><button class="jbtn" id="btn-queue" data-desc="모든 분석가에게 동일한 순서로 제공되는 표본을 순서대로 라벨합니다 — 분석가 간 일치도(IAA)는 이 겹치는 항목들로 계산됩니다">⚖ 검토 시작 (공유 표본)</button>
+    <div class="qstart"><button class="jbtn" id="btn-queue" data-desc="모든 분석가에게 동일한 순서로 제공되는 표본을 순서대로 라벨합니다. 분석가 간 일치도(IAA)는 이 겹치는 항목들로 계산됩니다">⚖ 검토 시작 (공유 표본)</button>
       <button class="jbtn" id="btn-iaa" data-desc="라벨링 현황과 분석가 간·분석가 vs judge 일치도">📊 IAA</button>
-      <button class="jbtn" id="btn-gqa" data-desc="골든 정답 검수 결과 — 벤치마크 문항 자체의 품질. judge 판정과 별개 축입니다">📝 정답검수</button></div>
+      <button class="jbtn" id="btn-gqa" data-desc="골든 정답 검수 결과: 벤치마크 문항 자체의 품질. judge 판정과는 별개로 봅니다">📝 정답검수</button></div>
   </div>`;
   sb.innerHTML = compHTML + S.bundle.sessions.map((s) => {
     if (s.generated_qa_session) return "";
@@ -605,8 +605,8 @@ function renderSessions() {
   }).join("");
   $$(".side-item", sb).forEach((el) => (el.onclick = () => { S.session = +el.dataset.sid; renderSessions(); }));
   $("#btn-queue") && ($("#btn-queue").onclick = jmStartQueue);
-  $("#btn-iaa") && ($("#btn-iaa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>사람 판정 vs judge — 검토 결과</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmIAA(); });
-  $("#btn-gqa") && ($("#btn-gqa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>골든 정답 검수 — 벤치마크 품질</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmGoldQA(); });
+  $("#btn-iaa") && ($("#btn-iaa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>사람 판정 vs judge: 검토 결과</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmIAA(); });
+  $("#btn-gqa") && ($("#btn-gqa").onclick = () => { JM.ctx = null; $("#jmodal").classList.remove("hidden"); $("#jmodal-head").innerHTML = `<b>골든 정답 검수: 벤치마크 품질</b><span style="margin-left:auto"></span><button class="jbtn" id="jm-close">✕</button>`; $("#jm-close").onclick = jmClose; jmGoldQA(); });
 
   const s = S.bundle.sessions.find((x) => x.session_id === S.session);
   if (!s || s.generated_qa_session) { $("#content").innerHTML = "<p class='muted'>세션을 선택하세요</p>"; return; }
@@ -622,7 +622,7 @@ function renderSessions() {
       badges = abPair(verdictBadge(q.judge), verdictBadge(qb?.judge));
     }
     const jq = (run, lab) => jmBtn({ run, uuid: S.uuid, session_id: s.session_id, rec_type: "qa", idx: i, generator: S.generator, judge_name: S.judge }, lab);
-    // 골든 정답 자체의 타당성 검수 (judge 판정과 별개 축 — 벤치마크 품질)
+    // 골든 정답 자체의 타당성 검수 (judge 판정과 별개, 벤치마크 품질 검수)
     const jgold = jmBtn({ run: S.run, uuid: S.uuid, session_id: s.session_id, rec_type: "gold_qa", idx: i, generator: S.generator }, "정답검수");
     return `<div class="row" data-qa="${i}" data-desc="클릭하면 이 QA의 4자 대조 화면으로 이동. 드래그로 텍스트 선택 후 코멘트도 가능">
       <span>${badges}${B?.session ? jq(S.run, "A") + jq(S.runB, "B") : jq(S.run)}${jgold}</span>
@@ -639,8 +639,8 @@ function renderSessions() {
         const upd = mp.is_update === "True", intf = mp.memory_source === "interference";
         const cls = upd ? " upd" : intf ? " intf" : "";
         const icon = upd ? "↻" : intf ? "⚠" : "";
-        const desc = upd ? "갱신 골든 (근사 앵커·추정) — 과거 정보의 업데이트본. Update(C/H/O) 평가 대상"
-          : intf ? "미끼(interference) 골든 (근사 앵커·추정) — AI 발화에만 있고 user가 확정 안 한 내용. 시스템이 흡수하면 감점(FMR)"
+        const desc = upd ? "갱신 골든 (근사 앵커·추정): 과거 정보의 업데이트본. Update(C/H/O) 평가 대상"
+          : intf ? "미끼(interference) 골든 (근사 앵커·추정): AI 발화에만 있고 user가 확정 안 한 내용. 시스템이 흡수하면 감점(FMR)"
           : "골든 (근사 앵커·추정)";
         return `<span class="anchor-chip g${cls}" data-chip="mp:${gi}" data-desc="${desc}">G${icon} ${esc(mp.memory_content)}</span>`;
       }),
@@ -691,16 +691,16 @@ function renderSessions() {
   }
 
   $("#content").innerHTML = `
-    <div class="hint">S${s.session_id} — QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${s.add_dialogue_duration_ms ? ` · <span data-desc="이 세션의 mem0.add 소요 시간 (fact 추출·update 결정 LLM 콜 포함) — 백본 속도 실측">⏱ 투입 ${(s.add_dialogue_duration_ms / 1000).toFixed(1)}s</span>` : ""}${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(runLabel(S.runB))} (회색)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
-    <div class="legend" data-desc="배지 범례 — 채운 원형=judge 판정, 외곽선 사각형=사이드바 세션 문제 카운트">
+    <div class="hint">S${s.session_id}: QA부터 확인 → 대화 스크롤하며 골든/추출 대조. 행 클릭=우측 상세 · 드래그 선택=코멘트 · 턴 클릭=앵커 상세${s.add_dialogue_duration_ms ? ` · <span data-desc="이 세션의 mem0.add 소요 시간 (fact 추출·update 결정 LLM 콜 포함): 백본 속도 실측">⏱ 투입 ${(s.add_dialogue_duration_ms / 1000).toFixed(1)}s</span>` : ""}${S.bundleB ? ` · <span style="color:var(--bcol);font-weight:700">B=${esc(runLabel(S.runB))} (회색)</span>` : " · 상단 [+ 비교(B)]로 다른 세팅 비교"}</div>
+    <div class="legend" data-desc="배지 범례: 채운 원형=judge 판정, 외곽선 사각형=사이드바 세션 문제 카운트">
       <b>범례</b>
       <span><span class="badge b2">2</span>완전</span><span><span class="badge b1">1</span>부분</span><span><span class="badge b0">0</span>실패</span>
       <span><span class="badge bC">C</span>/<span class="badge bH">H</span>/<span class="badge bO">O</span></span>
       <span class="flag flag-g" style="cursor:default" data-desc="사이드바: 이 세션의 미포함(0점) 골든 수">G✗</span>
       <span class="flag flag-q" style="cursor:default" data-desc="사이드바: 이 세션의 오답 QA 수">Q✗</span>
       <span class="anchor-chip g" style="cursor:default">G 골든(금)</span>
-      <span class="anchor-chip g upd" style="cursor:default" data-desc="갱신 골든 — Update(C/H/O) 평가 대상">G↻ 갱신</span>
-      <span class="anchor-chip g intf" style="cursor:default" data-desc="미끼 골든 — 흡수하면 감점(FMR)">G⚠ 미끼</span>
+      <span class="anchor-chip g upd" style="cursor:default" data-desc="갱신 골든: Update(C/H/O) 평가 대상">G↻ 갱신</span>
+      <span class="anchor-chip g intf" style="cursor:default" data-desc="미끼 골든: 흡수하면 감점(FMR)">G⚠ 미끼</span>
       <span class="anchor-chip e" style="cursor:default">A 추출(파랑)</span>
       ${S.bundleB ? '<span class="anchor-chip eb" style="cursor:default">B 추출(회색)</span>' : ""}
       <span class="op UPDATE" style="cursor:default">UPDATE</span><span class="op noop" style="cursor:default" data-desc="${NOOP_DESC}">= 무변경</span><span>= 갱신했다지만 내용이 안 바뀜</span>
@@ -712,7 +712,7 @@ function renderSessions() {
       <input type="range" id="anch-w" min="140" max="640" step="10" style="width:110px"></h4>
       <div class="body">${dlg}</div></div>
     <div class="${B?.session ? "three-col" : "two-col"}">
-      <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})${B?.session ? ' <span class="small muted" style="text-transform:none" data-desc="골든은 데이터셋 공통 — 배지는 왼쪽이 A 세팅, 오른쪽이 B 세팅의 judge 판정">공통 · A/B 판정</span>' : ""}</h4>
+      <div class="card"><h4 data-k="memory_points" class="gold-h">골든 (${s.golden.length})${B?.session ? ' <span class="small muted" style="text-transform:none" data-desc="골든은 데이터셋 공통: 배지는 왼쪽이 A 세팅, 오른쪽이 B 세팅의 judge 판정">공통 · A/B 판정</span>' : ""}</h4>
         <div class="scomp">${compBar(sG.g, goldSegs(sG))}</div><div class="body">${goldenRows}</div></div>
       <div class="card"><h4 data-k="extracted_memories">추출 A: ${esc(runLabel(S.run))} (${s.extracted.length})<span class="tot-h" data-desc="이 세션에서 mem0가 수행한 메모리 연산 총수 (ADD+UPDATE+DELETE). 저장돼 남은 것은 ${sA.stored}개">연산 ${sA.ops}</span></h4>
         <div class="scomp">${compBar(sA.ops, extSegs(sA))}</div><div class="body">${extRows}</div></div>
@@ -750,7 +750,7 @@ function renderSessions() {
     };
   });
   $$("#content [data-qa]").forEach((el) => (el.onclick = () => renderQADetail(s.session_id, +el.dataset.qa, true)));
-  // 칩 클릭: 우측 상세만 (자동 스크롤 없음 — 대화 읽던 위치 유지)
+  // 칩 클릭: 우측 상세만 (자동 스크롤 없음. 대화 읽던 위치 유지)
   $$("#content [data-chip]").forEach((el) => {
     el.onclick = (ev) => {
       ev.stopPropagation();
@@ -784,20 +784,20 @@ function toggleTurnPanel(s, A, B, ti) {
   if (!box.classList.contains("hidden")) { box.classList.add("hidden"); box.innerHTML = ""; return; }
   const a = A.map[ti];
   const dual = !!B?.session;
-  // 골든은 데이터셋 공통 — B 비교 중엔 양쪽 judge 판정을 페어로
+  // 골든은 데이터셋 공통: B 비교 중엔 양쪽 judge 판정을 페어로
   const secG = a.g.length ? `
-    <h5 style="color:var(--gold)">골든 (공통${dual ? " · A/B 판정" : ""}) — 이 턴 앵커 (추정)</h5>
+    <h5 style="color:var(--gold)">골든 (공통${dual ? " · A/B 판정" : ""}): 이 턴 앵커 (추정)</h5>
     ${a.g.map((gi) => { const mp = s.golden[gi];
       const badge = dual ? abPair(goldenBadge(mp), goldenBadge(bGolden(s.session_id, gi, mp.memory_content))) : goldenBadge(mp);
       return `<div class="row">${badge}<span class="txt">${esc(mp.memory_content)}</span></div>`; }).join("")}` : "";
   const secA = `
-    <h5 style="color:var(--accent)">A: ${esc(runLabel(S.run))} — 이 턴 추출 (추정)</h5>
+    <h5 style="color:var(--accent)">A: ${esc(runLabel(S.run))}: 이 턴 추출 (추정)</h5>
     ${a.e.map((ei) => { const m = s.extracted[ei];
       return `<div class="row${isNoop(m) ? " noop-row" : ""}">${memOps(m)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
   let secB = "";
   if (dual) {
     const bMap = B.map[ti] || { g: [], e: [] };
-    secB = `<h5 style="color:var(--bcol)">B: ${esc(runLabel(S.runB))} — 이 턴 추출 (추정)</h5>
+    secB = `<h5 style="color:var(--bcol)">B: ${esc(runLabel(S.runB))}: 이 턴 추출 (추정)</h5>
       ${bMap.e.map((ei) => { const m = B.session.extracted[ei];
         return `<div class="row${isNoop(m) ? " noop-row" : ""}">${memOps(m)}${scoreBadge(m.judge?.score)}<span class="txt">${esc(m.text)}</span></div>`; }).join("") || "<p class='small muted'>앵커된 추출 없음</p>"}`;
   }
@@ -835,7 +835,7 @@ function renderCmtMarks() {
     const chip = document.createElement("span");
     chip.className = `cmt-chip live${allOther ? " other" : ""}`;
     chip.textContent = list.length > 1 ? `${initials(list[0].author)}+${list.length - 1}` : initials(list[0].author);
-    chip.dataset.desc = `${allOther ? "[다른 세팅] " : ""}코멘트 ${list.length}개 — ${esc(list.map((c) => `${c.author}: ${c.body.slice(0, 40)}`).join(" | "))} (클릭하면 스레드)`;
+    chip.dataset.desc = `${allOther ? "[다른 세팅] " : ""}코멘트 ${list.length}개. ${esc(list.map((c) => `${c.author}: ${c.body.slice(0, 40)}`).join(" | "))} (클릭하면 스레드)`;
     chip.onclick = (ev) => {
       ev.stopPropagation();
       const { obj } = resolveAnchorObj(anchor);
@@ -895,14 +895,14 @@ function renderQA() {
     return sb?.questions?.find((x) => x.question === q.question)?.judge;
   };
   $("#sidebar").innerHTML = `
-    <div style="padding:8px"><div class="pill-filter" ${S.bundleB ? 'data-desc="판정 필터 — B 비교 중에도 필터는 A 세팅 판정 기준"' : ""}>${filters.map((f) =>
+    <div style="padding:8px"><div class="pill-filter" ${S.bundleB ? 'data-desc="판정 필터: B 비교 중에도 필터는 A 세팅 판정 기준"' : ""}>${filters.map((f) =>
       `<button class="${S.qaFilter === f ? "on" : ""}" data-f="${f}">${f === "all" ? "전체" : f[0]}</button>`).join("")}</div></div>` +
     items.map((it) => `
       <div class="side-item" data-sid="${it.s.session_id}" data-qi="${it.i}">
         ${S.bundleB ? abPair(verdictBadge(it.q.judge), verdictBadge(bVerdict(it))) : verdictBadge(it.q.judge)} <span class="txt small">${esc(it.q.question.slice(0, 60))}</span></div>`).join("");
   $$("#sidebar .pill-filter button").forEach((b) => (b.onclick = () => { S.qaFilter = b.dataset.f; renderQA(); }));
   $$("#sidebar .side-item").forEach((el) => (el.onclick = () => renderQADetail(+el.dataset.sid, +el.dataset.qi, false)));
-  $("#content").innerHTML = `<p class="hint">좌측에서 QA를 선택하세요 (판정 필터: 전체/C/H/O${S.bundleB ? " — A 세팅 기준" : ""}). 총 ${allQAs().length}문항.</p>`;
+  $("#content").innerHTML = `<p class="hint">좌측에서 QA를 선택하세요 (판정 필터: 전체/C/H/O${S.bundleB ? ", A 세팅 기준" : ""}). 총 ${allQAs().length}문항.</p>`;
 }
 
 function parseContext(raw) {
@@ -923,7 +923,7 @@ function renderQADetail(sid, qi, fromSession) {
     : null;
   const rawHTML = `<pre class="mono">${esc(typeof q.context === "string" ? q.context : JSON.stringify(q.context, null, 2))}</pre>`;
 
-  // 답변 생성 레인 표기 — A/B 카드 공통 (generator 레인은 상단 선택 하나를 양쪽이 공유)
+  // 답변 생성 레인 표기: A/B 카드 공통 (generator 레인은 상단 선택 하나를 양쪽이 공유)
   const genTxt = ` · gen=${esc(genLabel(S.generator))}`;
 
   // B 세팅: 답변 + B 자체의 검색 context (context는 Stage A 산물이라 런마다 다름)
@@ -948,8 +948,8 @@ function renderQADetail(sid, qi, fromSession) {
   const isOracle = S.generator === "oracle";
   $("#content").innerHTML = `
     ${fromSession ? `<span class="backlink" id="btn-back">← 세션 S${sid}로 돌아가기</span>` : ""}
-    ${isOracle ? `<div class="oracle-note" data-desc="이 레인은 메모리 시스템의 검색 결과를 쓰지 않습니다. 저장·검색이 완벽했다고 가정한 QA 상한을 재기 위한 대조군입니다">⚠ <b>오라클 레인</b> — 이 답변은 아래 <b>검색 Context가 아니라 Evidence(정답 근거 골든)</b>만 보고 생성됐습니다. 저장·검색이 완벽했을 때의 상한을 재는 대조군이며, 아래 검색 Context는 참고용으로만 표시됩니다.</div>` : ""}
-    <div class="hint">S${sid} · ${esc(q.question_type || "")} — 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → ${isOracle ? "Evidence(실제 사용) → 검색 context(참고)" : "context"}</div>
+    ${isOracle ? `<div class="oracle-note" data-desc="이 레인은 메모리 시스템의 검색 결과를 쓰지 않습니다. 저장·검색이 완벽했다고 가정한 QA 상한을 재기 위한 대조군입니다">⚠ <b>오라클 레인</b>: 이 답변은 아래 검색 Context를 쓰지 않고 <b>Evidence(정답 근거 골든)</b>만 보고 생성됐습니다. 저장·검색이 완벽했을 때의 상한을 재는 대조군이며, 아래 검색 Context는 참고용으로만 표시됩니다.</div>` : ""}
+    <div class="hint">S${sid} · ${esc(q.question_type || "")}: 질문 → 정답 → ${S.bundleB ? "A/B 답변(판정)" : "답변(판정)"} → ${isOracle ? "Evidence(실제 사용) → 검색 context(참고)" : "context"}</div>
     <div class="card"><h4 data-k="question">질문</h4><div class="body">${esc(q.question)}</div></div>
     <div class="card"><h4 data-k="answer">골든 정답</h4><div class="body">${esc(q.answer)}</div></div>
     <div class="card"><h4 data-k="system_response">${S.bundleB ? `A: ${esc(runLabel(S.run))} 답변` : "시스템 답변 (A′)"}${genTxt} ${verdictFull(q.judge)}</h4><div class="body">${esc(q.system_response || "(A′ 미실행)")}</div></div>
@@ -1011,12 +1011,12 @@ function renderCompare() {
       <td ${r.diff ? 'class="diff"' : ""}>${verdictBadge(r.qb?.judge)}</td></tr>`);
 
   $("#content").innerHTML = `
-    <div class="hint">A = ${esc(runLabel(S.run))} / B = ${esc(runLabel(S.runB))} — 유저 ${esc(S.bundle.user_name)}. 주황 = 판정 갈림. QA 행 클릭 = 상세 대조.</div>
-    <div class="card"><h4 data-desc="이 유저 전체에 대한 A/B 세팅 요약 — 골든 포함률(judge 2점 비율), 추출량, accuracy 0점 수, QA 판정 분포">요약 (유저 전체)</h4><div class="body">
+    <div class="hint">A = ${esc(runLabel(S.run))} / B = ${esc(runLabel(S.runB))}: 유저 ${esc(S.bundle.user_name)}. 주황 = 판정 갈림. QA 행 클릭 = 상세 대조.</div>
+    <div class="card"><h4 data-desc="이 유저 전체에 대한 A/B 세팅 요약: 골든 포함률(judge 2점 비율), 추출량, accuracy 0점 수, QA 판정 분포">요약 (유저 전체)</h4><div class="body">
       <div class="row" style="cursor:default"><span class="tagchip">A</span><span class="txt">${esc(runLabel(S.run))}</span><span>${fmtAgg(aA)}</span></div>
       <div class="row" style="cursor:default"><span class="tagchip" style="color:var(--bcol)">B</span><span class="txt">${esc(runLabel(S.runB))}</span><span>${fmtAgg(aB)}</span></div>
     </div></div>
-    <div class="card"><h4 data-desc="같은 질문에 대한 A/B 판정 대조 — 주황 셀이 판정이 갈린 질문. 행 클릭 시 양쪽 답변·정답·근거 펼침">QA 판정 대조 (${qas.filter((r) => r.diff).length}건 갈림 / ${qas.length})</h4><div class="body">
+    <div class="card"><h4 data-desc="같은 질문에 대한 A/B 판정 대조: 주황 셀이 판정이 갈린 질문. 행 클릭 시 양쪽 답변·정답·근거 펼침">QA 판정 대조 (${qas.filter((r) => r.diff).length}건 갈림 / ${qas.length})</h4><div class="body">
       <table class="cmp" id="cmp-qa"><tr><th>세션</th><th>질문</th><th>A</th><th>B</th></tr>${qaRows.join("")}</table></div></div>`;
 
   $$("#cmp-qa .qa-row").forEach((tr) => {
@@ -1028,10 +1028,10 @@ function renderCompare() {
       const x = document.createElement("tr");
       x.className = "qa-x";
       x.innerHTML = `<td colspan="4">
-        <p class="small"><b>골든 정답</b> — ${esc(r.q.answer)}</p>
+        <p class="small"><b>골든 정답</b>: ${esc(r.q.answer)}</p>
         <p class="small"><b>A 답변</b> ${verdictFull(r.q.judge)}</p><pre class="mono">${esc(r.q.system_response || "(없음)")}</pre>
         <p class="small"><b>B 답변</b> ${verdictFull(r.qb?.judge)}</p><pre class="mono">${esc(r.qb?.system_response || "(B 런에 없음)")}</pre>
-        <p class="small"><b>근거 골든</b> — ${(r.q.evidence || []).map((e) => esc(e.memory_content)).join(" · ") || "없음"}</p></td>`;
+        <p class="small"><b>근거 골든</b>: ${(r.q.evidence || []).map((e) => esc(e.memory_content)).join(" · ") || "없음"}</p></td>`;
       tr.after(x);
     };
   });
@@ -1040,18 +1040,18 @@ function renderCompare() {
 /* ----- Metrics (전체 실험 지표 테이블) ----- */
 
 const METRIC_DEFS = {
-  r: "Recall↑ — 골든 메모리 포인트(interference 제외) 중 judge가 '완전 포함(2점)'으로 판정한 비율. 추출 커버리지의 핵심 지표",
-  wr: "Weighted Recall↑ — 부분 포함(1점)에 0.5 가중치를 준 포함률. R과의 격차가 크면 '부분만 건진' 골든이 많다는 뜻",
-  acc: "Accuracy↑ — 추출 메모리가 당해 세션 대화·골든에 근거하는 정도(2/1/0 가중평균). 괄호=채점된 추출 메모리 수. ⚠ 교차 세션 내용을 담은 UPDATE 재작성본은 구조적으로 불리",
-  tp: "Target Precision↑ — 필드(주제) 단위로 골든과 대응한다고 판정된 추출 메모리만 모수(괄호)로 한 accuracy 가중평균",
-  fmr: "FMR↑ — 미끼(interference: AI 발화에만 있고 user가 확정 안 한 내용) 골든 중 시스템이 흡수하지 않은 비율. 높을수록 distractor 저항이 강함",
-  f1: "F1↑ — R과 Target P의 조화평균. R≪P 레짐에선 사실상 R이 지배 (F1 개선 ≡ R 개선)",
-  upd_c: "Update Correct↑ — 갱신 요구 골든에 대해 갱신본의 모든 원자 정보·수치가 정확한 비율",
-  upd_h: "Update Hallucination↓ — 갱신 중 틀린 값을 만들어낸 비율",
-  upd_o: "Update Omission↓ — 갱신 중 디테일을 누락한 비율 (Qwen 계열의 주 실패 모드)",
-  qa_c: "QA Correct↑ — 다요소 질문에 대한 답변이 완전 정답인 비율",
-  qa_h: "QA Hallucination↓ — 답변이 날조인 비율",
-  qa_o: "QA Omission↓ — 답변이 누락·회피인 비율",
+  r: "Recall↑: 골든 메모리 포인트(interference 제외) 중 judge가 '완전 포함(2점)'으로 판정한 비율. 추출 커버리지의 핵심 지표",
+  wr: "Weighted Recall↑: 부분 포함(1점)에 0.5 가중치를 준 포함률. R과의 격차가 크면 '부분만 건진' 골든이 많다는 뜻",
+  acc: "Accuracy↑: 추출 메모리가 당해 세션 대화·골든에 근거하는 정도(2/1/0 가중평균). 괄호=채점된 추출 메모리 수. ⚠ 교차 세션 내용을 담은 UPDATE 재작성본은 구조적으로 불리",
+  tp: "Target Precision↑: 필드(주제) 단위로 골든과 대응한다고 판정된 추출 메모리만 모수(괄호)로 한 accuracy 가중평균",
+  fmr: "FMR↑: 미끼(interference: AI 발화에만 있고 user가 확정 안 한 내용) 골든 중 시스템이 흡수하지 않은 비율. 높을수록 distractor 저항이 강함",
+  f1: "F1↑: R과 Target P의 조화평균. R≪P 레짐에선 사실상 R이 지배 (F1 개선 ≡ R 개선)",
+  upd_c: "Update Correct↑: 갱신 요구 골든에 대해 갱신본의 모든 원자 정보·수치가 정확한 비율",
+  upd_h: "Update Hallucination↓: 갱신 중 틀린 값을 만들어낸 비율",
+  upd_o: "Update Omission↓: 갱신 중 디테일을 누락한 비율 (Qwen 계열의 주 실패 모드)",
+  qa_c: "QA Correct↑: 다요소 질문에 대한 답변이 완전 정답인 비율",
+  qa_h: "QA Hallucination↓: 답변이 날조인 비율",
+  qa_o: "QA Omission↓: 답변이 누락·회피인 비율",
 };
 const METRIC_COLS = [
   { k: "r", label: "R↑", dir: 1 }, { k: "wr", label: "Weighted R↑", dir: 1 },
@@ -1062,14 +1062,13 @@ const METRIC_COLS = [
 ];
 const metricsCache = new Map();
 S.metricsScope = "first4";
-S.showGroups = new Set();   // 켜진 숨김 그룹 (custom / bm25 …) — runs.yaml의 hide_groups
-S.showHidden = false;   // custom 프롬프트 축은 기본 숨김 (데이터는 보존 — 토글로 복원)
-// 행/열 하이라이트 선택 — 행은 run 이름, 열은 칼럼 키. 재렌더에도 유지 (탭 이탈해도 세션 내 유지)
+S.showGroups = new Set();   // 켜진 숨김 그룹 (custom / bm25 …): runs.yaml의 hide_groups
+// 행/열 하이라이트 선택: 행은 run 이름, 열은 칼럼 키. 재렌더에도 유지 (탭 이탈해도 세션 내 유지)
 S.metricsSelRows = new Set(); S.metricsSelCols = new Set(); S.metricsSelCells = new Set();
 S.metricsColRows = new Set(); S.metricsColCols = new Set();   // 접힌 행/열
 
 async function renderMetrics() {
-  // generator·judge는 상단바 선택을 그대로 따른다 (별도 선택기 없음 — 화면 전체가 한 조합)
+  // generator·judge는 상단바 선택을 그대로 따른다 (별도 선택기 없음. 화면 전체가 한 조합)
   const groupsParam = [...S.showGroups].sort().join(",");
   const key = `${S.generator}|${S.judge}|${S.metricsScope}|${groupsParam}`;
   if (!metricsCache.has(key)) {
@@ -1082,7 +1081,7 @@ async function renderMetrics() {
   // 스코프 옵션: 공통 4유저 + 개별 유저(이름은 현재 유저 목록에서 매핑)
   const nameOf = (uid) => S.users.find((u) => u.uuid === uid)?.user_name || uid.slice(0, 8);
   $("#sidebar").innerHTML = `<div style="padding:10px">
-    <p class="small muted" data-desc="이 테이블의 관측 스택 — 바꾸려면 상단바의 Generator/Judge 드롭다운을 사용">
+    <p class="small muted" data-desc="이 테이블의 관측 스택: 바꾸려면 상단바의 Generator/Judge 드롭다운을 사용">
       <b>조합</b> (상단바 연동)<br>gen=${esc(genLabel(S.generator))}<br>judge=${esc(judgeLabel(S.judge))}</p>
     <p class="small muted" style="margin-top:10px"><b>유저 범위</b></p>
     <select id="metrics-scope" style="width:100%">
@@ -1105,7 +1104,7 @@ async function renderMetrics() {
   const rows = allRows;   // 접기는 DOM에 남겨두고 클래스로만 처리 (재렌더 없이 토글하기 위함)
   // 오라클로 읽을 수 없게 된 지표는 '–'로 가린다 (백엔드가 masked 목록을 내려줌)
   const isMasked = (r, k) => (r.masked || []).includes(k);
-  // 오라클 행은 '시스템 설정'이 아니라 대조군(상한)이므로 어떤 열에서도 백본들과 순위를 겨루지 않는다.
+  // 오라클 행은 시스템 설정이 아닌 대조군(상한)이므로 어떤 열에서도 백본들과 순위를 겨루지 않는다.
   // QA까지 순위에 넣으면 1위가 항상 오라클 상한(83.66)이 되어 백본 간 비교가 무의미해진다.
   // 값은 그대로 보여주되 순위·최고값 계산에서만 뺀다.
   const QA_KEYS = ["qa_c", "qa_h", "qa_o"];
@@ -1114,7 +1113,7 @@ async function renderMetrics() {
   //   (오라클 행에서 QA는 실제로 읽는 값이므로 흐리게 만들면 안 된다)
   const isInjected = (r, k) => outOfRank(r) && !QA_KEYS.includes(k);
   const inRank = (r, k) => !isMasked(r, k) && !outOfRank(r);
-  // 열별 최고/순위 (방향 반영) — 가려진 칸·오라클 주입값은 모수에서 제외해 순위가 오염되지 않게 한다
+  // 열별 최고/순위 (방향 반영): 가려진 칸·오라클 주입값은 모수에서 제외해 순위가 오염되지 않게 한다
   const rank = {};
   METRIC_COLS.forEach((c) => {
     const live = rows.filter((r) => inRank(r, c.k));
@@ -1127,7 +1126,7 @@ async function renderMetrics() {
   // 같은 실험을 A′ 생성부터 다시 돌리면 수치가 얼마나 흔들리는지의 실측값(백엔드가 산출물에서 계산).
   // 이보다 작은 행 간 차이는 실체가 아니므로, '최고값 ± 노이즈' 안에 드는 행을 모두 공동 1위로 굵게 한다.
   const NZ = data.noise;
-  // 반복 회차는 1유저분만 있다. 질문 단위 독립을 가정하면 유저가 n배면 표준편차는 √n배 작아진다 — 추정치다.
+  // 반복 회차는 1유저분만 있다. 질문 단위 독립을 가정하면 유저가 n배면 표준편차는 √n배 작아진다. 추정치다.
   const noiseFor = (k, nUsers) => {
     if (!NZ || NZ[k] == null) return null;
     return NZ[k] / Math.sqrt(Math.max(1, (nUsers || 1) / (NZ.n_users || 1)));
@@ -1140,7 +1139,7 @@ async function renderMetrics() {
     if (own == null) return floor;
     return floor == null ? own : Math.max(own, floor);
   };
-  // 두 값이 구분 가능한가는 '값 하나의 SD'가 아니라 '차이의 표준오차'로 판단한다.
+  // 두 값이 구분 가능한가는 '값 하나의 SD' 대신 '차이의 표준오차'로 판단한다.
   //   차이의 SE = √(sd_a² + sd_b²), 95% 기준이면 1.96배. 1σ로 자르면 지나치게 엄격해진다.
   const bestRowOf = (k) => rows.find((x) => inRank(x, k) && x.metrics[k] === rank[k].best);
   const coBestGap = (r, k) => {
@@ -1157,16 +1156,16 @@ async function renderMetrics() {
   const judgeShortName = judgeShort(data.judge);
   const maxIngest = Math.max(...rows.map((r) => r.latency?.ingest_avg_s || 0), 0.1);
 
-  // 메타 열 + 지표 열을 한 목록으로 — 숨기기·하이라이트를 열 종류와 무관하게 동일하게 처리
+  // 메타 열 + 지표 열을 한 목록으로: 숨기기·하이라이트를 열 종류와 무관하게 동일하게 처리
   const META_COLS = [
-    { k: "sys", label: "Memory System", desc: "메모리 시스템 — 전부 mem0 OSS 0.1.118 classic" },
+    { k: "sys", label: "Memory System", desc: "메모리 시스템: 전부 mem0 OSS 0.1.118 classic" },
     { k: "users", label: "#Users", desc: "이 행의 지표가 집계된 유저 수" },
-    { k: "backbone", label: "Agent LLM", desc: "memory agent 백본 — fact 추출·update 결정을 담당하는 LLM" },
-    { k: "prompt", label: "Prompt", desc: "fact 추출 프롬프트 — default=mem0 기본 / custom=HaluMem 원본 지침(문단형)" },
-    { k: "retriever", label: "Retriever", desc: "메모리 검색기 — <b>백본·프롬프트와 독립된 축</b>입니다. 기본은 임베딩(Qwen3-Embedding-4B + Qdrant dense), BM25는 Qdrant sparse + IDF.<br>⚠ retriever는 QA 검색만 바꾸지 않습니다 — mem0는 <b>갱신 결정 전에도 search로 후보를 가져오므로</b>(main.py:378) 저장 내용 자체가 달라집니다.<br>⚠ BM25는 질의어와 토큰이 겹치지 않는 문서를 아예 반환하지 않아 <b>context 개수가 줄어듭니다</b>(실측 19.96→13.83). 컨텍스트 축약만으로 QA가 오르므로 길이 통제 대조군과 함께 읽어야 합니다" },
-    { k: "oracle", label: "Oracle 단계", desc: "해당 단계를 '완벽한 정답'으로 대체한 실험인지 — <b>프롬프트 종류와는 독립된 축</b>입니다. '없음'=모든 단계를 시스템이 실제로 수행. 오라클 행은 저장물이 골든 자체라 R·Acc·FMR 비교가 무의미하고 QA C만 읽습니다" },
-    { k: "lat", label: "Ingest/세션↓", desc: "세션 1개 투입(mem0.add) 평균 시간 — fact 추출·update 결정 LLM 콜 포함. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용" },
-    { k: "judge", label: "Judge LLM", desc: "채점 LLM — 행 간 비교는 동일 judge에서만 유효" },
+    { k: "backbone", label: "Agent LLM", desc: "memory agent 백본: fact 추출·update 결정을 담당하는 LLM" },
+    { k: "prompt", label: "Prompt", desc: "fact 추출 프롬프트: default=mem0 기본 / custom=HaluMem 원본 지침(문단형)" },
+    { k: "retriever", label: "Retriever", desc: "메모리 검색기입니다. <b>백본·프롬프트와 독립된 변인</b>입니다. 기본은 임베딩(Qwen3-Embedding-4B + Qdrant dense), BM25는 Qdrant sparse + IDF.<br>⚠ retriever는 QA 검색만 바꾸지 않습니다. mem0는 <b>갱신 결정 전에도 search로 후보를 가져오므로</b>(main.py:378) 저장 내용 자체가 달라집니다.<br>⚠ BM25는 질의어와 토큰이 겹치지 않는 문서를 아예 반환하지 않아 <b>context 개수가 줄어듭니다</b>(실측 19.96→13.83). 컨텍스트 축약만으로 QA가 오르므로 길이 통제 대조군과 함께 읽어야 합니다" },
+    { k: "oracle", label: "Oracle 단계", desc: "해당 단계를 '완벽한 정답'으로 대체한 실험인지: <b>프롬프트 종류와 독립된 항목</b>입니다. '없음'=모든 단계를 시스템이 실제로 수행. 오라클 행은 저장물이 골든 자체라 R·Acc·FMR 비교가 무의미하고 QA C만 읽습니다" },
+    { k: "lat", label: "Ingest/세션↓", desc: "세션 1개 투입(mem0.add) 평균 시간. fact 추출·update 결정 LLM 콜 포함. ⚠ 유저 병렬 실행 부하가 섞인 실측이라 절대값보단 행 간 상대 비교용" },
+    { k: "judge", label: "Judge LLM", desc: "채점 LLM: 행 간 비교는 동일 judge에서만 유효" },
   ];
   const ALL_COLS = [...META_COLS, ...METRIC_COLS.map((c) => ({ k: c.k, label: c.label, desc: METRIC_DEFS[c.k], metric: c }))];
   const cols = ALL_COLS;
@@ -1174,7 +1173,7 @@ async function renderMetrics() {
   const colCls = (k) => S.metricsSelCols.has(k) ? " mcol-sel" : "";
   const cellCls = (run, k) => S.metricsSelCells.has(`${run}|${k}`) ? " mcell-sel" : "";
   const caret = (kind, id, label) =>
-    `<button class="hidecaret" data-fold="${kind}" data-id="${esc(id)}" data-desc="${esc(label)}을(를) 얇게 접습니다 — 접힌 줄을 다시 클릭하면 펼쳐집니다">▾</button>`;
+    `<button class="hidecaret" data-fold="${kind}" data-id="${esc(id)}" data-desc="${esc(label)}을(를) 얇게 접습니다. 접힌 줄을 다시 클릭하면 펼쳐집니다">▾</button>`;
 
   function cellHTML(c, r, m) {
     if (c.metric) {
@@ -1184,12 +1183,12 @@ async function renderMetrics() {
       //    오라클 행은 masked 경로로 걸러지지만 오라클이 아닌 QA 전용 행은 여기까지 온다.
       //    가드가 없으면 null.toFixed()로 Metrics 탭 전체가 렌더에 실패한다.
       if (v == null) return { html: `<span class="masked">–</span>`,
-        desc: `<b>${esc(c.label)}</b> — 이 행은 <b>QA만 측정</b>했습니다. 답변 생성 레인 자체가 실험 조건이라 반복 채점을 QA로만 돌렸고, 저장물 지표(R·Acc·Upd 등)는 carrier 런의 값과 같습니다.` };
+        desc: `<b>${esc(c.label)}</b>: 이 행은 <b>QA만 측정</b>했습니다. 답변 생성 레인 자체가 실험 조건이라 반복 채점을 QA로만 돌렸고, 저장물 지표(R·Acc·Upd 등)는 carrier 런의 값과 같습니다.` };
       const rk = rank[c.k].sorted.indexOf(v) + 1;
       const bestRow = bestRowOf(c.k);
       if (isInjected(r, c.k)) return {
         html: `<span class="oorank">${v.toFixed(2)}</span>`,
-        desc: `<b>${esc(c.label)}</b> = ${v} <span class="small">(순위 비교 제외)</span><br>이 행은 <b>${esc(oracleLabel(r.oracle))}</b>을(를) 정답으로 주입한 실험이라, 이 값은 백본의 능력이 아니라 <b>주입된 정답이 다음 단계를 얼마나 통과했는지</b>를 뜻합니다. 실제 백본 행들과 같은 순위표에 놓지 않습니다.<br>${esc(METRIC_DEFS[c.k])}`,
+        desc: `<b>${esc(c.label)}</b> = ${v} <span class="small">(순위 비교 제외)</span><br>이 행은 <b>${esc(oracleLabel(r.oracle))}</b>을(를) 정답으로 주입한 실험이라, 이 값은 <b>주입된 정답이 다음 단계를 얼마나 통과했는지</b>를 뜻합니다. 백본의 능력을 잰 값과는 다릅니다. 실제 백본 행들과 같은 순위표에 놓지 않습니다.<br>${esc(METRIC_DEFS[c.k])}`,
       };
       const nTxt = c.metric.n && m[c.metric.n] != null ? ` <span class="small muted">(${m[c.metric.n].toLocaleString()})</span>` : "";
       // 흔들림 폭을 값 옆에 붙인다. 반복을 실제로 돌린 행은 실측 SD(±), 나머지는 유저 수로 환산한 추정치(~±).
@@ -1199,18 +1198,18 @@ async function renderMetrics() {
         : ` <span class="sdtag${own != null ? " meas" : ""}">${own != null ? "±" : "~±"}${band.toFixed(2)}</span>`;
       const sdDesc = band == null ? ""
         : own != null
-          ? `<br><b>${r.repeats.length}회 반복 실측</b> (A′ 생성 + judge 채점을 매번 새로) — 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}`
+          ? `<br><b>${r.repeats.length}회 반복 실측</b> (A′ 생성 + judge 채점을 매번 새로): 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}`
             + (band > own ? `<br>⚠ 이 회차들은 <b>한 루프 안에서 연속 실행</b>돼 흔들림을 과소평가합니다(자체 ±${own.toFixed(2)}). 배치 간을 포함한 <b>±${band.toFixed(2)}</b>를 밴드로 씁니다.` : "")
-          : `<br><b>흔들림 추정 ±${band.toFixed(2)}</b> — 이 행은 1회만 돌렸습니다. 실측 행의 독립 실행 ${NZ.n_obs}회에서 잰 ±${NZ[c.k]}(유저 ${NZ.n_users}명)를 이 행의 유저 ${m.n_users}명 기준으로 환산한 <b>추정치</b>입니다.`;
+          : `<br><b>흔들림 추정 ±${band.toFixed(2)}</b>: 이 행은 1회만 돌렸습니다. 실측 행의 독립 실행 ${NZ.n_obs}회에서 잰 ±${NZ[c.k]}(유저 ${NZ.n_users}명)를 이 행의 유저 ${m.n_users}명 기준으로 환산한 <b>추정치</b>입니다.`;
       const co = isCoBest(r, c);
       const gap = coBestGap(r, c.k);
       const coDesc = (co && v !== rank[c.k].best)
-        ? `<br><span style="color:var(--accent);font-weight:800">공동 1위</span> — 1위(${rank[c.k].best})와의 차이 ${Math.abs(v - rank[c.k].best).toFixed(2)}p가 구분 한계 ${gap.toFixed(2)}p 이내라 우열을 가릴 수 없습니다.` : "";
+        ? `<br><span style="color:var(--accent);font-weight:800">공동 1위</span>. 1위(${rank[c.k].best})와의 차이 ${Math.abs(v - rank[c.k].best).toFixed(2)}p가 구분 한계 ${gap.toFixed(2)}p 이내라 우열을 가릴 수 없습니다.` : "";
       // 오라클 행의 QA는 실제로 읽는 값이므로 정상 표기하되, 순위표에서는 빠졌음을 밝힌다
       const rkTxt = inRank(r, c.k)
-        ? `${rk}위/${rank[c.k].n} (${c.metric.dir === 1 ? "높을수록" : "낮을수록"} 좋음 · 최고 ${rank[c.k].best}: ${esc(bestRow ? bestRow.label : "-")})`
-        : `<span class="small">대조군(상한) — 백본 순위 비교에서 제외</span>`;
-      const d = `<b>${esc(c.label)}</b> = ${v} — ${rkTxt}<br>${esc(METRIC_DEFS[c.k])}${sdDesc}${coDesc}`;
+        ? `${rk}위/${rank[c.k].n}, ${c.metric.dir === 1 ? "높을수록" : "낮을수록"} 좋음, 최고 ${rank[c.k].best} = ${esc(bestRow ? bestRow.label : "-")}`
+        : `<span class="small">대조군(상한): 백본 순위 비교에서 제외</span>`;
+      const d = `<b>${esc(c.label)}</b> = ${v} (${rkTxt})<br>${esc(METRIC_DEFS[c.k])}${sdDesc}${coDesc}`;
       return { html: `${v.toFixed(2)}${sdTxt}${nTxt}`, desc: d, bold: co };
     }
     if (c.k === "sys") return { html: `<b>Mem0-Classic-OSS</b>${caret("row", r.run, r.label)}`, desc: r.note || r.label, rowHead: true };
@@ -1227,16 +1226,16 @@ async function renderMetrics() {
     if (c.k === "oracle") return { html: r.oracle ? `<span class="orc">${esc(oracleLabel(r.oracle))}</span>` : `<span class="muted">없음</span>`, desc: c.desc };
     if (c.k === "judge") {
       const p = r.pinned_lane;
-      // 고정 레인 행은 상단바 generator·judge 선택을 따르지 않는다 — 어떤 조합으로 집계됐는지 칸에 명시
+      // 고정 레인 행은 상단바 generator·judge 선택을 따르지 않는다. 어떤 조합으로 집계됐는지 칸에 명시
       return p
         ? { html: `${esc(judgeShort(p.judge))} <span class="pinlane">📌</span>`,
-            desc: `<b>고정 레인 행</b> — 이 행은 상단바의 generator·judge 선택을 따르지 않습니다.<br>답변 생성 레인 자체가 실험 조건이라, 항상 <b>${esc(genLabel(p.generator))}</b> × <b>${esc(judgeLabel(p.judge))}</b>으로만 집계됩니다.<br><span class="small">Stage A 저장소는 런 <b>${esc(p.run)}</b>의 것을 씁니다.</span>` }
+            desc: `<b>고정 레인 행</b>: 이 행은 상단바의 generator·judge 선택을 따르지 않습니다.<br>답변 생성 레인 자체가 실험 조건이라, 항상 <b>${esc(genLabel(p.generator))}</b> × <b>${esc(judgeLabel(p.judge))}</b>으로만 집계됩니다.<br><span class="small">Stage A 저장소는 런 <b>${esc(p.run)}</b>의 것을 씁니다.</span>` }
         : { html: esc(judgeShortName), desc: judgeName };
     }
     const lat = r.latency;
     return lat
       ? { html: `<div class="lat-bar" style="width:${(lat.ingest_avg_s / maxIngest * 100).toFixed(0)}%"></div><span class="small">${lat.ingest_avg_s}s</span>`,
-          desc: `<b>세션 투입 시간</b> — 평균 ${lat.ingest_avg_s}s · 중앙값 ${lat.ingest_p50_s}s · 세션 ${lat.n_sessions}개 실측. 질문 검색은 평균 ${lat.search_avg_ms}ms로 백본 무관` }
+          desc: `<b>세션 투입 시간</b>: 평균 ${lat.ingest_avg_s}s · 중앙값 ${lat.ingest_p50_s}s · 세션 ${lat.n_sessions}개 실측. 질문 검색은 평균 ${lat.search_avg_ms}ms로 백본 무관` }
       : { html: "–", desc: c.desc };
   }
 
@@ -1253,22 +1252,22 @@ async function renderMetrics() {
 
   const anySel = S.metricsSelRows.size || S.metricsSelCols.size || S.metricsSelCells.size;
   const nHidden = S.metricsColRows.size + S.metricsColCols.size;
-  // 재렌더로 스크롤이 튀지 않도록 보존 — 창 폭에 따라 스크롤 주체가 #content일 수도, 문서일 수도 있다
+  // 재렌더로 스크롤이 튀지 않도록 보존: 창 폭에 따라 스크롤 주체가 #content일 수도, 문서일 수도 있다
   const scrollTop = $("#content").scrollTop, winY = window.scrollY;
   const restoreScroll = () => { $("#content").scrollTop = scrollTop; window.scrollTo(0, winY); };
   const batchWarn = NZ && NZ.n_batches > 1 && NZ.qa_c > NZ.qa_c_within;
   const noiseBanner = !NZ ? "" : `
     <div class="noisebar" data-desc="사다리의 실측 행(오라클 없음)을 <b>A′ 답변 생성부터 judge 채점까지 통째로</b> 다시 돌린 <b>독립 실행 ${NZ.n_obs}회</b>(${NZ.n_batches}개 배치)에서 잰 값입니다. 회차별: ${NZ.values.join(", ")}. 산출물에서 실시간 계산하므로 반복을 더 돌리면 자동으로 갱신됩니다.">
-      <b>📏 노이즈 바닥</b> — 같은 실험을 다시 돌리기만 해도 <b>QA C가 ±${NZ.qa_c}p</b> 흔들립니다
+      <b>📏 노이즈 바닥</b>: 같은 실험을 다시 돌리기만 해도 <b>QA C가 ±${NZ.qa_c}p</b> 흔들립니다
       <span class="small">(유저 ${NZ.n_users}명 · 독립 실행 ${NZ.n_obs}회 실측 · 최대 폭 ${NZ.qa_c_range}p)</span>.
-      <b>이보다 작은 행 간 차이는 해석하지 마세요</b> — 1위와 구분 한계 이내인 행은 <b>공동 1위로 함께 굵게</b> 표시됩니다.
-      ${batchWarn ? `<br><span class="small">⚠ 연속 루프로 돌린 ${NZ.n_repeats}회만 보면 ±${NZ.qa_c_within}p로 <b>작게 나오지만</b>, 날짜가 다른 배치를 섞으면 ±${NZ.qa_c}p입니다 — 한 루프 안의 회차들은 서버 상태를 공유해 독립 시행이 아닙니다. <b>보수적인 쪽(±${NZ.qa_c}p)을 씁니다.</b></span>` : ""}
-      <span class="small">흔드는 것은 채점이 아니라 <b>답변 생성</b>입니다 (judge만 반복하면 폭 0.6p).</span>
+      <b>이보다 작은 행 간 차이는 해석하지 마세요</b>: 1위와 구분 한계 이내인 행은 <b>공동 1위로 함께 굵게</b> 표시됩니다.
+      ${batchWarn ? `<br><span class="small">⚠ 연속 루프로 돌린 ${NZ.n_repeats}회만 보면 ±${NZ.qa_c_within}p로 <b>작게 나오지만</b>, 날짜가 다른 배치를 섞으면 ±${NZ.qa_c}p입니다. 한 루프 안의 회차들은 서버 상태를 공유해 독립 시행이 아닙니다. <b>보수적인 쪽(±${NZ.qa_c}p)을 씁니다.</b></span>` : ""}
+      <span class="small">흔드는 쪽은 채점이 아닌 <b>답변 생성</b>입니다 (judge만 반복하면 폭 0.6p).</span>
     </div>`;
   $("#content").innerHTML = `
     <div id="ladder-card"></div>
     ${noiseBanner}
-    <div class="hint">HaluMem Table 3 지표 — judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
+    <div class="hint">HaluMem Table 3 지표: judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
       · 첫 칸 클릭=행, 머리글 클릭=열, 나머지 칸 클릭=그 칸만 하이라이트 · <b>▾</b>=접기(접힌 줄 클릭=펼침) · 칼럼 경계 드래그=폭 조절 <button id="msel-clear" class="ctx-toggle${anySel ? "" : " btn-off"}" style="margin-left:6px">하이라이트 해제</button> <button id="mhide-clear" class="ctx-toggle${nHidden ? "" : " btn-off"}" style="margin-left:6px">접힌 항목 <b id="nfold">${nHidden}</b>개 모두 펼치기</button></div>
     <div class="card"><div class="body" style="overflow-x:auto">
       <table class="cmp resizable" id="metrics-table"><tr>
@@ -1279,7 +1278,7 @@ async function renderMetrics() {
   requestAnimationFrame(restoreScroll);          // 레이아웃 확정 후 한 번 더
   // 사다리는 비동기로 채워지며 높이를 바꾼다. 그 사이 사용자가 스크롤했다면 건드리지 않는다
   // (늦은 복원이 사용자의 스크롤을 되감는 것을 방지).
-  // ⚠ 사다리 렌더를 requestAnimationFrame 안에 두면 안 된다 — 백그라운드 탭에서는 rAF가 아예
+  // ⚠ 사다리 렌더를 requestAnimationFrame 안에 두면 안 된다. 백그라운드 탭에서는 rAF가 아예
   //    호출되지 않아 사다리가 영영 비어 있게 된다(탭을 숨긴 채 대시보드를 열면 재현). 즉시 호출하고,
   //    스크롤 보정만 완료 후에 한다.
   const settled = () => [$("#content").scrollTop, window.scrollY];
@@ -1289,7 +1288,7 @@ async function renderMetrics() {
     if (Math.abs(c1 - c0) < 2 && Math.abs(w1 - w0) < 2) restoreScroll();
   });
 
-  // ⚠ 표 조작(하이라이트·접기)은 절대 재렌더하지 않는다 — 표를 다시 그리면 스크롤이 튄다.
+  // ⚠ 표 조작(하이라이트·접기)은 절대 재렌더하지 않는다. 표를 다시 그리면 스크롤이 튄다.
   //    모두 제자리에서 클래스만 토글하고, 상태 집합은 다음 재렌더(범위 변경 등) 때 복원용으로만 쓴다.
   const sel = (q) => $$(`#content ${q}`);
   const syncBtns = () => {
@@ -1319,7 +1318,7 @@ async function renderMetrics() {
     td.classList.toggle("mcell-sel", !on);
     syncBtns();
   };
-  // 접기/펼치기 — DOM은 그대로 두고 클래스만 (행은 얇은 줄, 열은 좁은 띠로 축소)
+  // 접기/펼치기: DOM은 그대로 두고 클래스만 (행은 얇은 줄, 열은 좁은 띠로 축소)
   const foldRow = (run, on) => {
     on ? S.metricsColRows.add(run) : S.metricsColRows.delete(run);
     rowEl(run)?.classList.toggle("crow", on);
@@ -1423,12 +1422,12 @@ async function renderLadder() {
   try { d = await api(`/api/oracle-ladder?scope=${S.metricsScope}`); }
   catch { const b = $("#ladder-card"); if (b) b.innerHTML = ""; return; }
   // ⚠ await 사이에 renderMetrics가 다시 돌면 #content가 통째로 교체돼 앞서 잡아둔 노드가 떨어져 나간다.
-  //    그 노드에 쓰면 화면에는 아무것도 안 보인다 — 반드시 await '이후' 다시 조회한다.
+  //    그 노드에 쓰면 화면에는 아무것도 안 보인다. 반드시 await '이후' 다시 조회한다.
   const box = $("#ladder-card");
   if (!box) return;
   const lads = d.ladders || [{ key: "", label: "", note: d.note, n_repeats: d.n_repeats, rows: d.rows }];
   if (!lads.length || !lads.some((L) => L.rows.length)) { box.innerHTML = ""; return; }
-  // 사다리를 retriever 축마다 한 벌씩 그린다. 막대 스케일은 전 사다리 공통이라야 눈으로 비교된다.
+  // 사다리를 retriever 종류마다 한 벌씩 그린다. 막대 스케일은 전 사다리 공통이라야 눈으로 비교된다.
   const allDone = lads.flatMap((L) => L.rows).filter((r) => r.qa_c != null);
   const max = Math.max(...allDone.map((r) => r.qa_c), 100);
 
@@ -1437,18 +1436,18 @@ async function renderLadder() {
   const rows = L.rows.map((r, i) => {
     const stages = LADDER_STAGES.map((s) => {
       const on = r.stages.includes(s);
-      return `<td class="lst ${on ? "on" : ""}" data-desc="${esc(d.stage_names[s])} 단계 — ${on ? "이 행에서는 정답으로 대체됨(오라클)" : "실제 시스템이 수행"}">${on ? "오라클" : "실측"}</td>`;
+      return `<td class="lst ${on ? "on" : ""}" data-desc="${esc(d.stage_names[s])} 단계: ${on ? "이 행에서는 정답으로 대체됨(오라클)" : "실제 시스템이 수행"}">${on ? "오라클" : "실측"}</td>`;
     }).join("");
-    const sd = r.sd != null ? `<span class="lsd" data-desc="${r.repeats.length}회 반복(A′ 생성 + judge 채점을 매번 새로) 표본표준편차 — 각 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}">±${r.sd.toFixed(2)}</span>` : "";
-    const nrep = r.repeats && r.repeats.length ? `<span class="lrep" data-desc="반복 회차 수 — 평균값으로 표시됩니다">n=${r.repeats.length}</span>` : "";
+    const sd = r.sd != null ? `<span class="lsd" data-desc="${r.repeats.length}회 반복(A′ 생성 + judge 채점을 매번 새로) 표본표준편차: 각 회차: ${r.repeats.map((x) => x.toFixed(2)).join(", ")}">±${r.sd.toFixed(2)}</span>` : "";
+    const nrep = r.repeats && r.repeats.length ? `<span class="lrep" data-desc="반복 회차 수: 평균값으로 표시됩니다">n=${r.repeats.length}</span>` : "";
     const bar = r.qa_c == null ? `<span class="small muted">미실행</span>`
       : `<div class="lbar"><span style="width:${(r.qa_c / max * 100).toFixed(1)}%"></span>${r.sd != null ? `<i class="lerr" style="left:${((r.qa_c - r.sd) / max * 100).toFixed(1)}%;width:${(2 * r.sd / max * 100).toFixed(1)}%"></i>` : ""}</div><b>${r.qa_c.toFixed(2)}</b>${sd}${nrep}`;
     const dl = r.delta == null ? "" : `<span class="ldelta ${r.delta >= 0 ? "up" : "down"}">${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(2)}</span>`;
     return `<tr class="${r.qa_c == null ? "pend" : ""}">
       <td class="lstep" data-desc="${esc(r.desc)}"><b>${esc(r.label)}</b><br><span class="small muted">${esc(r.run_label || r.run)}</span></td>
       ${stages}
-      <td class="lqa">${bar}${r.n_users != null ? `<span class="small muted" data-desc="이 행이 실제로 채점한 유저 수 — 모든 행이 같아야 공정한 비교입니다">${r.n_users}u</span>` : ""}</td>
-      <td class="lgain" data-desc="직전 단계 대비 QA Correct 증가분 — 이 단계를 완벽하게 만들었을 때 얻는 성능">${dl}</td></tr>`;
+      <td class="lqa">${bar}${r.n_users != null ? `<span class="small muted" data-desc="이 행이 실제로 채점한 유저 수: 모든 행이 같아야 공정한 비교입니다">${r.n_users}u</span>` : ""}</td>
+      <td class="lgain" data-desc="직전 단계 대비 QA Correct 증가분: 이 단계를 완벽하게 만들었을 때 얻는 성능">${dl}</td></tr>`;
   }).join("");
 
   const first = done[0], last = done[done.length - 1];
@@ -1460,11 +1459,11 @@ async function renderLadder() {
         <table class="cmp ladder"><tr>
           <th>세팅</th><th data-desc="fact 추출 단계">추출</th><th data-desc="ADD/UPDATE/DELETE 갱신 결정 단계">갱신</th>
           <th data-desc="저장소에서 답변 재료를 찾아오는 단계">저장·검색</th>
-          <th data-desc="QA Correct — 이 사다리에서 유일하게 의미 있는 지표. 오라클 행은 저장물이 골든 자체라 R·Acc는 100 근처로 붙어 무의미합니다">QA C↑</th>
+          <th data-desc="QA Correct: 이 사다리에서 유일하게 의미 있는 지표. 오라클 행은 저장물이 골든 자체라 R·Acc는 100 근처로 붙어 무의미합니다">QA C↑</th>
           <th>직전 대비</th></tr>${rows}</table>
         <p class="small muted" style="margin-top:8px">${L.n_repeats ? `반복 ${L.n_repeats}회 설계 (A′ 생성·judge 채점을 매번 새로 수행, 평균±표준편차) · ` : ""}${esc(L.note)} · 남은 구간(상한 → 100)은 generator 자체와 문항·정답 결함의 몫입니다.</p>
         <p class="small" style="margin-top:4px;color:#8a5600;background:#fff4e6;border-left:3px solid var(--warn);padding:5px 9px;border-radius:0 5px 5px 0" data-desc="마지막 행은 검색 결과 대신 정답 근거(evidence)만 제공합니다. 평균 1.4개 항목으로, 실제 검색(top-20)보다 훨씬 짧고 깨끗한 컨텍스트입니다. 따라서 이 구간의 증가분에는 '검색 정확도'와 '컨텍스트 축약·무관정보 제거' 효과가 섞여 있습니다">
-          ⚠ 마지막 행은 <b>정답 근거만 남긴 조건</b>(평균 1.4개 항목)이라 실제 검색(top-20)과 컨텍스트 조건이 다릅니다 — 이 구간 증가분은 검색의 기여를 <b>과대평가</b>합니다.</p>
+          ⚠ 마지막 행은 <b>정답 근거만 남긴 조건</b>(평균 1.4개 항목)이라 실제 검색(top-20)과 컨텍스트 조건이 다릅니다. 이 구간 증가분은 검색의 기여를 <b>과대평가</b>합니다.</p>
       </div></div>`;
   };
 
@@ -1475,7 +1474,7 @@ async function renderLadder() {
 
 async function renderDigest() {
   const all = await api(`/api/digest/${S.uuid}`);
-  // 기본은 현재 세팅(런·generator·judge·B런)에서 단 코멘트만 — 토글 켜면 전체 런·전체 세팅
+  // 기본은 현재 세팅(런·generator·judge·B런)에서 단 코멘트만: 토글 켜면 전체 런·전체 세팅
   const base = S.showOtherCmts ? all : all.filter((c) => c.run === S.run && cmtMatches(c));
   const hiddenN = all.length - base.length;
   const scoped = S.digestScope === "session"
@@ -1494,8 +1493,8 @@ async function renderDigest() {
   $$("#sidebar .pill-filter button").forEach((b) => (b.onclick = () => { S.digestScope = b.dataset.sc; renderDigest(); }));
   $("#digest-other-tgl").onchange = () => setShowOtherCmts($("#digest-other-tgl").checked);
   if (!scoped.length) {
-    $("#content").innerHTML = `<div class="card"><h4>Digest — 코멘트 모아보기</h4><div class="body">
-      <p>선택 범위(${S.digestScope === "user" ? "유저 전체" : `세션 S${S.session}`}${S.showOtherCmts ? "" : " · 현재 세팅"})에 코멘트가 없습니다.${!S.showOtherCmts && hiddenN ? ` 다른 세팅 코멘트 ${hiddenN}개가 숨겨져 있습니다 — 좌측 토글로 표시.` : ""}</p>
+    $("#content").innerHTML = `<div class="card"><h4>Digest: 코멘트 모아보기</h4><div class="body">
+      <p>선택 범위(${S.digestScope === "user" ? "유저 전체" : `세션 S${S.session}`}${S.showOtherCmts ? "" : " · 현재 세팅"})에 코멘트가 없습니다.${!S.showOtherCmts && hiddenN ? ` 다른 세팅 코멘트 ${hiddenN}개가 숨겨져 있습니다. 좌측 토글로 표시.` : ""}</p>
       <p class="small muted">코멘트 남기기: Sessions/QA 탭에서 항목 클릭 → 우측 코멘트 탭. 또는 텍스트 드래그 선택 → 💬 버튼.<br>
       세션/유저 단위 종합 코멘트는 항목 클릭 없이 우측 코멘트 탭에서 바로 작성하면 됩니다 (앵커 run/session).</p></div></div>`;
     return;
@@ -1534,7 +1533,7 @@ function renderInspector() {
           obj = sb?.questions?.find((x) => x.question === S.anchorObj?.question) ?? null;
         }
       }
-      pills = `<div class="pill-filter" style="margin:8px 0 0" data-desc="상세 JSON을 볼 세팅 선택 — 골든/QA는 데이터셋 공통이지만 judge 라벨·검색 스냅샷·답변·context는 런마다 다름">
+      pills = `<div class="pill-filter" style="margin:8px 0 0" data-desc="상세 JSON을 볼 세팅 선택: 골든/QA는 데이터셋 공통이지만 judge 라벨·검색 스냅샷·답변·context는 런마다 다름">
         <button class="${side === "A" ? "on" : ""}" data-dside="A">A: ${esc(runLabel(S.run))}</button>
         <button class="${side === "B" ? "on" : ""}" data-dside="B">B: ${esc(runLabel(S.runB))}</button></div>`;
       sideChip = "";  // 알약이 세팅 표시를 대신함
@@ -1583,7 +1582,7 @@ async function renderTrace(el) {
   // B 비교 중엔 어느 세팅의 trace를 볼지 선택 (B 요소 클릭 시 자동으로 B로 전환됨)
   const side = S.runB && S.traceSide === "B" ? "B" : "A";
   const traceRun = side === "B" ? S.runB : S.run;
-  const pills = S.runB ? `<div class="pill-filter" style="margin:0 0 8px" data-desc="Trace를 볼 세팅 선택 — trace는 Stage A 산물이라 런마다 별도">
+  const pills = S.runB ? `<div class="pill-filter" style="margin:0 0 8px" data-desc="Trace를 볼 세팅 선택: trace는 Stage A 산물이라 런마다 별도">
       <button class="${side === "A" ? "on" : ""}" data-side="A">A: ${esc(runLabel(S.run))}</button>
       <button class="${side === "B" ? "on" : ""}" data-side="B">B: ${esc(runLabel(S.runB))}</button></div>` : "";
   const bindPills = () => $$(".pill-filter button[data-side]", el).forEach((b) =>
@@ -1597,7 +1596,7 @@ async function renderTrace(el) {
     catch { el.innerHTML = pills + `<p class='muted'>${side} 런(${esc(runLabel(traceRun))})에는 trace가 없습니다</p>`; bindPills(); return; }
     S.traceCache.set(cacheKey, recs);
   }
-  el.innerHTML = pills + `<div class="anchor-label">S${S.session} trace${S.runB ? ` · ${side}=${esc(runLabel(traceRun))}` : ""} — ${recs.length}건 (시간순) · 클릭하면 펼침 (한 번에 하나)</div>` +
+  el.innerHTML = pills + `<div class="anchor-label">S${S.session} trace${S.runB ? ` · ${side}=${esc(runLabel(traceRun))}` : ""}: ${recs.length}건 (시간순) · 클릭하면 펼침 (한 번에 하나)</div>` +
     recs.map((r, i) => `<div class="tr-rec" data-i="${i}">
       <div class="hdr" data-k="${esc(r.event)}">
         <span class="small muted">#${r.seq}</span>
@@ -1628,7 +1627,7 @@ function highlightTraceTarget(r, side = "A") {
   if (S.tab !== "sessions") return;
   const s = S.bundle.sessions.find((x) => x.session_id === S.session);
   if (!s) return;
-  // B trace를 보는 중이면 추출 매칭은 B 카드([data-b-ext])에 — 골든·질문은 데이터셋 공통이라 그대로
+  // B trace를 보는 중이면 추출 매칭은 B 카드([data-b-ext])에: 골든·질문은 데이터셋 공통이라 그대로
   const sB = side === "B" ? S.bundleB?.sessions.find((x) => x.session_id === S.session) : null;
   const extList = side === "B" ? (sB?.extracted || []) : s.extracted;
   const extSel = (i) => side === "B" ? `[data-b-ext="${i}"]` : `[data-a="ext:${i}"]`;
@@ -1663,14 +1662,14 @@ function traceDetail(r) {
   if (r.event === "llm_call" && r.llm) {
     const L = r.llm;
     // reasoning 모델은 사고 과정이 message.reasoning으로 분리 반환된다 (vLLM --reasoning-parser).
-    // 옛 런에는 이 필드가 없다 — tracing.py에 기록이 추가된 이후 런부터 존재.
+    // 옛 런에는 이 필드가 없다. tracing.py에 기록이 추가된 이후 런부터 존재.
     const meta = [
       L.finish_reason ? `finish_reason=${L.finish_reason}` : "",
       L.completion_tokens != null ? `출력 ${L.completion_tokens.toLocaleString()} tok` : "",
       L.reasoning_tokens != null ? `그중 사고 ${L.reasoning_tokens.toLocaleString()} tok` : "",
     ].filter(Boolean).join(" · ");
     return r.llm.messages.map((m) => `<p class="small"><b>${esc(m.role)}</b></p><pre class="mono">${esc(m.content)}</pre>`).join("") +
-      (L.reasoning ? `<p class="small"><b data-desc="모델이 답을 내기 전 생성한 사고 과정 — 응답 본문(content)에는 포함되지 않습니다">reasoning (사고 과정)</b> <span class="small muted">${esc(String(L.reasoning).length.toLocaleString())}자</span></p><pre class="mono reason">${esc(L.reasoning)}</pre>` : "") +
+      (L.reasoning ? `<p class="small"><b data-desc="모델이 답을 내기 전 생성한 사고 과정: 응답 본문(content)에는 포함되지 않습니다">reasoning (사고 과정)</b> <span class="small muted">${esc(String(L.reasoning).length.toLocaleString())}자</span></p><pre class="mono reason">${esc(L.reasoning)}</pre>` : "") +
       `<p class="small"><b>response</b>${meta ? ` <span class="small muted">${esc(meta)}</span>` : ""}</p><pre class="mono">${esc(L.response)}</pre>`;
   }
   if (r.event === "retrieval" && r.retrieval) {
@@ -1694,13 +1693,13 @@ function traceDetail(r) {
 
 function cmtHTML(c, canGoto = false) {
   const mine = c.author === S.author;
-  // ① 대상 세팅(런) — 가장 중요: 이 코멘트가 어떤 모델/세팅의 요소를 가리키는가.
+  // ① 대상 세팅(런): 가장 중요: 이 코멘트가 어떤 모델/세팅의 요소를 가리키는가.
   //    A쪽 앵커(mp/ext/turn/qa/session)는 c.run, B쪽 앵커(extb)는 c.run_b가 대상
   const isB = c.anchor.includes("/extb:");
   const target = isB ? (c.run_b || null) : c.run;
   const targetChip = `<span class="tagchip" style="font-weight:800; color:${isB ? "var(--bcol)" : "var(--accent)"}"
-    data-desc="이 코멘트의 대상 세팅(런): ${esc(target ? runLabel(target) : "당시 비교(B) 쪽 요소에 단 코멘트인데 B 런 기록이 없는 구버전 코멘트")}${isB && target ? " — 당시 비교(B) 쪽 요소에 단 코멘트" : ""}">▶ ${esc(target ? runLabel(target) : "B 런 (기록 없음)")}</span>`;
-  // ② 작성 당시 관측 스택 (generator/judge — 구 코멘트는 빈 값이라 생략)
+    data-desc="이 코멘트의 대상 세팅(런): ${esc(target ? runLabel(target) : "당시 비교(B) 쪽 요소에 단 코멘트인데 B 런 기록이 없는 구버전 코멘트")}${isB && target ? ": 당시 비교(B) 쪽 요소에 단 코멘트" : ""}">▶ ${esc(target ? runLabel(target) : "B 런 (기록 없음)")}</span>`;
+  // ② 작성 당시 관측 스택 (generator/judge: 구 코멘트는 빈 값이라 생략)
   //    비교 상대는 대상의 반대편: B에 단 코멘트면 상대=A(c.run), A에 단 코멘트면 상대=B(c.run_b)
   const counterpart = isB ? c.run : c.run_b;
   const cpTxt = counterpart ? ` (당시 비교 상대 ${isB ? "A" : "B"}=${esc(runLabel(counterpart))})` : "";
@@ -1708,8 +1707,8 @@ function cmtHTML(c, canGoto = false) {
   if (c.generator) ctxBits.push(`gen=${genLabel(c.generator)}`);
   if (c.judge) ctxBits.push(`judge=${judgeLabel(c.judge)}`);
   const ctxChip = ctxBits.length
-    ? `<span class="tagchip" data-desc="작성 당시 관측 스택 — 답변·라벨이 이 generator/judge 기준이었음${cpTxt}">${esc(ctxBits.join(" · "))}</span>`
-    : `<span class="tagchip" data-desc="generator/judge 기록이 없는 구버전 코멘트 — 어떤 세팅에서 봤는지 재구성 불가">세팅 기록 없음</span>`;
+    ? `<span class="tagchip" data-desc="작성 당시 관측 스택: 답변·라벨이 이 generator/judge 기준이었음${cpTxt}">${esc(ctxBits.join(" · "))}</span>`
+    : `<span class="tagchip" data-desc="generator/judge 기록이 없는 구버전 코멘트: 어떤 세팅에서 봤는지 재구성 불가">세팅 기록 없음</span>`;
   const other = !cmtMatches(c);  // 다른 세팅에서 단 코멘트 → 점선 테두리 + 흐리게
   return `<div class="cmt${other ? " other" : ""}"><div class="meta"><span class="author">${esc(c.author)}</span>
     ${c.tag ? `<span class="tagchip">${esc(c.tag)}</span>` : ""}
@@ -1750,7 +1749,7 @@ function renderComments(el) {
       body: JSON.stringify({
         run: S.run, uuid: S.uuid, anchor: S.anchor, author: S.author,
         tag: $("#cmt-tag").value, body, quote: S.pendingQuote,
-        // 작성 당시 관측 세팅 기록 — 나중에 어떤 generator/judge 라벨을 보며 단 코멘트인지 재구성 가능
+        // 작성 당시 관측 세팅 기록: 나중에 어떤 generator/judge 라벨을 보며 단 코멘트인지 재구성 가능
         generator: S.generator, judge: S.judge, run_b: S.runB || "",
       }),
     });
@@ -1776,16 +1775,16 @@ const LABEL_SETS = {
   accuracy: [["2", "전부 근거 있음", "이 메모리의 모든 내용이 대화·골든에 근거"], ["1", "부분 근거", "일부만 근거 있음"], ["0", "근거 없음/모순", "대화에 없거나 모순됨"]],
   update: [["Correct", "Correct", "갱신본의 모든 원자 정보·수치가 정확"], ["Hallucination", "Hallucination", "틀린 값을 만들어냄"], ["Omission", "Omission", "디테일을 누락"], ["Other", "Other", "위 셋 중 어디에도 명확히 속하지 않는 갱신 실패 (judge 프롬프트의 4번째 분류)"]],
   qa: [["Correct", "Correct", "정답과 의미가 완전히 동등. ⚠ 정답이 '알 수 없음'인데 시스템도 추측 없이 모른다고 답하면 Correct"], ["Hallucination", "Hallucination", "날조·모순. 정답이 '알 수 없음'인데 단정적 사실을 답한 경우도 포함"], ["Omission", "Omission", "날조는 없으나 필요한 요소를 누락 (다요소 질문은 하나만 빠져도 Omission)"]],
-  // 벤치마크 자체 검수 축 — judge 판정이 아니라 '이 문항의 골든 정답이 타당한가'를 본다.
-  // ⚠ 세 라벨의 갈림점은 '얼마나 나쁜가'가 아니라 **조치**다:
+  // 벤치마크 자체 검수: '이 문항의 골든 정답이 타당한가'를 본다 (judge 판정 검토와 별개).
+  // ⚠ 세 라벨은 '얼마나 나쁜가'로 갈리지 않는다. **조치**로 갈린다:
   //    그대로 씀 / 정답·채점을 고침 / 문항을 뺌.
   //    '근거 없음'만 유일하게 달성 가능한 QA 상한을 깎으므로 반드시 따로 센다.
-  //    (구 라벨 ambiguous는 wrong으로 접어 집계한다 — 조치가 같아 쪼갤 실익이 없었음)
+  //    (구 라벨 ambiguous는 wrong으로 접어 집계한다. 조치가 같아 쪼갤 실익이 없었음)
   gold_qa: [["valid", "타당", "대화에 근거가 있고, 정답 표현도 이것 하나로 좁혀진다. 이대로 채점 기준으로 쓸 수 있다"],
-            ["wrong", "골든 정답이 잘못됨", "<b>문항은 멀쩡한데 정답 쪽이 문제다.</b> 두 경우를 모두 포함한다:<br>① 골든 값이 그냥 틀렸다 — §13 s7/qa3: 정답이 \"Unknown\"인데 12개 세팅이 전부 \"No siblings mentioned\"로 답해 오답 처리됐다.<br>② 똑같이 타당한 다른 표현도 정답인데 골든이 그중 하나만 인정한다 — §13 s23/qa0: \"alternating crowded and remote destinations\" vs 골든 \"crowded tourist spots for cultural enrichment\".<br><b>→ 옆의 대안 정답 칸에 올바른(또는 함께 인정해야 할) 답을 적어주세요.</b>"],
-            ["unanswerable", "대화에 근거 없음", "<b>그 정보가 대화에 아예 없다.</b> 어떤 메모리 시스템도 원리적으로 맞힐 수 없다.<br>§13 s52/qa3: 골든 \"From 20000 to 23000 yuan\" — 이 수치는 <b>64개 세션 대화 전체에 0회 등장</b>하고 persona_info에도 없다. 구조화 프로필 필드에만 존재한다.<br><b>→ 문항 자체를 벤치마크에서 빼야 한다. 이 라벨만 달성 가능한 QA 상한을 깎는다.</b>"]],
+            ["wrong", "골든 정답이 잘못됨", "<b>문항은 멀쩡한데 정답 쪽이 문제다.</b> 두 경우를 모두 포함한다:<br>① 골든 값이 그냥 틀렸다. §13 s7/qa3: 정답이 \"Unknown\"인데 12개 세팅이 전부 \"No siblings mentioned\"로 답해 오답 처리됐다.<br>② 똑같이 타당한 다른 표현도 정답인데 골든이 그중 하나만 인정한다. §13 s23/qa0: \"alternating crowded and remote destinations\" vs 골든 \"crowded tourist spots for cultural enrichment\".<br><b>→ 옆의 대안 정답 칸에 올바른(또는 함께 인정해야 할) 답을 적어주세요.</b>"],
+            ["unanswerable", "대화에 근거 없음", "<b>그 정보가 대화에 아예 없다.</b> 어떤 메모리 시스템도 원리적으로 맞힐 수 없다.<br>§13 s52/qa3: 골든 \"From 20000 to 23000 yuan\": 이 수치는 <b>64개 세션 대화 전체에 0회 등장</b>하고 persona_info에도 없다. 구조화 프로필 필드에만 존재한다.<br><b>→ 문항 자체를 벤치마크에서 빼야 한다. 이 라벨만 달성 가능한 QA 상한을 깎는다.</b>"]],
 };
-// 오라클로 대체한 파이프라인 단계 — 추출 프롬프트 종류(default/custom)와는 독립된 축
+// 오라클로 대체한 파이프라인 단계. 추출 프롬프트 종류(default/custom)와 독립된 항목
 const ORACLE_STAGE_NAMES = {
   "": "없음",
   "extraction": "추출",
@@ -1794,34 +1793,34 @@ const ORACLE_STAGE_NAMES = {
 };
 const oracleLabel = (v) => ORACLE_STAGE_NAMES[v || ""] || v;
 
-// 오라클 행에서 특정 지표를 '–'로 가리는 이유 — 칸에 호버하면 뜬다.
+// 오라클 행에서 특정 지표를 '–'로 가리는 이유: 칸에 호버하면 뜬다.
 // 계단이 단순하지 않다는 게 요점이다: 오라클을 넣으면 그 단계의 '내용 품질' 지표는 자명해져 죽지만
 // '생존율' 지표(R·Weighted R)와 다음 단계 지표(Upd)는 그 단계만 단독으로 재게 되어 오히려 살아난다.
 const MASK_WHY = {
-  acc: "추출 오라클 — 저장물이 골든 원문 그대로라 정확도가 자명하게 높습니다. 백본 능력을 재는 값이 아닙니다",
-  tp: "추출 오라클 — 저장물이 골든 원문 그대로라 자명하게 높습니다",
-  f1: "추출 오라클 — Target P가 자명해져 조합 지표인 F1도 읽을 수 없습니다",
-  fmr: "추출 오라클 — 미끼(interference) 골든을 애초에 주입하지 않으므로 '흡수하지 않은 비율'이 무의미합니다",
-  r: "갱신 오라클 — 골든이 정의상 전부 저장되어 100입니다. (추출 오라클만 걸린 행에서는 이 값이 <b>살아 있습니다</b>: 완벽히 추출해도 저장까지 살아남지 못한 비율 = 갱신 결정의 손실)",
-  wr: "갱신 오라클 — 정의상 100입니다",
-  upd_c: "갱신 오라클 — 갱신을 정답대로 수행하므로 정의상 100 근처입니다. (추출 오라클만 걸린 행에서는 <b>살아 있습니다</b>: 추출이 완벽할 때의 갱신 능력 단독 측정)",
-  upd_h: "갱신 오라클 — 정의상 0입니다",
-  upd_o: "갱신 오라클 — 정의상 0입니다",
+  acc: "추출 오라클: 저장물이 골든 원문 그대로라 정확도가 자명하게 높습니다. 백본 능력을 재는 값이 아닙니다",
+  tp: "추출 오라클: 저장물이 골든 원문 그대로라 자명하게 높습니다",
+  f1: "추출 오라클: Target P가 자명해져 조합 지표인 F1도 읽을 수 없습니다",
+  fmr: "추출 오라클: 미끼(interference) 골든을 애초에 주입하지 않으므로 '흡수하지 않은 비율'이 무의미합니다",
+  r: "갱신 오라클: 골든이 정의상 전부 저장되어 100입니다. (추출 오라클만 걸린 행에서는 이 값이 <b>살아 있습니다</b>: 완벽히 추출해도 저장까지 살아남지 못한 비율 = 갱신 결정의 손실)",
+  wr: "갱신 오라클: 정의상 100입니다",
+  upd_c: "갱신 오라클: 갱신을 정답대로 수행하므로 정의상 100 근처입니다. (추출 오라클만 걸린 행에서는 <b>살아 있습니다</b>: 추출이 완벽할 때의 갱신 능력 단독 측정)",
+  upd_h: "갱신 오라클: 정의상 0입니다",
+  upd_o: "갱신 오라클: 정의상 0입니다",
 };
 const maskDesc = (r, k) =>
-  `<b>읽을 수 없는 지표</b> — 이 행은 <b>${esc(oracleLabel(r.oracle))}</b>을(를) 오라클로 대체한 실험입니다.<br>${MASK_WHY[k] || "오라클 대체로 이 지표가 자명해집니다"}<br><span class="small">오라클 행에서는 <b>QA</b> 지표만 해석합니다.</span>`;
+  `<b>읽을 수 없는 지표</b>: 이 행은 <b>${esc(oracleLabel(r.oracle))}</b>을(를) 오라클로 대체한 실험입니다.<br>${MASK_WHY[k] || "오라클 대체로 이 지표가 자명해집니다"}<br><span class="small">오라클 행에서는 <b>QA</b> 지표만 해석합니다.</span>`;
 
 const REC_NAMES = { integrity: "골든 포함 (Integrity)", accuracy: "추출 근거 (Accuracy)", update: "갱신 (Update)", qa: "질의응답 (QA)",
                     gold_qa: "골든 정답 검수 (벤치마크 품질)" };
-// judge 채점 4종이 각각 무엇을 묻는지 — 유형 이름에 호버하면 뜬다 (분석가가 라벨 의미를 헷갈리지 않도록)
+// judge 채점 4종이 각각 무엇을 묻는지: 유형 이름에 호버하면 뜬다 (분석가가 라벨 의미를 헷갈리지 않도록)
 const REC_DESCS = {
-  integrity: "<b>골든 포함 (Memory Integrity)</b><br>정답 메모리(골든 MP)가 시스템이 <b>추출한 메모리 목록 안에 담겼는지</b>를 봅니다.<br>judge 라벨 <b>0</b>=미포함 · <b>1</b>=부분 포함 · <b>2</b>=완전 포함.<br><span class='small'>지표 R·Weighted R의 원천. ⚠ interference(미끼) 골든은 여기가 아니라 FMR로 채점됩니다.</span>",
-  accuracy: "<b>추출 근거 (Memory Accuracy)</b><br>시스템이 <b>추출한 메모리가 그 세션 대화·골든에 근거하는지</b>(날조·왜곡 여부)를 봅니다. 방향이 Integrity와 반대입니다 — 이쪽은 시스템 산출물이 심판 대상.<br>judge 라벨 <b>0/1/2</b>점.<br><span class='small'>지표 Acc·Target P의 원천.</span>",
+  integrity: "<b>골든 포함 (Memory Integrity)</b><br>정답 메모리(골든 MP)가 시스템이 <b>추출한 메모리 목록 안에 담겼는지</b>를 봅니다.<br>judge 라벨 <b>0</b>=미포함 · <b>1</b>=부분 포함 · <b>2</b>=완전 포함.<br><span class='small'>지표 R·Weighted R의 원천. ⚠ interference(미끼) 골든은 여기서 빠지고 FMR로 채점됩니다.</span>",
+  accuracy: "<b>추출 근거 (Memory Accuracy)</b><br>시스템이 <b>추출한 메모리가 그 세션 대화·골든에 근거하는지</b>(날조·왜곡 여부)를 봅니다. 방향이 Integrity와 반대입니다. 이쪽은 시스템 산출물이 심판 대상.<br>judge 라벨 <b>0/1/2</b>점.<br><span class='small'>지표 Acc·Target P의 원천.</span>",
   update: "<b>갱신 (Memory Update)</b><br><code>is_update</code> 골든에 대해 시스템 메모리가 <b>갱신된 내용을 정확히 담고 원본을 대체했는지</b>를 봅니다.<br>judge 라벨 <b>Correct · Hallucination · Omission · Other</b>.<br><span class='small'>지표 Upd C/H/O의 원천. judge 간 합의가 가장 낮은 항목(Fleiss κ 0.384)이라 단독 결론 금지.</span>",
   qa: "<b>질의응답 (Question Answering)</b><br>검색 context로 <b>생성된 답변이 골든 정답과 맞는지</b>를 봅니다. 유일하게 답변 생성 레인(generator)에 종속되는 항목입니다.<br>judge 라벨 <b>Correct · Hallucination · Omission</b>.<br><span class='small'>지표 QA C/H/O의 원천. 반복 채점 안정성은 가장 높습니다(κ 0.888).</span>",
-  gold_qa: "<b>골든 정답 검수</b><br>골든 정답 자체가 <b>채점 기준으로 타당한지</b>를 봅니다 (벤치마크 품질 축).<br><span class='small'>judge와 대조하는 축이 아니라 IAA 집계에서 제외됩니다.</span>",
+  gold_qa: "<b>골든 정답 검수</b><br>골든 정답 자체가 <b>채점 기준으로 타당한지</b>를 봅니다 (벤치마크 품질 검수).<br><span class='small'>judge 판정과 비교하지 않으므로 IAA 집계에서 제외됩니다.</span>",
 };
-// 유형 이름 — 한글·영문 병기 + 호버 설명
+// 유형 이름: 한글·영문 병기 + 호버 설명
 const recTag = (t) => `<span class="rectag" data-desc="${esc(REC_DESCS[t] || "")}">${esc(REC_NAMES[t] || t)}</span>`;
 
 const JM = { ctx: null, data: null, my: null, revealed: false, raw: false, queue: null, qi: -1, blind: true, note: "", gt: "", agree: null };
@@ -1859,10 +1858,10 @@ function jmFieldsHTML(d) {
     + box(`골든 메모리 (미끼 제외, ${(f.golden_memories || []).length})`, list(f.golden_memories))
     + box(`이 세션 대화 (${(f.dialogue || []).length}턴)`, `<div class="jdlg">${(f.dialogue || []).map((x) =>
         `<div class="jt ${esc(x.role)}"><span class="r"><span class="ts">[${esc(x.timestamp)}]</span>${esc(x.role)}</span><span>${esc(x.content)}</span></div>`).join("")}</div>`,
-        "judge는 대화 전체를 근거로 이 메모리가 지지되는지 봅니다 — 다른 세션 내용은 보지 못합니다. 프롬프트에는 각 발화가 [타임스탬프]역할: 내용 형식으로 들어갑니다");
+        "judge는 대화 전체를 근거로 이 메모리가 지지되는지 봅니다. 다른 세션 내용은 보지 못합니다. 프롬프트에는 각 발화가 [타임스탬프]역할: 내용 형식으로 들어갑니다");
   if (t === "update") return box(`평가 대상 갱신 골든 <span class="jtag gold">이게 반영됐는가?</span>`, `<div class="jtarget">${esc(f.updated_memory)}</div>`)
     + box("원본 메모리 (갱신 전)", list(f.original_memory))
-    + box(`시스템 메모리 검색 스냅샷 (top-10)`, list(f.memories), "Stage A에서 이 갱신 골든으로 검색한 상위 10건 — judge는 이 안에 갱신 내용이 반영됐는지 봅니다");
+    + box(`시스템 메모리 검색 스냅샷 (top-10)`, list(f.memories), "Stage A에서 이 갱신 골든으로 검색한 상위 10건. judge는 이 안에 갱신 내용이 반영됐는지 봅니다");
   return box("질문", `<div class="jtarget">${esc(f.question)}</div>`)
     + box("골든 정답", `<div class="jans">${esc(f.reference_answer)}</div>`)
     + box(`핵심 근거 골든 (${(f.key_memory_points || []).length})`, list(f.key_memory_points))
@@ -1879,7 +1878,7 @@ function jmRender() {
     <span class="jchip t-${esc(c.rec_type)}">${esc(REC_NAMES[c.rec_type])}</span>
     <span class="jchip">${esc(runLabel(c.run))}</span><span class="jchip">S${c.session_id}</span>
     ${qpos}<span style="margin-left:auto"></span>
-    <label class="jsw" data-desc="켜면 judge 판정을 가린 채 먼저 라벨합니다 (앵커링 편향 방지 — IAA 신뢰도의 핵심)"><input type="checkbox" id="jm-blind" ${JM.blind ? "checked" : ""}> 블라인드</label>
+    <label class="jsw" data-desc="켜면 judge 판정을 가린 채 먼저 라벨합니다 (앵커링 편향 방지: IAA 신뢰도의 핵심)"><input type="checkbox" id="jm-blind" ${JM.blind ? "checked" : ""}> 블라인드</label>
     <button class="jbtn" id="jm-iaa">📊 IAA</button><button class="jbtn" id="jm-close">✕</button>`;
 
   if (!d) { el.innerHTML = `<p class="muted" style="padding:20px">judge 입력 재현 중…</p>`; jmBind(); return; }
@@ -1888,7 +1887,7 @@ function jmRender() {
   const opts = LABEL_SETS[c.rec_type];
   const curJudge = c.judge_name || S.judge;
   const myJudge = d.judge_labels?.[curJudge];
-  // 모든 judge를 한 줄씩 — 각 judge별로 내 판정과의 일치 여부를 따로 표시 (현재 선택 judge를 맨 위)
+  // 모든 judge를 한 줄씩: 각 judge별로 내 판정과의 일치 여부를 따로 표시 (현재 선택 judge를 맨 위)
   const jList = Object.entries(d.judge_labels || {})
     .sort(([a], [b]) => (a === curJudge ? -1 : b === curJudge ? 1 : 0));
   // 동일 judge를 같은 입력으로 반복 채점한 결과가 갈리면 = 판정이 경계선에 있는 항목
@@ -1896,7 +1895,7 @@ function jmRender() {
   const repSet = [...new Set(reps.map(normLab))];
   const unstable = reps.length >= 2 && repSet.length > 1;
 
-  // 골든 정답 검수 축: judge 대조 없이 '정답 타당성 + 내가 생각하는 정답'만 기록
+  // 골든 정답 검수: judge 대조 없이 '정답 타당성 + 내가 생각하는 정답'만 기록
   if (c.rec_type === "gold_qa") {
     el.innerHTML = `
       <div class="jleft">
@@ -1904,7 +1903,7 @@ function jmRender() {
         ${JM.raw ? `<pre class="mono jraw">${esc(d.prompt)}</pre>` : jmFieldsHTML({ ...d, rec_type: "qa" })}
       </div>
       <div class="jright">
-        <div class="jsec"><h5 data-desc="judge의 판정이 아니라 벤치마크가 제시한 골든 정답 자체가 채점 기준으로 타당한지를 봅니다">① 이 골든 정답은 타당한가?</h5>
+        <div class="jsec"><h5 data-desc="벤치마크가 제시한 골든 정답 자체가 채점 기준으로 타당한지를 봅니다 (judge 판정을 검토하는 항목과는 다릅니다)">① 이 골든 정답은 타당한가?</h5>
           <div class="jopts">${LABEL_SETS.gold_qa.map(([v, label, desc]) =>
             `<button class="jopt ${JM.my === v ? "on" : ""}" data-lab="${esc(v)}" data-desc="${esc(desc)}">${esc(label)}</button>`).join("")}</div></div>
         <div class="jsec"><h5>② 내가 생각하는 정답 (선택)</h5>
@@ -1922,7 +1921,7 @@ function jmRender() {
     <div class="jleft">
       <div class="jtoggle"><button class="jbtn ${JM.raw ? "" : "on"}" id="jm-view">정리된 화면</button><button class="jbtn ${JM.raw ? "on" : ""}" id="jm-rawv">judge가 받은 프롬프트 원문 (${d.prompt.length.toLocaleString()}자)</button></div>
       ${JM.raw ? `<pre class="mono jraw">${esc(d.prompt)}</pre>` : jmFieldsHTML(d) + `
-        <details class="jrubric"><summary data-desc="judge가 프롬프트로 받은 채점 지시문 원문 — 위 데이터가 {중괄호} 자리에 들어갑니다. 분석가도 같은 기준으로 판정해야 비교가 성립합니다">judge가 받은 채점 기준 (지시문 원문) 펼치기</summary>
+        <details class="jrubric"><summary data-desc="judge가 프롬프트로 받은 채점 지시문 원문: 위 데이터가 {중괄호} 자리에 들어갑니다. 분석가도 같은 기준으로 판정해야 비교가 성립합니다">judge가 받은 채점 기준 (지시문 원문) 펼치기</summary>
           <pre class="mono">${esc(d.template || "")}</pre></details>`}
     </div>
     <div class="jright">
@@ -1938,11 +1937,11 @@ function jmRender() {
               const offSpec = v != null && !spec.includes(normLab(v));
               const hit = JM.my != null && labMatch(v, JM.my);
               const cell = JM.my == null ? ""
-                : v == null ? `<span class="jmatch na" data-desc="judge가 이 항목을 무효(None) 처리했습니다 — 대조 대상이 없습니다">대조 불가</span>`
+                : v == null ? `<span class="jmatch na" data-desc="judge가 이 항목을 무효(None) 처리했습니다. 대조 대상이 없습니다">대조 불가</span>`
                 : offSpec ? `<span class="jmatch na" data-desc="judge가 프롬프트 규격(${esc(LABEL_SETS[c.rec_type].map(([x]) => x).join(' / '))})에 없는 값을 반환했습니다. 선택지에 없으므로 일치 여부를 판정하지 않습니다. ⚠ HaluMem 공식 집계도 이런 값은 어느 비율에도 세지 않고 분모만 키웁니다">대조 불가</span>`
                 : `<span class="jmatch ${hit ? "ok" : "no"}">${hit ? "일치" : "불일치"}</span>`;
               return `<tr class="${k === curJudge ? "cur" : ""}">
-                <td class="jn">${k === curJudge ? '<span class="curdot" data-desc="상단바에서 선택 중인 judge — 주석 저장 시 이 judge의 라벨이 기록됩니다">●</span>' : ""}${esc(judgeLabel(k))}</td>
+                <td class="jn">${k === curJudge ? '<span class="curdot" data-desc="상단바에서 선택 중인 judge: 주석 저장 시 이 judge의 라벨이 기록됩니다">●</span>' : ""}${esc(judgeLabel(k))}</td>
                 <td class="jv">${esc(String(v ?? "–"))}${offSpec ? '<span class="offspec" data-desc="프롬프트가 정의하지 않은 라벨">규격외</span>' : ""}</td>
                 <td>${cell}</td></tr>`;
             }).join("")}</table>` : `<p class="small muted">이 항목에 대한 judge 라벨이 없습니다</p>`)
@@ -2004,7 +2003,7 @@ async function jmStartQueue() {
   JM.queue = d.items; jmGo(0);
 }
 
-// judge 라벨 표기 — 0/1/2가 분석가 번호로 오독되지 않게 항상 뜻을 붙인다
+// judge 라벨 표기: 0/1/2가 분석가 번호로 오독되지 않게 항상 뜻을 붙인다
 const labMeta = (t, v) => (LABEL_SETS[t] || []).find((x) => x[0] === String(v));
 const labDesc = (t, v) => { const m = labMeta(t, v); return m ? `${m[0]}=${m[1]}` : String(v ?? "–"); };
 const labChip = (t, v) => {
@@ -2019,13 +2018,13 @@ const pctCell = (o) => o && o.n ? `${o.agree}% <span class="muted small">(${o.n}
 
 // 골든 정답 검수 결과 화면.
 // IAA 화면과 묻는 것이 다르다: 저쪽은 "judge 채점이 맞았나", 여기는 **"문항이 채점 기준으로 쓸 만한가"**.
-// 핵심은 라벨 × 시스템 정답률 교차표다 — 분석가가 '근거 없음'이라 한 문항을 실제로 모든 시스템이
+// 핵심은 라벨 × 시스템 정답률 교차표다. 분석가가 '근거 없음'이라 한 문항을 실제로 모든 시스템이
 // 틀렸다면 그 진단이 데이터로 확인되고, 동시에 QA 점수 중 벤치마크 결함 몫이 정량화된다.
 const GQ_LAB = { valid: "타당", wrong: "골든 정답이 잘못됨", unanswerable: "대화에 근거 없음", "동률": "동률(합의 없음)" };
 const GQ_FIX = {
   valid: "그대로 채점 기준으로 쓸 수 있음",
-  wrong: "<b>정답·채점을 고쳐야 함</b> — 문항은 살리되 올바른 답(또는 함께 인정할 동등 표현)으로 교정",
-  unanswerable: "<b>문항을 빼야 함</b> — 대화에 근거가 없어 어떤 시스템도 원리적으로 못 맞힘. 이 라벨만 달성 가능한 QA 상한을 깎는다",
+  wrong: "<b>정답·채점을 고쳐야 함</b>: 문항은 살리되 올바른 답(또는 함께 인정할 동등 표현)으로 교정",
+  unanswerable: "<b>문항을 빼야 함</b>: 대화에 근거가 없어 어떤 시스템도 원리적으로 못 맞힘. 이 라벨만 달성 가능한 QA 상한을 깎는다",
 };
 // 사람 기준(3인 합의 / 개별 분석가)을 바꿀 때 화면 전체를 다시 그리면 스크롤이 튀고 느리다.
 // 필요한 데이터는 이미 응답 안에 다 들어 있으므로, 이 표만 다시 만들어 갈아끼운다.
@@ -2034,8 +2033,8 @@ function iaaMatrixHTML(d) {
       const MM = d.matrices[ref], baseM = MM[0], others = MM.slice(1);
       const isCons = ref === d.matrix_refs[0];
       // ⚠ 유형 × 모델 매트릭스로 본다. 모델을 행으로 두면 '한 유형에서 번 것을 다른 유형에서
-      //    잃는' 상쇄 구조가 안 보인다 — 그걸 놓치면 정반대 결론을 내게 된다.
-      // 행(판정 유형)별 최고 일치율 — 색(McNemar 유의)과 의미가 겹치지 않게 테두리로 구분한다
+      //    잃는' 상쇄 구조가 안 보인다. 그걸 놓치면 정반대 결론을 내게 된다.
+      // 행(판정 유형)별 최고 일치율: 색(McNemar 유의)과 의미가 겹치지 않게 테두리로 구분한다
       const rowBest = (t) => {
         const vals = [baseM, ...others].map((m) => (t ? m.by_type[t] : m)).filter(Boolean).map((s) => s.agree);
         return vals.length ? Math.max(...vals) : null;
@@ -2047,10 +2046,10 @@ function iaaMatrixHTML(d) {
         const sig = v && v.p < 0.05 ? (v.better > v.worse ? " tw" : " tl") : "";
         const best = s.agree === rowBest(t) ? " best" : "";
         const desc = `<b>${esc(m.model)}</b> · ${t ? esc(REC_NAMES[t]) : "전체"}<br>일치 ${s.ok}/${s.n} (${s.agree}%) · κ ${s.kappa ?? "–"}`
-          + (s.bias != null ? `<br>편향 ${s.bias > 0 ? "+" : ""}${s.bias} — 사람이 judge보다 ${s.bias > 0.05 ? "<b>관대</b>" : s.bias < -0.05 ? "<b>가혹</b>" : "중립"} (0/1/2 척도)` : "")
+          + (s.bias != null ? `<br>편향 ${s.bias > 0 ? "+" : ""}${s.bias}: 사람이 judge보다 ${s.bias > 0.05 ? "<b>관대</b>" : s.bias < -0.05 ? "<b>가혹</b>" : "중립"} (0/1/2 척도)` : "")
           + (s.agree === rowBest(t) ? `<br><b>이 유형에서 최고 일치율</b>` : "")
           + (v ? `<br>기준 대비 개선 <b>${v.better}</b> : 악화 <b>${v.worse}</b> · p=${v.p}`
-                 + (v.p < 0.05 ? (v.better > v.worse ? " — <b>유의하게 개선</b>" : " — <b>유의하게 악화</b>") : " — 구분 불가") : "");
+                 + (v.p < 0.05 ? (v.better > v.worse ? ": <b>유의하게 개선</b>" : ": <b>유의하게 악화</b>") : ": 구분 불가") : "");
         return `<td class="mcell${sig}${best}" data-desc="${esc(desc)}"><b>${s.agree}%</b> <span class="muted small">${s.ok}/${s.n}</span>
           <br><span class="kap">κ ${s.kappa ?? "–"}</span>${
           v ? ` <span class="vs">${v.better}:${v.worse}${v.p < 0.05 ? " ✦" : ""}</span>` : ""}</td>`;
@@ -2060,29 +2059,29 @@ function iaaMatrixHTML(d) {
       const row = (t) => `<tr><td>${t ? recTag(t) : "<b>전체</b>"}</td>${[baseM, ...others].map((m) => cell(m, t)).join("")}${
         t ? fs(baseM.by_type[t]?.firm) + fs(baseM.by_type[t]?.split) : `<td class="muted">–</td><td class="muted">–</td>`}</tr>`;
       return `
-      <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다 — 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">사람 판정 vs judge — 유형 × 모델</h4>
-      <p class="small hrefsw" data-desc="사람 쪽 기준을 고릅니다. <b>3인 합의</b>는 다수결(동률 제외)이고, 개인을 고르면 그 분석가의 라벨을 그대로 정답으로 놓습니다 — 사람마다 judge와 얼마나 맞는지, 그리고 그 순위가 분석가에 따라 바뀌는지를 볼 수 있습니다.">
+      <h4 style="margin:18px 0 6px" data-desc="같은 항목을 <b>judge 모델만 바꿔 재채점</b>한 결과입니다. 채점 프롬프트는 원본과 비트 단위로 같고 모델만 다릅니다.<br>⚠ 모든 칸을 <b>같은 항목 집합</b>(재채점 모델 전부가 커버하는 교집합)에서 쟀습니다. 기준 judge는 큐 밖 라벨까지 있어 그대로 재면 쉬운 항목이 섞여 유리해집니다.">사람 판정 vs judge: 유형 × 모델</h4>
+      <p class="small hrefsw" data-desc="사람 쪽 기준을 고릅니다. <b>3인 합의</b>는 다수결(동률 제외)이고, 개인을 고르면 그 분석가의 라벨을 그대로 정답으로 놓습니다. 사람마다 judge와 얼마나 맞는지, 그리고 그 순위가 분석가에 따라 바뀌는지를 볼 수 있습니다.">
         <b>사람 기준</b>${d.matrix_refs.map((r) => `<button class="seg${r === ref ? " on" : ""}" data-href="${esc(r)}">${r === d.matrix_refs[0] ? "3인 합의" : esc(r)}</button>`).join("")}</p>
       <div class="jbasis" data-desc="같은 항목을 여러 모델이 판정했으므로 <b>대응표본</b>입니다. 독립표본 CI는 서로 크게 겹쳐 '구분 불가'로 오판하게 되므로 McNemar 정확검정으로 판정합니다.">
-        <b>⚠ 유형별로 보세요</b> — 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
+        <b>⚠ 유형별로 보세요</b>: 전체 행만 보면 <b>한 유형에서 번 것을 다른 유형에서 잃는 상쇄</b>가 안 보입니다.
         분석가에게 배정된 <b>공유 표본</b>에서 ${isCons ? "3인 <b>합의 라벨</b>" : `<b>${esc(ref)}</b> 님의 라벨`}을 기준으로 각 judge 모델의 판정을 대조합니다.
         <span class="small">칸의 <b>a:b</b>는 기준(gpt-oss-120b) 대비 <b>개선 : 악화</b> 건수, <b>✦</b>는 McNemar p&lt;0.05.
-        초록=유의하게 개선, 빨강=유의하게 악화. <b>굵은 테두리</b>는 그 유형에서 <b>최고 일치율</b>입니다(색과 별개 — 최고여도 기준 대비 유의하지 않을 수 있습니다). <b>순위 판정은 κ가 아니라 개선:악화로</b> 합니다 — κ는 우연 일치를 보정한 절대 수준(0.6↑ 견고)을 볼 때 씁니다.</span>
+        초록=유의하게 개선, 빨강=유의하게 악화. <b>굵은 테두리</b>는 그 유형에서 <b>최고 일치율</b>입니다(색과 별개. 최고여도 기준 대비 유의하지 않을 수 있습니다). <b>순위 판정에는 κ 대신 개선:악화를</b> 씁니다. κ는 우연 일치를 보정한 절대 수준(0.6↑ 견고)을 볼 때 씁니다.</span>
       </div>
       <table class="cmp jm"><tr><th>판정 유형</th>${[baseM, ...others].map((m) =>
-        `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/ — 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}
-        <th data-desc="기준 judge가 반복 채점에서 <b>매번 같은 라벨</b>을 준 항목에서의 사람 일치율 — judge가 확신한 구간">judge 확신 구간</th>
-        <th data-desc="기준 judge가 반복 채점에서 <b>갈렸던</b> 항목에서의 사람 일치율 — 여기가 낮으면 그 항목이 사람에게도 애매하다는 뜻">judge 흔들린 구간</th></tr>
+        `<th data-desc="${esc(m.model)}">${esc(m.model.replace(/: 기존$/, ""))}${/기존/.test(m.model) ? '<br><span class="small muted">기준</span>' : ""}</th>`).join("")}
+        <th data-desc="기준 judge가 반복 채점에서 <b>매번 같은 라벨</b>을 준 항목에서의 사람 일치율: judge가 확신한 구간">judge 확신 구간</th>
+        <th data-desc="기준 judge가 반복 채점에서 <b>갈렸던</b> 항목에서의 사람 일치율: 여기가 낮으면 그 항목이 사람에게도 애매하다는 뜻">judge 흔들린 구간</th></tr>
         ${["integrity", "accuracy", "update", "qa"].filter((t) => baseM.by_type[t]).map(row).join("")}
         <tr class="jm-tot">${row("").slice(4)}</tr></table>
-      <p class="small muted" style="margin-top:5px">개별 검토(큐 밖)로 라벨한 주석 ${d.outside_queue}건은 이 집계에서 제외됩니다 — 분석가가 의심스러운 항목을 골라 누른 <b>기회 표본</b>이라 섞으면 지표가 왜곡됩니다.</p>`;
+      <p class="small muted" style="margin-top:5px">개별 검토(큐 밖)로 라벨한 주석 ${d.outside_queue}건은 이 집계에서 제외됩니다. 분석가가 의심스러운 항목을 골라 누른 <b>기회 표본</b>이라 섞으면 지표가 왜곡됩니다.</p>`;
 }
 
 async function jmGoldQA() {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
   let d;
-  // 실패를 삼키면 '집계 중…'에서 영원히 멈춘 것처럼 보인다 — 원인을 화면에 그대로 띄운다
+  // 실패를 삼키면 '집계 중…'에서 영원히 멈춘 것처럼 보인다. 원인을 화면에 그대로 띄운다
   try {
     d = await api("/api/gold-qa?uuid=" + encodeURIComponent(S.uuid || ""));
   } catch (e) {
@@ -2100,17 +2099,17 @@ async function jmGoldQA() {
   const chip = (l) => `<span class="gq gq-${l}" data-desc="${esc(GQ_FIX[l] || "")}">${esc(GQ_LAB[l] || l)}</span>`;
   const done = d.n_items, tot = d.total_q || 0;
 
-  // 문제 있음으로 합의된 문항 비율 — §13의 '벤치마크 노이즈' 추정을 실측으로 바꾸는 값
+  // 문제 있음으로 합의된 문항 비율: §13의 '벤치마크 노이즈' 추정을 실측으로 바꾸는 값
   const bad = ORDER.slice(1).reduce((a, l) => a + (d.by_label[l] || 0), 0);
 
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
-    <div class="jbasis" data-desc="judge 판정 검토는 '채점이 맞았나'를 묻고, 이 축은 '문항이 애초에 채점 기준으로 쓸 만한가'를 묻습니다. 그래서 IAA 집계와 섞지 않고 따로 봅니다.">
-      <b>📝 이 화면이 묻는 것</b> — judge가 잘 채점했는지가 아니라, <b>골든 정답 자체가 채점 기준으로 타당한지</b>입니다.
-      <span class="small">라벨 셋은 '문제 있음'을 <b>원인별로</b> 가릅니다 — 고치는 방법이 각각 다르기 때문입니다:
+    <div class="jbasis" data-desc="judge 판정 검토는 '채점이 맞았나'를 묻습니다. 이 화면은 '문항이 애초에 채점 기준으로 쓸 만한가'를 묻습니다. 그래서 IAA 집계와 섞지 않고 따로 봅니다.">
+      <b>📝 이 화면이 묻는 것</b>: <b>골든 정답 자체가 채점 기준으로 타당한지</b>입니다. judge의 채점 품질을 보는 화면과는 다릅니다.
+      <span class="small">라벨 셋은 '문제 있음'을 <b>원인별로</b> 가릅니다. 고치는 방법이 각각 다르기 때문입니다:
       ${ORDER.slice(1).map((l) => `${chip(l)} ${GQ_FIX[l].replace(/<b>|<\/b>/g, "")}`).join(" · ")}</span>
     </div>
 
-    <h4 style="margin:14px 0 6px" data-desc="대상은 ${esc(d.user_name)} 님의 QA 문항 전수입니다 (생성 QA 세션 제외). 분석가별 막대는 각자 라벨한 문항 수">진행 현황 — ${esc(d.user_name)} · 문항 ${tot}개</h4>
+    <h4 style="margin:14px 0 6px" data-desc="대상은 ${esc(d.user_name)} 님의 QA 문항 전수입니다 (생성 QA 세션 제외). 분석가별 막대는 각자 라벨한 문항 수">진행 현황: ${esc(d.user_name)} · 문항 ${tot}개</h4>
     <p class="small muted">라벨된 문항 <b>${done}</b>개 (${tot ? (done / tot * 100).toFixed(0) : 0}%) · 주석 ${d.n}건 · 2인 이상 겹친 문항 ${d.pairs.reduce((a, p) => Math.max(a, p.n), 0)}개</p>
     <div class="qprog">${d.progress.map((a) => `<div class="qrow">
       <span class="qwho">${esc(a.annotator)}</span>
@@ -2123,7 +2122,7 @@ async function jmGoldQA() {
       .map(([l, n]) => `<span class="cf">${chip(l)} <b>${n}</b><span class="muted">건 ${(n / done * 100).toFixed(0)}%</span></span>`).join("")}</p>
     ${bad ? `<p class="small" data-desc="이 비율이 벤치마크 자체의 결함 몫입니다. 라벨된 문항이 적을 때는 표본 편향(분석가가 의심스러운 문항부터 볼 수 있음)에 주의하세요">
       → 라벨된 ${done}개 중 <b>${bad}개(${(bad / done * 100).toFixed(0)}%)</b>가 문항 결함으로 합의됐습니다.
-      ${done < 30 ? `<span class="muted">⚠ 아직 표본이 작습니다 (${done}/${tot}) — 전수 대비 비율로 읽지 마세요.</span>` : ""}</p>` : ""}
+      ${done < 30 ? `<span class="muted">⚠ 아직 표본이 작습니다 (${done}/${tot}): 전수 대비 비율로 읽지 마세요.</span>` : ""}</p>` : ""}
 
     ${!d.pairs.length ? "" : `
     <h4 style="margin:16px 0 6px" data-desc="같은 문항을 두 분석가가 모두 라벨한 경우만 집계됩니다. κ는 우연 일치 보정값">분석가 간 일치도</h4>
@@ -2133,13 +2132,13 @@ async function jmGoldQA() {
 
     ${!d.cross.length ? "" : `
     <h4 style="margin:18px 0 6px" data-desc="사람이 매긴 문항 품질 라벨과, 그 문항에서 실제 시스템들이 맞혔는지를 교차한 표입니다. '근거 없음'인데 모든 시스템이 틀렸다면 그 진단이 데이터로 확인된 것입니다.">라벨 × 시스템 정답률</h4>
-    <div class="jbasis" data-desc="정답률은 각 런의 judge 채점(Correct 비율)입니다. '전멸'은 그 문항을 맞힌 런이 하나도 없는 경우 — 원리적으로 불가하다는 주장의 직접 증거입니다.">
-      <b>왜 보는가</b> — 라벨이 <b>주관적 인상이 아님</b>을 확인하는 대조입니다.
+    <div class="jbasis" data-desc="정답률은 각 런의 judge 채점(Correct 비율)입니다. '전멸'은 그 문항을 맞힌 런이 하나도 없는 경우: 원리적으로 불가하다는 주장의 직접 증거입니다.">
+      <b>왜 보는가</b>: 라벨이 <b>주관적 인상이 아님</b>을 확인하는 대조입니다.
       <span class="small">'근거 없음'으로 본 문항의 정답률이 '타당' 문항보다 뚜렷이 낮고 <b>전멸</b> 건수가 몰려 있다면, 사람 판정과 시스템 실패가 같은 곳을 가리키는 것입니다.
       반대로 차이가 없다면 그 라벨은 재검토 대상입니다.</span>
     </div>
     <table class="cmp"><tr><th>합의 라벨</th><th>문항</th>${d.runs.map((r) => `<th data-desc="${esc(runLabel(r))}">${esc(runLabel(r))}</th>`).join("")}
-      <th data-desc="모든 런이 틀린 문항 수 — 시스템 성능이 아니라 문항 자체의 문제일 가능성">전멸</th></tr>
+      <th data-desc="모든 런이 틀린 문항 수. 시스템 성능보다 문항 자체의 문제일 가능성을 봅니다">전멸</th></tr>
       ${d.cross.map((c) => `<tr><td>${chip(c.label)}</td><td>${c.n}</td>${d.runs.map((r) => {
         const v = c.runs[r];
         return !v ? `<td class="muted">–</td>` : `<td data-desc="${esc(`${runLabel(r)} · ${GQ_LAB[c.label]} 문항 ${v.n}개 중 ${v.ok}개 정답`)}">${v.pct}% <span class="muted small">${v.ok}/${v.n}</span></td>`;
@@ -2165,7 +2164,7 @@ async function jmIAA() {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">집계 중…</p>`;
   let d;
-  // 실패를 삼키면 '집계 중…'에서 영원히 멈춘 것처럼 보인다 — 원인을 화면에 그대로 띄운다
+  // 실패를 삼키면 '집계 중…'에서 영원히 멈춘 것처럼 보인다. 원인을 화면에 그대로 띄운다
   try {
     d = await api("/api/iaa");
   } catch (e) {
@@ -2173,13 +2172,13 @@ async function jmIAA() {
       <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
     $("#jm-back").onclick = jmRender; return;
   }
-  // 렌더 중 예외도 화면에 띄운다 — 안 그러면 innerHTML이 안 채워져 '집계 중…'에 갇힌다
+  // 렌더 중 예외도 화면에 띄운다. 안 그러면 innerHTML이 안 채워져 '집계 중…'에 갇힌다
   try {
   const jb = d.judge_basis || {};
   const pg = d.progress;
   const TYPES = ["integrity", "accuracy", "update", "qa"];
 
-  // 큐 진척 — 표 대신 막대. 유형별 몫만큼 칸을 나누고 그 안을 완료분으로 채운다.
+  // 큐 진척: 표 대신 막대. 유형별 몫만큼 칸을 나누고 그 안을 완료분으로 채운다.
   // (표가 많아 화면이 답답해지므로, 진척처럼 한눈에 볼 값은 그래픽으로 둔다)
   const progressBlock = !pg ? "" : `
     <h4 style="margin:14px 0 6px" data-desc="공유 표본 큐 ${pg.queue_n}건 중 몇 건을 라벨했는지. 분석가 간 일치도는 이 큐에서만 쌓입니다. 막대는 유형별 몫만큼 칸이 나뉘고, 칸 안의 채워진 부분이 완료분입니다">큐 진척</h4>
@@ -2194,7 +2193,7 @@ async function jmIAA() {
             data-desc="${esc(`<b>${REC_NAMES[t]}</b><br>${done} / ${tot}건 완료 (${(done / tot * 100).toFixed(0)}%)`)}"><i style="width:${done / tot * 100}%"></i></span>`;
         }).join("")}</div>
         <span class="qnum"><b>${a.in_queue}</b><span class="muted">/${pg.queue_n}</span> <span class="qpct${pct >= 99.5 ? " done" : ""}">${pct.toFixed(0)}%</span></span>
-        ${a.out ? `<span class="qout" data-desc="큐에 없는 항목을 개별 검토로 라벨한 건수 — 기회 표본이라 위 집계에서는 제외됩니다">큐 밖 ${a.out}</span>` : ""}
+        ${a.out ? `<span class="qout" data-desc="큐에 없는 항목을 개별 검토로 라벨한 건수: 기회 표본이라 위 집계에서는 제외됩니다">큐 밖 ${a.out}</span>` : ""}
       </div>`;
     }).join("")}
       <div class="qleg">${TYPES.map((t) => `<span class="qk qs-${t}">${esc((REC_NAMES[t] || t).replace(/\s*\(.*\)$/, ""))} <i>${pg.queue_types[t] || 0}</i></span>`).join("")}</div>
@@ -2207,33 +2206,33 @@ async function jmIAA() {
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
     <h4 style="margin:0 0 6px">진행 현황</h4>
     <p class="small muted">주석 ${d.total}건 · 라벨 완료 ${d.labeled}건 · 항목 ${d.items}개 (2인 이상 겹친 항목 <b>${d.overlap_items}</b>개) · judge와 대조 가능 ${d.comparable}건 · 👍${d.agree_clicks.agree} 👎${d.agree_clicks.disagree}</p>
-    ${d.hidden_labeled ? `<p class="small muted" data-desc="custom 프롬프트 축은 정성분석 결과 품질이 낮아 화면에서 숨겼지만, 이미 완료된 판정 검토 작업이 걸려 있어 주석은 지우지 않았습니다. 아래 집계에는 그대로 포함되며, 이전에 보고한 수치가 그대로 재현됩니다.">ℹ 이 중 <b>${d.hidden_labeled}건</b>은 화면에서 숨긴 런(${esc(d.hidden_runs.join(", "))})의 주석입니다 — 보고 수치 재현을 위해 집계에는 그대로 포함됩니다.</p>` : ""}
+    ${d.hidden_labeled ? `<p class="small muted" data-desc="custom 프롬프트 갈래는 정성분석 결과 품질이 낮아 화면에서 숨겼지만, 이미 완료된 판정 검토 작업이 걸려 있어 주석은 지우지 않았습니다. 아래 집계에는 그대로 포함되며, 이전에 보고한 수치가 그대로 재현됩니다.">ℹ 이 중 <b>${d.hidden_labeled}건</b>은 화면에서 숨긴 런(${esc(d.hidden_runs.join(", "))})의 주석입니다. 보고 수치 재현을 위해 집계에는 그대로 포함됩니다.</p>` : ""}
 
     <div class="jbasis" data-desc="${esc(jb.note || "")}">
-      <b>⚖ 'judge 판정'의 정의</b> — 단일 채점본이 아니라 <b>${esc(jb.label || "judge")}로 동일 입력을 반복 채점한 결과의 다수결</b>입니다.
+      <b>⚖ 'judge 판정'의 정의</b>: <b>${esc(jb.label || "judge")}로 동일 입력을 반복 채점한 결과의 다수결</b>입니다. 단일 채점본을 쓰지 않습니다.
       단일 회차와 대조하면 그 회차에 judge가 우연히 흔들린 값과 분석가를 비교하게 돼 일치율이 깎입니다.
-      <span class="small">반복 2회 이상인 항목 <b>${jb.multi_items || 0}</b>개 — 그중 만장일치 ${jb.unanimous || 0}, <b>동률이라 합의 없음 ${jb.tie || 0}</b>(대조에서 제외).
+      <span class="small">반복 2회 이상인 항목 <b>${jb.multi_items || 0}</b>개. 그중 만장일치 ${jb.unanimous || 0}, <b>동률이라 합의 없음 ${jb.tie || 0}</b>(대조에서 제외).
       반복본이 없는 항목 ${jb.fallback_items || 0}개는 단일 채점본으로 대조합니다.</span>
     </div>
     ${progressBlock}
 
-    <h4 style="margin:14px 0 6px" data-desc="같은 항목을 두 분석가가 모두 라벨한 경우만 집계됩니다. κ는 우연 일치를 보정한 값 — 대괄호는 부트스트랩 95% 신뢰구간">분석가 간 일치도 (IAA)</h4>
+    <h4 style="margin:14px 0 6px" data-desc="같은 항목을 두 분석가가 모두 라벨한 경우만 집계됩니다. κ는 우연 일치를 보정한 값: 대괄호는 부트스트랩 95% 신뢰구간">분석가 간 일치도 (IAA)</h4>
     <table class="cmp"><tr><th>쌍</th><th>공통 항목</th><th>일치율</th><th>Cohen κ</th><th>유형별 일치율</th></tr>
       ${d.annotator_pairs.map((p) => row(`${p.a} ↔ ${p.b}`, p,
         `<td class="small">${(p.by_type || []).map((b) => `${recTag(b.rec_type)} ${b.agree}%<span class="muted">(${b.n})</span>`).join(" · ") || "–"}</td>`)).join("")
-        || `<tr><td colspan="5" class="muted">겹친 항목 없음 — 공유 큐로 라벨하면 채워집니다</td></tr>`}</table>
+        || `<tr><td colspan="5" class="muted">겹친 항목 없음. 공유 큐로 라벨하면 채워집니다</td></tr>`}</table>
 
     ${!(d.matrix_refs || []).length ? "" : `<div id="jm-mtx">${iaaMatrixHTML(d)}</div>`}
 
     ${d.by_type.filter((p) => (p.confusion || []).some((c) => c.mine !== c.judge)).map((p) => `
-      <h4 style="margin:12px 0 4px" data-desc="분석가가 어느 방향으로 judge와 어긋나는지 — 한 방향으로 쏠려 있으면 체계적 이견(기준 차이), 흩어져 있으면 경계선 흔들림입니다">${recTag(p.rec_type)} 불일치 방향</h4>
+      <h4 style="margin:12px 0 4px" data-desc="분석가가 어느 방향으로 judge와 어긋나는지: 한 방향으로 쏠려 있으면 체계적 이견(기준 차이), 흩어져 있으면 경계선 흔들림입니다">${recTag(p.rec_type)} 불일치 방향</h4>
       <p class="small confrow">${p.confusion.filter((c) => c.mine !== c.judge).slice(0, 10)
         .map((c) => `<span class="cf" data-desc="${esc(`<b>${c.annotator}</b> 님이 ${labDesc(p.rec_type, c.mine)}로 봤고, judge 합의는 ${labDesc(p.rec_type, c.judge)}였습니다.`)}"><b class="who">${esc(c.annotator)}</b> ${labChip(p.rec_type, c.mine)} <span class="arr">→</span> judge ${labChip(p.rec_type, c.judge)} <span class="muted">${c.n}건</span></span>`).join("")}</p>`).join("")}
-    <h4 style="margin:18px 0 6px" data-desc="완전히 동일한 입력을 같은 judge로 여러 번 채점했을 때의 결과 — judge 자체의 재현성입니다 (분석가와 무관)">judge 자기 일관성 (동일 입력 반복 채점)</h4>
+    <h4 style="margin:18px 0 6px" data-desc="완전히 동일한 입력을 같은 judge로 여러 번 채점했을 때의 결과: judge 자체의 재현성입니다 (분석가와 무관)">judge 자기 일관성 (동일 입력 반복 채점)</h4>
     <div id="jc-box" class="small muted">집계 중…</div>
     <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 검토 화면으로</button></p></div>`;
   $("#jm-back").onclick = jmRender;
-  // 기준 전환은 표만 갈아끼운다 (전체 재렌더 금지 — 스크롤 위치가 유지되고 재요청도 없다)
+  // 기준 전환은 표만 갈아끼운다 (전체 재렌더 금지: 스크롤 위치가 유지되고 재요청도 없다)
   const bindHref = () => $$("#jmodal-body .hrefsw button").forEach((b) => (b.onclick = () => {
     JM.href = b.dataset.href;
     $("#jm-mtx").innerHTML = iaaMatrixHTML(d);
@@ -2249,15 +2248,15 @@ async function jmIAA() {
   try {
     const jc = await api("/api/judge-consistency");
     $("#jc-box").innerHTML = !jc.rows.length ? `<p class="small muted">${esc(jc.note || "반복 채점 세트 없음")}</p>` : `
-      <p class="small muted">${esc(runLabel(jc.run))} · ${jc.reps || jc.judges.length}회 반복 · 유저 ${jc.users}명 — 같은 입력을 같은 judge로 반복 채점</p>
-      <table class="cmp"><tr><th>레코드</th><th>항목</th><th data-desc="모든 회차가 같은 라벨을 준 항목 비율">전회 일치</th><th data-desc="다수결 라벨과 다르게 매긴 판정의 비율">다수결 이탈</th><th data-desc="다수결 라벨별 흔들린 항목 비율 — 판정이 애매한 구간에 불안정성이 집중됩니다">라벨별 흔들림</th></tr>
+      <p class="small muted">${esc(runLabel(jc.run))} · ${jc.reps || jc.judges.length}회 반복 · 유저 ${jc.users}명: 같은 입력을 같은 judge로 반복 채점</p>
+      <table class="cmp"><tr><th>레코드</th><th>항목</th><th data-desc="모든 회차가 같은 라벨을 준 항목 비율">전회 일치</th><th data-desc="다수결 라벨과 다르게 매긴 판정의 비율">다수결 이탈</th><th data-desc="다수결 라벨별 흔들린 항목 비율: 판정이 애매한 구간에 불안정성이 집중됩니다">라벨별 흔들림</th></tr>
         ${jc.rows.map((r) => `<tr><td>${esc(r.rec_type)}</td><td>${r.n.toLocaleString()}</td><td>${r.unanimous}%</td><td>${r.deviation}%</td>
           <td class="small">${Object.entries(r.by_major).map(([k, v]) => `${esc(k)}: ${v.unstable}% <span class="muted">(${v.n})</span>`).join(" · ")}</td></tr>`).join("")}</table>`;
   } catch (e) { $("#jc-box").innerHTML = `<p class="small muted">불러오기 실패: ${esc(e.message)}</p>`; }
 }
 
 // 행에 붙는 진입 버튼
-const jmBtn = (ctx, side = "") => `<button class="jopen${ctx.rec_type === "gold_qa" ? " gold" : side ? " s-" + side.toLowerCase() : ""}" data-jm="${esc(JSON.stringify(ctx))}" data-desc="${ctx.rec_type === "gold_qa" ? "이 문항의 골든 정답이 채점 기준으로 타당한지 검수합니다 (judge 판정과 별개 축)" : `judge가 이 항목을 판정할 때 받았던 입력(${esc(REC_NAMES[ctx.rec_type])} · ${esc(runLabel(ctx.run))})을 그대로 재현해 직접 평가합니다`}">${ctx.rec_type === "gold_qa" ? "정답검수" : "검토" + (side ? " " + side : "")}</button>`;
+const jmBtn = (ctx, side = "") => `<button class="jopen${ctx.rec_type === "gold_qa" ? " gold" : side ? " s-" + side.toLowerCase() : ""}" data-jm="${esc(JSON.stringify(ctx))}" data-desc="${ctx.rec_type === "gold_qa" ? "이 문항의 골든 정답이 채점 기준으로 타당한지 검수합니다 (judge 판정과 별개 항목)" : `judge가 이 항목을 판정할 때 받았던 입력(${esc(REC_NAMES[ctx.rec_type])} · ${esc(runLabel(ctx.run))})을 그대로 재현해 직접 평가합니다`}">${ctx.rec_type === "gold_qa" ? "정답검수" : "검토" + (side ? " " + side : "")}</button>`;
 function bindJmButtons(root = document) {
   $$(".jopen", root).forEach((b) => (b.onclick = (ev) => {
     ev.stopPropagation();

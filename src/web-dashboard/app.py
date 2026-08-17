@@ -1,4 +1,4 @@
-"""정성분석 웹앱 백엔드 — 산출물 4종(러너/A'/trace/judge)을 유저 단위로 조인해 API로 제공.
+"""정성분석 웹앱 백엔드: 산출물 4종(러너/A'/trace/judge)을 유저 단위로 조인해 API로 제공.
 
 원칙: results/·traces/는 읽기 전용. 쓰기는 src/web-dashboard/data/ 안에서만 (comments.sqlite3).
 실행: uv run --project src/web-dashboard uvicorn app:app --app-dir src/web-dashboard --port 8501
@@ -21,7 +21,7 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from pydantic import BaseModel
 
 HERE = Path(__file__).parent
-ROOT = HERE.parent.parent  # 리포 루트 — runs.yaml의 상대경로 기준
+ROOT = HERE.parent.parent  # 리포 루트: runs.yaml의 상대경로 기준
 DATA_DIR = HERE / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
@@ -38,7 +38,7 @@ _reg_cache: dict = {}
 
 
 def load_registry_doc() -> dict:
-    """runs.yaml 파싱 결과 — 파일 mtime이 바뀔 때만 다시 읽는다.
+    """runs.yaml 파싱 결과: 파일 mtime이 바뀔 때만 다시 읽는다.
 
     ⚠ 매번 파싱하면(28ms) 항목 단위로 레인을 조회하는 경로에서 수천 번 호출돼 API가 분 단위로
     느려진다(실측: /api/iaa 77초 → 캐시 후 1초 미만). mtime 기준이라 파일을 고치면 즉시 반영된다.
@@ -52,18 +52,18 @@ def load_registry_doc() -> dict:
 
 
 def hide_groups() -> dict:
-    """숨김 그룹 정의 — 축 하나를 통째로 접었다 펴는 단위. runs.yaml의 hide_groups 섹션."""
+    """숨김 그룹 정의: 실험 갈래 하나를 통째로 접었다 펴는 단위. runs.yaml의 hide_groups 섹션."""
     return load_registry_doc().get("hide_groups", {}) or {}
 
 
 def load_registry(include_hidden: bool = False, show: set | None = None) -> dict:
     """런 레지스트리. hidden: true 인 런은 기본적으로 화면·집계에서 제외한다.
 
-    ⚠ 숨김은 '삭제'가 아니다 — 산출물과 이미 기록된 정성분석 주석은 그대로 두고 노출만 막는다.
-    (custom 프롬프트 축은 정성분석 결과 품질이 낮아 제외했으나, 이미 완료된 판정 검토 큐 작업이
+    ⚠ 숨김은 '삭제'가 아니다. 산출물과 이미 기록된 정성분석 주석은 그대로 두고 노출만 막는다.
+    (custom 프롬프트 갈래는 정성분석 결과 품질이 낮아 제외했으나, 이미 완료된 판정 검토 큐 작업이
      걸려 있어 데이터를 지우면 안 된다.) include_hidden=True로 언제든 되살릴 수 있다.
 
-    show: 켜진 숨김 그룹 이름들. 축이 여러 개라 단일 토글로는 부족해서
+    show: 켜진 숨김 그룹 이름들. 갈래가 여러 개라 단일 토글로는 부족해서
           (custom 프롬프트 / BM25 검색기) 그룹 단위로 켠다.
     """
     runs = load_registry_doc()["runs"]
@@ -81,7 +81,7 @@ def gen_registry() -> dict:
 
 def resolve_lane(run: str, generator: str):
     """run×generator -> (results_path, judges{name: dir상대경로}). 미지의 run/generator면 404.
-    ⚠ 숨김 런도 열어준다 — 이미 기록된 주석·trace를 직접 조회하는 경로이므로 막으면 과거 작업이 깨진다."""
+    ⚠ 숨김 런도 열어준다. 이미 기록된 주석·trace를 직접 조회하는 경로이므로 막으면 과거 작업이 깨진다."""
     reg = load_registry(include_hidden=True)
     if run not in reg:
         raise HTTPException(404, f"unknown run: {run}")
@@ -120,7 +120,7 @@ def load_run_users(run: str, generator: str = "qwen4b") -> dict:
 
 
 # ⚠ lru_cache를 쓰지 않는 이유: 파일 부재/로드 실패 시의 None까지 영구 캐싱돼
-#    이후 파일이 생겨도(동기화 완료 등) 회색 '–' 라벨로 남는 버그가 됨 — 성공한 로드만 캐싱한다.
+#    이후 파일이 생겨도(동기화 완료 등) 회색 '–' 라벨로 남는 버그가 됨. 성공한 로드만 캐싱한다.
 _judge_cache: dict = {}
 
 
@@ -133,7 +133,7 @@ def load_judge(run: str, judge_name: str, uuid: str, generator: str = "qwen4b") 
         return None
     path = ROOT / judges[judge_name] / f"{uuid}.json"
     if not path.exists():
-        return None  # 실패는 캐싱하지 않음 — 다음 요청에서 재시도
+        return None  # 실패는 캐싱하지 않음. 다음 요청에서 재시도
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
     _judge_cache[key] = data
@@ -242,7 +242,7 @@ def api_runs(include_hidden: int = 0):
         out.append({
             "run": name, "label": r.get("label", name),
             "backbone": r.get("backbone"), "prompt": r.get("prompt"),
-            "oracle": r.get("oracle", ""),   # 오라클로 대체한 단계 (프롬프트 종류와 직교하는 축)
+            "oracle": r.get("oracle", ""),   # 오라클로 대체한 단계 (프롬프트 종류와 독립)
             "retriever": r.get("retriever") or "Qwen3-Embedding-4B",
             "backbone_effort": r.get("backbone_effort"),
             "embedder": r.get("embedder"),
@@ -286,12 +286,12 @@ def api_fielddict():
     return load_fielddict()
 
 
-# ---------- 지표 테이블 (공식 집계 함수 재사용 — 문서 테이블과 수치 일치 보장) ----------
+# ---------- 지표 테이블 (공식 집계 함수 재사용: 문서 테이블과 수치 일치 보장) ----------
 
 import sys as _sys
 _sys.path.insert(0, str(ROOT / "HaluMem" / "eval"))
 from evaluation import aggregate_eval_results  # noqa: E402
-# judge.py가 쓰는 것과 동일한 프롬프트 템플릿 — 분석가에게 judge와 똑같은 입력을 재현해 보여주기 위함
+# judge.py가 쓰는 것과 동일한 프롬프트 템플릿: 분석가에게 judge와 똑같은 입력을 재현해 보여주기 위함
 from eval_tools import (  # noqa: E402
     EVALUATION_PROMPT_FOR_MEMORY_INTEGRITY,
     EVALUATION_PROMPT_FOR_MEMORY_ACCURACY,
@@ -374,7 +374,7 @@ def build_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: 
     else:
         raise HTTPException(400, f"unknown rec_type: {rec_type}")
 
-    # gold_qa는 judge 판정이 아니라 '벤치마크 정답 자체'를 검토하는 축 — judge 라벨 대조가 의미 없다
+    # gold_qa는 '벤치마크 정답 자체'를 검토하므로 judge 라벨 대조가 의미 없다
     if rec_type == "gold_qa":
         return {"run": run, "uuid": uuid, "generator": generator, "rec_type": rec_type,
                 "session_id": session_id, "idx": idx, "target": key,
@@ -412,8 +412,8 @@ def api_judge_input(run: str, uuid: str, rec_type: str, session_id: int, idx: in
 
 @lru_cache(maxsize=1)
 def first4_uuids() -> tuple:
-    """모든 실험이 공유하는 데이터셋 첫 4유저 — 4u 런의 judge 디렉토리 파일 목록에서 확보.
-    ⚠ 숨김과 무관해야 한다 — 런을 숨겼다고 유저 범위가 달라지면 과거 수치가 재현되지 않는다."""
+    """모든 실험이 공유하는 데이터셋 첫 4유저: 4u 런의 judge 디렉토리 파일 목록에서 확보.
+    ⚠ 숨김과 무관해야 한다. 런을 숨겼다고 유저 범위가 달라지면 과거 수치가 재현되지 않는다."""
     reg = load_registry(include_hidden=True)
     for r in reg.values():
         if r.get("users") == 4:
@@ -428,7 +428,7 @@ _metrics_cache: dict = {}
 
 def compute_metrics(run: str, judge_name: str, scope: str, generator: str = "qwen4b") -> dict | None:
     """scope: 'first4' | 'all' | <uuid>. 선택 범위의 judge 레코드를 모아 공식 집계로 지표 산출.
-    성공 결과만 캐싱 (None 캐싱 금지 — load_judge와 동일 이유)."""
+    성공 결과만 캐싱 (None 캐싱 금지: load_judge와 동일 이유)."""
     key = (run, generator, judge_name, scope)
     if key in _metrics_cache:
         return _metrics_cache[key]
@@ -468,14 +468,14 @@ def _compute_metrics_uncached(run: str, judge_name: str, scope: str, generator: 
             u = json.load(f)
         for k in ["memory_integrity_records", "memory_accuracy_records", "memory_update_records", "question_answering_records"]:
             skeleton[k].extend(u.get(k, []))
-    # QA 지표는 레코드 카운트만으로 계산 — 일부 종류만 채점된 파일(--only qa)에서도 항상 유효
+    # QA 지표는 레코드 카운트만으로 계산: 일부 종류만 채점된 파일(--only qa)에서도 항상 유효
     qrecs = skeleton["question_answering_records"]
     nq = len(qrecs) or 1
     qcount = lambda t: round(sum(1 for r in qrecs if r.get("result_type") == t) / nq * 100, 2)
     try:
         o = aggregate_eval_results(skeleton)["overall_score"]
     except ZeroDivisionError:
-        # 메모리 판정이 비어 있는 QA 전용 채점본 — QA 지표만 돌려준다
+        # 메모리 판정이 비어 있는 QA 전용 채점본: QA 지표만 돌려준다
         return {"n_users": len(files), "qa_only": True,
                 "r": None, "wr": None, "acc": None, "acc_n": 0, "tp": None, "tp_n": 0,
                 "fmr": None, "f1": None, "upd_c": None, "upd_h": None, "upd_o": None,
@@ -497,7 +497,7 @@ def _compute_metrics_uncached(run: str, judge_name: str, scope: str, generator: 
 
 @app.post("/api/reload")
 def api_reload():
-    """서버측 캐시 전체 무효화 — 새 런 동기화·judge 재채점 후 강제 재로딩용."""
+    """서버측 캐시 전체 무효화: 새 런 동기화·judge 재채점 후 강제 재로딩용."""
     _judge_cache.clear()
     _metrics_cache.clear()
     load_run_users.cache_clear()
@@ -508,12 +508,12 @@ def api_reload():
 
 @app.get("/api/first4")
 def api_first4():
-    """nano judge가 라벨을 보유한 데이터셋 첫 4유저 uuid — UI의 ★ 표시용."""
+    """nano judge가 라벨을 보유한 데이터셋 첫 4유저 uuid: UI의 ★ 표시용."""
     return list(first4_uuids())
 
 
 def compute_latency(run: str, scope: str) -> dict | None:
-    """Stage A가 기록한 시간 실측 — 세션 투입(mem0.add: LLM 콜 포함)과 질문 검색. 백본 속도 비교용."""
+    """Stage A가 기록한 시간 실측: 세션 투입(mem0.add: LLM 콜 포함)과 질문 검색. 백본 속도 비교용."""
     try:
         users = load_run_users(run)
     except HTTPException:
@@ -547,7 +547,7 @@ def compute_latency(run: str, scope: str) -> dict | None:
     }
 
 
-# 오라클 단계별로 '읽을 수 없게 되는' 지표 — 화면에서 '–'로 가린다.
+# 오라클 단계별로 '읽을 수 없게 되는' 지표: 화면에서 '–'로 가린다.
 # 규칙은 단순한 계단이 아니다. 오라클을 넣으면 그 단계의 *내용 품질* 지표는 자명해져 죽지만,
 # *생존율* 지표(R·Weighted R)와 다음 단계 지표(Upd)는 오히려 그 단계만 단독으로 재게 되어 살아난다.
 #   추출 오라클  → 저장물이 골든 원문이라 Acc·Target P·F1이 자명하게 높고, FMR은 미끼를 원천 제외해 무의미
@@ -596,7 +596,7 @@ def _metrics_row(name: str, r: dict, scope: str, metrics: dict, extra: dict | No
         "run": name, "label": r.get("label", name),
         "backbone": r.get("backbone"), "prompt": r.get("prompt"),
         "oracle": r.get("oracle", ""),
-        # retriever 축 — 미기재면 기존 전 실험의 기본값(임베딩). BM25 레인과 구분하기 위한 칼럼
+        # retriever 종류. 미기재면 기존 전 실험의 기본값(임베딩). BM25 레인과 구분하기 위한 칼럼
         "retriever": r.get("retriever") or "Qwen3-Embedding-4B",
         "backbone_effort": r.get("backbone_effort"),
         "note": r.get("note", ""),
@@ -614,7 +614,7 @@ def _sd(xs: list) -> float:
 
 
 def _spearman(xs: list) -> float | None:
-    """값 계열이 회차 순서에 따라 단조 증감하는지 — 반복이 독립 시행인지 점검하는 지표.
+    """값 계열이 회차 순서에 따라 단조 증감하는지: 반복이 독립 시행인지 점검하는 지표.
     연속 루프로 돌린 회차들은 서버 상태를 공유해 드리프트가 생길 수 있다."""
     n = len(xs)
     if n < 3:
@@ -644,7 +644,7 @@ def noise_floor() -> dict | None:
     배치 내부 값(*_within)도 함께 돌려주어 둘의 차이를 화면에서 드러낸다.
     """
     doc = load_registry_doc()
-    # 노이즈 바닥은 기준선(임베딩 실측)에서 잰다 — 첫 번째 사다리의 actual 행
+    # 노이즈 바닥은 기준선(임베딩 실측)에서 잰다. 첫 번째 사다리의 actual 행
     lads = doc.get("oracle_ladders") or ([doc["oracle_ladder"]] if doc.get("oracle_ladder") else [])
     cfg = lads[0] if lads else {}
     step = next((s for s in cfg.get("steps", []) if s.get("key") == "actual"), None)
@@ -737,7 +737,7 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
             extra["pinned_lane"] = pinned
         rows.append(_metrics_row(name, r, scope, m, extra=extra or None))
 
-    # 고정 레인 행 — generator·judge 드롭다운을 따르지 않고 runs.yaml에 박아둔 조합으로만 집계한다.
+    # 고정 레인 행: generator·judge 드롭다운을 따르지 않고 runs.yaml에 박아둔 조합으로만 집계한다.
     # 검색 오라클처럼 '답변 생성 레인 자체가 실험 조건'인 세팅은 일반 런으로 표현할 수 없어서 필요하다.
     doc = load_registry_doc()
     for er in doc.get("extra_rows", []) or []:
@@ -771,7 +771,7 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
             continue
         base = reg[run]
         rows.append(_metrics_row(run, base, scope, m, extra={
-            "run": er.get("key", f"{run}:{gen}"),      # 행 식별자 — 접기·하이라이트가 런 이름과 충돌하지 않게 분리
+            "run": er.get("key", f"{run}:{gen}"),      # 행 식별자: 접기·하이라이트가 런 이름과 충돌하지 않게 분리
             "label": er.get("label", run),
             "backbone": er.get("backbone", base.get("backbone")),
             "prompt": er.get("prompt", base.get("prompt")),
@@ -783,8 +783,8 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
             "repeats": reps, "sd": sd,
             "pinned_lane": {"generator": gen, "judge": jd, "run": run},
         }))
-    # 짝 재배열 — pair_with가 있는 행(BM25)을 짝(임베딩) 바로 아래로 옮긴다.
-    # 같은 오라클 단계끼리 임베딩/BM25가 붙어 있어야 검색기 축을 눈으로 비교할 수 있다.
+    # 짝 재배열: pair_with가 있는 행(BM25)을 짝(임베딩) 바로 아래로 옮긴다.
+    # 같은 오라클 단계끼리 임베딩/BM25가 붙어 있어야 검색기 차이를 눈으로 비교할 수 있다.
     idx = {r["run"]: i for i, r in enumerate(rows)}
     paired = [r for r in rows if reg.get(r["run"], {}).get("pair_with") in idx]
     if paired:
@@ -819,7 +819,7 @@ def db():
         run TEXT NOT NULL, uuid TEXT NOT NULL, anchor TEXT NOT NULL,
         author TEXT NOT NULL, tag TEXT DEFAULT '', body TEXT NOT NULL,
         created_at TEXT NOT NULL)""")
-    # additive 마이그레이션 (기존 레코드 보존 — 새 컬럼은 빈 값)
+    # additive 마이그레이션 (기존 레코드 보존: 새 컬럼은 빈 값)
     cols = [r["name"] for r in conn.execute("PRAGMA table_info(comments)")]
     if "quote" not in cols:
         conn.execute("ALTER TABLE comments ADD COLUMN quote TEXT DEFAULT ''")
@@ -844,7 +844,7 @@ class CommentIn(BaseModel):
     quote: str = ""      # 드래그 하이라이트로 지정한 인용 텍스트 (선택)
     generator: str = ""  # 작성 당시 선택돼 있던 A' 레인 (예: mini)
     judge: str = ""      # 작성 당시 judge 라벨 세트 (예: mini-genmini)
-    run_b: str = ""      # 작성 당시 비교(B) 런 — extb 앵커의 대상 식별용
+    run_b: str = ""      # 작성 당시 비교(B) 런: extb 앵커의 대상 식별용
 
 
 @app.post("/api/comments")
@@ -870,7 +870,7 @@ def list_comments(run: str, uuid: str):
 
 @app.delete("/api/comments/{cid}")
 def delete_comment(cid: int, author: str):
-    # 인증 없는 내부 툴 — 본인 이름이 일치할 때만 삭제 허용 (실수 방지 수준)
+    # 인증 없는 내부 툴: 본인 이름이 일치할 때만 삭제 허용 (실수 방지 수준)
     with db() as conn:
         row = conn.execute("SELECT author FROM comments WHERE id=?", (cid,)).fetchone()
         if row is None:
@@ -893,7 +893,7 @@ ANN_COLS = """id INTEGER PRIMARY KEY AUTOINCREMENT,
 
 @contextmanager
 def adb():
-    """db()와 동일 — 반드시 닫는다 (FD 누수 방지)."""
+    """db()와 동일: 반드시 닫는다 (FD 누수 방지)."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute(f"CREATE TABLE IF NOT EXISTS annotations ({ANN_COLS})")
@@ -978,7 +978,7 @@ LABEL_FIELDS = {
     "update": ("memory_update_records", "memory_update_type", "memory_content"),
     "qa": ("question_answering_records", "result_type", "question"),
 }
-# 순서가 있는 라벨 — 분석가가 judge보다 관대/가혹한지(편향 방향)를 재려면 크기 비교가 가능해야 한다
+# 순서가 있는 라벨: 분석가가 judge보다 관대/가혹한지(편향 방향)를 재려면 크기 비교가 가능해야 한다
 ORDINAL = {"integrity": {"0": 0, "1": 1, "2": 2}, "accuracy": {"0": 0, "1": 1, "2": 2}}
 
 
@@ -1013,7 +1013,7 @@ def judge_votes(run: str, uuid: str, rec_type: str, session_id: int, idx: int,
                 generator: str, judge_name: str) -> dict | None:
     """이 항목에 대한 judge 반복 채점 결과와 다수결.
 
-    ⚠ 단일 채점본이 아니라 **같은 judge로 동일 입력을 반복 채점한 다수결**을 'judge 판정'으로 본다.
+    ⚠ **같은 judge로 동일 입력을 반복 채점한 다수결**을 'judge 판정'으로 본다.
     재채점 불일치가 10~27%로 실측되므로(§16), 단일 회차와 대조하면 분석가 일치율이 judge 자기
     노이즈만큼 깎여 과소평가된다. 동률이면 합의가 없다고 보고 대조에서 제외한다.
     """
@@ -1067,7 +1067,7 @@ REJUDGE_DIR = ROOT / "results/mem0-classic-oss/rejudge-update"
 
 
 def queue_keys() -> set:
-    """판정 검토 큐에 담긴 항목 키 — 분석가에게 실제로 배정된 표본."""
+    """판정 검토 큐에 담긴 항목 키: 분석가에게 실제로 배정된 표본."""
     if not QUEUE_PATH.exists():
         return set()
     with open(QUEUE_PATH, encoding="utf-8") as f:
@@ -1076,7 +1076,7 @@ def queue_keys() -> set:
 
 
 def load_rejudge() -> dict:
-    """judge 모델을 바꿔 재채점한 결과 — 큐 항목만 (사람 대조가 가능한 집합).
+    """judge 모델을 바꿔 재채점한 결과: 큐 항목만 (사람 대조가 가능한 집합).
 
     반환: {모델표시명: {(run,uuid,session_id,rec_type,idx): 라벨}}
     ⚠ 채점 프롬프트는 원본 judge와 동일하게 조립돼 있다 (rejudge_update.py). 모델만 다르다.
@@ -1137,9 +1137,9 @@ def _kappa(pairs: list, ci: bool = False) -> dict:
 
 @app.get("/api/gold-qa")
 def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: str = "oss120-genoss120-4u"):
-    """골든 정답 검수 결과 — 벤치마크 문항 자체의 품질을 사람이 판정한 것.
+    """골든 정답 검수 결과: 벤치마크 문항 자체의 품질을 사람이 판정한 것.
 
-    judge 판정 검토와 축이 다르다: 저쪽은 '채점이 맞았나', 이쪽은 **'문항이 채점 기준으로
+    judge 판정 검토와 묻는 것이 다르다: 저쪽은 '채점이 맞았나', 이쪽은 **'문항이 채점 기준으로
     쓸 만한가'**를 묻는다. 네 라벨은 문제의 **원인**을 가르며 고치는 방법이 각각 다르다
     (근거 없음 -> 문항 제외 / 표현 자의적 -> 채점 완화 / 오답 -> 정답 수정).
 
@@ -1155,17 +1155,17 @@ def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: st
     target_uuid = uuid or rows[0]["uuid"]
     rows = [r for r in rows if r["uuid"] == target_uuid]
 
-    # 구 라벨 접기 — 'ambiguous'(정답이 여럿)는 조치가 'wrong'과 같아 라벨을 합쳤다.
+    # 구 라벨 접기: 'ambiguous'(정답이 여럿)는 조치가 'wrong'과 같아 라벨을 합쳤다.
     # 이미 달린 주석은 지우지 않고(분석가 작업 보존) 집계에서만 접는다. 원본은 DB에 그대로 남는다.
     LEGACY = {"ambiguous": "wrong"}
     for r in rows:
         r["label"] = LEGACY.get(r["label"], r["label"])
 
 
-    # 문항 총수 — 이 유저의 QA 문항 (생성된 QA 세션 제외)
+    # 문항 총수: 이 유저의 QA 문항 (생성된 QA 세션 제외)
     total_q, qtext = 0, {}
     user = None
-    # 문항 원문은 어느 런에서 읽어도 같다 (골든 질문·정답은 데이터셋 고유) — 열리는 레인 아무거나 쓴다
+    # 문항 원문은 어느 런에서 읽어도 같다 (골든 질문·정답은 데이터셋 고유): 열리는 레인 아무거나 쓴다
     for cand in ["oss120b4", *[r for r in load_registry() if load_registry()[r].get("users") == 4]]:
         try:
             user = load_run_users(cand, generator).get(target_uuid)
@@ -1207,12 +1207,12 @@ def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: st
             if st["n"]:
                 pairs_out.append({"a": a, "b": b2, **st})
 
-    # 라벨 × 시스템 정답률 — 각 런이 그 문항을 맞혔는지
+    # 라벨 × 시스템 정답률: 각 런이 그 문항을 맞혔는지
     reg = load_registry()
     runs = [r for r in reg if reg[r].get("users") == 4 and not reg[r].get("oracle")]
     qa_ok: dict = {}
     for run in runs:
-        # ⚠ 한 런만 레인이 없어도 resolve_lane이 404를 던져 화면 전체가 못 뜬다 — 런 단위로 격리한다
+        # ⚠ 한 런만 레인이 없어도 resolve_lane이 404를 던져 화면 전체가 못 뜬다. 런 단위로 격리한다
         try:
             jd = load_judge(run, judge, target_uuid, generator)
             u2 = load_run_users(run, generator).get(target_uuid) if jd else None
@@ -1242,7 +1242,7 @@ def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: st
             if got:
                 row["runs"][run] = {"ok": sum(got), "n": len(got),
                                     "pct": round(sum(got) / len(got) * 100, 1)}
-        # 어떤 시스템도 못 맞힌 문항 수 — '원리적으로 불가'의 직접 증거
+        # 어떤 시스템도 못 맞힌 문항 수: '원리적으로 불가'의 직접 증거
         row["none_solved"] = sum(1 for k in keys
                                  if qa_ok.get(k) and not any(qa_ok[k].values()))
         cross.append(row)
@@ -1273,7 +1273,7 @@ def api_gold_qa(uuid: str | None = None, generator: str = "oss120-4u", judge: st
 def api_iaa(run: str | None = None, uuid: str | None = None):
     """분석가 간(IAA) · 분석가 vs judge 합의 일치도. 항목 키는 (run,uuid,session,rec_type,idx,generator).
 
-    'judge 판정'은 단일 채점본이 아니라 **반복 채점의 다수결**이다 (judge_consensus 참조).
+    'judge 판정'은 **반복 채점의 다수결**이다 (단일 채점본을 쓰지 않는다) (judge_consensus 참조).
     반복 세트가 없는 항목은 저장된 스냅샷 라벨로 폴백하고, 그 비율을 함께 보고한다.
     """
     rows = list_annotations(run=run, uuid=uuid)
@@ -1355,7 +1355,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
 
     # ── 레코드 타입별 (전체 분석가 합산) + judge 만장일치/분열 분해 ──
     by_type = []
-    for t in ["integrity", "accuracy", "update", "qa"]:   # gold_qa는 judge 대조 축이 아니라 제외
+    for t in ["integrity", "accuracy", "update", "qa"]:   # gold_qa는 judge 대조 대상이 아니므로 제외
         mine = [r for r in cmpable if r["rec_type"] == t]
         st = _kappa([(r["label"], jlab(r)) for r in mine], ci=True)
         if not st["n"]:
@@ -1365,7 +1365,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
         st["firm"] = _kappa([(r["label"], jlab(r)) for r in firm])
         st["split"] = _kappa([(r["label"], jlab(r)) for r in split])
         # 혼동 행렬 (분석가 라벨 → judge 합의 라벨). 누가 어느 방향으로 어긋나는지 보려고
-        # 분석가 아이디까지 키에 넣는다 — 합산만 보면 체계적 이견인지 개인차인지 구분이 안 된다.
+        # 분석가 아이디까지 키에 넣는다. 합산만 보면 체계적 이견인지 개인차인지 구분이 안 된다.
         conf: dict = {}
         for r in mine:
             conf[(r["annotator"], r["label"], jlab(r))] = conf.get((r["annotator"], r["label"], jlab(r)), 0) + 1
@@ -1397,9 +1397,9 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
 
     # ── 사람 판정 vs judge (§18) ──
     # 같은 항목을 여러 judge 모델로 재채점한 결과를, **사람 쪽 기준을 바꿔가며** 대조한다.
-    #   기준 '합의' : 3인 다수결 (동률 제외)  — 대표값
-    #   기준 '개인' : 그 분석가의 라벨 그대로 — 사람마다 judge와 얼마나 맞는지
-    # 기준 judge와의 비교는 **대응표본**(같은 항목)이므로 독립 CI가 아니라 McNemar로 판정한다 —
+    #   기준 '합의' : 3인 다수결 (동률 제외) : 대표값
+    #   기준 '개인' : 그 분석가의 라벨 그대로: 사람마다 judge와 얼마나 맞는지
+    # 기준 judge와의 비교는 **대응표본**(같은 항목)이므로 독립 CI 대신 McNemar로 판정한다.
     # 독립표본 CI로 보면 크게 겹쳐 '구분 불가'로 오판하게 된다(§18①).
     rj = load_rejudge()
     matrices: dict = {}
@@ -1417,7 +1417,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
             win = [k for k, v in t.items() if v == top]
             return win[0] if len(win) == 1 else None
 
-        # 기존 judge 라벨 — 주석에 저장된 스냅샷 (재채점 파일의 base_label과 같은 값)
+        # 기존 judge 라벨: 주석에 저장된 스냅샷 (재채점 파일의 base_label과 같은 값)
         base_lab = {}
         for r in labeled:
             k = (r["run"], r["uuid"], r["session_id"], r["rec_type"], r["idx"])
@@ -1437,11 +1437,11 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
                 return bo, ao, min(2 * sum(math.comb(n, i) for i in range(mn + 1)) / 2 ** n, 1.0)
 
             # ⚠ 모든 열을 **같은 항목**에서 재야 나란히 놓을 수 있다. 재채점 모델이 커버하지 못한
-            #    항목(추출 메모리가 0개라 judge.py가 LLM 없이 0점 처리하는 케이스 — judge.py:127)은
+            #    항목(추출 메모리가 0개라 judge.py가 LLM 없이 0점 처리하는 케이스: judge.py:127)은
             #    기준 judge만 갖고 있어, 빼지 않으면 기준 쪽 분모만 커지고 쉬운 항목이 섞인다.
             common = sorted(set(href) & set(base_lab) & set.intersection(*(set(m) for m in rj.values())))
             out = []
-            for name, m in [("gpt-oss-120b (high) — 기존", base_lab)] + sorted(rj.items()):
+            for name, m in [("gpt-oss-120b (high): 기존", base_lab)] + sorted(rj.items()):
                 keys = [k for k in common if k in m]
                 if not keys:
                     continue
@@ -1480,7 +1480,7 @@ def api_iaa(run: str | None = None, uuid: str | None = None):
             if href:
                 matrices[a] = build(href)
 
-    # 숨긴 런(custom 프롬프트 축)에 달린 주석은 지우지 않고 그대로 센다 — 이미 보고된 수치의
+    # 숨긴 런(custom 프롬프트 갈래)에 달린 주석은 지우지 않고 그대로 센다. 이미 보고된 수치의
     # 재현성을 지키기 위함. 대신 얼마나 섞여 있는지는 화면에 밝힌다.
     hidden_runs = set(load_registry_doc()["runs"]) - set(load_registry())
     n_hidden = sum(1 for r in labeled if r["run"] in hidden_runs)
@@ -1533,7 +1533,7 @@ def _qa_correct_from_dir(jdir: Path, scope: str) -> float | None:
 
 @app.get("/api/oracle-ladder")
 def api_oracle_ladder(scope: str = "first4"):
-    """단계별 오라클 상한 사다리 — 각 단계를 완벽하게 만들었을 때의 QA 상한과 구간별 기여분.
+    """단계별 오라클 상한 사다리: 각 단계를 완벽하게 만들었을 때의 QA 상한과 구간별 기여분.
     아직 안 돌린 단계는 metrics=None으로 내려가 화면에서 '미실행'으로 표시된다."""
     doc = load_registry_doc()
     ladders = doc.get("oracle_ladders") or ([doc["oracle_ladder"]] if doc.get("oracle_ladder") else [])
@@ -1650,7 +1650,7 @@ QUEUE_PATH = DATA_DIR / "annotation_queue.json"
 @app.get("/api/queue")
 def api_queue(rebuild: int = 0, per_type: int = 40, judge: str = "oss120-genoss120",
               generator: str = "oss120"):
-    """공유 표본 큐 — 모든 분석가에게 동일한 순서로 제공돼야 IAA가 계산된다.
+    """공유 표본 큐: 모든 분석가에게 동일한 순서로 제공돼야 IAA가 계산된다.
     층화: 레코드 타입 × judge 라벨 클래스 × 런. judge 간 불일치 항목을 우선 배치."""
     if QUEUE_PATH.exists() and not rebuild:
         with open(QUEUE_PATH, encoding="utf-8") as f:
@@ -1703,11 +1703,11 @@ def api_queue(rebuild: int = 0, per_type: int = 40, judge: str = "oss120-genoss1
     from collections import defaultdict
     buckets = defaultdict(list)
     for it in items:
-        if it[5] is None:  # judge 무효 판정 — 일치도 계산이 불가능하므로 큐에서 제외
+        if it[5] is None:  # judge 무효 판정: 일치도 계산이 불가능하므로 큐에서 제외
             continue
         buckets[(it[3], str(it[5]))].append(it)
     picked = []
-    for t in ["integrity", "accuracy", "update", "qa"]:  # gold_qa는 judge 대조 축이 아니라 제외
+    for t in ["integrity", "accuracy", "update", "qa"]:  # gold_qa는 judge 대조 대상이 아니므로 제외
         keys = sorted(k for k in buckets if k[0] == t)
         if not keys:
             continue
@@ -1739,7 +1739,7 @@ def export_md(uuid: str):
     """유저 1명 코멘트 전체를 Markdown으로 export (미팅 자료용)."""
     with db() as conn:
         rows = conn.execute("SELECT * FROM comments WHERE uuid=? ORDER BY run, anchor, created_at", (uuid,)).fetchall()
-    lines = [f"# 정성분석 코멘트 — user {uuid}", ""]
+    lines = [f"# 정성분석 코멘트: user {uuid}", ""]
     cur_run = None
     for r in rows:
         if r["run"] != cur_run:
@@ -1749,7 +1749,7 @@ def export_md(uuid: str):
         keys = r.keys()
         ctx_parts = [f"{k}={r[k]}" for k in ("generator", "judge", "run_b") if k in keys and r[k]]
         ctx = f" [{' · '.join(ctx_parts)}]" if ctx_parts else ""
-        lines.append(f"- **{r['anchor']}** — {r['author']}{tag}{ctx} ({r['created_at'][:16]})")
+        lines.append(f"- **{r['anchor']}**: {r['author']}{tag}{ctx} ({r['created_at'][:16]})")
         if "quote" in keys and r["quote"]:
             lines.append(f"  > “{r['quote']}”")
         for bl in r["body"].splitlines():
@@ -1761,7 +1761,7 @@ def export_md(uuid: str):
 
 @app.middleware("http")
 async def no_cache_static(request, call_next):
-    """정적 파일 캐시 재검증 강제 — 배포 후 옛 CSS/JS가 브라우저 캐시에 남아
+    """정적 파일 캐시 재검증 강제: 배포 후 옛 CSS/JS가 브라우저 캐시에 남아
     화면이 깨져 보이는 문제 방지 (내부 툴이라 no-cache 비용 무시 가능)."""
     resp = await call_next(request)
     if request.url.path.startswith("/static") or request.url.path == "/":
