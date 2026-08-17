@@ -9,3 +9,9 @@ logs/
 # 어시스턴트 로컬 설정 (커밋하지 않음)
 CLAUDE.md
 .claude/
+
+# BEAM 벤치마크 (ICLR 2026) — 코드 MIT / 데이터 CC BY-SA 4.0
+# 전체 리포는 chats/가 800MB라 커밋하지 않고 sparse partial clone으로 받는다.
+# 재현: git clone --filter=blob:none --sparse https://github.com/mohammadtavakoli78/BEAM.git BEAM
+#       cd BEAM && git sparse-checkout set src chats/100K   # 커밋 3e12035
+BEAM/
