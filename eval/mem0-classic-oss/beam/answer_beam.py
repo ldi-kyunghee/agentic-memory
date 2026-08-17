@@ -77,7 +77,8 @@ def answer_one(job: dict) -> dict:
     kwargs = dict(model=MODEL, messages=[{"role": "user", "content": prompt}])
     if REASONING_EFFORT:
         kwargs["reasoning_effort"] = REASONING_EFFORT
-        kwargs["max_completion_tokens"] = 32768
+        MAX_COMPLETION_TOKENS = int(os.getenv("ANSWER_MAX_COMPLETION_TOKENS", "32768"))
+        kwargs["max_completion_tokens"] = MAX_COMPLETION_TOKENS
     else:
         kwargs["temperature"] = 0.0
         kwargs["max_tokens"] = 1024
