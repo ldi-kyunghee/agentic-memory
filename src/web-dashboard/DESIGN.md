@@ -1,27 +1,30 @@
 ---
 version: alpha
 name: HaluMem Analysis Console
-description: mem0 × HaluMem 정성분석 대시보드의 시각 언어. 수치를 오래 대조하는 분석 도구용 — 장식보다 판독성과 밀도를 우선한다.
+description: mem0 × HaluMem 정성분석 대시보드의 시각 언어 "계기판(Instrument)". 문서가 아니라 계측 장비처럼 — 평면·각·어두운 크롬·데이터 시트.
 colors:
-  bg: "#f2f3f5"
+  chrome-bg: "#1b1c21"
+  chrome-ink: "#e9e9ee"
+  chrome-dim: "#8b8c97"
+  bg: "#eeeff2"
   panel: "#ffffff"
-  chrome: "#f8f9fb"
-  sunk: "#f4f5f7"
-  line: "#e5e6eb"
-  line-soft: "#eef0f3"
-  line-firm: "#d3d5dd"
-  ink: "#1b1b21"
-  dim: "#6a6a76"
-  faint: "#9a9aa6"
-  chip: "#eceef2"
-  accent: "#3f5ed3"
-  ok: "#2f8641"
-  warn: "#dd930f"
-  bad: "#c53131"
-  vio: "#7048a8"
-  gold: "#c4900f"
-  cmt: "#0e8398"
-  bcol: "#495057"
+  band: "#f4f5f8"
+  sunk: "#f2f3f6"
+  rule: "#dcdee5"
+  rule-soft: "#e9eaef"
+  rule-firm: "#c6c9d3"
+  ink: "#16171c"
+  dim: "#63646f"
+  faint: "#94959f"
+  chip: "#e8eaef"
+  accent: "#2f4fd0"
+  ok: "#22803a"
+  warn: "#d68a06"
+  bad: "#c02a2a"
+  vio: "#6a3fa5"
+  gold: "#bd8a08"
+  cmt: "#0b7d92"
+  bcol: "#41474e"
 typography:
   nano:
     fontFamily: var(--font-sans)
@@ -42,22 +45,22 @@ typography:
     fontFamily: var(--font-sans)
     fontSize: 11px
     fontWeight: 600
-    lineHeight: 1.45
+    lineHeight: 1.4
   table-sm:
     fontFamily: var(--font-sans)
     fontSize: 11.5px
     fontWeight: 400
-    lineHeight: 1.45
+    lineHeight: 1.4
   table-md:
     fontFamily: var(--font-sans)
     fontSize: 12px
     fontWeight: 400
-    lineHeight: 1.45
+    lineHeight: 1.4
   body:
     fontFamily: var(--font-sans)
     fontSize: 13px
     fontWeight: 400
-    lineHeight: 1.55
+    lineHeight: 1.5
   verdict:
     fontFamily: var(--font-sans)
     fontSize: 15px
@@ -67,14 +70,12 @@ typography:
     fontFamily: var(--font-mono)
     fontSize: 11px
     fontWeight: 400
-    lineHeight: 1.45
+    lineHeight: 1.4
 rounded:
-  xs: 4px
-  sm: 5px
-  md: 6px
-  lg: 8px
-  2xl: 12px
-  pill: 999px
+  0: 0
+  1: 2px
+  2: 3px
+  3: 4px
 spacing:
   1: 2px
   2: 4px
@@ -84,40 +85,56 @@ spacing:
   6: 12px
   7: 16px
 components:
+  topbar:
+    background: "{colors.chrome-bg}"
+    color: "{colors.chrome-ink}"
   card:
     background: "{colors.panel}"
-    border: "{colors.line}"
-    rounded: "{rounded.2xl}"
+    border: "{colors.rule}"
+    rounded: "{rounded.2}"
   card-header:
-    background: "{colors.chrome}"
-    typography: "{typography.label-xs}"
+    background: "{colors.band}"
+    typography: "{typography.micro}"
+  table-cell:
+    border: "{colors.rule}"
+    typography: "{typography.table-md}"
   table-header:
-    background: "{colors.chrome}"
-    typography: "{typography.label-xs}"
+    background: "{colors.band}"
+    typography: "{typography.micro}"
   badge:
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.1}"
     typography: "{typography.label-xs}"
   button:
-    border: "{colors.line-firm}"
-    rounded: "{rounded.md}"
+    border: "{colors.rule-firm}"
+    rounded: "{rounded.1}"
     typography: "{typography.table-sm}"
   tooltip:
-    background: "#23232b"
-    rounded: "{rounded.lg}"
+    background: "{colors.chrome-bg}"
+    rounded: "{rounded.2}"
     typography: "{typography.table-sm}"
 ---
 
-## Overview
+## Overview — 계기판(Instrument)
 
-수치를 **오래 들여다보고 서로 대조하는** 연구용 콘솔이다. 한 화면에 표가 여러 개 겹치고, 분석가는 한 세션에 수백 개의 셀을 눈으로 훑는다. 그래서 이 시스템의 성패는 "예쁜가"가 아니라 **두 숫자가 다르다는 것을 얼마나 빨리 알아채는가**로 갈린다.
+이 화면은 **읽는 화면이 아니라 읽어내는 화면**이다. 한 세션에 수백 개의 셀을 눈으로 훑고, 두 숫자가 다른지를 판단한다. 그래서 문서가 아니라 **계측 장비**처럼 만든다.
 
-세 가지 원칙이 나머지를 다 결정한다.
+다섯 가지가 나머지를 다 결정한다.
 
-**① 채도는 의미에만 쓴다.** 배경·테두리·보조 텍스트는 전부 무채색으로 눌러두고, 색이 있는 것은 판정 결과·설정 소속·골든·코멘트뿐이다. 이 규칙을 깨면 표에서 진짜 신호(빨간 0점 셀)가 장식에 묻힌다.
+**① 평면.** 그림자를 쓰지 않는다. 깊이는 1px 헤어라인과 배경 단차로만 만든다. 떠 있어야 하는 것(모달·툴팁)만 예외다. 그림자는 면을 흐리게 만들고, 면이 흐려지면 격자가 흐려진다.
 
-**② 밀도를 낮추지 않는다.** 여백을 넓히면 한 화면에 들어오는 행이 줄고, 그건 곧 비교 능력이 주는 것이다. 실제로 표 셀 패딩을 4px→6px로만 올렸다가 Metrics의 '직전 대비' 열이 잘렸다. 판독성은 여백이 아니라 **자간·행간·숫자 정렬**로 확보한다.
+**② 각.** 모서리는 0~4px. 알약(pill) 배지를 사각 태그로 바꿨다. 둥근 모서리는 "문서·앱"의 신호이고 각진 모서리는 "계기·표"의 신호다. **형태 하나가 색 열 개보다 인상을 크게 바꾼다** — 색만 만지던 이전 시도들이 체감되지 않았던 이유다.
 
-**③ 색의 의미 매핑은 고정이다.** 분석가들이 수백 시간에 걸쳐 익힌 규칙이고, 여기서 색을 재배치하면 과거 판정 기록과 화면이 어긋난다. 색상값(채도·명도)은 조정해도 **hue는 건드리지 않는다.**
+**③ 어두운 크롬.** 상단바와 모달 헤더는 근검정(`chrome-bg`)이다. **도구 영역과 데이터 영역을 색으로 가른다** — 설정을 만지는 곳과 결과를 읽는 곳이 눈으로 즉시 구분된다. 밀도 비용이 0이라는 것도 중요하다.
+
+**④ 데이터 시트.** 표는 전면 헤어라인 격자다. 세로 괘선을 지우면 문서의 표처럼 보이는데, 우리는 열을 따라 눈이 내려가야 하므로 격자가 있는 편이 맞다.
+
+**⑤ 위계는 크기가 아니라 굵기·대문자·자간으로.** 라벨은 10px 대문자에 자간 `.07em`, 값은 굵게. **글자를 키우지 않으므로 밀도가 줄지 않는다.**
+
+### 어기면 안 되는 두 가지
+
+**밀도.** 여백을 넓히면 한 화면의 행 수가 줄고 그건 곧 비교 능력이 주는 것이다. 실제로 표 셀 패딩을 4px→6px로만 올렸다가 Metrics의 '직전 대비' 열이 잘렸다. **표를 건드린 뒤에는 반드시 Metrics 탭을 열어 확인한다.**
+
+**색의 의미.** 분석가들이 수백 시간에 걸쳐 익힌 규칙이라, 재배치하면 과거 판정 기록과 화면이 어긋난다. 색상값(채도·명도)은 조정해도 **hue는 건드리지 않는다.**
 
 ## Colors
 
@@ -138,11 +155,13 @@ components:
 
 ### 무채색 층
 
-`bg`(창 바닥) → `chrome`(사이드바·인스펙터·표 머리글) → `panel`(카드·표의 면) → `sunk`(코드·인용).
+도구 영역은 `chrome-bg`(근검정) 하나, 데이터 영역은 네 층이다:
 
-창 바닥을 패널보다 한 단계 낮춰야 카드가 면으로 떠서 3단 레이아웃이 한눈에 갈린다. 글자는 `ink`(본문) → `dim`(보조) → `faint`(주석·비활성) **세 단계뿐**이다. 네 번째 회색을 만들지 말 것.
+`bg`(창 바닥) → `band`(머리글 띠·사이드바·인스펙터) → `panel`(카드·표의 면) → `sunk`(코드·인용).
 
-경계선도 세 단계다: `line-soft`(표 세로 괘선처럼 있는 듯 없는 듯) → `line`(기본) → `line-firm`(입력·버튼).
+글자는 `ink`(본문) → `dim`(보조) → `faint`(주석·비활성) **세 단계뿐**이다. 네 번째 회색을 만들지 말 것. 어두운 크롬 위에서는 `chrome-ink` / `chrome-dim` 두 단계를 쓴다.
+
+경계선도 세 단계다: `rule-soft`(목록 구분선) → `rule`(격자선, 기본) → `rule-firm`(입력·구조선).
 
 ### 국소 스케일 — Retriever 칼럼
 
@@ -150,24 +169,24 @@ Retriever는 판정 축과 무관한 별도 축이라 **이 칼럼 안에서만*
 
 ## Typography
 
-폰트 스택의 **순서가 곧 설계**다.
+**폰트는 원본 그대로다.**
 
 ```
--apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
-"Pretendard Variable", Pretendard, "Segoe UI", "Malgun Gothic", ...
+-apple-system, "Segoe UI", "Noto Sans KR", sans-serif
 ```
 
-맥은 `-apple-system`(SF Pro + Apple SD Gothic Neo)이 힌팅도 한글도 가장 또렷하므로 맨 앞에 둔다. 윈도우는 이 셋을 모르고 지나쳐 **Pretendard를 잡는다** — `Segoe UI` + 맑은고딕 조합은 라틴과 한글의 무게가 어긋나 `Upd C 74.44` 같은 혼합 문자열이 든 셀에서 줄이 튀기 때문에, 그 앞에 세운다. Pretendard는 CDN에서 받고 실패해도 시스템 폰트로 안전하게 떨어진다.
+웹폰트를 얹지 않고 `-webkit-font-smoothing`도 건드리지 않는다. 두 번 다 시도했다가 되돌렸다:
 
-> ⚠ Pretendard를 스택 맨 앞에 두면 맥에서 오히려 읽기 나빠진다. 한 번 그렇게 했다가 되돌렸다.
+- Pretendard를 스택 맨 앞에 두면 **맥에서 오히려 읽기 나빠진다** (SF Pro + Apple SD Gothic Neo가 힌팅·한글 모두 더 또렷하다)
+- `-webkit-font-smoothing: antialiased`는 맥에서 글자를 **얇게** 만들어 작은 글씨 가독성을 떨어뜨린다
 
 크기는 **8단**이며 원본에서 튜닝된 값을 그대로 계승했다. 표 폭에 직결돼 있어 바꾸면 열이 잘린다.
 
-`nano`(9.5) · `micro`(10) · `chip`(10.5) · `label-xs`(11) · `table-sm`(11.5) · `table-md`(12) · `body`(13) · `verdict`(15)
+`nano`(9.5) · `micro`(10, 라벨·범례) · `chip`(10.5) · `xs`(11) · `sm`(11.5) · `md`(12, 표 본문) · `base`(13, 본문) · `lg`(15, 판정 라벨)
 
-**숫자는 전부 `tabular-nums`다.** 이 화면 작업의 대부분이 세로로 늘어선 수치를 비교하는 일이라, 자릿수가 어긋나면 눈이 매번 다시 정렬해야 한다. 표·배지·막대 수치·κ 값에 일괄 적용한다. **수치를 표시하는 컴포넌트를 새로 만들면 이 목록에 추가한다.**
+행간은 본문 **1.5**(원본 값 — 올리면 화면당 행 수가 준다), 표 **1.4**, 칩·배지 **1.5 고정**(안 그러면 배지가 든 행만 높이가 튄다), 안내 박스 **1.65**.
 
-행간은 넷: `tight`(1.5, 칩·배지 — 행 높이가 튀지 않게 고정) · `snug`(1.45, 표) · `base`(1.55, 본문) · `loose`(1.7, 여러 줄 읽는 안내 박스).
+**숫자는 전부 `tabular-nums`다.** 이 화면 작업의 대부분이 세로로 늘어선 수치를 비교하는 일이라, 자릿수가 어긋나면 눈이 매번 다시 정렬해야 한다. **수치를 표시하는 컴포넌트를 새로 만들면 style.css 상단의 셀렉터 목록에 추가한다.**
 
 ## Layout
 
@@ -182,41 +201,48 @@ Retriever는 판정 축과 무관한 별도 축이라 **이 칼럼 안에서만*
 
 ## Elevation & Depth
 
-그림자는 세 단계뿐이다.
+**그림자를 쓰지 않는다.** 층은 배경 단차와 1px 선으로만 만든다:
 
-- `sh-1` — 카드·상단바. 종이 한 장 뜬 정도
-- `sh-2` — 떠 있는 컨트롤(선택 코멘트 버튼 등)
-- `sh-3` — 모달·툴팁
+`bg`(창 바닥) → `band`(머리글 띠·사이드바) → `panel`(카드·표의 면) → `sunk`(코드·인용)
 
-**테두리와 그림자를 동시에 강하게 주지 않는다.** 카드는 `line` 한 겹 + `sh-1`, 모달은 테두리 없이 `sh-3`.
+경계선도 세 단계다: `rule-soft`(목록 구분선) → `rule`(격자선, 기본) → `rule-firm`(입력·구조선).
+
+예외는 **떠 있어야 하는 것** 둘뿐이다 — 모달(`0 18px 60px`)과 툴팁(`0 8px 28px`). 이들은 아래 내용과 겹치므로 분리 신호가 필요하다.
 
 ## Shapes
 
-`xs`(4) 작은 칩 · `sm`(5) 태그 · `md`(6) 버튼·입력·탭 · `lg`(8) 큰 버튼·코드블록·툴팁 · `2xl`(12) 카드·모달 · `pill` 배지·진척막대.
+`0` 막대·구분 · `2px` 칩·배지·버튼 · `3px` 카드·코드블록 · `4px` 모달.
+
+**알약(999px)을 쓰지 않는다.** 둥근 알약은 앱의 신호이고, 이 화면은 계기다.
 
 ## Components
 
-- **표** — 세로 괘선은 정보를 나르지 않으므로 `line-soft`로 낮추고, 행을 가르는 가로선을 살려 눈이 가로로 미끄러지게 한다. 머리글은 `chrome` 바탕에 대문자·볼드 + 2px 밑줄. 행 호버 시 `accent-bg`를 55% 섞어 옅게 깐다.
+- **상단바 / 모달 헤더** — 근검정 크롬. 셀렉트·버튼도 크롬 톤으로 맞춘다(어두운 배경에 밝은 글자). 세팅 A 라벨은 `#8fa6ff`처럼 어두운 배경에서 읽히는 밝은 파랑을 쓴다.
+  - ⚠ `#topbar`의 padding은 고정이다. 높이가 바뀌면 `#layout`의 `calc(100vh - 46px)`가 어긋난다.
+- **표** — 전면 헤어라인 격자(`rule`). 머리글은 `band` 바탕에 10px 대문자·자간 `.07em`·굵게 + 2px 밑줄. 행 호버는 `accent-bg`.
   - ⚠ 머리글에 `position: sticky`를 쓰지 않는다. 한 스크롤 컨테이너(모달)에 표가 여러 개라 지나간 표의 머리글이 위에 떠서 다른 표 것처럼 보인다.
-- **카드** — 헤더에 `chrome` 면을 줘 본문과 층을 나눈다. 상단 모서리만 둥글린다.
-- **배지/칩** — `line-height`를 `tight`(1.5)로 고정한다. 안 그러면 배지가 든 행만 높이가 튀어 표가 울퉁불퉁해진다.
-- **버튼** — 기본은 흰 바탕 + `line-firm` 테두리. 선택 상태만 채움(`accent` 또는 `ink`). 전이는 `.12s` — 연속 클릭하는 화면이라 길면 방해가 된다.
-- **탭** — 활성 탭은 `ink` 채움 + 흰 글자. 지금 어느 화면인지 즉시 보이게.
-- **툴팁** — 이 대시보드는 설명을 툴팁에 싣는다(지표 정의, 마스킹 이유, 판정 기준). 보조 요소가 아니라 **본문급**이다: 폭 360px, 행간 1.45, `sh-3`.
-- **안내 박스** — `noisebar`(노랑, 신뢰 한계) / `jbasis`(파랑, 정의·기준) / `oracle-note`(보라, 오라클 레인)를 왼쪽 3px 색띠로 구분한다.
-- **포커스** — `:focus-visible`에만 링을 준다. 마우스 클릭에는 뜨지 않고 Tab 이동에만 뜬다.
+  - ⚠ `table.cmp`에 `overflow: hidden`을 주지 않는다. 칼럼 리사이즈 핸들(`.colrz`, `right: -3px`)이 잘려 드래그가 죽는다.
+- **카드** — 1px 테두리 + `band` 머리글 띠. 그림자 없음. 머리글은 대문자 10px.
+- **배지/칩** — 사각 태그(2px). `line-height`를 1.5로 고정한다.
+- **버튼** — 흰 바탕 + `rule-firm` 테두리, 모서리 2px. 선택 상태만 채움(`accent` 또는 `ink`). 전이 `.1s`.
+- **탭** — 어두운 크롬 위에서 활성 탭만 흰 바탕으로 뚫린다. 인스펙터 탭은 밝은 배경이라 반대로 `ink` 채움.
+- **툴팁** — 지표 정의·마스킹 이유·판정 기준을 전부 툴팁에 싣는다. 보조가 아니라 **본문급**: 폭 350px, 크롬 톤.
+- **안내 박스** — `noisebar`(노랑, 신뢰 한계) / `jbasis`(파랑, 정의·기준) / `oracle-note`(보라, 오라클 레인). 모서리 0, 왼쪽 3px 색띠로 구분.
+- **포커스** — `:focus-visible`에만 링. Tab 이동에만 뜬다.
 
 ## Do's and Don'ts
 
 **Do**
 - 새 색이 필요하면 먼저 기존 8계열 중 의미가 맞는 것을 찾는다
-- 수치를 표시하는 컴포넌트에는 `tabular-nums` 목록에 셀렉터를 추가한다
+- 수치를 표시하는 컴포넌트를 만들면 `tabular-nums` 셀렉터 목록에 추가한다
 - 값은 `:root` 토큰에서만 바꾼다
-- 표를 건드린 뒤에는 **반드시 Metrics 탭을 열어** 열이 잘리지 않았는지 본다
+- 표를 건드린 뒤에는 **반드시 Metrics 탭을 열어** 열이 잘리지 않았는지 확인한다
 
 **Don't**
 - 색의 **의미 매핑**을 바꾸지 않는다 (초록=좋음, 빨강=나쁨, 금=골든, 청록=코멘트, 파랑=A, 진회색=B)
 - 네 번째 회색을 만들지 않는다 — `ink`/`dim`/`faint`로 충분하다
-- 표 셀 패딩·글자 크기를 키우지 않는다 — 한 화면에 들어오는 행 수가 곧 비교 능력이다
+- 그림자를 쓰지 않는다 — 모달·툴팁만 예외
+- 알약(999px) 모서리를 쓰지 않는다
+- 표 셀 패딩·글자 크기를 키우지 않는다 — 한 화면의 행 수가 곧 비교 능력이다
+- 웹폰트를 얹거나 `-webkit-font-smoothing`을 건드리지 않는다 — 맥에서 가독성이 떨어진다
 - `.btn-off`를 "비활성 스타일"로 쓰지 않는다 — `visibility: hidden`이라 요소가 통째로 사라진다
-- Pretendard를 폰트 스택 맨 앞에 두지 않는다 — 맥에서 가독성이 떨어진다
