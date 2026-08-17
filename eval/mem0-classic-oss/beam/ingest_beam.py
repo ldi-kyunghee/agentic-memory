@@ -142,6 +142,12 @@ def process_conversation(conv_dir: str, bucket: str, top_k: int, save_path: str,
         if bar:
             bar.close()
 
+        # ------ 저장소에 남은 최종 메모리 개수 확인. ------
+        stored = memory.get_all(user_id=user_id, limit=100000)
+        out["stored_memories"] = len(stored.get("results", stored) if isinstance(stored, dict) else stored)
+        if out["stored_memories"] >= 100000:   # limit에 딱 걸렸다면 잘렸을 가능성이 있다
+            print(f"⚠ [{key}] get_all이 limit(100000)에 도달했다. 저장 메모리가 더 있을 수 있으니 limit을 올릴 것", flush=True)
+
 
         # ------ 문항별 검색 (top-200 한 번, 자르기는 Stage A'에서) ------
         out["questions"] = []
