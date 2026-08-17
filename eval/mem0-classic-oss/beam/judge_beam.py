@@ -34,19 +34,26 @@ from beam_official import event_ordering_score
 
 MODEL = os.getenv("JUDGE_MODEL", os.getenv("OPENAI_MODEL"))
 REASONING_EFFORT = os.getenv("JUDGE_REASONING_EFFORT")
+MAX_COMPLETION_TOKENS = int(os.getenv("JUDGE_MAX_COMPLETION_TOKENS", "32768"))
 client = OpenAI()
 
 
-def call_llm(prompt: str = None, messages: list = None) -> str:
+def call_llm(prompt: str = None, messages: list = None) -> tuple[str, str]:
+    """(응답 텍스트, finish_reason) 을 돌려줌.
+
+    finish_reason 이 length 면 예산 부족임. 그 경우 응답이 잘리거나 비어서
+    파싱에 실패하는데, 모델이 형식을 어긴 것과 구분해야 원인을 잡을 수 있음.
+    """
     kwargs = dict(model=MODEL,
                   messages=messages or [{"role": "user", "content": prompt}])
     if REASONING_EFFORT:
         kwargs["reasoning_effort"] = REASONING_EFFORT
-        kwargs["max_completion_tokens"] = 4096
+        kwargs["max_completion_tokens"] = MAX_COMPLETION_TOKENS
     else:
         kwargs["temperature"] = 0.0
         kwargs["max_tokens"] = 1024
-    return client.chat.completions.create(**kwargs).choices[0].message.content or ""
+    ch = client.chat.completions.create(**kwargs).choices[0]
+    return (ch.message.content or ""), ch.finish_reason
 
 
 def parse_score(raw: str) -> dict:
@@ -71,7 +78,10 @@ def judge_nugget(question: str, nugget: str, response: str) -> dict:
               .replace("<question>", question)
               .replace("<rubric_item>", nugget)
               .replace("<llm_response>", response))
-    return parse_score(call_llm(prompt=prompt))
+    raw, finish = call_llm(prompt=prompt)
+    out = parse_score(raw)
+    out["finish_reason"] = finish
+    return out
 
 
 def judge_one(job: dict) -> dict:
@@ -87,7 +97,7 @@ def judge_one(job: dict) -> dict:
         # ⚠ 원본이 개행 분리를 쓰므로 그대로 따름 (beam_official.py 주석 참고)
         try:
             eo = event_ordering_score(job["rubric"], resp.split("\n"),
-                                      llm=lambda messages: call_llm(messages=messages))
+                                      llm=lambda messages: call_llm(messages=messages)[0])
             out["event_ordering"] = {k: round(v, 4) for k, v in eo.items()}
         except Exception as e:
             out["event_ordering"] = {"error": str(e)[:200]}
@@ -135,8 +145,11 @@ def main(results_path: str, out_dir: str, max_workers: int, cutoffs: list[int] |
                        "reasoning_effort": REASONING_EFFORT, "records": rows},
                       f, ensure_ascii=False)
 
-    fails = sum(1 for r in results for n in r["nugget_scores"] if n["reason"] == "PARSE_FAIL")
-    print(f"\nJSON 파싱 실패 nugget {fails}건")
+    fails = [n for r in results for n in r["nugget_scores"] if n["reason"] == "PARSE_FAIL"]
+    budget = sum(1 for n in fails if n.get("finish_reason") == "length")
+    print(f"\nJSON 파싱 실패 nugget {len(fails)}건 (예산 부족 {budget}건, 형식 위반 {len(fails)-budget}건)")
+    if budget:
+        print("  ⚠ 예산 부족분은 JUDGE_MAX_COMPLETION_TOKENS 를 올려 다시 채점할 것")
     for k in sorted({r["cutoff"] for r in results}):
         rows = [r for r in results if r["cutoff"] == k]
         print(f"  top-{k:<3d} 문항 {len(rows):>4d} · 평균점수 {statistics.mean(r['score'] for r in rows):.4f}")
