@@ -332,6 +332,10 @@ f1     : 0.0 → final_score 0.0
 답변을 길게 쓰라고 시킨 프롬프트였음. 남은 2건은 둘 다 `multi_session_reasoning`의
 top-200이고 `finish_reason`이 `length`임.
 
+**그 2건은 메꾸지 않고 0점으로 두었음.** 능력당 문항이 40개라 그 칸에서만 5%가 강제
+0점이 되고 약 −0.025 눌림. 전체 1,600건 기준으로는 0.125%라 평균과 능력별 순위는
+바뀌지 않음. `multi_session_reasoning`의 top-200 칸 하나만 읽을 때 이 값을 감안할 것.
+
 mem0 이식본에서 능력별 길이 중앙값이 40배까지 벌어져 있었던 것도 같이 기록해둠.
 `preference_following` 6,344자 · `summarization` 5,762자 · `instruction_following` 4,430자
 대 `knowledge_update` 155자 · `temporal_reasoning` 226자. 길이 상관의 부호가 능력마다
