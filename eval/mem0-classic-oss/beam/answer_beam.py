@@ -106,9 +106,24 @@ def answer_one(job: dict) -> dict:
         kwargs["temperature"] = 0.0
         kwargs["max_tokens"] = 1024
     start = time.time()
-    resp = client.chat.completions.create(**kwargs)
-    choice = resp.choices[0]
-    text = choice.message.content or ""
+
+    # ⚠ 여기서 예외를 밖으로 내보내면 안 됨. 저장이 전체 완료 후 한 번뿐이라
+    #    1건 실패가 나머지 전부를 날림. 재시도하고, 그래도 안 되면 빈 답변으로 남김.
+    #    빈 답변은 다음 실행에서 자동으로 재생성 대상이 됨 (main의 skip 조건 참조).
+    text, finish = "", "error"
+    for attempt in range(3):
+        try:
+            choice = client.chat.completions.create(**kwargs).choices[0]
+            text = choice.message.content or ""
+            finish = choice.finish_reason   # length 면 예산 부족, stop 이면 정상 종료
+            break
+        except Exception as e:
+            if attempt == 2:
+                print(f"⚠ 3회 실패 {job['conv']}/{job['ability']}/{job['idx']} "
+                      f"cutoff={job['cutoff']}: {e}", flush=True)
+            else:
+                time.sleep(5 * (attempt + 1))
+
     for tag in ("RESPONSE:", "ANSWER:"):   # 모델이 프롬프트 꼬리를 따라 쓰는 경우 잘라냄
         if tag in text:
             text = text.rsplit(tag, 1)[-1].strip()
@@ -116,7 +131,7 @@ def answer_one(job: dict) -> dict:
         "conv": job["conv"], "ability": job["ability"], "idx": job["idx"],
         "cutoff": job["cutoff"], "used": job["used"], "stored": job["stored"],
         "system_response": text, "prompt_kind": PROMPT_KIND,
-        "finish_reason": choice.finish_reason,   # length 면 예산 부족, stop 이면 정상 종료
+        "finish_reason": finish,
         "response_duration_ms": (time.time() - start) * 1000,
     }
 
@@ -151,7 +166,10 @@ def main(results_path: str, out_path: str, max_workers: int, regen: bool):
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         futs = [ex.submit(answer_one, j) for j in jobs]
         for f in tqdm(as_completed(futs), total=len(futs), desc="answer"):
-            done.append(f.result())
+            try:
+                done.append(f.result())
+            except Exception as e:   # answer_one이 이미 잡지만 이중으로 막아둠
+                print(f"⚠ 워커 예외로 1건 유실: {e}", flush=True)
 
     # 생성 결과를 원본 레코드에 되붙임
     by_key = {(d["conv"], d["ability"], d["idx"]): {} for d in done}
