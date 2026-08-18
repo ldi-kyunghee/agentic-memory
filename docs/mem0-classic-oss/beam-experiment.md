@@ -48,15 +48,117 @@ mem0의 OSS 백엔드용 Dockerfile은 `mem0ai @ git+.../mem0.git@feat/v3-pipeli
 골든 메모리가 없어 Integrity·Accuracy·Update를 못 잼. 대신 문항마다 어떤 능력을 묻는지가
 라벨로 붙어 있어, HaluMem에서 못 하던 **능력별 분해**가 가능함.
 
-### 2-2. 프로토콜 선택
+**`chat.json`의 실제 모양** (100K_1 실측):
 
-투입 방식은 mem0 팀의 BEAM 하네스([mem0ai/memory-benchmarks](https://github.com/mem0ai/memory-benchmarks))를 따름.
-mem0에 mem0를 어떻게 먹일지는 그쪽 결정이 가장 덜 자의적이라고 판단함.
+```
+chat.json = [배치, 배치, 배치]
+배치 = { batch_number, turns, time_anchor }
+turns = [[msg, msg], [msg, msg, msg, msg], ...]
+msg   = { role, id, content, time_anchor?, index?, question_type? }
+```
+
+`time_anchor`가 두 군데에 있어 헷갈리는데, **배치 레벨은 항상 비어 있음.** 실제 날짜는
+배치의 **맨 첫 user 메시지 하나**에만 붙음 (`question_type: main_question`, `index: "1,1"`).
+
+| | 메시지 | 배치 `time_anchor` | 메시지에 붙은 anchor |
+|---|---|---|---|
+| 배치 1 | 60 | `None` | 1개 · `March-15-2024` |
+| 배치 2 | 56 | `None` | 1개 · `April-05-2024` |
+| 배치 3 | 72 | `None` | 1개 · `April-25-2024` |
+
+**대화 하나에 날짜가 3개뿐임.** 나머지 185개 메시지에는 시각 정보가 없음. HaluMem이
+세션마다 `start_time`을 주던 것과 근본적으로 다름.
+
+그래서 `temporal_reasoning` 문항(정답이 "3월 3일부터 4월 15일까지 43일" 같은 형태)이
+풀리려면 **대화 본문에 텍스트로 적힌 날짜**가 메모리에 남아야 함. 배치 앵커로는 안 됨.
+BEAM 데이터는 본문에 날짜가 자주 나오는 편임 (첫 메시지가 "Time Anchor of March 15, 2024"
+라고 말하고, 이후에도 "completed sprint 1 on March 29" 식으로 등장).
+
+또 하나. turn 길이가 **전부 짝수**임 (100K 5개 대화의 turn 538개 기준 길이 2가 352개,
+4가 99개, 6이 87개, 홀수 0개). 이 사실이 §2-2의 청킹 판단에 쓰임.
+
+### 2-2. 투입 단위: 공식과 mem0 하네스가 같은 값이라 고민할 것이 없었음
+
+BEAM 원본의 `create_chunking()`(`src/answer_probing_questions/long_term_memory_methods.py`)이
+네 가지를 제공함: `pair_chunk`(turn 안에서 2메시지씩) · `turn_chunk`(turn 통째로) ·
+`kv`(LLM episodic memory) · `light`(LightMem + scratchpad).
+
+그리고 **README가 권장하는 기본 RAG 설정이 `pair_chunk`임**:
+
+> Set `EVAL_TYPE="rag"`, `RETRIEVAL_METHOD="pair_chunk"` and `RETRIEVER="dense"`
+
+mem0 하네스도 2메시지 청크임. **양쪽이 같은 값이라 선택의 여지가 없었음.** 이 항목은
+"mem0를 따른 이탈"이 아니라 두 출처가 합치한 지점임.
+
+구현이 미세하게 다른데 결과는 동일함. BEAM은 turn 안에서 짝을 짓고(`turn[i:i+2]`), 우리는
+배치의 메시지를 평평하게 편 뒤 짝을 지음(`clean[i:i+2]`). turn 길이가 홀수면 갈리는데
+§2-1에서 확인했듯 홀수 turn이 하나도 없어서 두 방식이 같은 짝을 만듦.
+
+### 2-3. 시간 정보가 어디서 어떻게 쓰이나
+
+날짜가 배치당 하나뿐이므로 **배치의 첫 앵커를 그 배치의 모든 청크에** 부여함.
+
+```python
+anchor = next((m["time_anchor"] for m in msgs if m.get("time_anchor")), None)
+add_with_retry(memory, chunk, user_id=user_id,
+               metadata={"session_time": anchor or "unknown_time", "batch": bi})
+```
+
+100K_1이면 94개 청크가 세 날짜로 나뉨 (배치 0 → March-15, 1 → April-05, 2 → April-25).
+
+**① 추출 단계: 날짜를 안 봄.** mem0 `_add_to_vector_store`는 메시지만 프롬프트에 넣고
+`metadata`는 벡터 payload에만 붙임.
+
+```python
+parsed_messages = parse_messages(messages)
+system_prompt, user_prompt = get_fact_retrieval_messages(parsed_messages)   # metadata 없음
+...
+metadata=deepcopy(metadata),   # 저장할 때만
+```
+
+즉 "2024년 3월 15일에 X를 했다" 같은 메모리가 생기려면 그 날짜가 **대화 본문에** 있어야 함.
+
+**② 검색 단계: 날짜를 안 씀.** 필터 없이 코사인 유사도만 씀. `session_time`은 결과에
+딸려 나올 뿐임. 100K_1 검색 결과 195건 전부 `session_time`이 채워져 있고 값은 세 종류임.
+HaluMem에서 확인한 **검색 계층의 시간 인지 부재**가 여기서도 그대로임.
+
+**③ 답변 생성 단계: 여기서만 씀.** `build_context`가 cutoff로 자른 뒤 시간순 오름차순으로
+정렬하고 줄마다 `[날짜]` 접두사를 붙임.
+
+```
+1. [March-15-2024] Has a simple transaction input form and wants to improve its UX
+2. [April-05-2024] Completed sprint 1 on March 29
+```
+
+⚠ **자르기가 정렬보다 먼저임.** 순서를 바꾸면 상위 N개 대신 "오래된 것 N개"를 주게 되어
+검색 랭킹이 무의미해짐.
+
+⚠ **정렬이 문자열 기준이라 `April-05-2024 < March-15-2024`로 잘못 정렬됨.** 날짜가 배치당
+하나뿐이라 같은 값끼리 뭉치는 그룹핑 효과는 유지되지만 시간순은 정확하지 않음. 고칠 지점임.
+
+**공식 RAG 기준선과 비교하면 우리 쪽이 시간 정보에서 유리함.** 원본 `handling_context()`는
+검색 순서 그대로 이어붙이고 29,000토큰에서 자르며, 메타데이터가
+`{batch_number, turn_number, pair_number}`뿐이라 **날짜가 프롬프트에 아예 안 들어감.**
+
+| | BEAM 원본 RAG | 우리 |
+|---|---|---|
+| 청크 단위 | 2메시지 (`pair_chunk`) | 2메시지 |
+| 청크 중복 | **turn 길이만큼 중복** (§2-5) | 없음 |
+| 저장 | 원문 그대로 | mem0가 사실 추출 |
+| 검색 | dense top-k | dense top-200 |
+| 컨텍스트 순서 | 검색 점수 순 | **시간순 오름차순** |
+| 날짜 표기 | **없음** | **`[날짜]` 접두사** |
+| 예산 | 29,000토큰 | cutoff 20/50/100/200개 |
+
+저장 방식과 예산 단위까지 다르므로 **공식 기준선 수치와 직접 비교하지 않음.** 우리 실험은
+mem0 레인 안에서의 상대 비교로만 읽음.
+
+### 2-4. 프로토콜 선택 표
 
 | 항목 | 값 | 근거 |
 |---|---|---|
-| 투입 단위 | 2메시지 청크 | mem0 하네스 |
-| 시각 부여 | 배치의 `time_anchor`를 그 배치 전 청크에 | mem0 하네스 |
+| 투입 단위 | 2메시지 청크 | BEAM 공식 = mem0 하네스 (§2-2) |
+| 시각 부여 | 배치의 첫 `time_anchor`를 그 배치 전 청크에 | 날짜가 배치당 하나뿐 (§2-3) |
 | 컨텍스트 포맷 | 시간순 정렬 + `[날짜]` 접두사 | mem0 하네스 |
 | 검색 | top-200 한 번, cutoff 20/50/100/200으로 자름 | BEAM 기준 세팅 |
 | judge 프롬프트 | 논문 원본 무수정 import | 무수정 원칙 |
@@ -70,16 +172,18 @@ BEAM에서는 200이 나옴.
 두 출처를 섞은 것처럼 보이지만 가르는 규칙은 하나임. **BEAM에 원본이 있으면 BEAM을 따르고,
 없으면 mem0 하네스를 따름.**
 
-BEAM은 메모리 시스템을 쓰지 않는 벤치마크임. 대화 전문을 그대로 컨텍스트에 넣고 푸는 것이
-기준선이라, "무엇을 몇 개씩 잘라 넣고 어떻게 저장할지"에 대한 원본이 존재하지 않음. 투입 단위,
-시각 부여, 검색 예산, 컨텍스트 포맷이 전부 여기에 해당해서 mem0 하네스를 따랐음.
+BEAM은 메모리 시스템을 평가 대상으로 두지 않음. RAG 기준선은 있지만 **원문 청크를 그대로
+색인**할 뿐이라, "무엇을 사실로 뽑아 어떻게 저장하고 갱신할지"에 대한 원본이 없음. 시각을
+어떻게 부여할지, 컨텍스트를 몇 개로 끊을지도 마찬가지임. 이 항목들은 mem0 하네스를 따랐음.
+
+단, **투입 단위는 예외적으로 양쪽에 원본이 있고 값이 같음** (둘 다 2메시지). §2-2 참조.
 
 반면 답변 생성과 채점은 BEAM에 원본이 있음. 채점은 원본을 그대로 씀. 답변 생성은 이 규칙의
 유일한 예외로 mem0 이식본을 대표값에 씀. 공식 답변 프롬프트가 공식 rubric과 서로 어긋나 있고,
 mem0 팀 발표 수치와 비교하려면 그쪽에 맞춰야 하기 때문임. 공식본도 같이 돌려서 나란히 보고함.
 근거와 실측은 §7에 있음.
 
-### 2-3. 공식 코드와 다르게 한 곳 두 군데
+### 2-5. 공식 코드와 다르게 한 곳 두 군데
 
 **judge 프롬프트의 `<question>` 치환자를 채움.** 공식 `compute_metrics.py`는 이 자리를 비운 채
 호출함. 프롬프트 본문에 "질문에 응답하지 않으면 0점을 주고 중단하라"는 규칙이 있는데,
@@ -89,6 +193,36 @@ mem0 팀 발표 수치와 비교하려면 그쪽에 맞춰야 하기 때문임. 
 `from src.llm import *`를 하는데 `src/llm.py`가 import 시점에 OpenAI 클라이언트 세 개를 생성함.
 키가 없으면 그 자리에서 죽고 `sentence_transformers`·`rouge_score`·`nltk`도 함께 끌려옴.
 `src/beam/beam_official.py`에 원본 그대로 옮기고 출처 커밋과 줄번호를 주석에 박아둠.
+
+### 2-6. 공식 RAG 기준선 코드에 청크 중복 버그가 있음
+
+우리가 쓰지 않는 코드지만, **공식 기준선 수치를 그대로 믿기 어려운 근거**라 기록해둠.
+`create_chunking()`의 `pair_chunk` 분기임.
+
+```python
+for turn_number, turn in enumerate(turns):
+    for message in turn:                                     # ← 이 루프가
+        pairs = [turn[i:i+2] for i in range(0, len(turn), 2)]
+        for pair_number, pair in enumerate(pairs):
+            chunks.append({...})                             # ← 여기를 감싸고 있음
+```
+
+`pairs`가 `message`와 무관한데 `for message in turn` 안에 있음. **같은 청크가 turn 길이만큼
+중복 추가됨.** 메타데이터(`batch_number`/`turn_number`/`pair_number`)까지 같아서 완전한 중복임.
+
+| turn 길이 | 나와야 할 청크 | 실제 생성 | 배수 |
+|---|---|---|---|
+| 2 | 1 | 2 | 2배 |
+| 4 | 2 | 8 | 4배 |
+| 6 | 3 | 18 | 6배 |
+
+검색 코퍼스가 중복으로 부풀면 top-k에 같은 내용이 여러 번 올라와 다양성이 죽음. 10M 분기도
+같은 구조임. 그리고 10M 분기에는 `len(pair) == 2` 가드가 있는데 일반 분기에는 없어서 홀수
+길이 turn이 들어오면 `pair[1]`에서 IndexError가 남 (실제 데이터는 전부 짝수라 안 터짐).
+
+§6-3의 `extract_facts` 덮어쓰기 버그와 같은 계열임. **공식 코드의 서술과 동작이 어긋나는
+지점이 지금까지 셋임** (judge 프롬프트의 빈 `<question>`, `event_ordering`의 사실 분할 폐기,
+이 청크 중복).
 
 ---
 
