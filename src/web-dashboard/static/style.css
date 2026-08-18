@@ -716,3 +716,22 @@ td.bad-n { color: var(--bad); font-weight: 800; }
 .bleg { display: flex; gap: 2px; }
 .bleg span { flex: 1; text-align: center; font-size: var(--fs-micro); font-weight: 800;
   padding: 2px 0; font-variant-numeric: tabular-nums; }
+/* BEAM 문항 상세 */
+td.bclick { cursor: pointer; }
+td.bclick:hover { background: var(--accent-bg); }
+.nsc { display: inline-block; min-width: 26px; padding: 0 5px; border-radius: var(--r-1);
+  font-weight: 800; font-variant-numeric: tabular-nums; }
+.nsc.n0 { background: var(--bad-bg); color: var(--bad); }
+.nsc.n05 { background: var(--warn-bg); color: var(--warn-ink); }
+.nsc.n10, .nsc.n1 { background: var(--ok-bg); color: var(--ok-ink); }
+details.bans { border: 1px solid var(--rule); border-radius: var(--r-2); margin-bottom: 5px;
+  background: var(--panel); }
+details.bans > summary { cursor: pointer; padding: 5px 9px; font-weight: 700; font-size: var(--fs-sm); }
+details.bans .jans { margin: 0 9px 9px; white-space: pre-wrap; }
+.bmem { max-height: 40vh; overflow-y: auto; border: 1px solid var(--rule); border-radius: var(--r-2);
+  margin-top: 6px; background: var(--panel); }
+.bm { display: flex; gap: 7px; padding: 2px 8px; border-bottom: 1px solid var(--rule-soft);
+  font-size: var(--fs-xs); line-height: var(--lh-snug); }
+.bmi { flex: 0 0 28px; color: var(--faint); text-align: right; font-variant-numeric: tabular-nums; }
+.bmt { flex: 0 0 96px; color: var(--dim); white-space: nowrap; }
+.bmx { flex: 1; min-width: 0; }

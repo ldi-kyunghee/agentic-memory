@@ -820,6 +820,29 @@ def api_beam(bucket: str = "100k"):
             "abilities": abilities, "overall": overall, "convs": convs, "event_ordering": eo}
 
 
+@app.get("/api/beam/questions")
+def api_beam_questions(bucket: str, ability: str):
+    """능력 하나의 문항 목록. cutoff 별 점수를 나란히 놓아 어느 문항이 흔들리는지 보게 함."""
+    d = load_beam(bucket)
+    cuts = beam_cfg().get("cutoffs") or [20, 50, 100, 200]
+    rows = [r for r in d["records"] if r["ability"] == ability]
+    out = []
+    for (conv, idx) in sorted({(r["conv"], r["idx"]) for r in rows}):
+        rs = [r for r in rows if r["conv"] == conv and r["idx"] == idx]
+        by = {str(r["cutoff"]): r for r in rs}
+        cells = {str(k): (by[str(k)]["score"] if str(k) in by else None) for k in cuts}
+        vals = [v for v in cells.values() if v is not None]
+        out.append({
+            "conv": conv, "idx": idx, "question": rs[0]["question"],
+            "n_rubric": len(rs[0]["rubric"]), "stored": rs[0].get("stored"),
+            "category": d["convs"].get(conv, {}).get("category"),
+            "cells": cells,
+            "spread": round(max(vals) - min(vals), 4) if vals else None,
+        })
+    out.sort(key=lambda x: -(x["spread"] or 0))
+    return {"bucket": bucket, "ability": ability, "cutoffs": cuts, "questions": out}
+
+
 @app.get("/api/beam/question")
 def api_beam_question(bucket: str, conv: str, ability: str, idx: int):
     """문항 하나의 cutoff 4벌을 나란히. nugget 채점과 투입된 메모리까지 보여줌."""

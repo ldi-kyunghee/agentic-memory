@@ -2154,7 +2154,9 @@ async function renderBeam() {
     <table class="cmp beam"><tr><th>능력</th>${CUT.map((k) => `<th data-desc="답변자에게 메모리 ${k}개까지 제공">top-${k}</th>`).join("")}
       <th data-desc="top-${CUT[CUT.length-1]} 빼기 top-${CUT[0]}. 양수면 컨텍스트를 늘릴수록 좋아지는 능력">차이</th><th>추세</th></tr>
       ${d.abilities.map((a) => `<tr data-ab="${esc(a.key)}">
-        <td class="brow"><b>${esc(a.label)}</b><br><span class="small muted">${esc(a.key)}</span></td>
+        <td class="brow bclick" data-open="${esc(a.key)}|${esc(a.label)}"
+          data-desc="클릭하면 이 능력의 문항 ${CUT.length}벌 채점을 문항 단위로 볼 수 있습니다"><b>${esc(a.label)}</b>
+          <br><span class="small muted">${esc(a.key)}</span></td>
         ${CUT.map((k) => cellHTML(a.cells[String(k)])).join("")}
         ${deltaHTML(a.delta)}<td>${spark(a.cells)}</td></tr>`).join("")}
       <tr class="jm-tot"><td class="brow"><b>전체</b></td>
@@ -2211,6 +2213,111 @@ async function renderBeam() {
     <p class="small muted" style="margin-top:10px">⚠ 이 화면은 HaluMem 과 데이터가 달라 상단바의 Generator·Judge 선택을 따르지 않습니다. 버킷마다 고정된 조합으로 집계됩니다.</p>
   </div>`;
   $$("#content .hrefsw button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
+  $$("#content td.bclick").forEach((td) => (td.onclick = () => {
+    const [k, lab] = td.dataset.open.split("|");
+    beamQuestions(k, lab);
+  }));
+}
+
+// 능력 하나의 문항 목록. 어느 문항이 cutoff 에 따라 흔들리는지 보려는 화면임
+async function beamQuestions(ability, label) {
+  $("#jmodal").classList.remove("hidden");
+  $("#jmodal-head").innerHTML = `<b>BEAM · ${esc(label)}</b>
+    <span class="jchip">${esc(ability)}</span><span style="margin-left:auto"></span>
+    <button class="jbtn" id="jm-close">✕</button>`;
+  $("#jm-close").onclick = jmClose;
+  const el = $("#jmodal-body");
+  el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
+  const d = await api(`/api/beam/questions?bucket=${encodeURIComponent(S.beamBucket)}&ability=${encodeURIComponent(ability)}`);
+  const CUT = d.cutoffs;
+  el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
+    <div class="jbasis" data-desc="같은 문항을 cutoff 만 바꿔 네 번 답변시키고 각각 채점했습니다. 흔들림이 큰 문항일수록 컨텍스트 양에 민감합니다.">
+      문항 ${d.questions.length}개를 <b>흔들림(최대 − 최소)</b>이 큰 순으로 놓았습니다.
+      <span class="small">흔들림이 크면 컨텍스트 양이 답을 좌우한다는 뜻이고, 0에 가까우면 몇 개를 주든 결과가 같습니다.</span>
+    </div>
+    <table class="cmp beam"><tr><th>대화</th><th>주제</th><th>문항</th><th>rubric</th>
+      ${CUT.map((k) => `<th>top-${k}</th>`).join("")}<th data-desc="최대 − 최소">흔들림</th><th></th></tr>
+      ${d.questions.map((q) => `<tr>
+        <td><b>${esc(q.conv)}</b><span class="muted small">·q${q.idx}</span></td>
+        <td class="small">${esc(q.category || "")}</td>
+        <td class="qtxt small">${esc((q.question || "").slice(0, 90))}</td>
+        <td>${q.n_rubric}</td>
+        ${CUT.map((k) => {
+          const v = q.cells[String(k)];
+          const over = q.stored != null && q.stored < k;
+          return v == null ? `<td class="muted">–</td>`
+            : `<td class="bcell" style="${beamHeat(v)}">${v.toFixed(2)}${over ? '<i class="bfull">▚</i>' : ""}</td>`;
+        }).join("")}
+        <td class="bdelta ${q.spread >= 0.4 ? "down" : ""}">${(q.spread ?? 0).toFixed(2)}</td>
+        <td><button class="jbtn" data-q="${esc(q.conv)}|${esc(ability)}|${q.idx}">상세</button></td>
+      </tr>`).join("")}</table>
+    <p style="margin-top:14px"><button class="jbtn" id="jm-back">✕ 닫기</button></p></div>`;
+  $("#jm-back").onclick = jmClose;
+  $$("#jmodal-body button[data-q]").forEach((b) => (b.onclick = () => {
+    const [conv, ab, idx] = b.dataset.q.split("|");
+    beamDetail(conv, ab, +idx, label);
+  }));
+}
+
+// 문항 하나를 cutoff 4벌로 나란히. rubric 항목별 채점과 투입된 메모리까지 보여줌
+async function beamDetail(conv, ability, idx, label) {
+  const el = $("#jmodal-body");
+  el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
+  const d = await api(`/api/beam/question?bucket=${encodeURIComponent(S.beamBucket)}`
+    + `&conv=${encodeURIComponent(conv)}&ability=${encodeURIComponent(ability)}&idx=${idx}`);
+  const CS = d.cutoffs;
+  const sc = (v) => `<span class="nsc n${String(v).replace(".", "")}">${v}</span>`;
+
+  el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
+    <p class="small muted"><b>${esc(d.conv)}</b> · ${esc(d.category || "")} · ${esc(ability)}
+      ${d.difficulty ? `· 난이도 ${esc(d.difficulty)}` : ""} · 저장 메모리 <b>${d.stored ?? "–"}</b>개</p>
+
+    <div class="jsec"><h5 data-desc="BEAM 이 제시한 probing question 원문">문항</h5>
+      <div class="jtarget">${esc(d.question)}</div></div>
+
+    <div class="jsec"><h5 data-desc="채점은 이 항목들만 봅니다. judge 가 항목마다 0 / 0.5 / 1 을 매기고 그 평균이 문항 점수입니다">rubric (${d.rubric.length}개)</h5>
+      <ol class="jl">${d.rubric.map((r) => `<li class="small">${esc(r)}</li>`).join("")}</ol></div>
+
+    ${d.reference ? `<div class="jsec"><h5 data-desc="참고용입니다. 채점에는 쓰이지 않습니다">데이터셋이 제시한 정답</h5>
+      <div class="jans small">${esc(String(d.reference))}</div></div>` : ""}
+
+    <div class="jsec"><h5 data-desc="같은 문항을 컨텍스트 양만 바꿔 네 번 답변시킨 결과입니다. 행이 rubric 항목, 열이 cutoff 입니다">rubric × cutoff 채점</h5>
+      <table class="cmp beam"><tr><th>rubric</th>${CS.map((c) =>
+        `<th data-desc="${esc(`요청 ${c.cutoff}개 · 실제 투입 ${c.used}개`)}">top-${c.cutoff}<br>
+          <span class="small muted">${c.used}개 투입</span></th>`).join("")}</tr>
+        ${d.rubric.map((r, i) => `<tr><td class="qtxt small">${esc(r)}</td>
+          ${CS.map((c) => {
+            const n = (c.nugget_scores || [])[i];
+            return !n ? `<td class="muted">–</td>`
+              : `<td class="bcell" data-desc="${esc(n.reason || "")}">${sc(n.score)}</td>`;
+          }).join("")}</tr>`).join("")}
+        <tr class="jm-tot"><td><b>문항 점수</b></td>
+          ${CS.map((c) => `<td class="bcell" style="${beamHeat(c.score)}"><b>${c.score.toFixed(3)}</b></td>`).join("")}</tr>
+      </table></div>
+
+    ${d.cutoffs.some((c) => c.event_ordering) ? `<div class="jsec">
+      <h5 data-desc="이 능력만 공식 코드가 다른 계열의 지표를 씁니다. 세 값이 서로 다릅니다">event_ordering 보조 지표</h5>
+      <table class="cmp"><tr><th>cutoff</th><th>nugget</th><th>tau_norm</th><th>f1</th><th>final</th></tr>
+        ${CS.map((c) => { const e = c.event_ordering || {};
+          return `<tr><td>top-${c.cutoff}</td><td><b>${c.score.toFixed(3)}</b></td>
+            <td>${e.tau_norm ?? "–"}</td><td class="${e.f1 === 0 ? "bad-n" : ""}">${e.f1 ?? "–"}</td>
+            <td>${e.final_score ?? "–"}</td></tr>`; }).join("")}</table></div>` : ""}
+
+    <div class="jsec"><h5>생성된 답변</h5>
+      ${CS.map((c) => `<details class="bans"><summary>top-${c.cutoff}
+        <span class="muted small">${c.used}개 투입 · 점수 ${c.score.toFixed(3)}</span></summary>
+        <div class="jans small">${esc(c.system_response || "(빈 답변)")}</div></details>`).join("")}</div>
+
+    <details class="jrubric"><summary>검색된 메모리 ${d.retrieved.length}개 (상위 순)</summary>
+      <div class="bmem">${d.retrieved.map((m, i) => `<div class="bm">
+        <span class="bmi">${i + 1}</span>
+        <span class="bmt">${esc(m.session_time || "")}</span>
+        <span class="bmx">${esc(m.memory || "")}</span></div>`).join("")}</div></details>
+
+    <p style="margin-top:14px"><button class="jbtn" id="jm-back">← 문항 목록</button>
+      <button class="jbtn" id="jm-x">✕ 닫기</button></p></div>`;
+  $("#jm-back").onclick = () => beamQuestions(ability, label);
+  $("#jm-x").onclick = jmClose;
 }
 
 async function jmGoldQA() {
