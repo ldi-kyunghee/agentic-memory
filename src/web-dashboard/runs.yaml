@@ -67,21 +67,30 @@ beam:
     summarization: "요약"
     temporal_reasoning: "시간 추론"
   buckets:
+    # 세 버킷 모두 답변 생성 프롬프트는 BEAM 공식(answer_generation_for_rag)으로 통일했음.
+    # 채점 프롬프트도 BEAM 공식이라 생성·채점 규약이 한 벌로 맞음.
     100k:
-      label: "100K (20대화 400문항)"
+      label: "100K"
       ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
-      judge: results/mem0-classic-oss/beam-judge-oss120-100k
-      note: "청크 2,866 · 저장 메모리 100~407 (중앙값 278) · agent gpt-oss-120b medium, gen=judge gpt-oss-120b high"
+      judge: results/mem0-classic-oss/beam-judge-oss120-100k-beamprompt
+      note: "20대화 400문항 · 청크 2,866 · 저장 메모리 100~407 (중앙값 278) · agent gpt-oss-120b medium, 답변=채점 gpt-oss-120b high · 답변 프롬프트 BEAM 공식"
     500k:
-      label: "500K (35대화 700문항)"
+      label: "500K"
       ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-500k
-      note: "청크 약 18,200"
+      note: "20대화 400문항 · 청크 10,746 (100K의 3.7배) · 나머지 세팅은 100K와 동일"
     1m:
-      label: "1M (35대화 700문항)"
+      label: "1M"
       ingest: results/mem0-classic-oss/beam-1m-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-1m
-      note: "청크 약 37,500"
+      note: "투입 대기 중 · 나머지 세팅은 100K와 동일"
+    # 대조군. 검색 결과는 100K와 한 글자도 다르지 않고 답변 생성 프롬프트만 다름.
+    # 저장·검색이 고정이므로 두 버킷의 차이는 전부 답변 생성 규약의 몫임.
+    100k-oldprompt:
+      label: "100K · 옛 답변 프롬프트"
+      ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
+      judge: results/mem0-classic-oss/beam-judge-oss120-100k
+      note: "대조군 · 100K와 검색 결과가 동일하고 답변 생성 프롬프트만 mem0 하네스 이식본 · 간결 지시가 없어 답변이 길어짐 (중앙값 669자, 최대 18,903자) · 길이와 점수의 상관이 능력마다 부호까지 갈림 (abstention -0.87, summarization +0.47)"
 
 # 숨김 그룹: 실험 갈래 하나를 통째로 접었다 편다. Metrics 사이드바에 그룹당 체크박스 하나.
 # ⚠ 숨김은 삭제가 아니다: 산출물·주석은 그대로 두고 노출만 막는다.
