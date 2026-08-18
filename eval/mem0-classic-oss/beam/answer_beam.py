@@ -13,6 +13,7 @@ Stage A가 문항마다 top-200을 저장해뒀으므로 여기서는 검색을 
 BEAM은 mem0 하네스 기준을 따르기로 했으므로 그쪽에 맞춤.
 """
 import os
+import sys
 import json
 import time
 import argparse
@@ -24,15 +25,25 @@ from openai import OpenAI
 
 load_dotenv()
 
+sys.path.insert(0, "BEAM/src")   # 공식 프롬프트 (prompts.py 는 상수뿐이라 부작용 없음)
+from prompts import answer_generation_for_rag   # noqa: E402
+
 MODEL = os.getenv("ANSWER_MODEL", os.getenv("OPENAI_MODEL"))
 REASONING_EFFORT = os.getenv("ANSWER_REASONING_EFFORT")
 CUTOFFS = [int(c) for c in os.getenv("BEAM_CUTOFFS", "20,50,100,200").split(",")]
+# 답변 생성 프롬프트 선택.
+#   beam = BEAM 공식(answer_generation_for_rag). "간결하게, 설명 없이 답만" 지시
+#   mem0 = mem0 하네스 이식본. 간결 지시가 없고 세부를 다 담으라고 함
+# ⚠ 이 선택이 점수를 좌우함. 100K 실측에서 답변 중앙 길이가 669자였고, 길이와 점수의
+#    상관이 abstention -0.869 / summarization +0.467 로 능력마다 부호까지 갈렸음.
+#    채점을 BEAM 공식으로 하므로 답변 생성도 공식을 기본으로 둠.
+PROMPT_KIND = os.getenv("BEAM_ANSWER_PROMPT", "beam")
 
 client = OpenAI()
 
 # mem0 memory-benchmarks의 get_beam_answer_generation_prompt 이식본.
 # 규칙 9개를 원문 그대로 옮김. 번역하면 판정이 달라질 수 있어 영어를 유지함.
-PROMPT_BEAM = """You are an AI assistant with access to stored memories from prior conversations with a user.
+PROMPT_MEM0 = """You are an AI assistant with access to stored memories from prior conversations with a user.
 Use these memories to answer the following question as accurately and completely as possible.
 
 IMPORTANT RULES:
@@ -54,6 +65,18 @@ RETRIEVED MEMORIES:
 ANSWER:"""
 
 
+def build_prompt(question: str, memories: str) -> str:
+    """선택된 규약으로 프롬프트를 조립함.
+
+    공식 쪽은 <context> / <question> 치환자를 쓰고, mem0 이식본은 {} 포맷을 씀.
+    """
+    if PROMPT_KIND == "beam":
+        return (answer_generation_for_rag
+                .replace("<context>", memories)
+                .replace("<question>", question))
+    return PROMPT_MEM0.format(question=question, memories=memories)
+
+
 def build_context(retrieved: list, cutoff: int) -> tuple[str, int]:
     """검색 결과를 cutoff개로 자르고 시간순 정렬해 프롬프트용 문자열로 만듦.
 
@@ -73,7 +96,7 @@ def build_context(retrieved: list, cutoff: int) -> tuple[str, int]:
 
 def answer_one(job: dict) -> dict:
     """(대화, 문항, cutoff) 하나에 대한 답변 생성."""
-    prompt = PROMPT_BEAM.format(question=job["question"], memories=job["_ctx"])
+    prompt = build_prompt(job["question"], job["_ctx"])
     kwargs = dict(model=MODEL, messages=[{"role": "user", "content": prompt}])
     if REASONING_EFFORT:
         kwargs["reasoning_effort"] = REASONING_EFFORT
@@ -86,12 +109,13 @@ def answer_one(job: dict) -> dict:
     resp = client.chat.completions.create(**kwargs)
     choice = resp.choices[0]
     text = choice.message.content or ""
-    if "ANSWER:" in text:   # 모델이 프롬프트 꼬리를 따라 쓰는 경우 잘라냄
-        text = text.rsplit("ANSWER:", 1)[-1].strip()
+    for tag in ("RESPONSE:", "ANSWER:"):   # 모델이 프롬프트 꼬리를 따라 쓰는 경우 잘라냄
+        if tag in text:
+            text = text.rsplit(tag, 1)[-1].strip()
     return {
         "conv": job["conv"], "ability": job["ability"], "idx": job["idx"],
         "cutoff": job["cutoff"], "used": job["used"], "stored": job["stored"],
-        "system_response": text,
+        "system_response": text, "prompt_kind": PROMPT_KIND,
         "finish_reason": choice.finish_reason,   # length 면 예산 부족, stop 이면 정상 종료
         "response_duration_ms": (time.time() - start) * 1000,
     }
@@ -101,6 +125,7 @@ def main(results_path: str, out_path: str, max_workers: int, regen: bool):
     convs = [json.loads(l) for l in open(results_path, encoding="utf-8") if l.strip()]
     print(f"대화 {len(convs)}개 · cutoff {CUTOFFS} · 모델 {MODEL}")
     print(f"reasoning effort: {REASONING_EFFORT or '없음 (기본값)'}")
+    print(f"답변 생성 프롬프트: {PROMPT_KIND} ({'BEAM 공식, 간결 지시 있음' if PROMPT_KIND == 'beam' else 'mem0 하네스, 간결 지시 없음'})")
 
     jobs = []
     for c in convs:
@@ -132,7 +157,8 @@ def main(results_path: str, out_path: str, max_workers: int, regen: bool):
     by_key = {(d["conv"], d["ability"], d["idx"]): {} for d in done}
     for d in done:
         by_key[(d["conv"], d["ability"], d["idx"])][str(d["cutoff"])] = {
-            k: d[k] for k in ("system_response", "used", "stored", "finish_reason", "response_duration_ms")
+            k: d[k] for k in ("system_response", "used", "stored", "prompt_kind",
+                              "finish_reason", "response_duration_ms")
         }
     for c in convs:
         for q in c["questions"]:
