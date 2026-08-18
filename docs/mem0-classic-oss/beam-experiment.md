@@ -39,8 +39,8 @@ mem0의 OSS 백엔드용 Dockerfile은 `mem0ai @ git+.../mem0.git@feat/v3-pipeli
 | 항목 | HaluMem | BEAM |
 |---|---|---|
 | 최상위 단위 | 유저(uuid) | 대화(`100K_1`) |
-| 그 아래 | 세션 | 배치 3~10개 |
-| 시각 정보 | 세션마다 `start_time` | **배치당 `time_anchor` 1개** (전체 메시지의 1.6%) |
+| 그 아래 | 세션 | 배치 3~5개 (100K 실측) |
+| 시각 정보 | 세션마다 `start_time` | **배치당 `time_anchor` 1개** (100K 전체 메시지 5,732개 중 90개, 1.57%) |
 | 골든 메모리 | 세션마다 있음 | **없음** |
 | 잴 수 있는 지표 | R, Acc, Upd, QA 4종 | **QA 하나** |
 | 문항 구분 | 세션 안 QA | **능력 10종** |
@@ -59,6 +59,7 @@ msg   = { role, id, content, time_anchor?, index?, question_type? }
 
 `time_anchor`가 두 군데에 있어 헷갈리는데, **배치 레벨은 항상 비어 있음.** 실제 날짜는
 배치의 **맨 첫 user 메시지 하나**에만 붙음 (`question_type: main_question`, `index: "1,1"`).
+100K_1이면 이럼.
 
 | | 메시지 | 배치 `time_anchor` | 메시지에 붙은 anchor |
 |---|---|---|---|
@@ -66,8 +67,24 @@ msg   = { role, id, content, time_anchor?, index?, question_type? }
 | 배치 2 | 56 | `None` | 1개 · `April-05-2024` |
 | 배치 3 | 72 | `None` | 1개 · `April-25-2024` |
 
-**대화 하나에 날짜가 3개뿐임.** 나머지 185개 메시지에는 시각 정보가 없음. HaluMem이
-세션마다 `start_time`을 주던 것과 근본적으로 다름.
+**100K 20개 대화 전수로 확인한 불변식** (대화마다 배치 수는 다름):
+
+- 배치마다 `time_anchor`가 **정확히 1개** (20/20)
+- 배치 레벨 `time_anchor`는 **항상 비어 있음** (20/20)
+- 따라서 **고유 날짜 수 = 배치 수**
+
+| 배치 수 | 대화 |
+|---|---|
+| 3개 | 5개 (대화 1~5) |
+| 5개 | 15개 (대화 6~20) |
+
+메시지 수는 188~392개로 두 배 넘게 벌어짐. 즉 **메시지 60~80개당 날짜 하나**꼴이고,
+나머지 메시지에는 시각 정보가 없음. HaluMem이 세션마다 `start_time`을 주던 것과 근본적으로
+다름. 500K·1M은 로컬 sparse checkout에 없어 미확인이며 서버에서 같은 스크립트로 재확인할 것.
+
+⚠ 10M은 구조가 한 겹 더 깊음. 원본 `create_chunking`에 `for plan in messages:
+for batch in list(plan.values())[0]` 분기가 따로 있음. 10M을 돌리려면 `parse_chat`부터
+손봐야 함.
 
 그래서 `temporal_reasoning` 문항(정답이 "3월 3일부터 4월 15일까지 43일" 같은 형태)이
 풀리려면 **대화 본문에 텍스트로 적힌 날짜**가 메모리에 남아야 함. 배치 앵커로는 안 됨.
