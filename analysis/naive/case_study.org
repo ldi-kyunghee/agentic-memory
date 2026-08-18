@@ -102,8 +102,7 @@
 
 ** 패턴
 #+name: mean-distribution
-#+header: :noweb strip-export
-#+begin_src python :results output file link :file "figs/per-memory-type-mean-distribution-plot.png" :exports results
+#+begin_src python :results output file link :file "figs/per-memory-type-mean-distribution-plot.png" :exports results :tangle "case_study/plot_per_memory_type_distribution.py" :mkdirp yes
   import matplotlib.pyplot as plt
   import numpy as np
   import json
