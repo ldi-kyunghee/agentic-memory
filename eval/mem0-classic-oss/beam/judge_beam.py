@@ -109,12 +109,16 @@ def main(results_path: str, out_dir: str, max_workers: int, cutoffs: list[int] |
     os.makedirs(out_dir, exist_ok=True)
     print(f"대화 {len(convs)}개 · judge {MODEL} · effort {REASONING_EFFORT or '기본값'}")
 
-    jobs = []
+    # ⚠ 대화 하나가 끝날 때마다 즉시 저장함. 전부 모았다가 맨 끝에 한 번 쓰면
+    #    그 지점에서 죽을 때 몇 시간치가 통째로 날아감 (실측: 5500콜 1.5시간 유실).
+    #    파일이 이미 있으면 건너뛰므로 중단 후 재실행도 이어서 됨.
+    results = []
+    todo = []
     for c in convs:
-        done_path = os.path.join(out_dir, f"{c['conv_id']}.json")
-        if os.path.exists(done_path):
+        if os.path.exists(os.path.join(out_dir, f"{c['conv_id']}.json")):
             print(f"skip {c['conv_id']} (채점본 있음)")
             continue
+        jobs = []
         for q in c["questions"]:
             for k, a in (q.get("answers") or {}).items():
                 if cutoffs and int(k) not in cutoffs:
@@ -125,25 +129,31 @@ def main(results_path: str, out_dir: str, max_workers: int, cutoffs: list[int] |
                     "question": q["question"], "rubric": q["rubric"],
                     "response": a["system_response"],
                 })
-    print(f"채점 대상 {len(jobs)}건")
-    if not jobs:
+        if jobs:
+            todo.append((c["conv_id"], jobs))
+
+    total = sum(len(j) for _, j in todo)
+    print(f"채점 대상 {total}건 (대화 {len(todo)}개)")
+    if not total:
         print("채점할 것이 없음. out-dir 을 비우거나 다른 경로를 줄 것")
         return
 
-    results = []
-    with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        futs = [ex.submit(judge_one, j) for j in jobs]
-        for f in tqdm(as_completed(futs), total=len(futs), desc="judge"):
-            results.append(f.result())
-
-    by_conv = {}
-    for r in results:
-        by_conv.setdefault(r["conv"], []).append(r)
-    for conv, rows in by_conv.items():
+    bar = tqdm(total=total, desc="judge")
+    for conv, jobs in todo:
+        rows = []
+        with ThreadPoolExecutor(max_workers=max_workers) as ex:
+            futs = [ex.submit(judge_one, j) for j in jobs]
+            for f in as_completed(futs):
+                rows.append(f.result())
+                bar.update(1)
+        os.makedirs(out_dir, exist_ok=True)   # 실행 중 디렉토리가 사라져도 다시 만듦
         with open(os.path.join(out_dir, f"{conv}.json"), "w", encoding="utf-8") as f:
             json.dump({"conv_id": conv, "judge_model": MODEL,
                        "reasoning_effort": REASONING_EFFORT, "records": rows},
                       f, ensure_ascii=False)
+        results += rows
+        bar.write(f"saved {conv} ({len(rows)}건)")
+    bar.close()
 
     fails = [n for r in results for n in r["nugget_scores"] if n["reason"] == "PARSE_FAIL"]
     budget = sum(1 for n in fails if n.get("finish_reason") == "length")
