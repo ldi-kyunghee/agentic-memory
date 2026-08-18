@@ -92,6 +92,7 @@ def process_conversation(conv_dir: str, bucket: str, top_k: int, save_path: str,
         return f"skip {key} (cached)"
 
     tracer = None
+    memory = None
     try:
         memory = build_memory(
             collection_name=f"{collection_name}_{conv_id}",
@@ -177,6 +178,18 @@ def process_conversation(conv_dir: str, bucket: str, top_k: int, save_path: str,
             f.write(traceback.format_exc())
         return f"FAILED {key} -> {err}"
     finally:
+        # 검색 결과까지 tmp에 저장했으므로 이 대화의 컬렉션은 더 필요 없음.
+        # ⚠ 안 지우면 대화 수만큼 컬렉션이 쌓이고, 컬렉션마다 옵티마이저 스레드가 붙어
+        #   결국 스레드 생성이 실패함. 실측: 2026-08-18 07:57:03, 100K 20개 + 500K 35개가
+        #   쌓인 지점에서 Qdrant가 "failed to allocate an alternative stack:
+        #   Cannot allocate memory (os error 12)" 로 죽었음. 메모리는 481Gi 남아 있었음.
+        #   그때 돌던 23개 대화가 2분 안에 전부 유실됐고 뒤이은 1M 투입은 즉시 실패했음.
+        # 재현이나 사후 재검색이 필요하면 BEAM_KEEP_COLLECTIONS=1 로 남길 수 있음.
+        if memory is not None and os.getenv("BEAM_KEEP_COLLECTIONS") != "1":
+            try:
+                memory.vector_store.delete_col()
+            except Exception as e:
+                print(f"⚠ [{key}] 컬렉션 정리 실패, 무시하고 진행: {e}", flush=True)
         if tracer:
             tracer.close()
 
