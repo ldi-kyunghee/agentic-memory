@@ -697,3 +697,22 @@ td:has(> .masked) { background: repeating-linear-gradient(135deg, transparent, t
 .gq-동률          { background: var(--chip); color: var(--dim); }
 table.gqi td.qtxt { max-width: 300px; font-size: var(--fs-md); line-height: var(--lh-snug); white-space: normal; }
 table.gqi td { vertical-align: top; }
+
+/* ---------- BEAM 화면 ----------
+   점수 히트맵은 이 화면 안에서만 쓰는 국소 스케일임 (0 빨강 ~ 1 초록).
+   판정 팔레트의 초록/빨강과 색은 겹치지만 칸 배경으로만 쓰고 칩에는 쓰지 않아 혼동이 없음. */
+table.beam td.bcell { text-align: center; font-variant-numeric: tabular-nums; cursor: help;
+  white-space: nowrap; }
+table.beam td.brow { min-width: 150px; }
+/* 저장소가 cutoff 보다 적어 전량이 들어간 칸 표시 */
+.bfull { font-style: normal; margin-left: 3px; opacity: .55; cursor: help; }
+table.beam td.bdelta { text-align: right; font-weight: 800; font-variant-numeric: tabular-nums; }
+table.beam td.bdelta.up { color: var(--ok-ink); background: var(--ok-bg); }
+table.beam td.bdelta.down { color: var(--bad); background: var(--bad-bg); }
+/* 능력별 추세 미니 곡선 */
+.bspark { width: 60px; height: 22px; display: block; }
+.bspark polyline { fill: none; stroke: var(--accent); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+td.bad-n { color: var(--bad); font-weight: 800; }
+.bleg { display: flex; gap: 2px; }
+.bleg span { flex: 1; text-align: center; font-size: var(--fs-micro); font-weight: 800;
+  padding: 2px 0; font-variant-numeric: tabular-nums; }

@@ -486,6 +486,7 @@ function render() {
   else if (S.tab === "qa") renderQA();
   else if (S.tab === "compare") renderCompare();
   else if (S.tab === "metrics") renderMetrics();
+  else if (S.tab === "beam") renderBeam();
   else renderDigest();
   renderInspector();
 }
@@ -2075,6 +2076,141 @@ function iaaMatrixHTML(d) {
         ${["integrity", "accuracy", "update", "qa"].filter((t) => baseM.by_type[t]).map(row).join("")}
         <tr class="jm-tot">${row("").slice(4)}</tr></table>
       <p class="small muted" style="margin-top:5px">개별 검토(큐 밖)로 라벨한 주석 ${d.outside_queue}건은 이 집계에서 제외됩니다. 분석가가 의심스러운 항목을 골라 누른 <b>기회 표본</b>이라 섞으면 지표가 왜곡됩니다.</p>`;
+}
+
+/* ---------- BEAM ---------- */
+/* HaluMem 화면과 데이터 구조가 달라 전용 화면으로 둠. 유저·세션·골든이 없고
+   대화 x 능력 x cutoff 세 갈래로만 집계됨. */
+S.beamBucket = "100k";
+
+// 점수를 색으로. 0(빨강) ~ 0.5(노랑) ~ 1(초록). 판정 팔레트와 뜻이 겹치지 않게
+// 이 화면 안에서만 쓰는 국소 스케일임
+function beamHeat(v) {
+  if (v == null) return "background:var(--chip)";
+  const t = Math.max(0, Math.min(1, v));
+  const h = t * 120;                       // 0=빨강, 120=초록
+  return `background:hsl(${h} 62% ${92 - t * 14}%);color:hsl(${h} 70% 24%)`;
+}
+
+async function renderBeam() {
+  const el = $("#content");
+  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  let d;
+  try {
+    d = await api(`/api/beam?bucket=${encodeURIComponent(S.beamBucket)}`);
+  } catch (e) {
+    el.innerHTML = `<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
+    return;
+  }
+  const CUT = d.cutoffs;
+  const pick = (d.buckets || []).map((b) =>
+    `<button class="seg${b.key === d.bucket ? " on" : ""}" data-bk="${esc(b.key)}"
+      ${b.ready ? "" : "disabled"} data-desc="${esc(b.note || "")}${b.ready ? "" : "<br><b>아직 채점본이 없습니다</b>"}"
+      >${esc(b.label)}</button>`).join("");
+
+  if (!d.ready) {
+    el.innerHTML = `<p class="hrefsw"><b>버킷</b>${pick}</p>
+      <p class="muted">이 버킷은 아직 채점본이 없습니다.</p>`;
+    $$("#content .hrefsw button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
+    return;
+  }
+
+  // cutoff 가 저장소보다 큰 칸을 표시. 그 칸은 검색이 작동하지 않은 조건임
+  const cellHTML = (c) => {
+    if (!c) return `<td class="muted">–</td>`;
+    const fullPct = c.n ? c.full / c.n * 100 : 0;
+    const mark = c.full ? `<i class="bfull" data-desc="${esc(
+      `이 칸의 ${c.full}/${c.n}건은 저장 메모리가 cutoff 보다 적어 <b>저장소를 전부 준 조건</b>입니다.`
+      + `<br>실제 투입 평균 ${c.used}개. 검색이 골라낸 결과가 아니므로 검색 품질로 읽으면 안 됩니다.`)}">▚</i>` : "";
+    return `<td class="bcell" style="${beamHeat(c.score)}" data-desc="${esc(
+      `평균 ${c.score} · ${c.n}건<br>실제 투입 평균 <b>${c.used}</b>개`
+      + (c.full ? `<br>그중 ${c.full}건은 저장소가 모자라 cutoff 를 못 채웠습니다 (${fullPct.toFixed(0)}%)` : ""))}"
+      ><b>${c.score.toFixed(3)}</b>${mark}</td>`;
+  };
+  const deltaHTML = (v) => v == null ? `<td class="muted">–</td>`
+    : `<td class="bdelta ${v >= 0 ? "up" : "down"}">${v >= 0 ? "+" : ""}${v.toFixed(3)}</td>`;
+
+  // 능력별 미니 곡선. 값을 0~1 로 보고 세로 위치를 잡음
+  const spark = (cells) => {
+    const pts = CUT.map((k, i) => {
+      const c = cells[String(k)];
+      return c ? `${(i / (CUT.length - 1) * 56 + 2).toFixed(1)},${(20 - c.score * 18).toFixed(1)}` : null;
+    }).filter(Boolean).join(" ");
+    return `<svg class="bspark" viewBox="0 0 60 22" preserveAspectRatio="none"><polyline points="${pts}"/></svg>`;
+  };
+
+  const eo = d.event_ordering;
+  el.innerHTML = `
+    <p class="hrefsw" data-desc="버킷마다 대화 길이와 저장 메모리 규모가 다릅니다. 절대 수치를 버킷 간에 비교하지 마세요."><b>버킷</b>${pick}</p>
+    <p class="small muted">${esc(d.note || "")}<br>대화 ${d.n_convs}개 · 문항 ${d.n_questions}개 · 채점 ${d.n_records}건 · 저장 메모리 ${d.stored_min}~${d.stored_max}개</p>
+
+    <div class="jbasis" data-desc="cutoff 는 Stage A' 에서 검색 결과 top-200 을 잘라 만든 조건입니다. 투입은 한 번만 했고 자르기만 달리했습니다.">
+      <b>이 표가 묻는 것</b>: 답변자에게 메모리를 몇 개까지 주느냐(cutoff)에 따라 능력별 점수가 어떻게 변하는가.
+      <span class="small">▚ 표시는 저장 메모리가 cutoff 보다 적어 <b>저장소를 전부 준</b> 칸입니다. 그 칸은 검색이 작동하지 않았습니다.</span>
+    </div>
+
+    <div class="card"><h4 data-desc="행은 능력 10종, 열은 cutoff. 마지막 열은 top-${CUT[CUT.length-1]} 에서 top-${CUT[0]} 을 뺀 값으로, 클수록 검색 예산에 민감한 능력입니다">능력 × 검색 예산</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>능력</th>${CUT.map((k) => `<th data-desc="답변자에게 메모리 ${k}개까지 제공">top-${k}</th>`).join("")}
+      <th data-desc="top-${CUT[CUT.length-1]} 빼기 top-${CUT[0]}. 양수면 컨텍스트를 늘릴수록 좋아지는 능력">차이</th><th>추세</th></tr>
+      ${d.abilities.map((a) => `<tr data-ab="${esc(a.key)}">
+        <td class="brow"><b>${esc(a.label)}</b><br><span class="small muted">${esc(a.key)}</span></td>
+        ${CUT.map((k) => cellHTML(a.cells[String(k)])).join("")}
+        ${deltaHTML(a.delta)}<td>${spark(a.cells)}</td></tr>`).join("")}
+      <tr class="jm-tot"><td class="brow"><b>전체</b></td>
+        ${CUT.map((k) => cellHTML(d.overall[String(k)])).join("")}
+        ${deltaHTML(d.overall[String(CUT[CUT.length-1])] && d.overall[String(CUT[0])]
+          ? d.overall[String(CUT[CUT.length-1])].score - d.overall[String(CUT[0])].score : null)}<td></td></tr>
+    </table></div></div>
+
+    ${!eo ? "" : `
+    <div class="card"><h4 data-desc="공식 채점 코드가 이 능력만 다른 계열의 지표로 잽니다. 세 정의가 서로 다른 값을 냅니다">event_ordering 지표 정의 (${eo.n}건)</h4>
+    <div class="body">
+      <table class="cmp"><tr><th>정의</th><th>쓰는 곳</th><th>값</th><th>0인 건</th><th>무엇을 재나</th></tr>
+        <tr><td><b>nugget 평균</b></td><td>mem0 하네스</td><td><b>${eo.nugget}</b></td><td>–</td>
+          <td class="small">rubric 항목을 언급했는가. <b>순서를 전혀 보지 않음</b></td></tr>
+        <tr><td>tau_norm</td><td>BEAM 공식 리포트</td><td>${eo.tau_norm}</td>
+          <td>${eo.tau_zero}/${eo.n}</td>
+          <td class="small">순서. 언급 안 된 사건이 뒤로 몰려 '순서 맞음'이 되어 <b>적게 말할수록 유리</b></td></tr>
+        <tr><td>final (tau×f1)</td><td>계산만 하고 버려짐</td><td>${eo.final_score}</td>
+          <td class="bad-n">${eo.f1_zero}/${eo.n}</td>
+          <td class="small">순서 + 회수율. 동등성 판정기가 짧은 rubric 라벨과 장황한 응답 줄을 못 맞춰 무너짐</td></tr>
+      </table>
+      <p class="small muted" style="margin-top:6px">보조 지표: precision ${eo.precision} · recall ${eo.recall} · f1 ${eo.f1}</p>
+      <div class="noisebar" data-desc="같은 응답에 nugget 0.5, final 0.0 이 매겨진 사례가 실재합니다. 자세한 근거는 docs/mem0-classic-oss/beam-experiment.md §6">
+        <b>대표값은 nugget 평균을 씁니다.</b> 셋 다 결함이 있으나 나머지 9개 능력과 척도가 같아 한 표에 놓을 수 있는 것이 이것뿐입니다.
+        공식 수치를 인용할 때는 그쪽이 tau_norm 을 쓴다는 점을 반드시 밝혀야 합니다.
+      </div>
+    </div></div>`}
+
+    <div class="card"><h4 data-desc="대화마다 주제와 저장 메모리 규모가 다릅니다. 저장이 적은 대화는 큰 cutoff 에서 검색이 작동하지 않습니다">대화별 (${d.n_convs})</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>대화</th><th>주제</th><th>청크</th><th data-desc="투입이 끝난 뒤 저장소에 남은 메모리 수">저장</th>
+      ${CUT.map((k) => `<th>top-${k}</th>`).join("")}</tr>
+      ${d.convs.map((c) => `<tr><td><b>${esc(c.conv)}</b></td><td class="small">${esc(c.category || "")}</td>
+        <td>${c.chunks ?? "–"}</td><td><b>${c.stored ?? "–"}</b></td>
+        ${CUT.map((k) => {
+          const v = c.cells[String(k)];
+          const over = c.stored != null && c.stored < k;
+          return v == null ? `<td class="muted">–</td>`
+            : `<td class="bcell" style="${beamHeat(v)}" data-desc="${esc(
+                over ? `저장 ${c.stored}개로 cutoff ${k}보다 적습니다. <b>저장소를 전부 준 조건</b>입니다` : `평균 ${v}`)}"
+                >${v.toFixed(3)}${over ? '<i class="bfull">▚</i>' : ""}</td>`;
+        }).join("")}</tr>`).join("")}
+    </table></div></div>`;
+
+  // 사이드바가 HaluMem 세션 목록인 채로 남으면 다른 화면처럼 보임. 이 화면 전용 안내로 교체함
+  $("#sidebar").innerHTML = `<div style="padding:10px">
+    <p class="small muted"><b>BEAM</b> (ICLR 2026)<br>${esc(d.note || "")}</p>
+    <p class="small muted" style="margin-top:10px"><b>점수 색</b></p>
+    <div class="bleg">${[0, .25, .5, .75, 1].map((v) =>
+      `<span style="${beamHeat(v)}">${v.toFixed(2)}</span>`).join("")}</div>
+    <p class="small muted" style="margin-top:10px"><b>▚ 표시</b><br>저장 메모리가 cutoff 보다 적어 저장소를 전부 준 칸입니다. 검색이 작동하지 않았으므로 검색 품질로 읽으면 안 됩니다.</p>
+    <p class="small muted" style="margin-top:10px"><b>읽는 법</b><br>전체 행만 보면 평평해 보입니다. 반대 방향 둘이 상쇄되기 때문입니다. 능력별로 나눠 보세요.</p>
+    <p class="small muted" style="margin-top:10px">판독 근거는 <code>docs/mem0-classic-oss/beam-experiment.md</code></p>
+    <p class="small muted" style="margin-top:10px">⚠ 이 화면은 HaluMem 과 데이터가 달라 상단바의 Generator·Judge 선택을 따르지 않습니다. 버킷마다 고정된 조합으로 집계됩니다.</p>
+  </div>`;
+  $$("#content .hrefsw button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
 }
 
 async function jmGoldQA() {

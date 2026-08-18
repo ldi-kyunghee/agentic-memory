@@ -698,6 +698,149 @@ def available_lane(run: str) -> tuple[str, str] | None:
     return None
 
 
+# ---------- BEAM ----------
+
+def beam_cfg() -> dict:
+    return load_registry_doc().get("beam", {}) or {}
+
+
+_beam_cache: dict = {}
+
+
+def load_beam(bucket: str) -> dict:
+    """버킷 하나의 채점본과 투입 산출물을 읽어 합침. mtime 기준 캐시.
+
+    judge 레코드에 ability/cutoff/score/nugget_scores/used/stored 가 이미 들어 있음.
+    투입 산출물에서는 대화 메타(주제·청크 수)와 검색된 메모리 원문만 가져옴.
+    """
+    cfg = (beam_cfg().get("buckets") or {}).get(bucket)
+    if not cfg:
+        raise HTTPException(404, f"unknown beam bucket: {bucket}")
+    jdir = ROOT / cfg["judge"]
+    if not jdir.exists():
+        return {"ready": False, "records": [], "convs": {}}
+    files = sorted(jdir.glob("*.json"))
+    key = (bucket, tuple(sorted((f.name, f.stat().st_mtime_ns) for f in files)))
+    if _beam_cache.get("key") == key:
+        return _beam_cache["val"]
+
+    records = []
+    for f in files:
+        with open(f, encoding="utf-8") as fh:
+            records += json.load(fh).get("records", [])
+
+    convs = {}
+    ing = ROOT / cfg["ingest"]
+    if ing.exists():
+        with open(ing, encoding="utf-8") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                d = json.loads(line)
+                convs[d["conv_id"]] = {
+                    "category": d.get("category"), "title": d.get("title"),
+                    "chunks": len(d.get("ingest") or []), "batches": d.get("batches"),
+                    "stored": d.get("stored_memories"),
+                    # 문항별 검색 결과는 상세 화면에서만 쓰므로 인덱스만 만들어 둠
+                    "questions": {f'{q["ability"]}#{q["idx"]}': q for q in (d.get("questions") or [])},
+                }
+    val = {"ready": True, "records": records, "convs": convs, "cfg": cfg}
+    _beam_cache.update(key=key, val=val)
+    return val
+
+
+def _mean(xs):
+    xs = [x for x in xs if x is not None]
+    return round(sum(xs) / len(xs), 4) if xs else None
+
+
+@app.get("/api/beam")
+def api_beam(bucket: str = "100k"):
+    """능력 x cutoff 집계. 이 화면의 주 산출물임.
+
+    ⚠ cutoff 가 그 대화의 저장 메모리 수보다 크면 검색이 작동하지 않은 칸임.
+       used < cutoff 인 레코드 비율을 함께 내려 화면에서 표시하게 함.
+    """
+    cfg = beam_cfg()
+    cuts = cfg.get("cutoffs") or [20, 50, 100, 200]
+    abil_labels = cfg.get("abilities") or {}
+    buckets = [{"key": k, "label": v.get("label", k), "note": v.get("note", ""),
+                "ready": (ROOT / v["judge"]).exists()}
+               for k, v in (cfg.get("buckets") or {}).items()]
+
+    d = load_beam(bucket)
+    rec = d["records"]
+    if not rec:
+        return {"bucket": bucket, "buckets": buckets, "cutoffs": cuts, "ready": False,
+                "abilities": [], "overall": {}, "convs": [], "event_ordering": None}
+
+    def cell(rows):
+        if not rows:
+            return None
+        full = sum(1 for r in rows if r.get("stored") and (r.get("used") or 0) < r["cutoff"])
+        return {"score": _mean([r["score"] for r in rows]), "n": len(rows),
+                "full": full,  # 저장소가 모자라 cutoff 를 못 채운 건수
+                "used": _mean([r.get("used") for r in rows])}
+
+    abilities = []
+    for a in sorted({r["ability"] for r in rec}):
+        cells = {str(k): cell([r for r in rec if r["ability"] == a and r["cutoff"] == k]) for k in cuts}
+        lo, hi = cells[str(cuts[0])], cells[str(cuts[-1])]
+        abilities.append({"key": a, "label": abil_labels.get(a, a), "cells": cells,
+                          "delta": round(hi["score"] - lo["score"], 4) if lo and hi else None})
+    abilities.sort(key=lambda x: -(x["delta"] if x["delta"] is not None else 0))
+
+    overall = {str(k): cell([r for r in rec if r["cutoff"] == k]) for k in cuts}
+
+    # event_ordering 은 정의가 셋으로 갈림. 셋 다 내려보내고 화면에서 나란히 보여줌
+    eo_rows = [r for r in rec if r["ability"] == "event_ordering" and r.get("event_ordering")]
+    eo = None
+    if eo_rows:
+        g = lambda k: _mean([r["event_ordering"].get(k) for r in eo_rows])
+        zero = lambda k: sum(1 for r in eo_rows if (r["event_ordering"].get(k) or 0) == 0)
+        eo = {"n": len(eo_rows), "nugget": _mean([r["score"] for r in eo_rows]),
+              "tau_norm": g("tau_norm"), "final_score": g("final_score"),
+              "f1": g("f1"), "precision": g("precision"), "recall": g("recall"),
+              "f1_zero": zero("f1"), "tau_zero": zero("tau_norm")}
+
+    convs = []
+    for cid in sorted({r["conv"] for r in rec}):
+        meta = d["convs"].get(cid, {})
+        rows = [r for r in rec if r["conv"] == cid]
+        convs.append({"conv": cid, "category": meta.get("category"), "chunks": meta.get("chunks"),
+                      "stored": meta.get("stored"),
+                      "cells": {str(k): _mean([r["score"] for r in rows if r["cutoff"] == k]) for k in cuts}})
+
+    stored = [c["stored"] for c in convs if c["stored"]]
+    return {"bucket": bucket, "buckets": buckets, "cutoffs": cuts, "ready": True,
+            "note": d["cfg"].get("note", ""), "n_records": len(rec),
+            "n_questions": len({(r["conv"], r["ability"], r["idx"]) for r in rec}),
+            "n_convs": len(convs), "stored_min": min(stored) if stored else None,
+            "stored_max": max(stored) if stored else None,
+            "abilities": abilities, "overall": overall, "convs": convs, "event_ordering": eo}
+
+
+@app.get("/api/beam/question")
+def api_beam_question(bucket: str, conv: str, ability: str, idx: int):
+    """문항 하나의 cutoff 4벌을 나란히. nugget 채점과 투입된 메모리까지 보여줌."""
+    d = load_beam(bucket)
+    rows = [r for r in d["records"] if r["conv"] == conv and r["ability"] == ability and r["idx"] == idx]
+    if not rows:
+        raise HTTPException(404, "no such question")
+    rows.sort(key=lambda r: r["cutoff"])
+    q = (d["convs"].get(conv, {}).get("questions") or {}).get(f"{ability}#{idx}") or {}
+    return {"conv": conv, "ability": ability, "idx": idx,
+            "question": rows[0]["question"], "rubric": rows[0]["rubric"],
+            "reference": q.get("reference"), "difficulty": q.get("difficulty"),
+            "category": d["convs"].get(conv, {}).get("category"),
+            "stored": rows[0].get("stored"),
+            "retrieved": (q.get("retrieved") or [])[:200],
+            "cutoffs": [{"cutoff": r["cutoff"], "used": r.get("used"), "score": r["score"],
+                         "system_response": r["system_response"],
+                         "nugget_scores": r["nugget_scores"],
+                         "event_ordering": r.get("event_ordering")} for r in rows]}
+
+
 @app.get("/api/labels")
 def api_labels():
     """UI 표시용 라벨. 내부 키(ctxmatch-4u 등)가 화면에 새어 나가지 않도록

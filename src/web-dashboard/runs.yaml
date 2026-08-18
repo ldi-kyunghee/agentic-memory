@@ -50,6 +50,39 @@ generators:
     judges:
       oss120-genoss120-4u: "results/mem0-classic-oss/judge-oss120-genoss120-4u-{run}/judge"
 
+# BEAM 벤치마크 (ICLR 2026). HaluMem 과 데이터 구조가 달라 전용 화면으로 분리함.
+#   대화 단위이고 골든 메모리가 없어 QA 하나만 잼. 대신 문항마다 능력 라벨이 붙어 있음.
+#   cutoff 는 Stage A' 에서 검색 결과를 잘라 만든 조건이며 20/50/100/200 네 개임.
+beam:
+  cutoffs: [20, 50, 100, 200]
+  abilities:
+    abstention: "근거 없음 판단"
+    contradiction_resolution: "모순 감지"
+    event_ordering: "사건 순서"
+    information_extraction: "사실 회수"
+    instruction_following: "지시 준수"
+    knowledge_update: "갱신 반영"
+    multi_session_reasoning: "다중 배치 추론"
+    preference_following: "선호 반영"
+    summarization: "요약"
+    temporal_reasoning: "시간 추론"
+  buckets:
+    100k:
+      label: "100K (20대화 400문항)"
+      ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
+      judge: results/mem0-classic-oss/beam-judge-oss120-100k
+      note: "청크 2,866 · 저장 메모리 100~407 (중앙값 278) · agent gpt-oss-120b medium, gen=judge gpt-oss-120b high"
+    500k:
+      label: "500K (35대화 700문항)"
+      ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
+      judge: results/mem0-classic-oss/beam-judge-oss120-500k
+      note: "청크 약 18,200"
+    1m:
+      label: "1M (35대화 700문항)"
+      ingest: results/mem0-classic-oss/beam-1m-oss120b/beam_eval_results.jsonl
+      judge: results/mem0-classic-oss/beam-judge-oss120-1m
+      note: "청크 약 37,500"
+
 # 숨김 그룹: 실험 갈래 하나를 통째로 접었다 편다. Metrics 사이드바에 그룹당 체크박스 하나.
 # ⚠ 숨김은 삭제가 아니다: 산출물·주석은 그대로 두고 노출만 막는다.
 hide_groups:
