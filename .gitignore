@@ -12,4 +12,3 @@ _run.sh
 eval/bm25/evaluation.ipynb
 .vorg.db
 *.~undo-tree~
-.dir-locals.el

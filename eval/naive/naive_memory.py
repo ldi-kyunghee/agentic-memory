@@ -32,8 +32,8 @@ from vllm import LLM, SamplingParams
 
 load_dotenv()
 
-
 def with_prior(string):
+
     if "t" in string.lower():
         return True
     elif "f" in string.lower():
@@ -525,3 +525,5 @@ if __name__ == "__main__":
     os.makedirs(qa_results_dir, exist_ok=True)
     with open(qa_results_dir + result_file, "w") as file:
         json.dump(llm_results, file, indent=2)
+
+
