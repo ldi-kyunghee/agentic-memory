@@ -1,10 +1,7 @@
 .env
-.venv
 uv.lock
 test.ipynb
 .python-version
-__pycache__
-logs
 check_results.ipynb
 *.org~
 results_analysis.ipynb
@@ -12,3 +9,20 @@ _run.sh
 eval/bm25/evaluation.ipynb
 .vorg.db
 *.~undo-tree~
+*.pyc
+.env
+traces/
+.DS_Store
+logs/
+# 어시스턴트 로컬 설정 (커밋하지 않음)
+CLAUDE.md
+.claude/
+
+# BEAM 벤치마크 (ICLR 2026) — 코드 MIT / 데이터 CC BY-SA 4.0
+# 전체 리포는 chats/가 800MB라 커밋하지 않고 sparse partial clone으로 받는다.
+# 재현: git clone --filter=blob:none --sparse https://github.com/mohammadtavakoli78/BEAM.git BEAM
+#       cd BEAM && git sparse-checkout set src chats/100K   # 커밋 3e12035
+# ⚠ 슬래시로 시작해 루트에만 걸리게 한다. macOS는 core.ignorecase=true라
+#    "BEAM/"로 두면 eval/mem0-classic-oss/beam/ 까지 무시된다.
+/BEAM/
+

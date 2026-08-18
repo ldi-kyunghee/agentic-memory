@@ -1,0 +1,19 @@
+[project]
+name = "web-dashboard"
+version = "0.1.0"
+description = "mem0×HaluMem 정성분석 웹앱 (내부 툴)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "pyyaml>=6.0",
+    "tqdm>=4.70.0",
+    "python-dotenv>=1.2.2",
+    "openai>=2.48.0",
+    "tenacity>=9.1.4",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.9.1",
+]

@@ -1,0 +1,534 @@
+# 런 레지스트리: 새 실험 추가 시 이 파일에만 항목 추가 (경로는 리포 루트 기준)
+# judges: 라벨 세트 이름 -> judge 디렉토리 (유저별 {uuid}.json). 초기 런들의 불규칙 네이밍은 여기서 흡수함.
+# A' 답변 생성(generator) 레인: 레인마다 results(jsonl)와 judge 세트가 다름.
+# base: true 인 레인은 각 런의 기본 results/judges를 그대로 사용. 그 외에는 {run} 템플릿 경로.
+generators:
+  qwen4b:
+    label: "Qwen3-4B"
+    base: true
+  mini:
+    label: "GPT-5-Mini (minimal · 1유저)"
+    results: "results/mem0-classic-oss/genmini/{run}.jsonl"
+    judges:
+      mini-genmini: "results/mem0-classic-oss/judge-mini-genmini-{run}/judge"
+  oss120:
+    label: "gpt-oss-120b (high · 1유저)"
+    results: "results/mem0-classic-oss/genoss120/{run}.jsonl"
+    judges:
+      oss120-genoss120: "results/mem0-classic-oss/judge-oss120-genoss120-{run}/judge"
+      # 동일 입력·동일 judge 반복 채점 (자기 일관성 측정용, oss120b4에만 존재)
+      oss120-rep1: "results/mem0-classic-oss/judge-rep1-{run}/judge"
+      oss120-rep2: "results/mem0-classic-oss/judge-rep2-{run}/judge"
+      oss120-rep3: "results/mem0-classic-oss/judge-rep3-{run}/judge"
+  # 오라클 상한 레인: 검색 결과 대신 '정답 근거 골든(evidence)'만 주고 답변시킨 결과.
+  # 저장·검색이 완벽했을 때의 QA 상한: generator 병목 여부 판별용 (full-traced에만 존재)
+  oracle:
+    label: "오라클 (정답 근거만 · QA 상한)"
+    results: "results/mem0-classic-oss/genoracle/{run}.jsonl"
+    judges:
+      oracle-oss120: "results/mem0-classic-oss/judge-oracle-{run}/judge"
+  # 오라클 + 잡음 유지 레인: 정답 근거를 포함하되 실제 검색 결과로 top-20까지 채운 컨텍스트
+  oraclepad:
+    label: "오라클+잡음 (top-20 유지)"
+    results: "results/mem0-classic-oss/genoraclepad/{run}.jsonl"
+    judges:
+      oraclepad-oss120: "results/mem0-classic-oss/judge-oraclepad-{run}/judge"
+  # 길이 통제 대조군 레인: 임베딩 검색 결과(top-20)를 BM25 레인의 문항별 context 개수로 잘라
+  # 답변시킨 것. BM25가 임베딩보다 context가 짧다는 사실(19.96 -> 13.83) 자체가 QA를 올릴 수
+  # 있어서, 이 레인을 빼면 '검색기 교체 효과'와 '컨텍스트 축약 효과'를 분리할 수 없다.
+  # ⚠ base pass 없이 반복(r1~r5)만 돌렸다. base 경로는 r1을 대표로 가리킨다.
+  ctxmatch-4u:
+    label: "임베딩 검색 · BM25 길이로 절단 (길이 통제)"
+    results: "results/mem0-classic-oss/genctxmatch-4u-r1/{run}.jsonl"
+    judges:
+      ctxmatch-4u: "results/mem0-classic-oss/judge-ctxmatch-4u-r1-{run}/judge"
+
+  # 1u 레인의 4유저 확장본. 1u 레인은 정성분석가들의 작업·코멘트 스코프 보존을 위해 그대로 둠
+  oss120-4u:
+    label: "gpt-oss-120b (high · 4유저)"
+    results: "results/mem0-classic-oss/genoss120-4u/{run}.jsonl"
+    judges:
+      oss120-genoss120-4u: "results/mem0-classic-oss/judge-oss120-genoss120-4u-{run}/judge"
+
+# BEAM 벤치마크 (ICLR 2026). HaluMem 과 데이터 구조가 달라 전용 화면으로 분리함.
+#   대화 단위이고 골든 메모리가 없어 QA 하나만 잼. 대신 문항마다 능력 라벨이 붙어 있음.
+#   cutoff 는 Stage A' 에서 검색 결과를 잘라 만든 조건이며 20/50/100/200 네 개임.
+beam:
+  cutoffs: [20, 50, 100, 200]
+  abilities:
+    abstention: "근거 없음 판단"
+    contradiction_resolution: "모순 감지"
+    event_ordering: "사건 순서"
+    information_extraction: "사실 회수"
+    instruction_following: "지시 준수"
+    knowledge_update: "갱신 반영"
+    multi_session_reasoning: "다중 배치 추론"
+    preference_following: "선호 반영"
+    summarization: "요약"
+    temporal_reasoning: "시간 추론"
+  buckets:
+    # 세 버킷 모두 답변 생성 프롬프트는 BEAM 공식(answer_generation_for_rag)으로 통일했음.
+    # 채점 프롬프트도 BEAM 공식이라 생성·채점 규약이 한 벌로 맞음.
+    100k:
+      label: "100K"
+      ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
+      judge: results/mem0-classic-oss/beam-judge-oss120-100k-beamprompt
+      note: "20대화 400문항 · 청크 2,866 · 저장 메모리 100~407 (중앙값 278) · agent gpt-oss-120b medium, 답변=채점 gpt-oss-120b high · 답변 프롬프트 BEAM 공식"
+    500k:
+      label: "500K"
+      ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
+      judge: results/mem0-classic-oss/beam-judge-oss120-500k
+      note: "20대화 400문항 · 청크 10,746 (100K의 3.7배) · 나머지 세팅은 100K와 동일"
+    1m:
+      label: "1M"
+      ingest: results/mem0-classic-oss/beam-1m-oss120b/beam_eval_results.jsonl
+      judge: results/mem0-classic-oss/beam-judge-oss120-1m
+      note: "투입 대기 중 · 나머지 세팅은 100K와 동일"
+    # 대조군. 검색 결과는 100K와 한 글자도 다르지 않고 답변 생성 프롬프트만 다름.
+    # 저장·검색이 고정이므로 두 버킷의 차이는 전부 답변 생성 규약의 몫임.
+    100k-oldprompt:
+      label: "100K · 옛 답변 프롬프트"
+      ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
+      judge: results/mem0-classic-oss/beam-judge-oss120-100k
+      note: "대조군 · 100K와 검색 결과가 동일하고 답변 생성 프롬프트만 mem0 하네스 이식본 · 간결 지시가 없어 답변이 길어짐 (중앙값 669자, 최대 18,903자) · 길이와 점수의 상관이 능력마다 부호까지 갈림 (abstention -0.87, summarization +0.47)"
+
+# 숨김 그룹: 실험 갈래 하나를 통째로 접었다 편다. Metrics 사이드바에 그룹당 체크박스 하나.
+# ⚠ 숨김은 삭제가 아니다: 산출물·주석은 그대로 두고 노출만 막는다.
+hide_groups:
+  custom:
+    label: "custom 프롬프트 행"
+    desc: "custom 프롬프트 갈래는 정성분석 결과 품질이 낮아 기본적으로 표에서 뺍니다. 산출물과 이미 기록된 주석은 그대로 남아 있어, 켜면 이전 수치가 그대로 재현됩니다."
+  bm25:
+    label: "BM25 검색기 행"
+    desc: "retriever를 바꾼 행(BM25)은 기본 그리드와 변인이 달라 기본적으로 뺍니다. 켜면 <b>같은 오라클 단계끼리 임베딩 바로 아래에</b> BM25 행이 붙어, 검색기 차이를 행 단위로 대조할 수 있습니다 (판독은 backbone-experiment.md §19)."
+
+# UI 표시용 judge 이름: 내부 키가 화면에 새어 나가지 않게 한다 (CLAUDE.md 규약).
+# app.js의 기본 표(JUDGE_NAMES)를 이 값으로 덮어쓴다. 새 레인은 여기만 추가하면 된다.
+judge_names:
+  ctxmatch-4u: "gpt-oss-120b (high · 길이 통제)"
+
+# judge 합의(다수결) 정의: "judge 판정"은 **같은 모델로 동일 입력을 여러 번
+# 채점한 결과의 다수결**로 본다. 단일 채점본과 비교하면 judge가 그 회차에 우연히 흔들린 값과
+# 분석가를 대조하게 돼(재채점 불일치 10~27% 실측), 일치율이 judge 자기 노이즈만큼 깎인다.
+# key = 대표 judge 이름, value = 같은 모델·같은 입력의 반복 채점 세트들.
+judge_consensus:
+  label: "gpt-oss-120b (high)"
+  note: "동일 입력을 같은 judge로 반복 채점한 다수결. 동률이면 합의 없음으로 처리해 대조에서 제외한다."
+  sets:
+    oss120-genoss120:
+      all: [oss120-genoss120, oss120-rep1, oss120-rep2, oss120-rep3]
+      # ⚠ 저장물 판정(integrity·accuracy·update)의 입력은 Stage A 산출물뿐이라 4유저 배치도
+      #    '같은 입력의 2회차 채점'이다 (§16①·§17-2③에서 배치 효과가 아님을 확인).
+      #    QA는 답변이 재생성돼 입력 자체가 달라지므로(§15② 판정 21% 변동) 반복으로 세지 않는다.
+      store_only: [oss120-genoss120-4u]
+    oss120-genoss120-4u:
+      all: [oss120-genoss120-4u]
+      store_only: [oss120-genoss120, oss120-rep1, oss120-rep2, oss120-rep3]
+
+# 고정 레인 행: Metrics 표(HaluMem Table 3)에 상단바 generator·judge 선택과 무관하게 항상 이 조합으로 집계해
+# 붙이는 행. 검색 오라클처럼 '답변 생성 레인 자체가 실험 조건'인 세팅은 일반 런으로는 표현할 수 없다.
+# oracle 값에 따라 읽을 수 없게 된 지표 칼럼은 화면에서 자동으로 '–' 처리된다 (app.py의 ORACLE_MASK).
+extra_rows:
+  - key: "oe2:oraclepad"
+    run: oe2
+    generator: oraclepad
+    judge: oraclepad-oss120
+    repeat_judge: "results/mem0-classic-oss/judge-oraclepad-4u-r{i}-{run}/judge"
+    repeats: 5
+    label: "오라클 ③ 추출+갱신+검색 · 잡음 유지 (4u)"
+    backbone: gpt-oss-120b
+    backbone_effort: "해당 없음. 추출·갱신 오라클, 답변은 정답 근거+실제 검색 잡음으로 top-20 구성"
+    prompt: default
+    oracle: extraction+update+retrieval
+    note: "QA 76.91 ±0.63 (4유저 5회, 버그 수정 후). E2(74.44)와의 +2.47p (p=0.0014)가 **순수 검색 정확도**의 기여, E3(84.71)와의 +7.80p (p<0.0001)가 **컨텍스트 축약**의 기여다. ⚠ 이력: evidence를 검색 context와 달리 시각 접두사 없이 끼워넣는 버그로 한때 67.80(E2보다 낮은 불가능한 값)이 나왔다. 수정으로 +9.11p 회복. 버그본은 *-buggy 디렉토리에 보존"
+  - key: "full-traced:oracle"
+    run: oss120b4
+    generator: oracle
+    judge: oracle-oss120
+    repeat_judge: "results/mem0-classic-oss/judge-oracle-4u-r{i}-{run}/judge"
+    repeats: 5
+    label: "오라클 ④ 추출+갱신+검색 · 근거만 (4u)"
+    backbone: gpt-oss-120b
+    backbone_effort: "해당 없음. 메모리 시스템 미사용, 정답 근거(evidence)만 직접 제공"
+    prompt: default
+    oracle: extraction+update+retrieval
+    note: "QA 84.71 ±1.24 (4유저 5회). ⚠ 이는 '정답 근거만 남기고 나머지를 전부 제거한' 조건이고, '완벽한 검색'과 다르다. 평균 1.4개 항목(실제 검색은 top-20). ③(잡음 유지)과의 +7.80p는 검색 정확도와 무관한 **컨텍스트 축약** 효과이며, 메모리 시스템이 top-k를 유지하는 한 얻을 수 없는 몫이다. carrier run은 oss120b4라 실측 행의 엄밀한 ablation(저장소 동일, 답변 입력만 다름)"
+
+  - key: "oss120b4:ctxmatch-4u"
+    run: oss120b4
+    generator: ctxmatch-4u
+    judge: ctxmatch-4u
+    repeat_judge: "results/mem0-classic-oss/judge-ctxmatch-4u-r{i}-{run}/judge"
+    repeats: 5
+    label: "길이 통제: 임베딩 검색을 BM25 길이로 절단 (4u)"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium): 저장소는 oss120b4 실측 그대로, 답변 입력만 절단"
+    prompt: default
+    retriever: "Qwen3-Embedding-4B (top-20 → 13.8개로 절단)"   # ⚠ 문자열에 BM25를 넣지 말 것. app.js가 BM25 칩으로 오표시한다
+    note: "**결과: BM25 56.85 ±0.90 = 이 행 56.85 ±0.90 (차이 +0.00p, p=1.000).** BM25가 임베딩(59.52)에 뒤진 −2.67p는 <b>전부 컨텍스트 길이 효과</b>였다. 임베딩 결과를 BM25와 같은 개수로 자르기만 해도 소수점 둘째 자리까지 같은 값이 나온다. ⚠ 다만 저장소가 다르다: BM25 레인은 갱신 결정의 검색 후보가 달라져 UPDATE가 878→757로 줄었다. 길이가 이미 맞는 E1(오라클 저장소, 둘 다 ~19.9개)에서는 BM25가 −2.44p (p=0.0007)로 뒤지므로, 실측에서는 <b>랭킹 손해와 저장소 이득이 상쇄</b>되고 길이 효과만 남은 것으로 읽힌다. 자세한 판독은 backbone-experiment.md §19"
+
+# 단계별 오라클 상한 사다리: mem0 파이프라인의 각 단계를 차례로 '완벽'하게 만들며 QA 상한을 잰다.
+# 아직 안 돌린 단계는 화면에서 '미실행'으로 표시되고, 산출물이 생기면 자동으로 채워진다.
+# stages: 그 행에서 오라클로 대체된 단계 (extraction=fact 추출, update=갱신 결정, retrieval=저장·검색)
+# 오라클 상한 사다리: retriever 종류마다 한 벌씩. 화면에 나란히 그려 구간별 기여를 비교한다.
+# 아직 안 돌린 단계는 '미실행'으로 표시되고 산출물이 생기면 자동으로 채워진다.
+oracle_ladders:
+  - key: embed
+    label: "임베딩 (Qwen3-Embedding-4B)"
+    repeats: 5
+    note: "4유저(공통 705문항) · agent=gpt-oss-120b(effort 기본값 medium, 기존 실험과 통제 일치) · gen=judge=gpt-oss-120b(high) 고정. 각 행 5회 반복 평균±표본표준편차. 확정 분해: 추출 +12.37(49%) · 갱신 +2.55(10%) · 순수 검색 정확도 +2.47(10%) · 컨텍스트 축약 +7.80(31%): 네 구간 모두 유의(p<0.002). 마지막 축약분은 '생성기에게 정답만 주고 나머지를 치운' 효과이므로 메모리 시스템의 능력으로 볼 수 없고, 시스템이 실제로 가져갈 몫은 25.19p 중 17.39p(69%)이고 그중 추출이 절반을 차지한다"
+    steps:
+      - key: actual
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "실측 (오라클 없음)"
+        stages: []
+        run: oss120b4
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "gpt-oss-120b 백본이 실제로 추출·갱신·검색한 결과: 사다리의 기준선"
+      - key: e1
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "추출 오라클"
+        stages: [extraction]
+        run: oe1
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "골든 메모리(미끼 제외)를 추출 결과로 주입. 갱신 결정·저장·검색은 실제 로직"
+      - key: e2
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "추출+갱신 오라클"
+        stages: [extraction, update]
+        run: oe2
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐: 백본 무관"
+      - key: e2pad
+        repeat_judge: "results/mem0-classic-oss/judge-oraclepad-4u-r{i}-{run}/judge"
+        label: "추출+갱신+검색 오라클 (잡음 유지)"
+        stages: [extraction, update, retrieval]
+        run: oe2
+        generator: oraclepad
+        judge: oraclepad-oss120
+        run_display: "정답 근거 + 실제 검색 잡음으로 top-20"
+        desc: "정답 근거를 반드시 포함시키되 나머지는 실제 검색 결과로 채워 컨텍스트 규모를 top-20으로 맞춘 대조군. 위 행(E2)과의 차이 +2.47p가 순수 검색 정확도, 아래 행과의 차이 +7.80p가 컨텍스트 축약의 기여다 (둘 다 p<0.002). ⚠ 이 대조군은 evidence에도 검색 context와 동일한 시각 접두사를 붙여야 성립한다. 한때 접두사 누락으로 부호가 뒤집혔다"
+      - key: retrieval
+        repeat_judge: "results/mem0-classic-oss/judge-oracle-4u-r{i}-{run}/judge"
+        label: "추출+갱신+검색 오라클 (근거만)"
+        stages: [extraction, update, retrieval]
+        run: oss120b4
+        generator: oracle
+        judge: oracle-oss120
+        desc: "메모리 시스템을 전혀 쓰지 않고 정답 근거(evidence)만 직접 제공. ⚠ 이는 '정답 근거만 남기고 나머지를 전부 제거한' 조건이고, '완벽한 검색'과 다르다. 평균 1.4개 항목(실제 검색은 top-20). 검색 정확도와 컨텍스트 축약 효과가 섞여 있어 이 구간의 증가분은 검색의 기여를 과대평가한다"
+        run_display: "메모리 시스템 미사용 (evidence 직접 제공)"
+
+  - key: bm25
+    label: "BM25 (Qdrant sparse + IDF)"
+    repeats: 5
+    note: "retriever만 BM25로 교체한 사다리. 나머지 변인(agent=gpt-oss-120b medium · default 프롬프트 · top-k 20 · gen=judge=gpt-oss-120b high · 4유저)은 임베딩 사다리와 동일. **판독(§19): 구간 구조가 임베딩 사다리와 같다**: +12.60 / +3.43 / +4.17 / +7.66 (전부 p<0.005) vs 임베딩 +12.37 / +2.55 / +2.47 / +7.80. 검색기를 바꿔도 병목의 위치와 순서는 안 바뀐다. 같은 단계 직접 비교는 E1 −2.44p(p=0.0007) · E2 −1.56p(구분불가) · E2pad +0.14p(구분불가)로, 오라클을 올릴수록 검색기 차이가 사라진다. ⚠ 마지막 행(근거만)은 저장소를 거치지 않으므로 임베딩 사다리 것을 그대로 재사용한다"
+    steps:
+      - key: actual
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "실측 (오라클 없음)"
+        stages: []
+        run: oss120b4-bm25
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "gpt-oss-120b 백본이 실제로 추출·갱신·검색한 결과: 사다리의 기준선"
+      - key: e1
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "추출 오라클"
+        stages: [extraction]
+        run: oe1-bm25
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "골든 메모리(미끼 제외)를 추출 결과로 주입. 갱신 결정·저장·검색은 실제 로직"
+      - key: e2
+        repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"
+        label: "추출+갱신 오라클"
+        stages: [extraction, update]
+        run: oe2-bm25
+        generator: oss120-4u
+        judge: oss120-genoss120-4u
+        desc: "갱신 결정도 정답대로(is_update면 원본 교체). 남은 변수는 저장소 검색뿐: 백본 무관"
+      - key: e2pad
+        repeat_judge: "results/mem0-classic-oss/judge-oraclepad-4u-r{i}-{run}/judge"
+        label: "추출+갱신+검색 오라클 (잡음 유지)"
+        stages: [extraction, update, retrieval]
+        run: oe2-bm25
+        generator: oraclepad
+        judge: oraclepad-oss120
+        run_display: "정답 근거 + 실제 검색 잡음으로 top-20"
+        desc: "정답 근거를 반드시 포함시키되 나머지는 실제 검색 결과로 채워 컨텍스트 규모를 top-20으로 맞춘 대조군. 위 행(E2)과의 차이 +2.47p가 순수 검색 정확도, 아래 행과의 차이 +7.80p가 컨텍스트 축약의 기여다 (둘 다 p<0.002). ⚠ 이 대조군은 evidence에도 검색 context와 동일한 시각 접두사를 붙여야 성립한다. 한때 접두사 누락으로 부호가 뒤집혔다"
+      - key: retrieval
+        repeat_judge: "results/mem0-classic-oss/judge-oracle-4u-r{i}-{run}/judge"
+        label: "추출+갱신+검색 오라클 (근거만)"
+        stages: [extraction, update, retrieval]
+        run: oss120b4
+        generator: oracle
+        judge: oracle-oss120
+        desc: "메모리 시스템을 전혀 쓰지 않고 정답 근거(evidence)만 직접 제공. ⚠ 이는 '정답 근거만 남기고 나머지를 전부 제거한' 조건이고, '완벽한 검색'과 다르다. 평균 1.4개 항목(실제 검색은 top-20). 검색 정확도와 컨텍스트 축약 효과가 섞여 있어 이 구간의 증가분은 검색의 기여를 과대평가한다"
+        run_display: "메모리 시스템 미사용 (evidence 직접 제공)"
+
+
+runs:
+  full-traced:
+    label: "Qwen3-4B × default (20u)"
+    note: "Qwen 베이스라인: ⚠ UPDATE 19,752건 중 97%가 내용 무변경(no-op)으로 판명(20유저). '다작·과잉 재작성' 서술은 정정됨: 재작성이 망가진 게 아니라 갱신을 안 해 낡은 메모리가 재등록되며 Acc가 깎임"
+    backbone: Qwen3-4B-Instruct-2507
+    prompt: default
+    embedder: Qwen3-Embedding-4B
+    users: 20
+    results: results/mem0-classic-oss/memzero-oss-full-traced/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/full-traced
+    judges:
+      qwen4b: results/mem0-classic-oss/memzero-oss-full-traced/judge
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u/judge
+
+  full-custom:
+    hidden: true
+    hide_group: custom   # custom 프롬프트 갈래. 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    label: "Qwen3-4B × custom (20u)"
+    note: "R/F1 급등하나 FMR 급락(지침 무시 오염 커버리지), QA 정체: 병목이 초장문 활용(생성)으로 이동"
+    backbone: Qwen3-4B-Instruct-2507
+    prompt: custom
+    embedder: Qwen3-Embedding-4B
+    users: 20
+    results: results/mem0-classic-oss/memzero-oss-full-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/full-custom
+    judges:
+      qwen4b: results/mem0-classic-oss/memzero-oss-full-custom/judge
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-custom/judge
+
+  nano4:
+    label: "GPT-5-Nano × default (4u)"
+    note: "적지만 깨끗한 저장: R 최저인데 QA 상위, '청결도>커버리지 총량' 증거"
+    backbone: gpt-5-nano
+    backbone_effort: "default(medium): mem0가 effort 미전달"
+    prompt: default
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-nano4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/nano4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-nano/judge
+
+  nano4-custom:
+    hidden: true
+    hide_group: custom   # custom 프롬프트 갈래. 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    label: "GPT-5-Nano × custom (4u)"
+    note: "지침 과잉 준수로 커버리지 부족: QA 최저 셀"
+    backbone: gpt-5-nano
+    backbone_effort: "default(medium): mem0가 effort 미전달"
+    prompt: custom
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-nano4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/nano4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-nano-custom/judge
+
+  mini4:
+    label: "GPT-5-Mini × default (4u)"
+    note: "현 QA 1위(52.91): 능력 사다리 미포화, Upd C 27.56로 논문 GPT-4o(25.50) 상회"
+    backbone: gpt-5-mini
+    backbone_effort: "default(medium): mem0가 effort 미전달"
+    prompt: default
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-mini4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/mini4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-mini/judge
+
+  mini4-custom:
+    hidden: true
+    hide_group: custom   # custom 프롬프트 갈래. 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    label: "GPT-5-Mini × custom (4u)"
+    note: "선별 정밀형: Acc·Target P 전 셀 최고, 빈 세션 다수로 QA는 default에 밀림"
+    backbone: gpt-5-mini
+    backbone_effort: "default(medium): mem0가 effort 미전달"
+    prompt: custom
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-mini4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/mini4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-mini-custom/judge
+
+  30b4:
+    label: "Qwen3-30B-A3B × default (4u)"
+    note: "체급 7.5배에도 4B와 동일한 실패: ⚠ UPDATE 2,512건 중 96.9%가 no-op(4유저). 스케일로는 UPDATE 이행이 해결되지 않고 reasoning이 갈림(think4 0.6%)"
+    backbone: Qwen3-30B-A3B-Instruct-2507
+    prompt: default
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-30b4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/30b4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-30b4/judge
+
+  30b4-custom:
+    hidden: true
+    hide_group: custom   # custom 프롬프트 갈래. 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    label: "Qwen3-30B-A3B × custom (4u)"
+    note: "custom 프롬프트 QA 기준 4백본 전패 패턴 유지"
+    backbone: Qwen3-30B-A3B-Instruct-2507
+    prompt: custom
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-30b4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/30b4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-30b4-custom/judge
+
+  think4:
+    label: "Qwen3-4B-Thinking × default (4u)"
+    note: "UPDATE 이행의 분기점: 같은 4B에 thinking만 얹으니 no-op UPDATE 97%→0.6%로 붕괴(실제 갱신 수행). FMR 최고·R 최저의 초절제형, 청결도로 4B-Instruct QA 상회"
+    backbone: Qwen3-4B-Thinking-2507
+    backbone_effort: "항상 사고 (effort 개념 없음, vLLM)"
+    prompt: default
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-think4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/think4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-think4/judge
+
+  think4-custom:
+    hidden: true
+    hide_group: custom   # custom 프롬프트 갈래. 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    label: "Qwen3-4B-Thinking × custom (4u)"
+    note: "과잉 절제의 붕괴: 세션 58%에서 명시적 {facts:[]} 반환(잘림 아님, trace 검증), 그 세션들에 골든 62%가 소재. thinking이 '서사' 지침을 문자 그대로 적용해 사실형 세션을 통째 기각. QA C 34.18 최저 셀"
+    backbone: Qwen3-4B-Thinking-2507
+    backbone_effort: "항상 사고 (effort 개념 없음, vLLM)"
+    prompt: custom
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-think4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/think4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-think4-custom/judge
+
+  oss120b4:
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균을 표에도 그대로 쓴다 (사다리와 동일 값)
+    label: "gpt-oss-120b × default (4u)"
+    note: "nano4 동형 프로파일의 로컬 재현(볼륨·R·포함분포 일치): 실질 우위는 UPDATE-유래 Acc 96.4%(nano4 80.1%)의 재작성 견고성. QA 차이는 1유저 노이즈(155문항 중 순차 1)(oss120 judge·1u 기준)"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium): effort 주입 패치가 미배포 상태로 실행돼 env 무시됨 (mem0는 effort 미전달)"
+    prompt: default
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oss120b4/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oss120b4
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-oss120b4/judge
+
+  oss120b4-custom:
+    hidden: true
+    hide_group: custom   # custom 프롬프트 갈래. 정성분석 결과 품질이 낮아 화면에서 숨김 (데이터·주석은 보존)
+    label: "gpt-oss-120b × custom (4u)"
+    note: "custom 전패 패턴 6번째 백본에서도 유지(QA 55.5<58.5): 문단형 ADD 87%가 부분(1점) 판정. FMR·Upd C는 상승(oss120 judge·1u 기준)"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium): effort 주입 패치가 미배포 상태로 실행돼 env 무시됨 (mem0는 effort 미전달)"
+    prompt: custom
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oss120b4-custom/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oss120b4-custom
+    judges:
+      nano: results/mem0-classic-oss/judge-gpt5nano-4u-oss120b4-custom/judge
+
+  # ── BM25 retriever 레인 (retriever 단일 변수 교체) ──
+  oss120b4-bm25:
+    hidden: true
+    hide_group: bm25
+    pair_with: oss120b4   # 켜면 이 런 바로 아래에 붙는다
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
+    label: "gpt-oss-120b × default × BM25 (4u)"
+    note: "retriever만 Qwen3-Embedding-4B → BM25(Qdrant sparse+IDF)로 교체. 추출 fact는 3496으로 임베딩(3508)과 사실상 동일해 통제 확인. 차이는 갱신 결정과 검색에만 나타남: UPDATE 878→757(-14%), 검색 context 평균 19.96→13.83. ⚠ ingest 시간은 임베딩 레인이 단일 GPU, BM25가 TP=2 환경이라 비교 불가"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium): 기존 그리드와 통제 일치"
+    prompt: default
+    retriever: BM25 (Qdrant sparse + IDF)
+    embedder: "미사용 (mem0가 호출은 하나 BM25 store가 벡터를 버림)"
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oss120b4-bm25/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oss120b4-bm25
+    judges:
+      oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oss120b4-bm25/judge
+
+  oe1-bm25:
+    hidden: true
+    hide_group: bm25
+    pair_with: oe1   # 켜면 이 런 바로 아래에 붙는다
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
+    label: "BM25 오라클 ① 추출 (4u)"
+    note: "BM25 레인의 추출 오라클. ⚠ 오라클 저장소에서는 BM25도 context를 19.89개로 거의 다 채운다(실측 저장소는 13.83): 골든 원문이 질문과 어휘가 겹치기 때문. 즉 BM25의 컨텍스트 부족은 '재작성된 fact'에서만 생긴다"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium): 남은 LLM 호출은 갱신 결정뿐"
+    prompt: default
+    oracle: extraction
+    retriever: BM25 (Qdrant sparse + IDF)
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oe1-bm25/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oe1-bm25
+    judges:
+      oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oe1-bm25/judge
+
+  oe2-bm25:
+    hidden: true
+    hide_group: bm25
+    pair_with: oe2   # 켜면 이 런 바로 아래에 붙는다
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균 (§19)
+    label: "BM25 오라클 ② 추출+갱신 (4u)"
+    note: "BM25 레인의 추출+갱신 오라클. 추출 fact 2451로 임베딩 레인과 완전히 동일. ⚠ 갱신 오라클도 검색 결과에 의존한다. OracleLLM이 프롬프트에 실린 후보에서 원본을 매칭하므로 후보가 달라지면 결과가 달라진다 (UPDATE 269→323)"
+    backbone: gpt-oss-120b
+    backbone_effort: "해당 없음. 추출·갱신 모두 오라클이라 LLM 호출 없음"
+    prompt: default
+    oracle: extraction+update
+    retriever: BM25 (Qdrant sparse + IDF)
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oe2-bm25/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oe2-bm25
+    judges:
+      oss120-genoss120-4u: results/mem0-classic-oss/judge-oss120-genoss120-4u-oe2-bm25/judge
+
+  # ── 단계별 오라클 사다리 전용 런 (전부 gpt-oss-120b · effort=high · Martin 1유저) ──
+  oe1:
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균을 표에도 그대로 쓴다 (사다리와 동일 값)
+    label: "오라클 ① 추출 (4u)"
+    note: "추출 오라클: QA 59.52→71.89 (+12.37, p<0.0001, 4유저 5회 반복 평균). 사다리에서 가장 큰 단일 단계 기여이자 총 격차의 49%. R=90.44로 '완벽히 추출해도 9.6%는 저장소에 못 남는다'(갱신 결정 손실)까지 함께 보인다. ⚠ 단일 회차 시절 기재했던 +7.31은 노이즈였다"
+    backbone: gpt-oss-120b
+    backbone_effort: "default(medium): 남은 LLM 호출은 갱신 결정뿐"
+    prompt: default
+    oracle: extraction
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oe1/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oe1
+    judges: {}
+
+  oe2:
+    repeat_judge: "results/mem0-classic-oss/judge-oss120-4u-r{i}-{run}/judge"   # QA는 5회 반복 평균을 표에도 그대로 쓴다 (사다리와 동일 값)
+    label: "오라클 ② 추출+갱신 (4u)"
+    note: "추출+갱신 오라클: QA 71.89→74.44 (+2.55, p=0.0014, 4유저 5회 반복 평균). 작지만 유의하다. 1유저에서 ns(+1.46, p=0.43)였던 것은 표본 부족이었고 '갱신 기여 0' 서술은 정정한다. 다만 추출(+12.37)의 1/5 규모이며, 갱신 골든의 74.5%가 원본이 저장소에 존재조차 하지 않는 프로필 필드 유래라 상한 자체가 눌려 있다. 저장물 전부 골든 원문과 일치(검증). ⚠ 단일 회차 시절의 '추출과 갱신이 동등(7.3:7.3)' 주장은 철회됨"
+    backbone: gpt-oss-120b
+    backbone_effort: "해당 없음. 추출·갱신 모두 오라클이라 LLM 호출 없음"
+    prompt: default
+    oracle: extraction+update
+    embedder: Qwen3-Embedding-4B
+    users: 4
+    results: results/mem0-classic-oss/memzero-oss-oe2/memzero-oss_eval_results.jsonl
+    traces: traces/mem0-classic-oss/oe2
+    judges: {}
+
+  # (참고) 옛 주석 원형:
+  # think4:
+  #   label: "Qwen3-4B-Thinking × default (4u)"
+  #   backbone: Qwen3-4B-Thinking-2507
+  #   prompt: default
+  #   users: 4
+  #   results: results/mem0-classic-oss/memzero-oss-think4/memzero-oss_eval_results.jsonl
+  #   traces: traces/mem0-classic-oss/think4
+  #   judges:
+  #     nano: results/mem0-classic-oss/judge-gpt5nano-4u-think4/judge
