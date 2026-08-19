@@ -20,7 +20,7 @@ def load_results_stats(model: str, result_type: str = 'Correct'):
         "Multi-hop Inference": 50,
         "Dynamic Update": 39
     }
-        
+
     per_memory_type_results = {}
     for retrieval_type, retrieval_type_name in RETRIEVAL_TYPES.items():
         exps_dir = results_dir + retrieval_type
@@ -44,7 +44,7 @@ def load_results_stats(model: str, result_type: str = 'Correct'):
                         if data[result_type] == np.nan:
                             result_count = 0
                     per_memory_type_results[memory_type][retrieval_type_name] += result_count
-                    
+
     per_memory_type_results = {
         key: {
             k: (v / len(list(exps))) / memory_type_len[key]
@@ -63,8 +63,8 @@ for i, model in enumerate(["gpt-oss-120b", "gpt-5-mini"]):
         results = {
             retrieval_type: [per_memory_type_results_dict[memory_type][retrieval_type] for memory_type in memory_types]
             for retrieval_type in ["BM25", "Embedding", "Hybrid"]
-        } 
-       
+        }
+
         axes[i][j].grouped_bar(results, tick_labels=memory_types)
         axes[i][j].set_title(f"{model} ({result_label})", fontsize=18)
         axes[i][j].legend()
