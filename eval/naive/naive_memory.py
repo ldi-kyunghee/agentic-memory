@@ -58,7 +58,6 @@ def init_parser():
     parser.add_argument("--alpha", type=float, default=0.5)
     parser.add_argument("--use_llm", action="store_true", default=False)
     parser.add_argument("--backend", choices=["vllm", "openai"], default="vllm")
-    parser.add_argument("--llm_config", type=str, default=None)
     parser.add_argument("--memory_type", choices=['bm25', 'embeddings', 'hybrid'], default='hybrid')
     parser.add_argument("--embed_config", type=str, default=None)
     parser.add_argument("--memory_with_prior_question", type=with_prior, default=False)
@@ -76,24 +75,6 @@ def load_vllm(**model_kwargs):
     llm = LLM(**model_kwargs)
 
     return llm
-
-def generate_answer_openai(queries: list[dict], **model_kwargs):
-    answers = []
-    for item in tqdm(queries, desc="Generating..."):
-        query = item["question"]
-        documents = ""
-        for doc in item["retrieved"]:
-            documents += f" - {doc['memory_content']}"
-        prompt = PROMPT.format(context=documents, question=query)
-
-        response = llm.responses.create(
-            input=prompt,
-            **model_kwargs
-        )
-
-        answer = response.output_text
-        answers.append(answer)
-    return compile_outputs(queries, answers)
         
 def embed_online(queries: list, memories: list):
     model = "Qwen/Qwen3-Embedding-4B"
@@ -119,115 +100,6 @@ def embed_offline(queries: list, memories: list):
     query_embeddings = [output.outputs.embedding for output in query_outputs]
 
     return np.array(corpus_embeddings), np.array(query_embeddings)
-
-
-def sort_documents_original(I: np.ndarray, vector_scores: np.ndarray):
-    distances = [
-        {i.item(): d.item() for i, d in zip(I[j], vector_scores[j])}
-        for j in range(I.shape[0])
-    ]
-
-    sorted_Ds = [[distance[i] for i in range(I.shape[1])] for distance in distances]
-    return np.array(sorted_Ds)
-
-def format_inputs_vllm(query, documents):
-    prompt = PROMPT.format(context=documents, question=query)
-    return [
-        {
-            "role": "user", "content": prompt
-        }
-    ]
-
-def format_inputs_gpt_oss(query, documents):
-    prompt = Conversation.from_messages(
-        [
-            Message.from_role_and_content(
-                Role.SYSTEM,
-                SystemContent.new().with_model_identity(SYSTEM_PROMPT).with_reasoning_effort(ReasoningEffort.HIGH)
-            ),
-            Message.from_role_and_content(
-                Role.DEVELOPER, 
-                DeveloperContent.new().with_instructions(DEVELOPER_PROMPT)
-            ),
-            Message.from_role_and_content(
-                Role.USER,
-                USER_PROMPT.format(
-                    context=documents,
-                    question=query
-                )
-            )
-        ]
-    )
-
-    return prompt
-
-def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
-    encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
-    stop_token_ids = encoding.stop_tokens_for_assistant_actions()
-    sampling_params['stop_token_ids'] = stop_token_ids
-    sampling_params = SamplingParams(**sampling_params)
-
-    prompts = []
-    for item in queries:
-        query = item["question"]
-        documents = ""
-        for doc in item['retrieved']:
-            documents += f" - {doc['memory_content']}"
-
-        prompt = format_inputs_gpt_oss(query, documents)
-        prefill_ids = encoding.render_conversation_for_completion(prompt, Role.ASSISTANT)
-        prompts.append({
-            "prompt_token_ids": prefill_ids,
-            "prompt": encoding.decode(prefill_ids)
-        })
-
-    _ = llm.enqueue(prompts, sampling_params, **generation_kwargs)
-    outputs = llm.wait_for_completion()
-    output_tokens = [output.outputs[0].token_ids for output in outputs]
-    responses = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
-    answers = []
-    for response in responses:
-        raw_answer = response[0].content[0].text
-        answer = raw_answer.splitlines()[-1].split(':')[-1]
-        answers.append(answer)
-    return compile_outputs(queries, answers)
-    
-def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
-    sampling_params = SamplingParams(**sampling_params)
-
-    prompts = []
-    for item in queries:
-        query = item["question"]
-        documents = ""
-        for doc in item["retrieved"]:
-            documents += f" - {doc['memory_content']}"
-
-        prompt = format_inputs_vllm(query, documents)
-        prompts.append(prompt)
-        
-    _ = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
-    outputs = llm.wait_for_completion()
-    answers = [output.outputs[0].text for output in outputs]
-
-    return compile_outputs(queries, answers)
-
-def compile_outputs(queries: list[dict], answers: list[str]):
-    results = []
-    for item, answer in zip(queries, answers):
-        results.append(
-            {
-                "question": item["question"],
-                "generated_answer": answer,
-                "reference": item["answer"],
-                "retrieved": item["retrieved"],
-                "evidence": item["evidence"],
-                "question_type": item["question_type"],
-                "difficulty": item["difficulty"],
-            }
-        )
-
-    return results
-
 
 def fetch_results(qas, documents, ranked_results):
     results = []
@@ -440,25 +312,6 @@ def run_retrieval(args, dataset):
         retrieval_results.append(per_persona_results)
     return retrieval_results
 
-def run_qa(args, dataset, retrieval_results):
-    llm_results = []
-    for per_persona_results in retrieval_results:
-        if args.backend == "vllm":
-            if "openai" in model_kwargs['model']:
-                per_persona_llm_results = generate_answers_gpt_oss(
-                    per_persona_results, generation_kwargs, sampling_params
-                )
-            else:
-                per_persona_llm_results = generate_answers_vllm(
-                    per_persona_results, generation_kwargs, sampling_params
-                )
-        else:
-            per_persona_llm_results = generate_answer_openai(
-                per_persona_results, **model_kwargs
-            )
-        llm_results.append(per_persona_llm_results)
-    return llm_results
-
 if __name__ == "__main__":
     flush()
 
@@ -487,43 +340,13 @@ if __name__ == "__main__":
         del embed_model
         time.sleep(3)
         flush()
-        
-    if args.backend == "vllm":
-        kwargs = load_config(args.llm_config)
-        if isinstance(kwargs, tuple):
-            if len(kwargs) == 2:
-                model_kwargs, sampling_params = kwargs
-            else:
-                model_kwargs, sampling_params, generation_kwargs = kwargs
-        else:
-            model_kwargs = kwargs
-            sampling_params = {}
-            generation_kwargs = {}
-        llm: LLM = load_vllm(**model_kwargs)
-    else:
-        model_kwargs = load_config(args.llm_config)
-        llm: Client = OpenAI()
-        
-    llm_results = run_qa(args, dataset, retrieval_results)
-    del llm
-    time.sleep(3)
-    flush()
 
-    results_dir = f"results/naive/{exp_name}/"
-    naive_results_dir = results_dir + "retrieval/"
+    results_dir = f'results/naive/{exp_name}/retrieval/'
     dataset_name = args.dataset.split("-")[-1].split(".")[0].lower()
-    naive_results_file = f"{args.memory_type}_retrieval_{dataset_name}_top_{args.top_k}_results.json"
+    results_file = f"{args.memory_type}_retrieval_{dataset_name}_top_{args.top_k}_results.json"
 
-    os.makedirs(naive_results_dir, exist_ok=True)
-    with open(naive_results_dir + naive_results_file, "w") as file:
+    os.makedirs(results_dir, exist_ok=True)
+    with open(results_dir + results_file, "w") as file:
         json.dump(retrieval_results, file, indent=2)
 
-    model_name = model_kwargs["model"].split("/")[-1].replace("-2507", "")
-    result_file = f"{model_name}_{dataset_name}_{args.memory_type}_qa_top_{args.top_k}_results.json"
-
-    qa_results_dir = results_dir + "question_answering/"
-    os.makedirs(qa_results_dir, exist_ok=True)
-    with open(qa_results_dir + result_file, "w") as file:
-        json.dump(llm_results, file, indent=2)
-
-
+    print(results_file)
