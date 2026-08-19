@@ -295,3 +295,14 @@
    Prediction:	Thus final answer: "Retired".
    Result Type:     Hallucination
    #+end_example
+
+** Thoughts
+틀린 경우 위 중 하나만 발생함으로 틀린 게 아니라, 위 원인 중 섞여서 틀린 경우 많습니다. 모델도 따지는 경우도 많다.
+ #+begin_example
+ Question:	Did Johnson Joseph express a dislike for classical music during the gathering on Nov 02, 2028?
+	Reference:	No, he found classical music soothing and suitable for his B&B.
+	Prediction:	 There is no mention of "Johnson Joseph" anywhere in these memories. The user never mentions a person named Johnson Joseph. The assistant also doesn't mention that name. So we cannot confirm that Johnson Joseph expressed a dislike. There's no evidence. The question: "Did Johnson Joseph express a dislike for classical music during the gathering on Nov 02, 2028?" The answer: No, there is no evidence; the user said the classical music was perfect and they expressed gratitude. So the answer should be "No" or "No, he didn't". The answer must be less than 5-6 words. So "No, he did not." That's 4 words? Actually "No, he did not." That's 4 words. That fits. Or "No, he didn't." That's 3 words. Let's answer "No, he didn't."
+ Result Type: Hallucination
+ #+end_example
+
+ 이 샘플 처럼, 'Let's answer' 부분은 맞지만, LLM은 자주 Johnson Joseph라는 유저가 없다고 판단해 버려서 할루시네인션 판단을 내려 버린 경우 꽤 있습니다.
