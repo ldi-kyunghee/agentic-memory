@@ -556,23 +556,45 @@ mem0 이식본에서 능력별 길이 중앙값이 40배까지 벌어져 있었�
 모델은 시킨 대로 `No`(3자)라고 답했고 4항목 중 0개를 맞았음. **BEAM 공식 답변 프롬프트가
 BEAM 공식 rubric과 서로 어긋나 있음.**
 
-짧은 답으로 채울 수 있는 rubric 항목은 "답 그 자체" 하나뿐임. 나머지 언급요구 항목은
-원리적으로 못 채움. 그 비율이 하락폭을 설명함.
+**rubric 형식 전수** (100K 400문항, `probing_questions.json` 원문 기준).
+`should state|mention|contain|include|...` 형태를 요구형으로 셈.
 
-| 능력 | 언급요구 항목 | 못 채우는 비율 | 실측 차이 |
+| 능력 | rubric/문항 | 요구형/문항 | 주요 동사 |
 |---|---|---|---|
-| contradiction_resolution | 4.00 | 0.750 | −0.434 |
-| multi_session_reasoning | 2.50 | 0.600 | −0.109 |
-| information_extraction | 2.30 | 0.565 | −0.124 |
-| temporal_reasoning | 1.88 | 0.467 | −0.117 |
-| knowledge_update | 1.05 | 0.048 | +0.009 |
-| summarization | 0.12 | 0 | −0.022 |
-| event_ordering | 0.03 | 0 | −0.050 |
-| abstention | 0.03 | 0 | −0.019 |
+| summarization | 4.88 | 4.88 | contain |
+| contradiction_resolution | 4.00 | 4.00 | mention, state |
+| multi_session_reasoning | 2.52 | 2.50 | state |
+| information_extraction | 2.30 | 2.30 | state |
+| temporal_reasoning | 1.88 | 1.88 | state |
+| preference_following | 1.85 | 1.85 | contain |
+| instruction_following | 1.48 | 1.48 | contain |
+| knowledge_update | 1.05 | 1.05 | state |
+| abstention | 1.00 | 0.00 | (동사 없음) |
+| event_ordering | 5.33 | 0.00 | (동사 없음) |
 
-Spearman ρ = −0.511이지만 n=10이라 p=0.13임. 상관보다 rubric 원문이 직접 증거임.
-`event_ordering`은 rubric 항목이 5.33개로 제일 많은데도 −0.050뿐임. 그 rubric들이
-"언급하라" 형식이 아니기 때문임. 항목 수로는 설명이 안 되고 **형식**이 정함.
+> ⚠ 이 표는 2026-08-18에 고친 것임. 처음에는 `mention|state`만 세서 `summarization`이
+> 0.12로 잡혔는데 그 rubric은 `contain`을 씀. 실제로는 4.88개 전부가 요구형임.
+
+**요구형 항목 수만으로는 설명이 안 됨.** `summarization`이 4.88개로 제일 많은데 −0.022뿐임.
+Spearman으로 봐도 요구항목 수 ρ=−0.444(p=0.20), 요구항목당 글자수 ρ=+0.381(p=0.35)로
+둘 다 유의하지 않음. n=10이라 애초에 상관으로 말할 표본이 아님.
+
+**조건 두 개가 동시에 성립할 때만 크게 떨어짐.**
+
+| | rubric이 답 이외의 언급을 요구 | 요구 안 함 |
+|---|---|---|
+| **간결 지시가 먹힘** | contradiction −0.434 (3자에 4항목)<br>temporal −0.117 (2자에 1.88항목)<br>multi_session −0.109 (20자에 2.5항목)<br>information_extraction −0.124 (70자에 2.3항목) | knowledge_update **+0.009**<br>(1항목이 곧 답이라 6자로 충분) |
+| **안 먹힘** | summarization −0.022 (1,152자 유지)<br>preference_following −0.096 (396자 유지) | event_ordering −0.050 (314자)<br>abstention −0.019 (81자) |
+
+`summarization`이 안 떨어진 이유가 여기서 나옴. 질문이 `Can you provide a comprehensive
+summary...`라서 **"설명 없이 답만"이라는 지시가 먹히지 않음.** 공식 프롬프트에서도 1,152자를
+쓰는데 이는 10개 능력 중 제일 긺. 지시가 안 먹히면 rubric 요구가 많아도 손해가 없음.
+
+반대로 `knowledge_update`는 155자에서 6자로 줄었는데도 유일하게 올랐음. rubric 1항목이
+**답 그 자체**라 6자로 충족되기 때문임.
+
+`event_ordering`은 rubric 항목이 5.33개로 제일 많은데도 −0.050뿐임. 그 rubric이 요구형이
+아니라 라벨 나열(`Core functionality`, `Transaction error handling`)이기 때문임.
 
 **결정적인 사례** (`temporal_reasoning`, 100K_10 idx0):
 
@@ -585,10 +607,10 @@ Spearman ρ = −0.511이지만 n=10이라 p=0.13임. 상관보다 rubric 원문
 **짧은 프롬프트가 추론을 망가뜨린 것이 아님. 보고를 줄였고, rubric은 보고를 채점함.**
 §7-2에서 길이와 점수의 상관으로 관찰했던 것의 기전이 이것임.
 
-예외가 둘 있음. `instruction_following`(−0.250)과 `preference_following`(−0.096)은 언급요구
-항목이 거의 없는데 크게 떨어졌음. 이 둘은 mem0 이식본에서 답변이 제일 길었던 능력임
-(4,430자, 6,344자). **벤치마크가 재려는 지시 준수를 답변 프롬프트가 위에서 덮어쓴 것**으로
-보이는데, rubric 원문을 더 봐야 확정됨.
+**설명 안 되는 것 하나**: `instruction_following`(−0.250)임. 공식 프롬프트에서 198자를
+쓰고 요구형 항목이 1.48개라 위 표의 어느 칸에도 잘 안 들어맞음. 이 능력은 mem0 이식본에서
+답변이 두 번째로 길었음(4,430자). **벤치마크가 재려는 지시 준수를 답변 프롬프트가 위에서
+덮어쓴 것**이라는 가설이 있는데 rubric 원문을 더 봐야 확정됨. 미해결로 둠.
 
 ### 7-6. 대표값은 mem0 이식본으로 함
 
