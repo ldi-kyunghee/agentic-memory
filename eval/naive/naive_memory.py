@@ -56,8 +56,6 @@ def init_parser():
     parser.add_argument("--n_persona", type=int, default=None)
     parser.add_argument("--top_k", type=int, default=5)
     parser.add_argument("--alpha", type=float, default=0.5)
-    parser.add_argument("--use_llm", action="store_true", default=False)
-    parser.add_argument("--backend", choices=["vllm", "openai"], default="vllm")
     parser.add_argument("--memory_type", choices=['bm25', 'embeddings', 'hybrid'], default='hybrid')
     parser.add_argument("--embed_config", type=str, default=None)
     parser.add_argument("--memory_with_prior_question", type=with_prior, default=False)

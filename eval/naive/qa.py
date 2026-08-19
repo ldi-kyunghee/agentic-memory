@@ -45,7 +45,7 @@ def flush():
 def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_num", type=int)
-    parser.add_argument("--result_file", type=str, default="HaluMem-Medium.jsonl")
+    parser.add_argument("--result_dir", type=str, default="results/naive/")
     parser.add_argument("--backend", choices=["vllm", "openai"], default="vllm")
     parser.add_argument("--online", action='store_true', default=False)
     parser.add_argument('--structured_outputs', action='store_true', default=False)
@@ -229,7 +229,7 @@ def compile_outputs(queries: list[dict], answers: list[str]):
 
     return results
 
-def run_qa(args, dataset, retrieval_results):
+def run_qa(args, retrieval_results):
     llm_results = []
     for per_persona_results in retrieval_results:
         if args.backend == "vllm":
@@ -260,6 +260,12 @@ if __name__ == "__main__":
 
     exp_dir = f"exp{args.exp_num}"
 
+    retrieval_dir = args.result_dir + exp_dir
+    retrieval_results = {}
+    for result_file in os.listdir(retrieval_dir):
+        with open(f"{retrieval_dir}/{result_file}", 'r') as file:
+            retrieval_results[result_file] = json.load(file)
+
     if args.backend == "vllm":
         kwargs = load_config(args.llm_config)
         if isinstance(kwargs, tuple):
@@ -279,16 +285,12 @@ if __name__ == "__main__":
     else:
         model_kwargs = load_config(args.llm_config)
         llm: Client = OpenAI()
-        
-    results = run_qa(args, dataset, retrieval_results)
-    del llm
-    time.sleep(3)
-    flush()
 
     results_dir = f"results/naive/{exp_name}/question_answering/"
-
-    model_name = model_kwargs["model"].split("/")[-1].replace("-2507", "")
-
     os.makedirs(results_dir, exist_ok=True)
-    with open(results_dir + args.result_file, "w") as file:
-        json.dump(results, file, indent=2)
+    for result_file, retrieval_result in retrieval_results.items():
+        results = run_qa(args, retrieval_results)
+        with open(results_dir + result_file, "w") as file:
+            json.dump(results, file, indent=2)
+
+        flush()
