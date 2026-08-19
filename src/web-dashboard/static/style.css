@@ -671,6 +671,10 @@ td:has(> .masked) { background: repeating-linear-gradient(135deg, transparent, t
 .noisebar { margin: 0 0 8px; padding: 7px 11px; border-radius: 0; font-size: var(--fs-sm);
   line-height: var(--lh-read); background: #fdf6e6; border: 1px solid #ecdcae;
   border-left: 3px solid var(--warn); color: #6b5320; }
+/* 배치 혼선처럼 '읽는 법이 깨지는' 경고. 노이즈 바닥 안내(주의)보다 한 단계 위임 */
+.noisebar.warn { background: var(--bad-bg); border-color: #f0c9c9;
+  border-left-color: var(--bad); color: #7a2323; }
+.pinlane.fb { color: var(--bad); opacity: 1; font-weight: 700; }
 .jbasis { margin: 10px 0 4px; padding: 8px 11px; border-radius: 0; font-size: var(--fs-sm);
   line-height: var(--lh-read); background: #edf2fd; border: 1px solid #c9d6f2;
   border-left: 3px solid var(--accent); color: #2b3f6b; }

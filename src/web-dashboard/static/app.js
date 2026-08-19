@@ -1227,11 +1227,15 @@ async function renderMetrics() {
     if (c.k === "oracle") return { html: r.oracle ? `<span class="orc">${esc(oracleLabel(r.oracle))}</span>` : `<span class="muted">없음</span>`, desc: c.desc };
     if (c.k === "judge") {
       const p = r.pinned_lane;
-      // 고정 레인 행은 상단바 generator·judge 선택을 따르지 않는다. 어떤 조합으로 집계됐는지 칸에 명시
-      return p
-        ? { html: `${esc(judgeShort(p.judge))} <span class="pinlane">📌</span>`,
-            desc: `<b>고정 레인 행</b>: 이 행은 상단바의 generator·judge 선택을 따르지 않습니다.<br>답변 생성 레인 자체가 실험 조건이라, 항상 <b>${esc(genLabel(p.generator))}</b> × <b>${esc(judgeLabel(p.judge))}</b>으로만 집계됩니다.<br><span class="small">Stage A 저장소는 런 <b>${esc(p.run)}</b>의 것을 씁니다.</span>` }
-        : { html: esc(judgeShortName), desc: judgeName };
+      // 두 경우를 구분한다. 설계상 고정된 레인(extra_rows)과, 고른 레인이 없어 대체된 것.
+      // 후자는 다른 배치라 행 간 비교가 깨지므로 경고로 표시한다.
+      if (!p) return { html: esc(judgeShortName), desc: judgeName };
+      if (p.fallback) {
+        return { html: `${esc(judgeShort(p.judge))} <span class="pinlane fb">⚠</span>`,
+          desc: `<b>⚠ 다른 채점 배치로 대체됨</b><br>이 런에는 선택하신 <b>${esc(judgeLabel(p.want_judge))}</b> 라벨이 없어 <b>${esc(judgeLabel(p.judge))}</b>으로 집계했습니다.<br><b>이 행의 R·Acc·Target P·FMR·F1·UPD를 다른 행과 비교하지 마세요.</b> 배치가 다르면 유저 집합과 문항 수가 다릅니다.<br><span class="small">QA C는 반복 채점 레인에서 따로 계산하므로 영향이 없습니다. 두 행을 제대로 대조하려면 상단바에서 양쪽이 다 가진 judge를 고르세요.</span>` };
+      }
+      return { html: `${esc(judgeShort(p.judge))} <span class="pinlane">📌</span>`,
+        desc: `<b>고정 레인 행</b>: 이 행은 상단바의 generator·judge 선택을 따르지 않습니다.<br>답변 생성 레인 자체가 실험 조건이라, 항상 <b>${esc(genLabel(p.generator))}</b> × <b>${esc(judgeLabel(p.judge))}</b>으로만 집계됩니다.<br><span class="small">Stage A 저장소는 런 <b>${esc(p.run)}</b>의 것을 씁니다.</span>` };
     }
     const lat = r.latency;
     return lat
@@ -1265,9 +1269,19 @@ async function renderMetrics() {
       ${batchWarn ? `<br><span class="small">⚠ 연속 루프로 돌린 ${NZ.n_repeats}회만 보면 ±${NZ.qa_c_within}p로 <b>작게 나오지만</b>, 날짜가 다른 배치를 섞으면 ±${NZ.qa_c}p입니다. 한 루프 안의 회차들은 서버 상태를 공유해 독립 시행이 아닙니다. <b>보수적인 쪽(±${NZ.qa_c}p)을 씁니다.</b></span>` : ""}
       <span class="small">흔드는 쪽은 채점이 아닌 <b>답변 생성</b>입니다 (judge만 반복하면 폭 0.6p).</span>
     </div>`;
+  // 선택한 judge 라벨이 없어 다른 배치로 대체된 행. 표 안에 배치가 섞이면 행 간 비교가 깨진다.
+  // 칸의 ⚠ 하나로는 눈에 안 띄어서 표 위에 따로 띄운다 (2026-08-19: BM25 행이 4유저 배치,
+  // 임베딩 행이 1유저 배치로 잡혀 UPD를 잘못 대조한 사고가 있었다).
+  const fb = rows.filter((r) => r.pinned_lane && r.pinned_lane.fallback);
+  const laneWarn = !fb.length ? "" : `
+    <div class="noisebar warn" data-desc="런마다 채점을 돌린 레인이 다릅니다. 어떤 런은 1유저 배치만, 어떤 런은 4유저 배치만 있습니다. 상단바에서 고른 레인이 없는 런은 표에서 빼는 대신 그 런이 가진 다른 레인으로 집계합니다.">
+      <b>⚠ 이 표에 다른 채점 배치가 섞여 있습니다</b>: ${fb.length}개 행이 선택한 judge(<b>${esc(judgeName)}</b>) 라벨이 없어 대체됐습니다.
+      <span class="small">${fb.map((r) => `${esc(r.label || r.run)} → <b>${esc(judgeLabel(r.pinned_lane.judge))}</b>`).join(" · ")}</span>
+      <br><span class="small"><b>대체된 행과 나머지 행의 R·Acc·Target P·FMR·F1·UPD를 비교하지 마세요.</b> 배치가 다르면 유저 집합과 문항 수가 다릅니다. QA C는 반복 채점 레인에서 따로 계산하므로 영향이 없습니다. 제대로 대조하려면 상단바에서 <b>양쪽이 다 가진 judge</b>를 고르세요.</span>
+    </div>`;
   $("#content").innerHTML = `
     <div id="ladder-card"></div>
-    ${noiseBanner}
+    ${noiseBanner}${laneWarn}
     <div class="hint">HaluMem Table 3 지표: judge 레코드에서 <b>공식 집계 함수로 실시간 산출</b> (문서 테이블과 동일 수치). 범위: ${S.metricsScope === "first4" ? "전 실험 공통 첫 4유저" : S.metricsScope === "all" ? "런별 전체 유저 (유저 수 다름 주의)" : "유저 " + esc(nameOf(S.metricsScope)) + " 1명"} · judge=${judgeName}
       · 첫 칸 클릭=행, 머리글 클릭=열, 나머지 칸 클릭=그 칸만 하이라이트 · <b>▾</b>=접기(접힌 줄 클릭=펼침) · 칼럼 경계 드래그=폭 조절 <button id="msel-clear" class="ctx-toggle${anySel ? "" : " btn-off"}" style="margin-left:6px">하이라이트 해제</button> <button id="mhide-clear" class="ctx-toggle${nHidden ? "" : " btn-off"}" style="margin-left:6px">접힌 항목 <b id="nfold">${nHidden}</b>개 모두 펼치기</button></div>
     <div class="card"><div class="body" style="overflow-x:auto">

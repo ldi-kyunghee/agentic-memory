@@ -888,7 +888,13 @@ def api_metrics(judge: str = "nano", scope: str = "first4", generator: str = "qw
                 lane_gen, lane_jd = alt
                 m = compute_metrics(name, lane_jd, scope, lane_gen)
                 if m:
-                    pinned = {"generator": lane_gen, "judge": lane_jd, "run": name}
+                    # ⚠ extra_rows의 '고정 레인'과 구분해야 한다. 저쪽은 설계상 항상 그 조합이고,
+                    #    이쪽은 사용자가 고른 레인이 없어서 대체된 것이다. 대체된 행은 다른 배치라
+                    #    유저 집합·문항 수가 다를 수 있어 행 간 비교가 깨진다 (실측 사고:
+                    #    oss120b4가 1유저 배치, oss120b4-bm25가 4유저 배치로 잡혀 UPD를 잘못 대조).
+                    pinned = {"generator": lane_gen, "judge": lane_jd, "run": name,
+                              "fallback": True,
+                              "want_generator": generator, "want_judge": judge}
         # 반복 산출물이 있으면 QA만 평균으로 덮어쓴다 (메모리측 지표는 Stage A 산출이라 회차 무관)
         reps, sd = [], None
         tpl = r.get("repeat_judge")
