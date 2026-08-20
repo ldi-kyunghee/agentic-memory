@@ -2112,7 +2112,167 @@ function beamHeat(v) {
   return `background:hsl(${h} 62% ${92 - t * 14}%);color:hsl(${h} 70% 24%)`;
 }
 
+S.beamMode = "overview";   // overview | bucket
+
+// 화면 상단 모드 전환. 두 화면이 같은 자리에 붙는다
+const beamModeSwitch = () => `<p class="hrefsw beammode"><b>보기</b>
+  <button class="seg${S.beamMode === "overview" ? " on" : ""}" data-bm="overview"
+    data-desc="규모 3종 × 답변 프롬프트 2종을 한 화면에서 대조합니다. BEAM 결론이 전부 버킷 간·프롬프트 간 비교라 버튼을 눌러가며 기억으로 맞추면 오독이 납니다">종합</button>
+  <button class="seg${S.beamMode === "bucket" ? " on" : ""}" data-bm="bucket"
+    data-desc="버킷 하나를 자세히 봅니다. 능력별 문항 목록과 문항 상세(답변 원문·rubric 채점)로 들어갈 수 있습니다">버킷별 상세</button></p>`;
+
+const bindBeamMode = () => $$("#content .beammode button").forEach((b) =>
+  (b.onclick = () => { S.beamMode = b.dataset.bm; renderBeam(); }));
+
+// 차이 칸 색. 0을 흰색으로 두고 ±0.4 를 양끝으로 잡는다 (실측 최대가 -0.434)
+function deltaHeat(v) {
+  if (v == null) return "background:var(--chip)";
+  const t = Math.max(-1, Math.min(1, v / 0.4));
+  const h = t >= 0 ? 145 : 8;
+  return `background:hsl(${h} 60% ${96 - Math.abs(t) * 20}%);color:hsl(${h} 70% 26%)`;
+}
+
 async function renderBeam() {
+  if (S.beamMode === "overview") return renderBeamOverview();
+  return renderBeamBucket();
+}
+
+// 규모 × 답변 프롬프트를 한 화면에. BEAM 결론이 전부 이 축들의 대조라 버킷별 화면으로는 안 보인다.
+async function renderBeamOverview() {
+  const el = $("#content");
+  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  let d;
+  try {
+    d = await api(`/api/beam/overview`);
+  } catch (e) {
+    el.innerHTML = `${beamModeSwitch()}<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
+    bindBeamMode();
+    return;
+  }
+  const CUT = d.cutoffs, SC = d.scales, PR = d.prompts;
+  const at = (s, p) => d.buckets.find((b) => b.ready && b.scale === s && b.prompt === p);
+  const sc = (b, c) => (b && b.overall[String(c)] ? b.overall[String(c)].score : null);
+  const n3 = (v) => (v == null ? "–" : v.toFixed(3));
+  const sgn = (v) => (v == null ? "–" : (v >= 0 ? "+" : "") + v.toFixed(3));
+
+  if (!d.buckets.some((b) => b.ready)) {
+    el.innerHTML = `${beamModeSwitch()}<p class="muted">채점본이 있는 버킷이 없습니다.</p>`;
+    bindBeamMode();
+    return;
+  }
+
+  // ---- 곡선 미니 그래프. 세로는 0~1 고정이라 행끼리 기울기를 눈으로 비교할 수 있다
+  const curve = (b) => {
+    const pts = CUT.map((c, i) => {
+      const v = sc(b, c);
+      return v == null ? null : `${(i / (CUT.length - 1) * 56 + 2).toFixed(1)},${(20 - v * 18).toFixed(1)}`;
+    }).filter(Boolean).join(" ");
+    return `<svg class="bspark" viewBox="0 0 60 22" preserveAspectRatio="none"><polyline points="${pts}"/></svg>`;
+  };
+
+  // ---- 카드 1: 전체 점수 (규모 × 프롬프트 × cutoff)
+  const rows1 = [];
+  for (const s of SC) {
+    for (const p of PR) {
+      const b = at(s, p);
+      if (!b) { rows1.push(`<tr><td class="brow"><b>${esc(s)}</b><br><span class="small muted">${esc(p)}</span></td>
+        <td class="muted" colspan="${CUT.length + 3}">채점본 없음</td></tr>`); continue; }
+      const lo = sc(b, CUT[0]), hi = sc(b, CUT[CUT.length - 1]);
+      rows1.push(`<tr><td class="brow"><b>${esc(s)}</b><br><span class="small muted">${esc(p)}</span></td>
+        <td class="small">${b.n_convs}대화<br>${b.n_questions}문항</td>
+        ${CUT.map((c) => {
+          const cell = b.overall[String(c)], v = cell ? cell.score : null;
+          const mark = cell && cell.full ? `<i class="bfull" data-desc="${esc(`이 칸의 ${cell.full}/${cell.n}건은 저장 메모리가 cutoff 보다 적어 <b>저장소를 전부 준 조건</b>입니다. 검색이 작동하지 않았으므로 검색 예산 효과로 읽으면 안 됩니다.`)}">▚</i>` : "";
+          return `<td class="bcell" style="${beamHeat(v)}"><b>${n3(v)}</b>${mark}</td>`;
+        }).join("")}
+        <td class="bdelta ${hi >= lo ? "up" : "down"}">${sgn(hi != null && lo != null ? hi - lo : null)}</td>
+        <td>${curve(b)}</td></tr>`);
+    }
+  }
+
+  // ---- 카드 2: 프롬프트 효과 (능력 × 규모, top-200)
+  const LAST = CUT[CUT.length - 1];
+  const abKeys = Object.keys(d.abilities);
+  const pdelta = (a, s) => {
+    const A = at(s, PR[0]), B = at(s, PR[1]);
+    if (!A || !B) return null;
+    const x = A.abilities[a]?.[String(LAST)], y = B.abilities[a]?.[String(LAST)];
+    return x == null || y == null ? null : y - x;
+  };
+  const ab2 = abKeys.map((a) => ({ a, vals: SC.map((s) => pdelta(a, s)) }))
+    .sort((p, q) => (p.vals.find((v) => v != null) ?? 0) - (q.vals.find((v) => v != null) ?? 0));
+
+  // ---- 카드 3: 능력 × 규모 (대표 프롬프트, top-200) — 단조인지 보려는 표
+  const ab3 = abKeys.map((a) => {
+    const vals = SC.map((s) => at(s, PR[0])?.abilities[a]?.[String(LAST)] ?? null);
+    const ok = vals.every((v) => v != null);
+    const mono = ok && (vals.every((v, i) => i === 0 || v >= vals[i - 1]) || vals.every((v, i) => i === 0 || v <= vals[i - 1]));
+    return { a, vals, mono, diff: ok ? vals[vals.length - 1] - vals[0] : null };
+  }).sort((p, q) => (p.diff ?? 0) - (q.diff ?? 0));
+  const nMono = ab3.filter((r) => r.mono).length;
+
+  el.innerHTML = `
+    ${beamModeSwitch()}
+
+    <div class="noisebar warn" data-desc="세 버킷의 대화 제목 겹침이 0입니다 (500K∩1M 0/35, 100K∩500K 0/20). 주제 구성도 8종/14종/13종으로 다릅니다.">
+      <b>⚠ 규모 간 절대 비교를 하지 마세요.</b> BEAM은 버킷마다 <b>완전히 다른 대화</b>를 씁니다(제목 겹침 0).
+      <span class="small">벤치마크 설계가 규모 간 대응 비교를 지원하지 않습니다. 능력 구성을 통제해도 10개 중 8개가 500K에서 위아래로 튀고, 버킷 안에서 저장량과 점수의 상관은 전부 무의미합니다.</span>
+      <br><span class="small"><b>읽어도 되는 것</b>: 같은 규모 안에서의 <b>cutoff 곡선 모양</b>과 <b>프롬프트 간극</b>. 둘 다 같은 대화·같은 저장소 위의 비교라 대화 집합 차이가 상쇄됩니다. 판독 근거는 <code>docs/mem0-classic-oss/beam-experiment.md</code> §0·§4-1</span>
+    </div>
+
+    <div class="card"><h4 data-desc="행은 규모 × 답변 프롬프트, 열은 cutoff. 곡선은 세로 0~1 고정이라 행끼리 기울기를 눈으로 비교할 수 있습니다">전체 점수 (규모 × 답변 프롬프트 × 검색 예산)</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>규모 · 프롬프트</th><th>규모</th>
+      ${CUT.map((c) => `<th data-desc="답변자에게 메모리 ${c}개까지 제공">top-${c}</th>`).join("")}
+      <th data-desc="top-${LAST} 빼기 top-${CUT[0]}. 양수면 컨텍스트를 늘릴수록 좋아집니다">차이</th><th>곡선</th></tr>
+      ${rows1.join("")}
+    </table></div>
+    <div class="body"><span class="small muted">▚ = 저장 메모리가 cutoff 보다 적어 저장소를 전부 준 칸. 그 칸은 검색이 작동하지 않았습니다. <b>100K의 top-200에만 붙습니다.</b> 100K에서 곡선이 꺾이는 이유입니다.</span></div>
+    </div>
+
+    <div class="card"><h4 data-desc="BEAM 공식 프롬프트에서 mem0 하네스 프롬프트를 뺀 값입니다. 음수면 공식 프롬프트가 낮습니다. top-${LAST} 기준">답변 프롬프트 효과 (능력 × 규모, top-${LAST})</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>능력</th>${SC.map((s) => `<th>${esc(s)}</th>`).join("")}</tr>
+      ${ab2.map((r) => `<tr><td class="brow"><b>${esc(d.abilities[r.a] || r.a)}</b><br><span class="small muted">${esc(r.a)}</span></td>
+        ${r.vals.map((v) => `<td class="bcell" style="${deltaHeat(v)}"><b>${sgn(v)}</b></td>`).join("")}</tr>`).join("")}
+    </table></div>
+    <div class="body"><span class="small muted">세 규모 모두 <b>모순 감지</b>가 최대 하락, <b>지시 준수</b>가 그다음입니다. <b>갱신 반영</b>만 0 근처이거나 양수입니다. rubric 1항목이 곧 답이라 짧아져도 안 깎이기 때문입니다 (§7-5).</span></div>
+    </div>
+
+    <div class="card"><h4 data-desc="대표 프롬프트(${esc(PR[0])}) 기준 능력별 점수를 규모끼리 늘어놓은 것입니다. 규모 효과가 있다면 단조여야 합니다">능력 × 규모 (${esc(PR[0])}, top-${LAST})</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>능력</th>${SC.map((s) => `<th>${esc(s)}</th>`).join("")}<th>${esc(SC[SC.length-1])}−${esc(SC[0])}</th><th>모양</th></tr>
+      ${ab3.map((r) => `<tr><td class="brow"><b>${esc(d.abilities[r.a] || r.a)}</b><br><span class="small muted">${esc(r.a)}</span></td>
+        ${r.vals.map((v) => `<td class="bcell" style="${beamHeat(v)}">${n3(v)}</td>`).join("")}
+        <td class="bdelta ${(r.diff ?? 0) >= 0 ? "up" : "down"}">${sgn(r.diff)}</td>
+        <td class="small">${r.mono ? "<b>단조</b>" : `<span class="muted">비단조</span>`}</td></tr>`).join("")}
+    </table></div>
+    <div class="body"><span class="small muted"><b>${abKeys.length}개 중 단조는 ${nMono}개뿐입니다.</b> 규모 효과라면 단조여야 합니다. 이 모양은 어느 대화가 그 버킷에 들어갔느냐가 만든 것입니다. 능력들이 같은 대화 집합을 공유하므로 여러 개가 같이 오르내리는 것도 근거가 되지 못합니다.</span></div>
+    </div>
+
+    <div class="card"><h4 data-desc="답변 길이 중앙값입니다. mem0 하네스 프롬프트는 길이 지시가 없고 세부를 다 담으라고 하며, BEAM 공식은 '설명 없이 답만 출력'이라고 지시합니다">답변 길이 (문자 수 중앙값)</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>프롬프트</th>${SC.map((s) => `<th>${esc(s)}</th>`).join("")}</tr>
+      ${PR.map((p) => `<tr><td class="brow"><b>${esc(p)}</b></td>
+        ${SC.map((s) => { const b = at(s, p); return `<td>${b ? `<b>${b.len_median}</b>자` : "–"}</td>`; }).join("")}</tr>`).join("")}
+    </table></div>
+    <div class="body"><span class="small muted">저장소가 커질수록 <b>${esc(PR[0])}</b> 쪽 답변이 길어집니다. <b>${esc(PR[1])}</b> 쪽은 규모와 무관하게 눌려 있습니다. 규모 간 무엇을 비교하든 이 몫을 먼저 빼야 합니다 (§4-3).</span></div>
+    </div>`;
+
+  $("#sidebar").innerHTML = `<div style="padding:10px">
+    <p class="small muted"><b>BEAM 종합</b><br>규모 ${SC.length}종 × 답변 프롬프트 ${PR.length}종 × cutoff ${CUT.length}종</p>
+    <p class="small muted" style="margin-top:10px"><b>점수 색</b></p>
+    <div class="bleg">${[0, .25, .5, .75, 1].map((v) => `<span style="${beamHeat(v)}">${v.toFixed(2)}</span>`).join("")}</div>
+    <p class="small muted" style="margin-top:10px"><b>차이 색</b></p>
+    <div class="bleg">${[-.4, -.2, 0, .2].map((v) => `<span style="${deltaHeat(v)}">${v >= 0 ? "+" : ""}${v.toFixed(2)}</span>`).join("")}</div>
+    <p class="small muted" style="margin-top:10px"><b>읽는 순서</b><br>① 곡선 모양 → 검색 예산이 언제 듣는가<br>② 프롬프트 효과 → 답변 규약의 몫<br>③ 능력 × 규모 → 규모 효과가 있는가 (없음)</p>
+    <p class="small muted" style="margin-top:10px">⚠ 이 화면은 상단바의 Generator·Judge 선택을 따르지 않습니다. 버킷마다 고정된 조합입니다.</p>
+    <p class="small muted" style="margin-top:10px">판독 근거는 <code>docs/mem0-classic-oss/beam-experiment.md</code></p>
+  </div>`;
+  bindBeamMode();
+}
+
+async function renderBeamBucket() {
   const el = $("#content");
   el.innerHTML = `<p class="muted">집계 중…</p>`;
   let d;
@@ -2129,9 +2289,11 @@ async function renderBeam() {
       >${esc(b.label)}</button>`).join("");
 
   if (!d.ready) {
-    el.innerHTML = `<p class="hrefsw"><b>버킷</b>${pick}</p>
+    el.innerHTML = `${beamModeSwitch()}<p class="hrefsw"><b>버킷</b>${pick}</p>
       <p class="muted">이 버킷은 아직 채점본이 없습니다.</p>`;
-    $$("#content .hrefsw button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
+    bindBeamMode();
+    bindBeamMode();
+  $$("#content .hrefsw:not(.beammode) button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
     return;
   }
 
@@ -2161,7 +2323,8 @@ async function renderBeam() {
 
   const eo = d.event_ordering;
   el.innerHTML = `
-    <p class="hrefsw" data-desc="버킷마다 대화 길이와 저장 메모리 규모가 다릅니다. 절대 수치를 버킷 간에 비교하지 마세요."><b>버킷</b>${pick}</p>
+    ${beamModeSwitch()}
+    <p class="hrefsw" data-desc="버킷마다 대화 집합이 다릅니다(제목 겹침 0). 절대 수치를 버킷 간에 비교하지 마세요."><b>버킷</b>${pick}</p>
     <p class="small muted">${esc(d.note || "")}<br>대화 ${d.n_convs}개 · 문항 ${d.n_questions}개 · 채점 ${d.n_records}건 · 저장 메모리 ${d.stored_min}~${d.stored_max}개</p>
 
     <div class="jbasis" data-desc="cutoff 는 Stage A' 에서 검색 결과 top-200 을 잘라 만든 조건입니다. 투입은 한 번만 했고 자르기만 달리했습니다.">
@@ -2232,7 +2395,8 @@ async function renderBeam() {
     <p class="small muted" style="margin-top:10px">판독 근거는 <code>docs/mem0-classic-oss/beam-experiment.md</code></p>
     <p class="small muted" style="margin-top:10px">⚠ 이 화면은 HaluMem 과 데이터가 달라 상단바의 Generator·Judge 선택을 따르지 않습니다. 버킷마다 고정된 조합으로 집계됩니다.</p>
   </div>`;
-  $$("#content .hrefsw button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
+  bindBeamMode();
+  $$("#content .hrefsw:not(.beammode) button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
   $$("#content td.bclick").forEach((td) => (td.onclick = () => {
     const [k, lab] = td.dataset.open.split("|");
     beamQuestions(k, lab);

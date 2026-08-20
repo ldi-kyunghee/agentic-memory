@@ -77,32 +77,44 @@ beam:
     # 공식 프롬프트 쪽도 지우지 않고 나란히 둠. 그 간극 자체가 결과임.
     100k:
       label: "100K"
+      scale: "100K"
+      prompt: "mem0 하네스"
       ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-100k
       note: "20대화 400문항 · 청크 2,866 · 저장 메모리 100~407 (중앙값 278) · 답변 프롬프트 mem0 하네스 · agent gpt-oss-120b medium, 답변=채점 gpt-oss-120b high · top-200이 저장소를 넘는 문항 100/400"
     500k:
       label: "500K"
+      scale: "500K"
+      prompt: "mem0 하네스"
       ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-500k-mem0prompt
       note: "35대화 700문항 · 답변 프롬프트 mem0 하네스 · top-200이 항상 꽉 참 (저장소가 예산보다 커서 검색 예산 비교가 성립하는 첫 버킷) · 나머지 세팅은 100K와 동일"
     1m:
       label: "1M"
+      scale: "1M"
+      prompt: "mem0 하네스"
       ingest: results/mem0-classic-oss/beam-1m-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-1m-mem0prompt
       note: "35대화 700문항 · 답변 프롬프트 mem0 하네스 · 나머지 세팅은 100K와 동일"
     # ---- 대조군: 답변 생성 프롬프트만 BEAM 공식으로 바꾼 벌 ----
     100k-beamprompt:
       label: "100K · BEAM 공식 프롬프트"
+      scale: "100K"
+      prompt: "BEAM 공식"
       ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-100k-beamprompt
       note: "대조군 · 100K와 검색 결과가 한 글자도 다르지 않고 답변 생성 프롬프트만 BEAM 공식(answer_generation_for_rag) · '설명 없이 답만 출력' 지시가 있어 답변 길이 중앙값이 669자에서 76자로 줄었음 · 전체 점수는 0.11~0.135 낮음 (10개 능력 중 8개가 p<0.001로 하락)"
     500k-beamprompt:
       label: "500K · BEAM 공식 프롬프트"
+      scale: "500K"
+      prompt: "BEAM 공식"
       ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-500k
       note: "대조군 · 500K와 검색 결과가 동일하고 답변 생성 프롬프트만 BEAM 공식"
     1m-beamprompt:
       label: "1M · BEAM 공식 프롬프트"
+      scale: "1M"
+      prompt: "BEAM 공식"
       ingest: results/mem0-classic-oss/beam-1m-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-1m
       note: "대조군 · 1M과 검색 결과가 동일하고 답변 생성 프롬프트만 BEAM 공식"

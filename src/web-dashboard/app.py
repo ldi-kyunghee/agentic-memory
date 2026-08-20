@@ -720,9 +720,12 @@ def load_beam(bucket: str) -> dict:
     if not jdir.exists():
         return {"ready": False, "records": [], "convs": {}}
     files = sorted(jdir.glob("*.json"))
-    key = (bucket, tuple(sorted((f.name, f.stat().st_mtime_ns) for f in files)))
-    if _beam_cache.get("key") == key:
-        return _beam_cache["val"]
+    key = tuple(sorted((f.name, f.stat().st_mtime_ns) for f in files))
+    # ⚠ 버킷마다 칸을 따로 둔다. 한 칸짜리로 두면 종합 화면(/api/beam/overview)이 버킷 여섯 개를
+    #    연달아 읽을 때 서로를 밀어내 매번 전부 다시 파싱한다 (버킷당 수천 레코드).
+    hit = _beam_cache.get(bucket)
+    if hit and hit[0] == key:
+        return hit[1]
 
     records = []
     for f in files:
@@ -745,7 +748,7 @@ def load_beam(bucket: str) -> dict:
                     "questions": {f'{q["ability"]}#{q["idx"]}': q for q in (d.get("questions") or [])},
                 }
     val = {"ready": True, "records": records, "convs": convs, "cfg": cfg}
-    _beam_cache.update(key=key, val=val)
+    _beam_cache[bucket] = (key, val)
     return val
 
 
@@ -818,6 +821,79 @@ def api_beam(bucket: str = "100k"):
             "n_convs": len(convs), "stored_min": min(stored) if stored else None,
             "stored_max": max(stored) if stored else None,
             "abilities": abilities, "overall": overall, "convs": convs, "event_ordering": eo}
+
+
+def _median(xs):
+    xs = sorted(x for x in xs if x is not None)
+    if not xs:
+        return None
+    n = len(xs)
+    return xs[n // 2] if n % 2 else round((xs[n // 2 - 1] + xs[n // 2]) / 2, 4)
+
+
+@app.get("/api/beam/overview")
+def api_beam_overview():
+    """모든 버킷을 한 번에. 규모 x 답변 프롬프트로 묶어 내려보냄.
+
+    이 화면이 필요한 이유: BEAM 결론이 전부 '버킷 간' 또는 '프롬프트 간' 비교인데
+    /api/beam 은 버킷 하나만 본다. 화면에서 버튼을 눌러가며 기억으로 비교하게 하면
+    2026-08-19 에 겪은 것 같은 오독이 난다 (부분 표본 12대화를 확정값으로 읽음).
+
+    ⚠ 규모 간 절대 비교는 성립하지 않는다. 버킷마다 대화 집합이 다르고 제목 겹침이 0이다.
+       화면에서 그 경고를 함께 띄우도록 diff_ok 플래그를 내려준다.
+    """
+    cfg = beam_cfg()
+    cuts = cfg.get("cutoffs") or [20, 50, 100, 200]
+    abil_labels = cfg.get("abilities") or {}
+    out = []
+    for k, v in (cfg.get("buckets") or {}).items():
+        if not (ROOT / v["judge"]).exists():
+            out.append({"key": k, "label": v.get("label", k), "scale": v.get("scale"),
+                        "prompt": v.get("prompt"), "ready": False})
+            continue
+        d = load_beam(k)
+        rec = d["records"]
+        if not rec:
+            out.append({"key": k, "label": v.get("label", k), "scale": v.get("scale"),
+                        "prompt": v.get("prompt"), "ready": False})
+            continue
+        by_cut = {}
+        for c in cuts:
+            rows = [r for r in rec if r["cutoff"] == c]
+            by_cut[str(c)] = None if not rows else {
+                "score": _mean([r["score"] for r in rows]), "n": len(rows),
+                # 저장소가 모자라 cutoff 를 못 채운 건수. 이 칸은 검색이 작동하지 않았음
+                "full": sum(1 for r in rows if r.get("stored") and (r.get("used") or 0) < r["cutoff"]),
+            }
+        ab = {}
+        for a in sorted({r["ability"] for r in rec}):
+            ab[a] = {str(c): _mean([r["score"] for r in rec if r["ability"] == a and r["cutoff"] == c])
+                     for c in cuts}
+        lens = [len(r.get("system_response") or "") for r in rec]
+        len_ab = {a: _median([len(r.get("system_response") or "") for r in rec if r["ability"] == a])
+                  for a in ab}
+        stored = [c.get("stored") for c in d["convs"].values() if c.get("stored")]
+        out.append({
+            "key": k, "label": v.get("label", k), "scale": v.get("scale"),
+            "prompt": v.get("prompt"), "ready": True, "note": v.get("note", ""),
+            "n_convs": len(d["convs"]), "n_records": len(rec),
+            "n_questions": len({(r["conv"], r["ability"], r["idx"]) for r in rec}),
+            "stored_min": min(stored) if stored else None,
+            "stored_max": max(stored) if stored else None,
+            "stored_med": _median(stored),
+            "overall": by_cut, "abilities": ab,
+            "len_median": _median(lens), "len_by_ability": len_ab,
+        })
+    scales, prompts = [], []
+    for b in out:
+        if b.get("scale") and b["scale"] not in scales:
+            scales.append(b["scale"])
+        if b.get("prompt") and b["prompt"] not in prompts:
+            prompts.append(b["prompt"])
+    return {"cutoffs": cuts, "abilities": abil_labels, "buckets": out,
+            "scales": scales, "prompts": prompts,
+            # 규모 간 대화 집합이 달라 절대 비교 불가. 화면 경고문의 근거임
+            "cross_scale_comparable": False}
 
 
 @app.get("/api/beam/questions")
