@@ -487,6 +487,7 @@ function render() {
   else if (S.tab === "compare") renderCompare();
   else if (S.tab === "metrics") renderMetrics();
   else if (S.tab === "beam") renderBeam();
+  else if (S.tab === "memora") renderMemora();
   else renderDigest();
   renderInspector();
 }
@@ -2693,3 +2694,232 @@ function bindJmButtons(root = document) {
 }
 
 boot().catch((e) => { document.body.innerHTML = `<pre style="padding:20px;color:#c92a2a">${esc(e.stack || e.message)}</pre>`; });
+
+/* ==================== Memora (ACL 2026 Findings) ====================
+   BEAM 화면과 달리 관심사가 '검색 예산'이 아니라 **저장소 행동**임. 삭제까지 재는 첫
+   벤치마크라, 데이터셋이 의도한 연산과 mem0 가 실제로 한 연산을 나란히 놓는 것이 핵심임.
+   판독 근거는 docs/mem0-classic-oss/memora-experiment.md */
+
+S.memoraPeriod = "weekly";
+
+// 수행률 색. 100%가 기준이고 모자랄수록 붉어짐. 100을 넘는 것(추가)은 회색으로 중립 처리
+function rateHeat(v, neutralOver) {
+  if (v == null) return "background:var(--chip)";
+  if (neutralOver && v > 120) return "background:var(--sunk);color:var(--faint)";
+  const t = Math.max(0, Math.min(1, v / 100));
+  const h = t * 120;
+  return `background:hsl(${h} 62% ${92 - t * 14}%);color:hsl(${h} 70% 24%)`;
+}
+
+async function renderMemora() {
+  const el = $("#content");
+  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  let d;
+  try {
+    d = await api(`/api/memora?period=${encodeURIComponent(S.memoraPeriod)}`);
+  } catch (e) {
+    el.innerHTML = `<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
+    return;
+  }
+  const pick = (d.periods || []).map((p) =>
+    `<button class="seg${p.key === d.period ? " on" : ""}" data-mp="${esc(p.key)}"
+      ${p.ready ? "" : "disabled"} data-desc="${esc(p.note || "")}${p.ready ? "" : "<br><b>아직 채점본이 없습니다</b>"}"
+      >${esc(p.label)}</button>`).join("");
+  const bind = () => $$("#content .hrefsw button").forEach((b) =>
+    (b.onclick = () => { S.memoraPeriod = b.dataset.mp; renderMemora(); }));
+
+  if (!d.ready) {
+    el.innerHTML = `<p class="hrefsw"><b>기간</b>${pick}</p>
+      <p class="muted">이 기간은 아직 채점본이 없습니다.</p>`;
+    bind();
+    return;
+  }
+
+  const n2 = (v) => (v == null ? "–" : v.toFixed(2));
+  const TASKS = d.tasks || {};
+  const rho = d.delete_faa_rho;
+
+  // 연산 수행률. 추가는 100%를 크게 넘는 것이 정상이라 따로 설명을 붙임
+  const opRow = (label, intent, actual, key, neutral, desc) => {
+    const rate = intent ? (100 * actual / intent) : null;
+    return `<tr><td class="brow"><b>${label}</b></td>
+      <td>${intent.toLocaleString()}</td><td>${actual.toLocaleString()}</td>
+      <td class="bcell" style="${rateHeat(rate, neutral)}" data-desc="${esc(desc)}">
+        <b>${rate == null ? "–" : rate.toFixed(1) + "%"}</b></td></tr>`;
+  };
+
+  el.innerHTML = `
+    <p class="hrefsw" data-desc="기간마다 세션 수와 누적 갱신·삭제 횟수가 다릅니다. 대화 집합도 다르므로 기간 간 절대 비교는 하지 마세요."><b>기간</b>${pick}</p>
+    <p class="small muted">${esc(d.note || "")}<br>페르소나 ${d.n_personas} · 세션 ${d.n_sessions.toLocaleString()} · 문항 ${d.n_questions} · 평가 기준 ${d.n_criteria.toLocaleString()} · 저장 메모리 ${d.stored.toLocaleString()}개</p>
+
+    <div class="jbasis" data-desc="FAMA = max(0, MPA − λ(1−FAA)). MPA는 넣어야 할 것을 넣은 비율, FAA는 빼야 할 것을 뺀 비율, λ는 문항의 forgetting 기준 비중입니다.">
+      <b>이 화면이 묻는 것</b>: 기억한 것만이 아니라 <b>잊어야 할 것을 잊었는가</b>.
+      <span class="small"><b>MPA</b>는 정답을 넣었는지만 봅니다. <b>FAMA</b>는 거기서 무효·삭제된 정보를 끌어다 쓴 만큼 깎습니다. 둘의 차이가 <b>페널티</b>입니다.</span>
+    </div>
+
+    <div class="noisebar" data-desc="실측(weekly/academic_researcher): 답변을 500토큰에서 자르면 recommending 페널티가 36→28로 줄지만 remembering MPA가 77→60으로 무너져 전체는 오히려 나빠집니다. 그래서 길이 제한 없이 생성한 것을 대표값으로 씁니다.">
+      <b>📏 FAMA는 답변 길이에 민감합니다</b>: 길게 쓸수록 무효 항목을 언급할 확률이 올라갑니다.
+      <span class="small">이 레인의 답변 길이 중앙값은 <b>${d.len_median == null ? "–" : d.len_median.toLocaleString()}자</b>(최대 ${d.len_max == null ? "–" : d.len_max.toLocaleString()}자)입니다. 공식 하네스는 500토큰에서 끊습니다. <b>점수를 볼 때 길이를 함께 보세요.</b></span>
+    </div>
+
+    <div class="card"><h4 data-desc="과제 이름을 클릭하면 그 과제의 문항 목록을 FAMA 낮은 순으로 봅니다">과제별</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>과제</th><th>문항</th>
+      <th data-desc="FAMA = max(0, MPA − λ(1−FAA)). 최종 점수">FAMA</th>
+      <th data-desc="넣어야 할 것을 넣은 비율. 망각을 안 보는 종래 지표">MPA</th>
+      <th data-desc="빼야 할 것을 뺀 비율. forgetting 기준이 있는 문항만으로 평균냅니다">FAA</th>
+      <th data-desc="MPA − FAMA. 무효 메모리를 끌어다 쓴 대가">페널티</th>
+      <th data-desc="이 과제의 평가 기준 수. 넣기(memory_presence) / 빼기(forgetting_absence)">기준 넣기/빼기</th></tr>
+      ${Object.keys(TASKS).map((t) => {
+        const v = d.by_task[t] || {};
+        return `<tr><td class="brow bclick" data-mtask="${esc(t)}"
+          data-desc="클릭하면 문항 목록을 봅니다"><b>${esc(TASKS[t])}</b>
+          <br><span class="small muted">${esc(t)}</span></td>
+          <td>${v.n ?? "–"}</td>
+          <td class="bcell" style="${beamHeat(v.fama == null ? null : v.fama / 100)}"><b>${n2(v.fama)}</b></td>
+          <td class="bcell" style="${beamHeat(v.mpa == null ? null : v.mpa / 100)}">${n2(v.mpa)}</td>
+          <td ${v.n_forget ? "" : `class="muted" data-desc="${esc("이 과제에는 forgetting_absence 기준이 하나도 없습니다(λ=0). 잰 값이 없으므로 비워 둡니다.")}"`}>${v.n_forget ? n2(v.faa) : "–"}</td>
+          <td class="bdelta ${v.n_forget && (v.penalty ?? 0) > 0 ? "down" : ""}"
+            ${v.n_forget ? "" : `data-desc="${esc("λ=0이라 FAMA가 MPA와 같아집니다. 잘해서 0이 아니라 뺄 것이 없어서 0입니다.")}"`}
+            >${v.n_forget ? "−" + (v.penalty ?? 0).toFixed(2) : "–"}</td>
+          <td class="small muted">${(v.n_presence || 0)} / ${(v.n_forget || 0)}</td></tr>`;
+      }).join("")}
+      <tr class="jm-tot"><td class="brow"><b>전체</b></td><td>${d.overall.n}</td>
+        <td class="bcell" style="${beamHeat(d.overall.fama / 100)}"><b>${n2(d.overall.fama)}</b></td>
+        <td class="bcell" style="${beamHeat(d.overall.mpa / 100)}">${n2(d.overall.mpa)}</td>
+        <td>${n2(d.overall.faa)}</td>
+        <td class="bdelta down">−${n2(d.overall.penalty)}</td>
+        <td class="small muted">${d.overall.n_presence} / ${d.overall.n_forget}</td></tr>
+    </table></div></div>
+
+    <div class="card"><h4 data-desc="데이터셋이 각 세션에서 의도한 메모리 연산 횟수와, mem0가 실제로 발생시킨 연산 횟수를 나란히 놓은 것입니다. 대상까지 맞는지는 확인하지 않은 개수 비교입니다">연산 발생비 (데이터셋 의도 대비 개수)</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>연산</th><th>데이터셋 의도</th><th>mem0 실제</th>
+      <th data-desc="실제 ÷ 의도. 100%라도 '지워야 할 그것'을 지웠다는 뜻은 아닙니다. 개수만 맞춘 값입니다">발생비</th></tr>
+      ${opRow("삭제 DELETE", d.intent.delete || 0, d.actual.DELETE || 0, "d", true,
+              "이 벤치마크의 핵심입니다. HaluMem에는 삭제가 없어 못 보던 갈래입니다. 100%를 넘는 것도 문제일 수 있습니다 - 지우라고 하지 않은 것까지 지운 것이기 때문입니다.")}
+      ${opRow("갱신 UPDATE", d.intent.update || 0, d.actual.UPDATE || 0, "u", true,
+              "HaluMem에서 무효 UPDATE가 99.5%였습니다(§14). 개수만으로는 유효성을 알 수 없으니 수행률은 참고값입니다.")}
+      ${opRow("추가 ADD", d.intent.add || 0, d.actual.ADD || 0, "a", true,
+              "100%를 크게 넘는 것이 정상입니다. 세션에 지정된 연산은 하나지만 mem0는 15턴 대화에 섞인 부수적 사실도 전부 뽑습니다. 회색은 중립 표시입니다.")}
+    </table></div>
+    <div class="body"><span class="small muted"><b>⚠ 이것은 수행률이 아니라 개수 비율입니다.</b> mem0의 DELETE 이벤트를 데이터셋이 지목한 삭제 대상과 짝지어 확인하지 않았습니다. 100%라도 엉뚱한 것을 지웠을 수 있고, 100%를 넘으면 지우라고 하지 않은 것까지 지운 것입니다. <b>대상 일치는 아직 재지 않았습니다.</b><br>추가가 100%를 크게 넘는 것은 설계상 당연합니다. 세션마다 지정된 연산은 하나지만 mem0는 15턴 대화에 섞인 부수적 사실도 전부 뽑습니다.</span></div>
+    </div>
+
+    <div class="card"><h4 data-desc="페르소나마다 대화 내용과 메모리 연산 수가 다릅니다. 순위를 말하기 전에 이 폭을 먼저 보세요">페르소나별 (${d.n_personas})</h4>
+    <div class="body" style="padding:0">
+    <table class="cmp beam"><tr><th>페르소나</th><th>세션</th><th>저장</th>
+      <th>FAMA</th><th>MPA</th><th>FAA</th><th>페널티</th>
+      <th data-desc="mem0의 DELETE 이벤트 수 ÷ 데이터셋이 의도한 삭제 수. 대상 일치는 확인하지 않은 개수 비율이라 100%를 넘기도 합니다">삭제 발생비</th>
+      <th data-desc="답변 길이 중앙값">길이</th></tr>
+      ${d.personas.slice().sort((a, b) => (a.fama ?? 0) - (b.fama ?? 0)).map((p) => `<tr>
+        <td class="brow"><b>${esc(p.persona)}</b></td>
+        <td class="small">${p.sessions ?? "–"}</td><td class="small">${p.stored ?? "–"}</td>
+        <td class="bcell" style="${beamHeat(p.fama == null ? null : p.fama / 100)}"><b>${n2(p.fama)}</b></td>
+        <td>${n2(p.mpa)}</td><td>${n2(p.faa)}</td>
+        <td class="bdelta ${(p.penalty ?? 0) > 0 ? "down" : ""}">−${n2(p.penalty)}</td>
+        <td class="bcell" style="${rateHeat(p.delete_rate, true)}" data-desc="${esc(`의도 ${p.delete_intent} → 실제 ${p.delete_actual}`)}">${p.delete_rate == null ? "–" : p.delete_rate.toFixed(0) + "%"}</td>
+        <td class="small">${p.len_median == null ? "–" : p.len_median.toLocaleString()}</td></tr>`).join("")}
+    </table></div>
+    <div class="body"><span class="small muted">${d.fama_sd == null ? "" : `FAMA 페르소나 간 <b>SD ${d.fama_sd}</b>. <b>이 폭보다 작은 차이는 순위로 말하지 마세요.</b> BEAM에서 부분 표본을 확정값으로 읽었다가 정정한 적이 있습니다.`}</span></div>
+    </div>
+
+    <div class="card"><h4 data-desc="삭제 이벤트가 많이 난 페르소나가 무효 언급도 적은지 봅니다. 페널티의 원인이 저장소인지 답변 규약인지 가르는 첫 단서입니다">삭제 발생비 ↔ forgetting 정확도</h4>
+    <div class="body">
+      ${rho == null
+        ? `<p class="muted small">페르소나가 3개 미만이라 상관을 내지 않습니다.</p>`
+        : `<p><b>Spearman ρ = ${rho >= 0 ? "+" : ""}${rho.toFixed(3)}</b> <span class="small muted">(페르소나 ${d.personas.filter((p) => p.delete_rate != null).length}개)</span></p>
+           <p class="small">양수이고 크면 <b>삭제가 많이 일어난 페르소나가 무효 언급도 적다</b>는 뜻입니다. 0 근처면 삭제 개수로는 forgetting 성적을 설명할 수 없다는 뜻이고, 원인을 <b>검색이나 답변 규약</b>에서 찾아야 합니다.</p>
+           <p class="small muted">⚠ 페르소나 10개짜리 순위 상관이고, x축이 대상 일치를 확인하지 않은 개수 비율입니다. 부호와 크기만 읽고 유의성을 주장하지 마세요.</p>`}
+    </div></div>
+
+    ${d.parse_fail ? `<p class="hint">⚠ 판정 실패 ${d.parse_fail}건 (파싱 또는 호출 실패). 오답으로 처리됐습니다</p>` : ""}`;
+
+  $("#sidebar").innerHTML = `<div style="padding:10px">
+    <p class="small muted"><b>Memora</b> (ACL 2026 Findings)<br>${esc(d.note || "")}</p>
+    <p class="small muted" style="margin-top:10px"><b>FAMA</b><br><code>max(0, MPA − λ(1−FAA))</code><br>λ = 망각 기준 수 ÷ 전체 기준 수</p>
+    <p class="small muted" style="margin-top:10px"><b>점수 색</b></p>
+    <div class="bleg">${[0, .25, .5, .75, 1].map((v) => `<span style="${beamHeat(v)}">${(v * 100).toFixed(0)}</span>`).join("")}</div>
+    <p class="small muted" style="margin-top:10px"><b>읽는 순서</b><br>① 과제별 페널티 → 무효 메모리를 얼마나 쓰나<br>② 삭제 수행률 → 저장소에 남아 있나<br>③ 상관 → 둘이 이어지나</p>
+    <p class="small muted" style="margin-top:10px">⚠ 기간마다 대화 집합이 다릅니다. <b>기간 간 절대 비교를 하지 마세요.</b></p>
+    <p class="small muted" style="margin-top:10px">⚠ 이 화면은 상단바의 Generator·Judge 선택을 따르지 않습니다.</p>
+    <p class="small muted" style="margin-top:10px">판독 근거는 <code>docs/mem0-classic-oss/memora-experiment.md</code></p>
+  </div>`;
+  bind();
+  $$("#content td.bclick").forEach((td) => (td.onclick = () => memoraQuestions(td.dataset.mtask, TASKS[td.dataset.mtask])));
+}
+
+// 과제 하나의 문항 목록. FAMA 낮은 순이라 실패부터 보임
+async function memoraQuestions(task, label) {
+  $("#jmodal").classList.remove("hidden");
+  $("#jmodal-head").innerHTML = `<b>Memora · ${esc(label)}</b>
+    <span class="jchip">${esc(task)}</span><span style="margin-left:auto"></span>
+    <button class="jbtn" id="jm-close">✕</button>`;
+  $("#jm-close").onclick = jmClose;
+  const el = $("#jmodal-body");
+  el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
+  const d = await api(`/api/memora/questions?period=${encodeURIComponent(S.memoraPeriod)}&task=${encodeURIComponent(task)}`);
+  el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
+    <div class="jbasis" data-desc="FAMA 낮은 순입니다. 기준 충족은 '넣어야 할 것 / 빼야 할 것'을 각각 몇 개 맞혔는지입니다.">
+      문항 ${d.questions.length}개를 <b>FAMA 낮은 순</b>으로 놓았습니다.
+      <span class="small">넣기(presence)는 다 맞혔는데 빼기(forget)에서 깨진 문항이 <b>무효 메모리를 끌어다 쓴 사례</b>입니다.</span>
+    </div>
+    <table class="cmp beam"><tr><th>페르소나</th><th>문항</th>
+      <th>FAMA</th><th>MPA</th><th>FAA</th><th>λ</th>
+      <th data-desc="넣어야 할 기준 중 맞힌 수">넣기</th>
+      <th data-desc="빼야 할 기준 중 맞힌 수">빼기</th><th>길이</th><th></th></tr>
+      ${d.questions.map((q) => `<tr>
+        <td class="small"><b>${esc(q.persona)}</b></td>
+        <td class="qtxt small">${esc((q.question || "").slice(0, 80))}</td>
+        <td class="bcell" style="${beamHeat(q.fama / 100)}"><b>${q.fama.toFixed(1)}</b></td>
+        <td>${q.mpa.toFixed(0)}</td><td>${q.faa.toFixed(0)}</td><td class="small">${q.lam.toFixed(2)}</td>
+        <td class="small">${q.n_presence_ok}/${q.n_presence}</td>
+        <td class="small${q.n_forget && q.n_forget_ok < q.n_forget ? " bad-n" : ""}">${q.n_forget_ok}/${q.n_forget}</td>
+        <td class="small">${q.len == null ? "–" : q.len.toLocaleString()}</td>
+        <td><button class="jbtn" data-mq="${esc(q.persona)}|${esc(q.question_id)}">상세</button></td>
+      </tr>`).join("")}</table>
+    <p style="margin-top:14px"><button class="jbtn" id="jm-back">✕ 닫기</button></p></div>`;
+  $("#jm-back").onclick = jmClose;
+  $$("#jmodal-body button[data-mq]").forEach((b) => (b.onclick = () => {
+    const [persona, qid] = b.dataset.mq.split("|");
+    memoraDetail(persona, qid, label);
+  }));
+}
+
+// 문항 하나. 기준별 판정과 답변 원문. 어떤 기준에서 깨졌는지 보는 화면
+async function memoraDetail(persona, qid, label) {
+  const el = $("#jmodal-body");
+  el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
+  const d = await api(`/api/memora/question?period=${encodeURIComponent(S.memoraPeriod)}`
+    + `&persona=${encodeURIComponent(persona)}&question_id=${encodeURIComponent(qid)}`);
+  const crit = (t) => d.criteria.filter((c) => c.type === t);
+  const block = (title, t, hint) => {
+    const cs = crit(t);
+    if (!cs.length) return "";
+    return `<div class="jsec"><h5 data-desc="${esc(hint)}">${title} (${cs.filter((c) => c.ok).length}/${cs.length})</h5>
+      <table class="cmp beam"><tr><th>기준</th><th>기대</th><th>판정</th><th></th></tr>
+        ${cs.map((c) => `<tr>
+          <td class="qtxt small">${esc(c.text)}</td>
+          <td class="small">${esc(c.expected)}</td>
+          <td class="small">${esc(String(c.got))}</td>
+          <td class="${c.ok ? "" : "bad-n"}" data-desc="${esc(c.reason || "")}">${c.ok ? "✓" : "✗"}</td>
+        </tr>`).join("")}</table></div>`;
+  };
+  el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
+    <p class="small muted"><b>${esc(d.persona)}</b> · ${esc(d.task)} · ${esc(d.question_id)}</p>
+    <div class="jsec"><h5>문항</h5><div class="jtarget">${esc(d.question)}</div></div>
+    <div class="jsec"><h5 data-desc="FAMA = max(0, MPA − λ(1−FAA))">점수</h5>
+      <p><b>FAMA ${(d.fama * 100).toFixed(1)}</b>
+        <span class="small muted">= max(0, MPA ${(d.mpa * 100).toFixed(1)} − λ ${d["lambda"].toFixed(3)} × (1 − FAA ${(d.faa * 100).toFixed(1)}%))</span></p></div>
+    ${block("넣어야 할 것 (memory_presence)", "memory_presence", "정답에 포함돼야 할 정보입니다. 기대 답이 yes입니다.")}
+    ${block("빼야 할 것 (forgetting_absence)", "forgetting_absence", "삭제·무효화된 정보라 언급하면 안 됩니다. 기대 답이 no입니다. 여기서 깨지면 무효 메모리를 끌어다 쓴 것입니다.")}
+    <div class="jsec"><h5 data-desc="채점에 들어간 답변 원문입니다">시스템 답변 (${(d.system_response || "").length.toLocaleString()}자)</h5>
+      <div class="jans small" style="white-space:pre-wrap">${esc(d.system_response || "(빈 답변)")}</div></div>
+    <div class="jsec"><h5 data-desc="이 문항에 대해 mem0가 검색해 온 메모리입니다. 여기에 무효 항목이 섞여 있으면 저장소 문제입니다">검색된 메모리 (${(d.retrieved || []).length})</h5>
+      <ol class="jl">${(d.retrieved || []).slice(0, 30).map((m) => `<li class="small">${esc(m.memory)}
+        <span class="muted">${m.session_date ? "· " + esc(m.session_date) : ""}${m.score != null ? " · " + m.score.toFixed(2) : ""}</span></li>`).join("")}</ol></div>
+    <p style="margin-top:14px"><button class="jbtn" id="jm-back2">← 목록</button>
+      <button class="jbtn" id="jm-close2">✕ 닫기</button></p></div>`;
+  $("#jm-back2").onclick = () => memoraQuestions(d.task, label);
+  $("#jm-close2").onclick = jmClose;
+}

@@ -940,6 +940,216 @@ def api_beam_question(bucket: str, conv: str, ability: str, idx: int):
                          "event_ordering": r.get("event_ordering")} for r in rows]}
 
 
+# ---------------- Memora (ACL 2026 Findings) ----------------
+# 삭제까지 재는 첫 벤치마크임. BEAM 화면과 달리 '검색 예산'이 아니라 **저장소 행동**이 관심사라
+# 보여주는 것이 다름: 데이터셋이 의도한 연산 대 mem0 가 실제로 한 연산, 그리고 그 수행률이
+# forgetting 정확도와 이어지는지.
+
+def memora_cfg() -> dict:
+    return load_registry_doc().get("memora", {}) or {}
+
+
+_memora_cache: dict = {}
+
+
+def load_memora(period: str) -> dict:
+    cfg = (memora_cfg().get("periods") or {}).get(period)
+    if not cfg:
+        raise HTTPException(404, f"unknown memora period: {period}")
+    jdir = ROOT / cfg["judge"]
+    if not jdir.exists():
+        return {"ready": False, "records": [], "convs": {}, "cfg": cfg}
+    files = sorted(jdir.glob("*.json"))
+    key = tuple(sorted((f.name, f.stat().st_mtime_ns) for f in files))
+    hit = _memora_cache.get(period)
+    if hit and hit[0] == key:
+        return hit[1]
+
+    records = []
+    for f in files:
+        if f.name.endswith("_error.json"):
+            continue
+        with open(f, encoding="utf-8") as fh:
+            records += json.load(fh).get("records", [])
+
+    convs = {}
+    ing = ROOT / cfg["ingest"]
+    if ing.exists():
+        with open(ing, encoding="utf-8") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                d = json.loads(line)
+                intent, actual = {}, {}
+                for s in d.get("ingest") or []:
+                    k = str(s.get("operation"))
+                    intent[k] = intent.get(k, 0) + 1
+                    for e in s.get("events") or []:
+                        actual[e["op"]] = actual.get(e["op"], 0) + 1
+                convs[d["persona"]] = {
+                    "sessions": d.get("n_sessions"), "stored": d.get("stored_memories"),
+                    "intent": intent, "actual": actual,
+                    "questions": {q["question_id"]: q for q in (d.get("questions") or [])},
+                }
+
+    # 답변 길이는 채점 레코드에서 뽑음. answers.jsonl 원문과 미세하게 다를 수 있어
+    # (판정 전 strip) 화면 안에서 두 출처가 섞이지 않게 한 곳으로 통일함
+    lens = {(r["persona"], r["question_id"]): len(r.get("system_response") or "")
+            for r in records}
+
+    val = {"ready": bool(records), "records": records, "convs": convs, "lens": lens, "cfg": cfg}
+    _memora_cache[period] = (key, val)
+    return val
+
+
+def _spearman(xs, ys):
+    """순위 상관. scipy 없이 계산함 (동점은 평균 순위). src/memora/readout.py 와 같은 구현."""
+    n = len(xs)
+    if n < 3:
+        return None
+    def rank(v):
+        order = sorted(range(n), key=lambda i: v[i])
+        r = [0.0] * n
+        i = 0
+        while i < n:
+            j = i
+            while j + 1 < n and v[order[j + 1]] == v[order[i]]:
+                j += 1
+            for k in range(i, j + 1):
+                r[order[k]] = (i + j) / 2 + 1
+            i = j + 1
+        return r
+    rx, ry = rank(xs), rank(ys)
+    mx, my = sum(rx) / n, sum(ry) / n
+    den = (sum((a - mx) ** 2 for a in rx) * sum((b - my) ** 2 for b in ry)) ** 0.5
+    if not den:
+        return None
+    return round(sum((a - mx) * (b - my) for a, b in zip(rx, ry)) / den, 4)
+
+
+def _fama_block(rows: list) -> dict:
+    if not rows:
+        return {"n": 0, "fama": None, "mpa": None, "penalty": None, "faa": None}
+    f = _mean([r["fama"] for r in rows])
+    m = _mean([r["mpa"] for r in rows])
+    nf = sum(r["n_forget"] for r in rows)
+    return {"n": len(rows),
+            "fama": None if f is None else round(f * 100, 2),
+            "mpa": None if m is None else round(m * 100, 2),
+            "penalty": None if (f is None or m is None) else round((m - f) * 100, 2),
+            # forget 기준이 하나도 없는 과제(reasoning)는 FAA 가 1.0 로 기본값이 박힘.
+            # 잰 값이 아니므로 None 으로 내보내 화면에서 '–' 로 뜨게 함
+            "n_presence": sum(r["n_presence"] for r in rows), "n_forget": nf,
+            # 평균에 forget 기준이 없는 문항의 기본값 1.0 을 섞으면 FAA 가 부풀음.
+            # 실제로 잰 문항만 평균냄
+            "faa": (round((_mean([r["faa"] for r in rows if r["n_forget"]]) or 0) * 100, 2)
+                    if nf else None)}
+
+
+@app.get("/api/memora")
+def api_memora(period: str = "weekly"):
+    cfg = memora_cfg()
+    tasks = cfg.get("tasks") or {}
+    periods = [{"key": k, "label": v.get("label", k), "note": v.get("note", ""),
+                "ready": (ROOT / v["judge"]).exists()}
+               for k, v in (cfg.get("periods") or {}).items()]
+    d = load_memora(period)
+    rec = d["records"]
+    if not rec:
+        return {"period": period, "periods": periods, "tasks": tasks, "ready": False}
+
+    by_task = {t: _fama_block([r for r in rec if r["task"] == t]) for t in tasks}
+    overall = _fama_block(rec)
+
+    # 페르소나별. 삭제 수행률을 같은 행에 붙여 저장소 행동과 점수를 나란히 봄
+    personas = []
+    for p in sorted({r["persona"] for r in rec}):
+        rows = [r for r in rec if r["persona"] == p]
+        meta = d["convs"].get(p, {})
+        di = (meta.get("intent") or {}).get("delete", 0)
+        da = (meta.get("actual") or {}).get("DELETE", 0)
+        ui = (meta.get("intent") or {}).get("update", 0)
+        ua = (meta.get("actual") or {}).get("UPDATE", 0)
+        ln = [d["lens"].get((p, r["question_id"])) for r in rows]
+        ln = [x for x in ln if x]
+        personas.append({**_fama_block(rows), "persona": p,
+                         "sessions": meta.get("sessions"), "stored": meta.get("stored"),
+                         "delete_intent": di, "delete_actual": da,
+                         "delete_rate": round(100 * da / di, 1) if di else None,
+                         "update_intent": ui, "update_actual": ua,
+                         "update_rate": round(100 * ua / ui, 1) if ui else None,
+                         "len_median": (sorted(ln)[len(ln) // 2] if ln else None)})
+
+    tot_i, tot_a = {}, {}
+    for m in d["convs"].values():
+        for k, v in (m.get("intent") or {}).items():
+            tot_i[k] = tot_i.get(k, 0) + v
+        for k, v in (m.get("actual") or {}).items():
+            tot_a[k] = tot_a.get(k, 0) + v
+
+    xs = [p["delete_rate"] for p in personas if p["delete_rate"] is not None]
+    ys = [p["faa"] for p in personas if p["delete_rate"] is not None]
+    rho = _spearman(xs, ys) if len(xs) >= 3 else None
+
+    fams = [p["fama"] for p in personas if p["fama"] is not None]
+    sd = None
+    if len(fams) > 1:
+        mu = sum(fams) / len(fams)
+        sd = round((sum((x - mu) ** 2 for x in fams) / (len(fams) - 1)) ** 0.5, 2)
+
+    alllen = sorted(v for v in d["lens"].values() if v)
+    return {"period": period, "periods": periods, "tasks": tasks, "ready": True,
+            "note": d["cfg"].get("note", ""),
+            "n_personas": len(personas), "n_questions": len(rec),
+            "n_criteria": sum(len(r["criteria"]) for r in rec),
+            "n_sessions": sum(p["sessions"] or 0 for p in personas),
+            "stored": sum(p["stored"] or 0 for p in personas),
+            "intent": tot_i, "actual": tot_a,
+            "by_task": by_task, "overall": overall, "personas": personas,
+            "fama_sd": sd, "delete_faa_rho": rho,
+            "len_median": (alllen[len(alllen) // 2] if alllen else None),
+            "len_max": (alllen[-1] if alllen else None),
+            "parse_fail": sum(1 for r in rec for c in r["criteria"] if c.get("got") is None)}
+
+
+@app.get("/api/memora/questions")
+def api_memora_questions(period: str, task: str):
+    """과제 하나의 문항 목록. FAMA 낮은 순으로 놓아 실패부터 보게 함."""
+    d = load_memora(period)
+    rows = [r for r in d["records"] if r["task"] == task]
+    if not rows:
+        raise HTTPException(404, "no questions for that task")
+    out = []
+    for r in rows:
+        out.append({"persona": r["persona"], "question_id": r["question_id"],
+                    "question": r["question"], "fama": round(r["fama"] * 100, 2),
+                    "mpa": round(r["mpa"] * 100, 2), "faa": round(r["faa"] * 100, 2),
+                    "lam": round(r["lambda"], 3),
+                    "n_presence": r["n_presence"], "n_presence_ok": r["n_presence_ok"],
+                    "n_forget": r["n_forget"], "n_forget_ok": r["n_forget_ok"],
+                    "len": d["lens"].get((r["persona"], r["question_id"]))})
+    out.sort(key=lambda x: x["fama"])
+    return {"period": period, "task": task, "questions": out}
+
+
+@app.get("/api/memora/question")
+def api_memora_question(period: str, persona: str, question_id: str):
+    """문항 하나. 기준별 판정과 답변 원문. 어떤 기준에서 깨졌는지 보는 화면임."""
+    d = load_memora(period)
+    r = next((x for x in d["records"]
+              if x["persona"] == persona and x["question_id"] == question_id), None)
+    if not r:
+        raise HTTPException(404, "no such question")
+    src = (d["convs"].get(persona, {}).get("questions") or {}).get(question_id, {})
+    return {**{k: r[k] for k in ("persona", "task", "question_id", "question",
+                                 "system_response", "fama", "mpa", "faa", "lambda",
+                                 "n_presence", "n_presence_ok", "n_forget", "n_forget_ok")},
+            "criteria": r["criteria"],
+            "memory_evidence": src.get("memory_evidence"),
+            "forgetting_evidence": src.get("forgetting_evidence"),
+            "retrieved": (src.get("retrieved") or [])[:50]}
+
+
 @app.get("/api/labels")
 def api_labels():
     """UI 표시용 라벨. 내부 키(ctxmatch-4u 등)가 화면에 새어 나가지 않도록

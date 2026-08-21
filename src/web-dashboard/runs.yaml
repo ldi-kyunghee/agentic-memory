@@ -119,6 +119,35 @@ beam:
       judge: results/mem0-classic-oss/beam-judge-oss120-1m
       note: "대조군 · 1M과 검색 결과가 동일하고 답변 생성 프롬프트만 BEAM 공식"
 
+# Memora 벤치마크 (ACL 2026 Findings). 삭제까지 재는 첫 벤치마크라 전용 화면으로 분리함.
+#   페르소나 10종 x 기간 3종. 문항마다 memory_presence / forgetting_absence 두 종류의
+#   yes/no 기준이 붙고, FAMA = max(0, MPA - lambda*(1-FAA)) 로 합쳐짐.
+#   판독 근거는 docs/mem0-classic-oss/memora-experiment.md
+memora:
+  tasks:
+    remembering: "기억"
+    reasoning: "추론"
+    recommending: "추천"
+  periods:
+    weekly:
+      label: "Weekly"
+      ingest: results/mem0-classic-oss/memora-weekly-oss120b/memora_eval_results.jsonl
+      answers: results/mem0-classic-oss/memora-gen-weekly/answers.jsonl
+      judge: results/mem0-classic-oss/memora-judge-weekly
+      note: "7일 · 페르소나 10 · 세션 1,551 · 문항 150 · 평가 기준 735 · lambda 중앙 0.286"
+    monthly:
+      label: "Monthly"
+      ingest: results/mem0-classic-oss/memora-monthly-oss120b/memora_eval_results.jsonl
+      answers: results/mem0-classic-oss/memora-gen-monthly/answers.jsonl
+      judge: results/mem0-classic-oss/memora-judge-monthly
+      note: "30일 · 페르소나 10 · 세션 6,150 · 문항 150 · 평가 기준 1,315 · lambda 중앙 0.441"
+    quarterly:
+      label: "Quarterly"
+      ingest: results/mem0-classic-oss/memora-quarterly-oss120b/memora_eval_results.jsonl
+      answers: results/mem0-classic-oss/memora-gen-quarterly/answers.jsonl
+      judge: results/mem0-classic-oss/memora-judge-quarterly
+      note: "90일 · 페르소나 10 · 세션 19,913 · 문항 300 · 평가 기준 4,365 · lambda 중앙 0.375"
+
 # 숨김 그룹: 실험 갈래 하나를 통째로 접었다 편다. Metrics 사이드바에 그룹당 체크박스 하나.
 # ⚠ 숨김은 삭제가 아니다: 산출물·주석은 그대로 두고 노출만 막는다.
 hide_groups:
