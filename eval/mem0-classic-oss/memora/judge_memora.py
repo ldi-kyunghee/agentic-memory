@@ -112,9 +112,31 @@ def judge_criterion(response: str, criterion: str, passes: int) -> dict:
             "passes": details if passes > 1 else details[:1]}
 
 
+def truncate_tokens(text: str, n: int) -> tuple[str, int, bool]:
+    """답변을 n 토큰에서 자름. 길이 통제 대조군용.
+
+    왜 생성 단계가 아니라 여기서 자르는가: 공식 하네스는 `max_tokens=500` 으로 **그냥 끊음**.
+    프롬프트로 짧게 쓰라고 시키는 것이 아님. 그래서 생성을 손대지 않고 나온 답변을 자르는 것이
+    공식 조건의 정확한 재현임. 그리고 effort 를 낮추면 길이와 사고량이 같이 움직여 변인이
+    둘이 됨 (HaluMem·BEAM 이 answer=judge=high 로 통일돼 있어 일관성도 깨짐).
+
+    ⚠ 공식은 gpt-4o-mini 로 돌렸으므로 그 토크나이저(o200k_base)로 셈. 우리 모델의
+       토크나이저가 아님. 재현하려는 것이 '공식이 준 예산'이라 이쪽이 맞음.
+    """
+    import tiktoken
+    enc = tiktoken.get_encoding("o200k_base")
+    ids = enc.encode(text)
+    if len(ids) <= n:
+        return text, len(ids), False
+    return enc.decode(ids[:n]), len(ids), True
+
+
 def judge_question(job: dict) -> dict:
     """문항 하나. 기준을 순차로 판정하고 FAMA를 계산함."""
     resp = job["response"]
+    n_tok, cut = None, False
+    if job.get("truncate"):
+        resp, n_tok, cut = truncate_tokens(resp, job["truncate"])
     crits = []
     p_ok = p_n = f_ok = f_n = 0
     for c in job["criteria"]:
@@ -139,13 +161,16 @@ def judge_question(job: dict) -> dict:
     fa = question_fama(p_ok, p_n, f_ok, f_n)
     return {"persona": job["persona"], "task": job["task"], "question_id": job["question_id"],
             "question": job["question"], "system_response": resp,
+            "n_tokens": n_tok, "truncated": cut,
             "criteria": crits, **fa}
 
 
-def main(results_path: str, out_dir: str, max_workers: int, passes: int):
+def main(results_path: str, out_dir: str, max_workers: int, passes: int, truncate: int):
     convs = [json.loads(l) for l in open(results_path, encoding="utf-8") if l.strip()]
     os.makedirs(out_dir, exist_ok=True)
     print(f"페르소나 {len(convs)}개 · judge {MODEL} · effort {REASONING_EFFORT or '기본값'} · passes {passes}")
+    if truncate:
+        print(f"⚠ 길이 통제: 답변을 {truncate}토큰(o200k_base)에서 자른 뒤 채점함. 공식 max_tokens 재현")
 
     all_records = []
     for c in convs:
@@ -158,6 +183,7 @@ def main(results_path: str, out_dir: str, max_workers: int, passes: int):
 
         jobs = [{"persona": c["persona"], "task": q["task"], "question_id": q["question_id"],
                  "question": q["question"], "criteria": q["criteria"], "passes": passes,
+                 "truncate": truncate,
                  "response": (q.get("answer") or {}).get("system_response", "")}
                 for q in c["questions"]]
         n_crit = sum(len(j["criteria"]) for j in jobs)
@@ -176,7 +202,8 @@ def main(results_path: str, out_dir: str, max_workers: int, passes: int):
         with open(outf, "w", encoding="utf-8") as f:
             json.dump({"persona": c["persona"], "period": c["period"],
                        "judge_model": MODEL, "reasoning_effort": REASONING_EFFORT,
-                       "passes": passes, "records": recs}, f, ensure_ascii=False)
+                       "passes": passes, "truncate_tokens": truncate,
+                       "records": recs}, f, ensure_ascii=False)
         all_records += recs
 
     fails = [c for r in all_records for c in r["criteria"] if c["got"] is None]
@@ -195,6 +222,10 @@ def main(results_path: str, out_dir: str, max_workers: int, passes: int):
     lam = [r["lambda"] for r in all_records]
     if lam:
         print(f"\nlambda 중앙 {statistics.median(lam):.3f} (forgetting 기준의 무게)")
+    toks = [r["n_tokens"] for r in all_records if r.get("n_tokens") is not None]
+    if toks:
+        ncut = sum(1 for r in all_records if r.get("truncated"))
+        print(f"답변 길이 중앙 {statistics.median(toks):.0f}토큰 · {truncate}토큰에서 잘린 문항 {ncut}/{len(all_records)}")
     print(f"done -> {out_dir}")
 
 
@@ -205,5 +236,7 @@ if __name__ == "__main__":
     p.add_argument("--max-workers", type=int, default=4)
     p.add_argument("--passes", type=int, default=1,
                    help="기준당 판정 횟수. 1이 기본이고 3을 주면 같은 모델 다수결")
+    p.add_argument("--truncate-tokens", type=int, default=0,
+                   help="답변을 이 토큰 수에서 자른 뒤 채점 (길이 통제 대조군). 공식은 500")
     a = p.parse_args()
-    main(a.results, a.out_dir, a.max_workers, a.passes)
+    main(a.results, a.out_dir, a.max_workers, a.passes, a.truncate_tokens)
