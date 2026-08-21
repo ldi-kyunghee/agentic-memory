@@ -3,6 +3,8 @@ import gc
 import json
 import os
 import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
 
 import numpy as np
 import torch
@@ -61,14 +63,14 @@ def generate_answer_openai(queries: list[dict], **model_kwargs):
     answers = []
     if args.structured_outputs:
         model_kwargs['text_format'] = QA
-    
+
     for item in tqdm(queries, desc="Generating..."):
         query = item["question"]
         documents = ""
         for doc in item["retrieved"]:
             documents += f" - {doc['memory_content']}"
         prompt = PROMPT.format(context=documents, question=query)
-        
+
         response = llm.responses.parse(
             input=prompt,
             **model_kwargs
@@ -99,7 +101,7 @@ def format_inputs_gpt_oss(query, documents):
 
         {QA.model_json_schema()}
         """.strip()
-        
+
     prompt = Conversation.from_messages(
         [
             Message.from_role_and_content(
@@ -107,7 +109,7 @@ def format_inputs_gpt_oss(query, documents):
                 SystemContent.new().with_model_identity(SYSTEM_PROMPT).with_reasoning_effort(ReasoningEffort.HIGH)
             ),
             Message.from_role_and_content(
-                Role.DEVELOPER, 
+                Role.DEVELOPER,
                 DeveloperContent.new().with_instructions(DEVELOPER_PROMPT)
             ),
             Message.from_role_and_content(
@@ -141,7 +143,7 @@ def generate_answer(prompt, model, **common_params):
 def generate_online(prompts, model: str, max_workers: int = 10, **common_params):
     # Question-Answering Evaluation
     results = []
-    
+
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = {}
         for prompt in prompts:
@@ -186,7 +188,7 @@ def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict = {}, 
 
     _ = llm.enqueue(prompts, sampling_params, **generation_kwargs)
     outputs = llm.wait_for_completion()
-    
+
     output_tokens = [output.outputs[0].token_ids for output in outputs]
     responses = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
     answers = []
@@ -195,7 +197,7 @@ def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict = {}, 
         answer = raw_answer.splitlines()[-1].split(':')[-1]
         answers.append(answer)
     return compile_outputs(queries, answers)
-    
+
 def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
     sampling_params = SamplingParams(**sampling_params)
 
@@ -208,7 +210,7 @@ def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sam
 
         prompt = format_inputs_vllm(query, documents)
         prompts.append(prompt)
-        
+
     _ = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
     outputs = llm.wait_for_completion()
     answers = [output.outputs[0].text for output in outputs]
