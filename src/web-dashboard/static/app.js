@@ -2821,7 +2821,8 @@ async function renderMemora() {
         <td class="bcell" style="${rateHeat(p.delete_rate, true)}" data-desc="${esc(`의도 ${p.delete_intent} → 실제 ${p.delete_actual}`)}">${p.delete_rate == null ? "–" : p.delete_rate.toFixed(0) + "%"}</td>
         <td class="small">${p.len_median == null ? "–" : p.len_median.toLocaleString()}</td></tr>`).join("")}
     </table></div>
-    <div class="body"><span class="small muted">${d.fama_sd == null ? "" : `FAMA 페르소나 간 <b>SD ${d.fama_sd}</b>. <b>이 폭보다 작은 차이는 순위로 말하지 마세요.</b> BEAM에서 부분 표본을 확정값으로 읽었다가 정정한 적이 있습니다.`}</span></div>
+    <div class="body"><span class="small muted">${d.fama_sd == null ? "" : `FAMA 페르소나 간 <b>SD ${d.fama_sd}</b>.`}
+      <b>이 표를 순위로 읽지 마세요.</b> 같은 페르소나(academic_researcher)를 같은 문항으로 전 구간 다시 돌렸더니 전체 FAMA가 <b>2.75</b>, 과제 단위로는 <b>12.67</b> 움직였습니다(weekly 실측). 페르소나당 문항이 15개뿐이라 <b>재실행 노이즈가 페르소나 간 차이와 같은 자릿수</b>입니다. 이 표는 분포의 폭을 보는 용도입니다.</span></div>
     </div>
 
     <div class="card"><h4 data-desc="삭제 이벤트가 많이 난 페르소나가 무효 언급도 적은지 봅니다. 페널티의 원인이 저장소인지 답변 규약인지 가르는 첫 단서입니다">삭제 발생비 ↔ forgetting 정확도</h4>
@@ -2842,6 +2843,7 @@ async function renderMemora() {
     <div class="bleg">${[0, .25, .5, .75, 1].map((v) => `<span style="${beamHeat(v)}">${(v * 100).toFixed(0)}</span>`).join("")}</div>
     <p class="small muted" style="margin-top:10px"><b>읽는 순서</b><br>① 과제별 페널티 → 무효 메모리를 얼마나 쓰나<br>② 삭제 수행률 → 저장소에 남아 있나<br>③ 상관 → 둘이 이어지나</p>
     <p class="small muted" style="margin-top:10px">⚠ 기간마다 대화 집합이 다릅니다. <b>기간 간 절대 비교를 하지 마세요.</b></p>
+    <p class="small muted" style="margin-top:10px">⚠ 재실행 노이즈가 큽니다. 같은 페르소나 재실행에서 과제 FAMA가 12.67 움직인 실측이 있습니다. <b>페르소나 순위·소수점 차이를 읽지 마세요.</b></p>
     <p class="small muted" style="margin-top:10px">⚠ 이 화면은 상단바의 Generator·Judge 선택을 따르지 않습니다.</p>
     <p class="small muted" style="margin-top:10px">판독 근거는 <code>docs/mem0-classic-oss/memora-experiment.md</code></p>
   </div>`;

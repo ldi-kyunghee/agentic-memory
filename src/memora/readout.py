@@ -5,10 +5,10 @@ BEAM의 compare_prompts.py 자리임. 다만 Memora는 프롬프트 대조가 �
 
 내는 것
   1. 투입 요약 — 세션·저장 메모리, 데이터셋이 의도한 연산 대 mem0가 실제로 한 연산
-  2. 삭제 수행률 — 이 벤치마크의 핵심. HaluMem에는 삭제가 없어 못 보던 갈래임
+  2. 삭제 발생비 — 이 벤치마크의 핵심. HaluMem에는 삭제가 없어 못 보던 갈래임
   3. 과제별 FAMA / MPA / 페널티
   4. 페르소나별 편차 — 순위를 말하기 전에 노이즈 바닥을 확인함 (BEAM에서 데인 것)
-  5. 삭제 수행률과 forgetting 정확도의 상관 — 페널티가 저장소 탓인지 보는 직접 검정
+  5. 삭제 발생비와 forgetting 정확도의 상관 — 페널티가 저장소 탓인지 보는 첫 단서
   6. 답변 길이 — FAMA가 과다 포함을 벌주므로 길이를 함께 봐야 함
 
 사용:
@@ -97,17 +97,19 @@ def main(period: str, ingest_path: str, answers_path: str, judge_dir: str):
     print(f"  데이터셋 의도: {dict(intent.most_common())}")
     print(f"  mem0 실제    : {dict(actual.most_common())}")
 
-    # ---------- 2. 삭제 수행률 ----------
+    # ---------- 2. 삭제 발생비 ----------
     di, da = intent.get("delete", 0), actual.get("DELETE", 0)
     ui, ua = intent.get("update", 0), actual.get("UPDATE", 0)
     print()
-    print("=== 연산 수행률 (데이터셋 의도 대비) ===")
+    print("=== 연산 발생비 (데이터셋 의도 대비 개수) ===")
     print(f"  삭제  의도 {di:5,} → mem0 {da:5,}  ({100 * da / di if di else 0:5.1f}%)")
     print(f"  갱신  의도 {ui:5,} → mem0 {ua:5,}  ({100 * ua / ui if ui else 0:5.1f}%)")
     print(f"  추가  의도 {intent.get('add', 0):5,} → mem0 {actual.get('ADD', 0):5,}"
           f"  ({100 * actual.get('ADD', 0) / intent.get('add', 1):5.1f}%)")
-    print("  ⚠ 추가가 100%를 크게 넘는 것은 정상임. 세션에 지정된 연산은 하나지만 mem0는")
-    print("    대화에 섞인 부수적 사실도 전부 뽑음. 삭제·갱신 수행률이 읽을 값임.")
+    print("  ⚠ 이것은 수행률이 아니라 개수 비율임. mem0의 DELETE 이벤트를 데이터셋이")
+    print("    지목한 삭제 대상과 짝지어 확인하지 않았으므로 100%를 넘기도 함.")
+    print("    추가가 100%를 크게 넘는 것은 정상임 — 세션에 지정된 연산은 하나지만")
+    print("    mem0는 대화에 섞인 부수적 사실도 전부 뽑음.")
 
     # ---------- 3. 채점 ----------
     recs = load_judge(judge_dir)
@@ -129,44 +131,49 @@ def main(period: str, ingest_path: str, answers_path: str, judge_dir: str):
     rows = []
     for p, rs in byp.items():
         a = aggregate(rs)["(전체)"]
-        faa = statistics.mean(r["faa"] for r in rs)
+        # forget 기준이 없는 문항(reasoning, λ=0)은 faa 가 1.0 으로 기본값이 박힘.
+        # 잰 값이 아니므로 평균 모수에서 뺌 (섞으면 weekly 전체가 52.3 → 68.9 로 부풀었음)
+        fl = [r["faa"] for r in rs if r["n_forget"]]
+        faa = statistics.mean(fl) if fl else None
         rows.append((a["fama"], p, a["mpa"], a["penalty"], faa, len(rs)))
     rows.sort()
     print()
     print("=== 페르소나별 (전체 과제) ===")
-    print(f"{'페르소나':26s}{'문항':>5s}{'FAMA':>9s}{'MPA':>9s}{'페널티':>9s}{'FAA':>8s}{'삭제수행':>9s}")
+    print(f"{'페르소나':26s}{'문항':>5s}{'FAMA':>9s}{'MPA':>9s}{'페널티':>9s}{'FAA':>8s}{'삭제발생':>9s}")
     print("-" * 76)
     for fama, p, mpa, pen, faa, n in rows:
         pp = per_persona.get(p, {})
         d_i = (pp.get("intent") or {}).get("delete", 0)
         d_a = (pp.get("actual") or {}).get("DELETE", 0)
         dr = f"{100 * d_a / d_i:8.0f}%" if d_i else f"{'–':>9s}"
-        print(f"{p:26s}{n:5d}{fama:9.2f}{mpa:9.2f}{pen:9.2f}{faa * 100:8.1f}{dr}")
+        fs_ = f"{faa * 100:8.1f}" if faa is not None else f"{'–':>8s}"
+        print(f"{p:26s}{n:5d}{fama:9.2f}{mpa:9.2f}{pen:9.2f}{fs_}{dr}")
     fs = [r[0] for r in rows]
     if len(fs) > 1:
         sd = statistics.stdev(fs)
         print(f"\n  FAMA 페르소나 간 SD {sd:.2f} · 범위 {min(fs):.1f}~{max(fs):.1f}")
         print(f"  ⚠ 이 폭보다 작은 차이는 순위로 말하지 않음 (BEAM에서 데인 것)")
 
-    # ---------- 5. 삭제 수행률 대 forgetting 정확도 ----------
+    # ---------- 5. 삭제 발생비 대 forgetting 정확도 ----------
     xs, ys = [], []
     for fama, p, mpa, pen, faa, n in rows:
         pp = per_persona.get(p, {})
         d_i = (pp.get("intent") or {}).get("delete", 0)
-        if not d_i:
+        if not d_i or faa is None:
             continue
         xs.append(100 * (pp.get("actual") or {}).get("DELETE", 0) / d_i)
         ys.append(faa * 100)
     rho, nn = spearman(xs, ys)
     print()
-    print("=== 삭제 수행률 대 forgetting 정확도 (페르소나 단위) ===")
+    print("=== 삭제 발생비 대 forgetting 정확도 (페르소나 단위) ===")
     if rho is None:
         print("  페르소나가 적어 상관을 내지 않음")
     else:
         print(f"  Spearman rho = {rho:+.3f} (n={nn})")
-        print("  양수이고 크면 '삭제를 잘한 페르소나가 무효 언급도 적다'는 뜻임.")
-        print("  즉 FAMA 페널티의 원인이 저장소 쪽이라는 직접 증거가 됨.")
-        print("  0 근처면 페널티의 원인이 다른 데 있음 (검색 또는 답변 규약).")
+        print("  양수이고 크면 '삭제가 많이 난 페르소나가 무효 언급도 적다'는 뜻임.")
+        print("  0 근처면 삭제 개수로는 forgetting 성적을 설명할 수 없다는 뜻이고,")
+        print("  원인을 검색이나 답변 규약에서 찾아야 함.")
+        print("  ⚠ x축이 대상 일치를 확인하지 않은 개수 비율임. 부호와 크기만 읽음.")
 
     # ---------- 6. 답변 길이 ----------
     if os.path.exists(answers_path):
