@@ -17,3 +17,7 @@ CLAUDE.md
 # ⚠ 슬래시로 시작해 루트에만 걸리게 한다. macOS는 core.ignorecase=true라
 #    "BEAM/"로 두면 eval/mem0-classic-oss/beam/ 까지 무시된다.
 /BEAM/
+
+# Memora 벤치마크 (ACL 2026 Findings) — Apache 2.0, 200MB
+# 재현: git clone --depth 1 https://github.com/geniesinc/Memora.git
+/Memora/
