@@ -72,8 +72,30 @@ def spearman(xs, ys):
     return rho, n
 
 
+def stage_status(period: str, ingest_path: str, answers_path: str, judge_dir: str) -> None:
+    """아직 안 끝난 단계를 알려줌. 실행 중에 돌려도 트레이스백이 안 나게."""
+    print(f"아직 판독할 수 없음: {period}\n")
+    for label, path, ok in (
+        ("① 투입 ingest ", ingest_path, os.path.exists(ingest_path)),
+        ("② 답변 answer ", answers_path, os.path.exists(answers_path)),
+        ("③ 채점 judge  ", judge_dir,
+         os.path.isdir(judge_dir) and bool(glob.glob(os.path.join(judge_dir, "*.json")))),
+    ):
+        n = ""
+        if ok and path.endswith(".jsonl"):
+            n = f"  ({sum(1 for l in open(path, encoding='utf-8') if l.strip())}페르소나)"
+        elif ok and os.path.isdir(path):
+            n = f"  ({len(glob.glob(os.path.join(path, '*.json')))}페르소나)"
+        print(f"  {label} {'있음' if ok else '없음'}  {path}{n}")
+    print("\n진행 상황:  tmux capture-pane -pt memora-all | grep -v PostHog | tail -8")
+
+
 def main(period: str, ingest_path: str, answers_path: str, judge_dir: str):
     print(f"━━━ Memora {period} ━━━\n")
+
+    if not os.path.exists(ingest_path):
+        stage_status(period, ingest_path, answers_path, judge_dir)
+        return
 
     # ---------- 1. 투입 ----------
     convs = load_ingest(ingest_path)
