@@ -67,9 +67,11 @@ print(json.dumps(m))
     echo "✗ ${what}: ${url} 에 ${want_model} 이 없습니다. 떠 있는 것: ${got}"
     return 1
   fi
+  # 길이는 비교값이 없어도 항상 읽어서 찍음. 임베더가 기본값(40960)으로 떠 있는 것을
+  # 눈으로 잡을 수 있어야 함
+  local len
+  len=$(printf '%s' "$got" | python3 -c "import json,sys;print(json.load(sys.stdin).get('${want_model}'))")
   if [ -n "$want_len" ]; then
-    local len
-    len=$(printf '%s' "$got" | python3 -c "import json,sys;print(json.load(sys.stdin).get('${want_model}'))")
     if [ "$len" != "$want_len" ]; then
       echo "✗ ${what}: ${url} 의 ${want_model} 이 max_model_len=${len} 입니다 (우리 것은 ${want_len})."
       echo "  다른 사람의 인스턴스일 수 있습니다. 포트를 확인하세요:"
@@ -77,7 +79,7 @@ print(json.dumps(m))
       return 1
     fi
   fi
-  echo "✓ ${what}: ${url} · ${want_model} · max_model_len=${len:-?}"
+  echo "✓ ${what}: ${url} · ${want_model} · max_model_len=${len}"
 }
 
 preflight "$OPENAI_BASE_URL" "$MEM0_LLM_MODEL" "$EXPECT_MAX_LEN" "LLM" || exit 1
