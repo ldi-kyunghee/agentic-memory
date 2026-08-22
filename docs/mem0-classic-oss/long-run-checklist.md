@@ -1,0 +1,118 @@
+# 긴 작업을 넘기기 전 점검표
+
+몇 시간~하루짜리 실행을 시작하기 전에 훑는 목록임. **여기 있는 항목은 전부 실제로 사고를
+낸 것들임.** 추측이 아니라 겪은 것만 적음.
+
+원칙 하나로 줄이면 이것임: **머릿속 파이프라인 모양으로 커맨드를 짜지 않고, 셋을 실제 값과
+대조함 — 엔드포인트 · env · 경로.**
+
+---
+
+## 1. 엔드포인트
+
+```bash
+curl -s http://localhost:8002/v1/models | python3 -m json.tool | head -12
+```
+
+- [ ] 응답이 있는가
+- [ ] 원하는 모델 id가 있는가
+- [ ] **`max_model_len`이 우리 값인가** (LLM 32768 / 임베더 4096)
+
+⚠ **모델 이름만 보면 안 됨.** 이 서버에는 다른 사용자(`/home/dania/agentic-memory`)가
+**같은 `openai/gpt-oss-120b`를 포트 8000에** 띄워둠. 이름은 똑같고 `max_model_len`만 다름
+(그쪽 131072, 우리 32768). 이름만 확인하는 사전 검사는 통과해버림.
+
+| 포트 | 주인 | 모델 | max_model_len |
+|---|---|---|---|
+| 8000 | **dania (남의 것)** | openai/gpt-oss-120b | 131072 |
+| 8001 | 우리 | Qwen/Qwen3-Embedding-4B | 4096 |
+| 8002 | 우리 | openai/gpt-oss-120b | **32768** |
+
+포트 주인 확인:
+
+```bash
+ss -ltnp | grep -E ":8000|:8001|:8002"; ps -eo pid,etime,args | grep "vllm serve" | grep -v grep | cut -c1-120
+```
+
+---
+
+## 2. env
+
+```bash
+grep -E "OPENAI_|MEM0_" .env; echo "--- 셸에 이미 잡힌 것 ---"; env | grep -E "OPENAI_|MEM0_|ANSWER_|JUDGE_"
+```
+
+- [ ] `.env` 값이 이번 실험에 맞는가
+- [ ] 셸에 이미 export된 값이 있는가
+
+⚠ **`${VAR:-기본값}`은 이미 잡혀 있으면 안 먹음.** 반드시 우리 값이어야 하는 것은 `:-`를
+쓰지 말고 **고정**하고, 오버라이드는 별도 이름으로 엶 (`MEMORA_BASE_URL` 같은 식).
+
+⚠ python 쪽은 `load_dotenv()`가 `.env`를 읽음. 셸에서 export하지 않으면 `.env` 값이 들어감.
+
+| env | 이 리포에서의 값 | 안 주면 |
+|---|---|---|
+| `OPENAI_BASE_URL` | `http://localhost:8002/v1` | `.env`의 8000 = **남의 서버** |
+| `MEM0_LLM_MODEL` | `openai/gpt-oss-120b` | `.env`의 `OPENAI_MODEL`(Qwen3-4B) → 404 |
+| `ANSWER_MODEL` / `JUDGE_MODEL` | `openai/gpt-oss-120b` | 위와 같음 |
+| `ANSWER_REASONING_EFFORT` / `JUDGE_REASONING_EFFORT` | `high` | 모델 기본값 |
+| `MEM0_REASONING_EFFORT` | **주지 않음** | (agent는 기본값 medium이 통제 조건) |
+
+---
+
+## 3. 경로
+
+- [ ] 스크립트가 실제로 쓰는 경로를 **코드에서** 확인했는가
+
+⚠ **기존 산출물 이름에서 규칙을 역추론하지 않음.** `memora-weekly-oss120b`는 스크립트가
+접미사를 붙인 게 아니라 `--version weekly-oss120b`로 넘긴 것임. `ingest_memora.py`는
+`results/mem0-classic-oss/memora-{version}/`을 그대로 씀.
+
+```bash
+grep -n "save_path\s*=\|out_dir\|--out" eval/mem0-classic-oss/memora/*.py
+```
+
+---
+
+## 4. 스크립트 자체에 넣을 것
+
+**사전 확인(preflight).** 몇 시간을 태우고 나서 틀린 걸 알면 안 됨. 시작 전에 엔드포인트·
+모델·`max_model_len`을 확인하고 어긋나면 **시작하지 않음.**
+
+**중간 완주 검사.** 단계 사이에서 산출물이 온전한지 봄. `[ -f "$FILE" ]`만 보면 안 됨 —
+투입이 통째로 실패해도 **0바이트 파일이 남아** 다음 단계가 빈 입력으로 돌고 결과가 나온
+것처럼 보임. 기대 개수(페르소나 수 등)와 실제 줄 수를 대조함.
+
+**이어 돌기.** 단위 작업이 끝날 때마다 저장함. 중단 후 재시작이 처음부터 다시 돌면 안 됨
+(`ingest_memora.py`의 `tmp/{key}.json` 캐시 방식).
+
+**실패를 조용히 삼키지 않기.** 빈 결과·파싱 실패 건수를 마지막에 경고로 출력함.
+
+참고 구현: `scripts/memora/run_cutoff_sweep.sh`
+
+---
+
+## 5. 실행 형태
+
+- 장시간 작업은 **tmux**. `nohup`/`&` 쓰지 않음
+- 긴 작업에 `| tail`, `| head` 금지. `tmux + tee + PYTHONUNBUFFERED`
+- 파괴적 명령(`rm -rf`, `kill`, `git reset --hard`)은 별도 단계로 분리하고, 지금 도는
+  작업이 없는지 먼저 확인함
+- 같은 이름 tmux 세션이 살아 있으면 `tmux new -d -s X`는 조용히 실패함
+- `--max-workers`는 4가 기본 ([[CLAUDE.md]] 참조). 투입은 페르소나 단위 병렬이라
+  페르소나 수보다 크게 줘도 소용없음
+
+---
+
+## 겪은 사고 목록
+
+| 언제 | 무엇 | 대가 |
+|---|---|---|
+| 2026-08-22 | `OPENAI_BASE_URL`이 셸/`.env`의 8000으로 잡혀 **남의 vLLM으로 투입이 나감** | 즉시 중단 |
+| 2026-08-22 | `--version`과 결과 디렉토리 경로 불일치. 투입 완주 후 죽는 구조 | 20분 (조기 발견) |
+| 2026-08-22 | `MEM0_LLM_MODEL` 누락 → `.env`의 Qwen3-4B를 불러 404 재시도만 쌓임 | 20분 |
+| 2026-08-22 | 0바이트 산출물을 `-f`로 검사해 Stage A를 건너뛸 뻔함 | 사전 차단 |
+| 2026-08-21 | `_spearman` 이름 충돌로 Metrics 탭 전체가 죽음. 탭 전환만 보고 내용을 안 봄 | 하루 |
+| 2026-08-18 | 돌고 있던 채점의 출력 디렉토리를 `rm -rf`로 지움 | 1.5시간 |
+| 2026-08-18 | Qdrant 컬렉션을 안 지워 180개에서 서버가 죽음 | 500K·1M 투입 유실 |
+| 2026-08-17 | 답변을 메모리에 모았다가 끝에 한 번 저장 → 예외 하나로 1,600건 유실 | 재실행 |
