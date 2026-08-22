@@ -16,11 +16,18 @@ PERIOD=${1:?"기간을 주세요: weekly | monthly | quarterly"}
 CUTOFFS=${2:-50,100,200,400}
 SEARCH_K=${SEARCH_K:-800}
 W=${W:-4}
+
+# PERSONAS 를 주면 축소 실행임. 본 실행 산출물을 덮지 않도록 이름에 -smoke 를 붙이고,
+# 완주 검사 기준도 지정한 페르소나 수로 바꿈. 러너를 고친 뒤에는 이걸로 먼저 통과시킴.
+#   PERSONAS=academic_researcher bash scripts/memora/run_cutoff_sweep.sh weekly 50,100
+PERSONAS=${PERSONAS:-}
+SUFFIX=""
+[ -n "$PERSONAS" ] && SUFFIX="-smoke"
 # ⚠ ingest_memora.py 는 결과를 `results/mem0-classic-oss/memora-{version}/` 에 그대로 씀.
 #   접미사를 붙여주지 않으므로 version 문자열에 -oss120b 까지 넣어야 기존 레인
 #   (memora-weekly-oss120b …) 과 이름이 맞음. 여기서 어긋나면 투입이 끝난 뒤에야
 #   경로를 못 찾고 죽음. 실제로 한 번 그럴 뻔했음.
-VER="${PERIOD}-k${SEARCH_K}-oss120b"
+VER="${PERIOD}-k${SEARCH_K}${SUFFIX}-oss120b"
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT"
 
@@ -40,8 +47,8 @@ EXPECT_MAX_LEN=${EXPECT_MAX_LEN:-32768}
 
 ING="results/mem0-classic-oss/memora-${VER}/memora_eval_results.jsonl"
 
-echo "━━━ Memora cutoff 스윕: ${PERIOD} ━━━"
-echo "  검색 k=${SEARCH_K} · cutoff=${CUTOFFS} · 워커 ${W}"
+echo "━━━ Memora cutoff 스윕: ${PERIOD}${SUFFIX} ━━━"
+echo "  검색 k=${SEARCH_K} · cutoff=${CUTOFFS} · 워커 ${W}${PERSONAS:+ · 페르소나 ${PERSONAS}}"
 echo "  agent=${MEM0_LLM_MODEL}(effort 기본) answer/judge=${ANSWER_MODEL}(high)"
 echo "  LLM=${OPENAI_BASE_URL} · 임베더=${MEM0_EMBED_BASE_URL}"
 
@@ -103,8 +110,13 @@ check_flags "$E/ingest_memora.py" --data --version --top-k --max-workers || exit
 check_flags "$E/answer_memora.py" --results --out --cutoff --max-workers || exit 1
 check_flags "$E/judge_memora.py"  --results --out-dir --max-workers || exit 1
 
-# 데이터셋의 페르소나 수. 산출물이 이만큼 있어야 완주한 것임
-N_EXPECT=$(find "Memora/data/${PERIOD}" -maxdepth 1 -mindepth 1 -type d | wc -l)
+# 산출물이 이만큼 있어야 완주한 것임. 축소 실행이면 지정한 페르소나 수만 기대함
+if [ -n "$PERSONAS" ]; then
+  # grep -c 는 매치 0 이면 exit 1 이라 set -e 에 걸림. awk 로 셈
+  N_EXPECT=$(printf '%s' "$PERSONAS" | awk -F, '{n=0; for(i=1;i<=NF;i++) if($i!="") n++; print n}')
+else
+  N_EXPECT=$(find "Memora/data/${PERIOD}" -maxdepth 1 -mindepth 1 -type d | wc -l)
+fi
 n_lines() { [ -s "$1" ] && grep -c . "$1" || echo 0; }
 
 # ⚠ `-f` 로만 보면 안 됨. 투입이 통째로 실패해도 0바이트 파일이 남아서 Stage A 를
@@ -119,7 +131,8 @@ else
   fi
   echo "▶ Stage A 투입 (k=${SEARCH_K}, 페르소나 ${N_EXPECT})"
   uv run python eval/mem0-classic-oss/memora/ingest_memora.py \
-    --data "Memora/data/${PERIOD}" --version "$VER" --top-k "$SEARCH_K" --max-workers "$W"
+    --data "Memora/data/${PERIOD}" --version "$VER" --top-k "$SEARCH_K" --max-workers "$W" \
+    ${PERSONAS:+--personas "$PERSONAS"}
 fi
 
 # 투입이 끝났어도 페르소나가 모자라면 여기서 멈춤. 몇 시간짜리 답변·채점을
@@ -149,8 +162,8 @@ print(n)" 2>/dev/null || echo 0
 }
 
 for K in ${CUTOFFS//,/ }; do
-  GEN="results/mem0-classic-oss/memora-gen-${PERIOD}-k${K}/answers.jsonl"
-  JUD="results/mem0-classic-oss/memora-judge-${PERIOD}-k${K}"
+  GEN="results/mem0-classic-oss/memora-gen-${PERIOD}${SUFFIX}-k${K}/answers.jsonl"
+  JUD="results/mem0-classic-oss/memora-judge-${PERIOD}${SUFFIX}-k${K}"
 
   HAVE_A=$(n_answered "$GEN")
   if [ "$HAVE_A" -ge "$N_Q" ]; then
@@ -171,5 +184,5 @@ done
 
 echo "━━━ 완료 ━━━"
 for K in ${CUTOFFS//,/ }; do
-  echo "  cutoff ${K} -> results/mem0-classic-oss/memora-judge-${PERIOD}-k${K}"
+  echo "  cutoff ${K} -> results/mem0-classic-oss/memora-judge-${PERIOD}${SUFFIX}-k${K}"
 done
