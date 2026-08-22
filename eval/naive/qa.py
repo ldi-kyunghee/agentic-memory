@@ -265,7 +265,7 @@ if __name__ == "__main__":
 
     exp_dir = f"exp{args.exp_num}"
 
-    retrieval_dir = args.result_dir + exp_dir
+    retrieval_dir = f"{args.result_dir + exp_dir}/retrieval/"
     retrieval_results = {}
     for result_file in os.listdir(retrieval_dir):
         with open(f"{retrieval_dir}/{result_file}", 'r') as file:
