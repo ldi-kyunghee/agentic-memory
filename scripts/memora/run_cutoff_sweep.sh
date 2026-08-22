@@ -16,6 +16,10 @@ PERIOD=${1:?"기간을 주세요: weekly | monthly | quarterly"}
 CUTOFFS=${2:-50,100,200,400}
 SEARCH_K=${SEARCH_K:-800}
 W=${W:-4}
+# 투입은 페르소나 단위 병렬이라 페르소나 수를 넘겨도 소용없음. 답변·채점은 문항 단위라
+# 그 제한이 없으므로 따로 둠. 실측 근거는 .claude/skills/halumem-vllm-serving/SKILL.md
+W_INGEST=${W_INGEST:-$W}
+W_ARMS=${W_ARMS:-$W}
 
 # PERSONAS 를 주면 축소 실행임. 본 실행 산출물을 덮지 않도록 이름에 -smoke 를 붙이고,
 # 완주 검사 기준도 지정한 페르소나 수로 바꿈. 러너를 고친 뒤에는 이걸로 먼저 통과시킴.
@@ -48,7 +52,7 @@ EXPECT_MAX_LEN=${EXPECT_MAX_LEN:-32768}
 ING="results/mem0-classic-oss/memora-${VER}/memora_eval_results.jsonl"
 
 echo "━━━ Memora cutoff 스윕: ${PERIOD}${SUFFIX} ━━━"
-echo "  검색 k=${SEARCH_K} · cutoff=${CUTOFFS} · 워커 ${W}${PERSONAS:+ · 페르소나 ${PERSONAS}}"
+echo "  검색 k=${SEARCH_K} · cutoff=${CUTOFFS} · 워커 투입 ${W_INGEST}/팔 ${W_ARMS}${PERSONAS:+ · 페르소나 ${PERSONAS}}"
 echo "  agent=${MEM0_LLM_MODEL}(effort 기본) answer/judge=${ANSWER_MODEL}(high)"
 echo "  LLM=${OPENAI_BASE_URL} · 임베더=${MEM0_EMBED_BASE_URL}"
 
@@ -131,7 +135,7 @@ else
   fi
   echo "▶ Stage A 투입 (k=${SEARCH_K}, 페르소나 ${N_EXPECT})"
   uv run python eval/mem0-classic-oss/memora/ingest_memora.py \
-    --data "Memora/data/${PERIOD}" --version "$VER" --top-k "$SEARCH_K" --max-workers "$W" \
+    --data "Memora/data/${PERIOD}" --version "$VER" --top-k "$SEARCH_K" --max-workers "$W_INGEST" \
     ${PERSONAS:+--personas "$PERSONAS"}
 fi
 
@@ -171,7 +175,7 @@ for K in ${CUTOFFS//,/ }; do
   else
     echo "▶ cutoff ${K}: 답변 (${HAVE_A}/${N_Q} 있음)"
     uv run python eval/mem0-classic-oss/memora/answer_memora.py \
-      --results "$ING" --out "$GEN" --cutoff "$K" --max-workers "$W"
+      --results "$ING" --out "$GEN" --cutoff "$K" --max-workers "$W_ARMS"
     HAVE_A=$(n_answered "$GEN")
     [ "$HAVE_A" -ge "$N_Q" ] || { echo "✗ cutoff ${K}: 답변이 ${HAVE_A}/${N_Q} 뿐입니다"; exit 1; }
   fi
@@ -179,7 +183,7 @@ for K in ${CUTOFFS//,/ }; do
   # ⚠ judge 는 답변 파일을 --results 로 받음 (--answers 아님). 이름이 헷갈리게 돼 있음
   echo "▶ cutoff ${K}: 채점"
   uv run python eval/mem0-classic-oss/memora/judge_memora.py \
-    --results "$GEN" --out-dir "$JUD" --max-workers "$W"
+    --results "$GEN" --out-dir "$JUD" --max-workers "$W_ARMS"
 done
 
 echo "━━━ 완료 ━━━"

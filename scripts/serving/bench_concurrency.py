@@ -35,8 +35,8 @@ def main(url, model, levels, n_per, max_tokens):
         return time.time() - t, (r.usage.completion_tokens if r.usage else 0)
 
     print(f"엔드포인트 {url} · 모델 {model} · 레벨당 {n_per}건")
-    print(f"{'동시성':>6s}{'초':>8s}{'req/s':>9s}{'출력tok/s':>11s}{'지연 중앙':>11s}{'배수':>8s}{'효율':>8s}")
-    base = None
+    print(f"{'동시성':>6s}{'초':>8s}{'req/s':>9s}{'출력tok/s':>11s}{'지연 중앙':>11s}{'직전 대비':>11s}")
+    prev = None
     for c in levels:
         one(0)  # 워밍업
         t0 = time.time()
@@ -46,12 +46,14 @@ def main(url, model, levels, n_per, max_tokens):
         rps = len(res) / dt
         tps = sum(r[1] for r in res) / dt
         lat = statistics.median(r[0] for r in res)
-        if base is None:
-            base = rps
-        # 효율 = 동시성을 c 배로 올렸을 때 실제로 몇 배가 나왔는가 / c. 1.0 이면 완전 선형
-        print(f"{c:6d}{dt:8.1f}{rps:9.2f}{tps:11.0f}{lat:10.2f}s{rps / base:7.2f}x{rps / base / c:8.2f}")
-    print("\n읽는 법: 효율이 0.8 밑으로 떨어지는 지점 직전이 실용 상한임.")
+        # ⚠ '선형 대비 효율'(배수/c)로 읽으면 안 됨. 단일 요청의 고정 지연 때문에 c=2 에서
+        #   이미 0.8 밑으로 떨어져 무릎을 놓침. 실제로 볼 것은 **한 단계 올렸을 때의 증가분**임
+        mark = "" if prev is None else f"{100 * (rps / prev - 1):+9.0f}%"
+        print(f"{c:6d}{dt:8.1f}{rps:9.2f}{tps:11.0f}{lat:10.2f}s{mark:>11s}")
+        prev = rps
+    print("\n읽는 법: '직전 대비' 증가가 뚝 떨어지는 지점이 무릎임. 그 앞 단계가 실용 상한임.")
     print("        투입은 페르소나 단위 병렬이라 페르소나 수(10)를 넘겨도 소용없음.")
+    print("        답변·채점은 문항 단위라 그 제한이 없음.")
 
 
 if __name__ == "__main__":
