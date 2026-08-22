@@ -77,11 +77,11 @@ def generate_answer_openai(queries: list[dict], **model_kwargs):
         )
 
         answer = response.output_parsed.model_dump_json()
-	if isinstance(answer, str):
-	   answer = json.loads(answer)
-	answers.append(answer)
+        if isinstance(answer, str):
+            answer = json.loads(answer)
+        answers.append(answer)
 
-	return compile_outputs(queries, answers)
+    return compile_outputs(queries, answers)
 
 def format_inputs_vllm(query, documents):
     prompt = PROMPT.format(context=documents, question=query)
