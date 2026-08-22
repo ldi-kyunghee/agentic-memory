@@ -85,6 +85,24 @@ print(json.dumps(m))
 preflight "$OPENAI_BASE_URL" "$MEM0_LLM_MODEL" "$EXPECT_MAX_LEN" "LLM" || exit 1
 preflight "$MEM0_EMBED_BASE_URL" "${MEM0_EMBED_MODEL:-Qwen/Qwen3-Embedding-4B}" "" "임베더" || exit 1
 
+# 쓰려는 플래그가 실제로 있는지 --help 로 대조함. 인자 이름을 틀려서 네 번 데었음
+# (judge 는 답변 파일을 --answers 가 아니라 --results 로 받음. 이름이 헷갈리게 돼 있음)
+check_flags() {
+  local script="$1"; shift
+  local help
+  help=$(uv run python "$script" --help 2>&1) || { echo "✗ ${script} --help 실패"; return 1; }
+  local bad=0
+  for f in "$@"; do
+    printf '%s' "$help" | grep -q -- "$f" || { echo "✗ ${script##*/} 에 ${f} 없음"; bad=1; }
+  done
+  [ "$bad" = 0 ] && echo "✓ 인자 확인: ${script##*/} ($*)"
+  return $bad
+}
+E=eval/mem0-classic-oss/memora
+check_flags "$E/ingest_memora.py" --data --version --top-k --max-workers || exit 1
+check_flags "$E/answer_memora.py" --results --out --cutoff --max-workers || exit 1
+check_flags "$E/judge_memora.py"  --results --out-dir --max-workers || exit 1
+
 # 데이터셋의 페르소나 수. 산출물이 이만큼 있어야 완주한 것임
 N_EXPECT=$(find "Memora/data/${PERIOD}" -maxdepth 1 -mindepth 1 -type d | wc -l)
 n_lines() { [ -s "$1" ] && grep -c . "$1" || echo 0; }
@@ -114,15 +132,41 @@ if [ "$HAVE" -lt "$N_EXPECT" ]; then
 fi
 echo "✓ Stage A 완주 (${HAVE}/${N_EXPECT} 페르소나)"
 
+# 문항 총수. 답변이 이만큼 채워져 있으면 그 팔은 다시 안 돌림
+N_Q=$(python3 -c "
+import json,sys
+print(sum(len(json.loads(l)['questions']) for l in open('$ING',encoding='utf-8') if l.strip()))")
+n_answered() {
+  [ -s "$1" ] || { echo 0; return; }
+  python3 -c "
+import json,sys
+n=0
+for l in open('$1',encoding='utf-8'):
+    if not l.strip(): continue
+    for q in json.loads(l)['questions']:
+        if ((q.get('answer') or {}).get('system_response') or '').strip(): n+=1
+print(n)" 2>/dev/null || echo 0
+}
+
 for K in ${CUTOFFS//,/ }; do
   GEN="results/mem0-classic-oss/memora-gen-${PERIOD}-k${K}/answers.jsonl"
   JUD="results/mem0-classic-oss/memora-judge-${PERIOD}-k${K}"
-  echo "▶ cutoff ${K}: 답변"
-  uv run python eval/mem0-classic-oss/memora/answer_memora.py \
-    --results "$ING" --out "$GEN" --cutoff "$K" --max-workers "$W"
+
+  HAVE_A=$(n_answered "$GEN")
+  if [ "$HAVE_A" -ge "$N_Q" ]; then
+    echo "▶ cutoff ${K}: 답변 건너뜀 (${HAVE_A}/${N_Q} 완료)"
+  else
+    echo "▶ cutoff ${K}: 답변 (${HAVE_A}/${N_Q} 있음)"
+    uv run python eval/mem0-classic-oss/memora/answer_memora.py \
+      --results "$ING" --out "$GEN" --cutoff "$K" --max-workers "$W"
+    HAVE_A=$(n_answered "$GEN")
+    [ "$HAVE_A" -ge "$N_Q" ] || { echo "✗ cutoff ${K}: 답변이 ${HAVE_A}/${N_Q} 뿐입니다"; exit 1; }
+  fi
+
+  # ⚠ judge 는 답변 파일을 --results 로 받음 (--answers 아님). 이름이 헷갈리게 돼 있음
   echo "▶ cutoff ${K}: 채점"
   uv run python eval/mem0-classic-oss/memora/judge_memora.py \
-    --answers "$GEN" --out-dir "$JUD" --max-workers "$W"
+    --results "$GEN" --out-dir "$JUD" --max-workers "$W"
 done
 
 echo "━━━ 완료 ━━━"

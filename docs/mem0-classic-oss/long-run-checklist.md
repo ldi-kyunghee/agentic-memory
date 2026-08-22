@@ -60,7 +60,29 @@ grep -E "OPENAI_|MEM0_" .env; echo "--- 셸에 이미 잡힌 것 ---"; env | gre
 
 ---
 
-## 3. 경로
+## 3. 인자 이름
+
+- [ ] 쓰려는 플래그가 **실제로 있는지** `--help`로 확인했는가
+
+⚠ 스크립트마다 이름이 다르다. 특히 **`judge_memora.py`는 답변 파일을 `--answers`가 아니라
+`--results`로 받는다.** Stage A′ 산출물인데 이름이 `--results`라 헷갈림.
+
+| 스크립트 | 입력 | 출력 |
+|---|---|---|
+| `ingest_memora.py` | `--data` (기간 디렉토리) | `--version` (→ `results/mem0-classic-oss/memora-{version}/`) |
+| `answer_memora.py` | `--results` (ingest jsonl) | `--out` (파일) |
+| `judge_memora.py` | **`--results`** (answers jsonl) | `--out-dir` (디렉토리) |
+
+```bash
+for f in ingest answer judge; do echo "== $f"; uv run python eval/mem0-classic-oss/memora/${f}_memora.py --help 2>&1 | grep -E "^ +--"; done
+```
+
+긴 실행 스크립트에는 이 확인을 **코드로 넣는다** (`run_cutoff_sweep.sh`의 `check_flags`).
+`set -e`가 걸린 스크립트에서 인자 하나가 틀리면 그때까지의 단계가 다 끝난 뒤에 죽는다.
+
+---
+
+## 4. 경로
 
 - [ ] 스크립트가 실제로 쓰는 경로를 **코드에서** 확인했는가
 
@@ -74,7 +96,7 @@ grep -n "save_path\s*=\|out_dir\|--out" eval/mem0-classic-oss/memora/*.py
 
 ---
 
-## 4. 스크립트 자체에 넣을 것
+## 5. 스크립트 자체에 넣을 것
 
 **사전 확인(preflight).** 몇 시간을 태우고 나서 틀린 걸 알면 안 됨. 시작 전에 엔드포인트·
 모델·`max_model_len`을 확인하고 어긋나면 **시작하지 않음.**
@@ -84,7 +106,9 @@ grep -n "save_path\s*=\|out_dir\|--out" eval/mem0-classic-oss/memora/*.py
 것처럼 보임. 기대 개수(페르소나 수 등)와 실제 줄 수를 대조함.
 
 **이어 돌기.** 단위 작업이 끝날 때마다 저장함. 중단 후 재시작이 처음부터 다시 돌면 안 됨
-(`ingest_memora.py`의 `tmp/{key}.json` 캐시 방식).
+(`ingest_memora.py`의 `tmp/{key}.json` 캐시 방식). **단계마다 "이미 다 됐으면 건너뛴다"를
+넣는다** — `answer_memora.py`는 입력이 ingest 파일이라 자기 출력물을 보지 않으므로,
+러너 쪽에서 출력물의 완료 개수를 세서 건너뛰어야 함.
 
 **실패를 조용히 삼키지 않기.** 빈 결과·파싱 실패 건수를 마지막에 경고로 출력함.
 
@@ -92,7 +116,7 @@ grep -n "save_path\s*=\|out_dir\|--out" eval/mem0-classic-oss/memora/*.py
 
 ---
 
-## 5. 실행 형태
+## 6. 실행 형태
 
 - 장시간 작업은 **tmux**. `nohup`/`&` 쓰지 않음
 - 긴 작업에 `| tail`, `| head` 금지. `tmux + tee + PYTHONUNBUFFERED`
@@ -127,6 +151,7 @@ grep -n "save_path\s*=\|out_dir\|--out" eval/mem0-classic-oss/memora/*.py
 | 2026-08-22 | `MEM0_LLM_MODEL` 누락 → `.env`의 Qwen3-4B를 불러 404 재시도만 쌓임 | 20분 |
 | 2026-08-22 | 0바이트 산출물을 `-f`로 검사해 Stage A를 건너뛸 뻔함 | 사전 차단 |
 | 2026-08-22 | `tmux kill-session`이 `finally`를 건너뛰어 고아 컬렉션 4개가 남음 | 수동 정리 |
+| 2026-08-22 | judge에 `--answers`를 넘김(실제는 `--results`). 투입 4.1시간 + 답변 22분을 마친 뒤 죽음 | 40분 유휴 |
 | 2026-08-21 | `_spearman` 이름 충돌로 Metrics 탭 전체가 죽음. 탭 전환만 보고 내용을 안 봄 | 하루 |
 | 2026-08-18 | 돌고 있던 채점의 출력 디렉토리를 `rm -rf`로 지움 | 1.5시간 |
 | 2026-08-18 | Qdrant 컬렉션을 안 지워 180개에서 서버가 죽음 | 500K·1M 투입 유실 |
