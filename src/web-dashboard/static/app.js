@@ -2711,6 +2711,71 @@ function rateHeat(v, neutralOver) {
   return `background:hsl(${h} 62% ${92 - t * 14}%);color:hsl(${h} 70% 24%)`;
 }
 
+// 검색 예산(cutoff) 스윕. 저장소·검색은 그대로 두고 답변에 넣는 개수만 바꾼 팔들임.
+// 이 카드가 답하는 질문: mem0 의 병목이 저장인가 검색인가.
+async function memoraCutoffCard(period) {
+  let d;
+  try { d = await api(`/api/memora/cutoff?period=${encodeURIComponent(period)}`); }
+  catch (e) { return ""; }
+  if (!d.ready) return "";
+  const T = d.tasks || {}, c = d.coverage || {}, ne = c.natural_experiment || {};
+  const n2 = (v) => (v == null ? "–" : v.toFixed(2));
+  const sig = (p) => (p != null && p < 0.05);
+
+  return `<div class="card"><h4 data-desc="Stage A를 k=800으로 한 번만 돌리고 답변 단계에서 잘라 만든 팔들입니다. 저장소도 검색 결과도 동일하고 답변에 넣은 개수만 다르므로 팔 사이 비교는 깨끗합니다.">검색 예산(cutoff) 스윕 · ${esc(period)}</h4>
+  <div class="body mscroll" style="padding:0">
+  <table class="cmp beam"><tr>
+    <th data-desc="답변 컨텍스트에 넣은 메모리 개수. 50이 Memora 공식 기본값입니다">cutoff</th>
+    <th data-desc="문항의 memory_evidence 조각 중 이 cutoff 안에 들어온 비율. 답변 모델이 실제로 본 재료입니다">근거 도달</th>
+    <th>전체 FAMA</th>
+    ${Object.keys(T).map((t) => `<th data-desc="${esc(t)} FAMA">${esc(T[t])}</th>`).join("")}
+    <th data-desc="remembering의 MPA. 이 실험이 겨냥한 지표입니다">기억 MPA</th>
+    <th>답변 길이</th></tr>
+    ${d.arms.map((a) => `<tr>
+      <td class="brow"><b>${a.cutoff}</b>${a.cutoff === 50 ? '<br><span class="small muted">공식</span>' : ""}</td>
+      <td class="bcell" style="${beamHeat(a.coverage == null ? null : a.coverage / 100)}">${a.coverage == null ? "–" : a.coverage.toFixed(1) + "%"}</td>
+      <td class="bcell" style="${beamHeat(a.overall.fama / 100)}"><b>${n2(a.overall.fama)}</b></td>
+      ${Object.keys(T).map((t) => {
+        const v = a.by_task[t] || {};
+        return `<td class="bcell" style="${beamHeat(v.fama == null ? null : v.fama / 100)}">${v.fama == null ? "–" : v.fama.toFixed(1)}</td>`;
+      }).join("")}
+      <td>${n2((a.by_task.remembering || {}).mpa)}</td>
+      <td class="small">${a.len_median == null ? "–" : a.len_median.toLocaleString()}</td></tr>`).join("")}
+  </table></div>
+
+  <div class="body"><span class="small">
+    <b>저장소가 페르소나당 ${c.store_median == null ? "?" : c.store_median.toLocaleString()}개입니다.</b>
+    cutoff 800은 검색 필터가 사실상 없는 상태입니다. 그런데도 근거 도달은
+    <b>${(d.coverage_curve || {})["800"] == null ? "–" : (d.coverage_curve || {})["800"].toFixed(1) + "%"}</b>가 상한이고,
+    mem0가 한 번이라도 뽑은 것은 <b>${c.extracted == null ? "–" : c.extracted.toFixed(1) + "%"}</b>입니다.
+    <b>그 차이는 검색을 아무리 늘려도 못 되찾습니다</b> (뽑았다가 지우거나 덮어쓴 몫).
+  </span></div>
+
+  <div class="jbasis" data-desc="k를 올리면 어떤 문항에는 새 근거가 들어오고, 어떤 문항에는 무관한 메모리만 늘어납니다. 그 둘을 갈라 보면 점수 변화가 근거 때문인지 아닌지 알 수 있습니다.">
+    <b>스윕 안의 자연 대조</b> (k${ne.lo} → k${ne.hi}, ${esc(c.task || "remembering")})
+    <table class="cmp beam" style="margin-top:8px"><tr><th>문항 갈래</th><th>문항</th><th>MPA 변화</th><th>부호검정</th></tr>
+      <tr><td class="brow"><b>근거가 새로 들어옴</b></td><td>${ne.gain?.n ?? "–"}</td>
+        <td class="bdelta ${(ne.gain?.mean_d_mpa ?? 0) > 0 ? "up" : "down"}"><b>${ne.gain?.mean_d_mpa >= 0 ? "+" : ""}${n2(ne.gain?.mean_d_mpa)}</b></td>
+        <td class="small">개선 ${ne.gain?.up} · 악화 ${ne.gain?.down} · <b${sig(ne.gain?.p) ? ' style="color:var(--ok-ink)"' : ""}>p=${(ne.gain?.p ?? 1).toFixed(4)}</b></td></tr>
+      <tr><td class="brow">주변 메모리만 늘어남 <span class="small muted">(대조군)</span></td><td>${ne.control?.n ?? "–"}</td>
+        <td class="bdelta">${ne.control?.mean_d_mpa >= 0 ? "+" : ""}${n2(ne.control?.mean_d_mpa)}</td>
+        <td class="small">개선 ${ne.control?.up} · 악화 ${ne.control?.down} · p=${(ne.control?.p ?? 1).toFixed(3)}</td></tr>
+    </table>
+    <span class="small"><b>근거가 도착한 곳에서만 점수가 올랐습니다.</b> 검색 예산이 실제 병목이라는 직접 증거입니다
+    (문항별 근거 증가량과 MPA 증가량의 Spearman ρ = ${ne.rho >= 0 ? "+" : ""}${(ne.rho ?? 0).toFixed(3)}).
+    대조군은 유의하지 않으므로 <b>긴 컨텍스트가 답변을 희석시킨다는 주장은 하지 않습니다.</b></span>
+  </div>
+
+  ${!d.noise ? "" : `<div class="noisebar" data-desc="cutoff ${d.noise.cutoff} 팔은 기존 monthly 레인과 같은 설정입니다. 투입부터 채점까지 전 구간을 다시 돌린 것이라 두 값의 차이가 파이프라인 재실행 노이즈입니다.">
+    <b>📏 이 표를 읽는 기준: 과제 단위 재실행 노이즈 ±${n2(d.noise.max_task_fama)}</b>
+    <span class="small">cutoff ${d.noise.cutoff} 팔과 기존 ${esc(period)} 레인은 같은 설정인데
+    ${Object.keys(T).map((t) => `${esc(T[t])} FAMA ${d.noise.by_task[t]?.fama >= 0 ? "+" : ""}${n2(d.noise.by_task[t]?.fama)}`).join(" · ")}
+    만큼 벌어졌습니다 (전체 FAMA ${d.noise.overall.fama >= 0 ? "+" : ""}${n2(d.noise.overall.fama)}).
+    <b>한 칸씩의 차이는 전부 이 폭 안입니다.</b> 끝점(k${d.arms[0].cutoff} 대 k${d.arms[d.arms.length - 1].cutoff})과,
+    네 점이 모두 단조라는 사실만 읽으세요.</span></div>`}
+  </div>`;
+}
+
 async function renderMemora() {
   const el = $("#content");
   el.innerHTML = `<p class="muted">집계 중…</p>`;
@@ -2761,6 +2826,8 @@ async function renderMemora() {
       <b>📏 길이로 점수차를 설명하지 마세요</b>
       <span class="small">이 레인의 답변 길이 중앙값은 <b>${d.len_median == null ? "–" : d.len_median.toLocaleString()}자</b>(최대 ${d.len_max == null ? "–" : d.len_max.toLocaleString()}자)이고, 공식 하네스는 500토큰에서 끊습니다. 한 답변을 잘라보면 페널티가 줄지만, <b>문항끼리 견주면 긴 답변이 오히려 FAA가 높습니다</b>(r=+0.16~+0.29). 길이를 통제해도 MPA↔FAA 상충은 그대로 남습니다(편상관 −0.19~−0.43).</span>
     </div>
+
+${await memoraCutoffCard(d.period)}
 
     ${!d.compare || d.compare.length < 2 ? "" : `
     <div class="card"><h4 data-desc="기간이 길수록 저장소가 커집니다. 이 벤치마크가 실제로 묻는 축입니다">기간 비교: 저장소가 커질 때</h4>

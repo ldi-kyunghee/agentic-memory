@@ -1148,6 +1148,75 @@ def api_memora(period: str = "weekly"):
             "parse_fail": sum(1 for r in rec for c in r["criteria"] if c.get("got") is None)}
 
 
+@app.get("/api/memora/cutoff")
+def api_memora_cutoff(period: str = "monthly"):
+    """검색 예산 스윕. 저장소·검색은 그대로 두고 답변에 넣는 개수만 바꾼 팔들임.
+
+    같은 Stage A 산출물을 잘라 만든 것이라 팔 사이 비교는 깨끗함. 다만 기존 레인과의
+    비교는 전 구간 재실행이므로 noise 항목을 함께 돌려줌.
+    """
+    cfg = (memora_cfg().get("periods") or {}).get(period) or {}
+    sw = cfg.get("cutoff_sweep")
+    if not sw:
+        return {"period": period, "ready": False}
+    tasks = memora_cfg().get("tasks") or {}
+
+    def block(d):
+        p = ROOT / d
+        if not p.exists():
+            return None
+        rec = []
+        for f in sorted(p.glob("*.json")):
+            if f.name.endswith("_error.json"):
+                continue
+            rec += json.load(open(f, encoding="utf-8")).get("records", [])
+        if not rec:
+            return None
+        out = {"overall": _fama_block(rec),
+               "by_task": {t: _fama_block([r for r in rec if r["task"] == t]) for t in tasks}}
+        # 노이즈는 반올림 전 평균끼리 빼야 함. `_mean` 은 4자리에서 반올림하므로 여기서는
+        # 쓰지 않음 (반올림된 값끼리 빼면 문서·readout 과 0.01 이 어긋남)
+        def raw(rows, k):
+            v = [r[k] for r in rows if r.get(k) is not None]
+            return sum(v) / len(v) if v else None
+        out["_raw"] = {"overall": {k: raw(rec, k) for k in ("fama", "mpa")},
+                       "by_task": {t: {k: raw([r for r in rec if r["task"] == t], k)
+                                       for k in ("fama", "mpa")} for t in tasks}}
+        ln = sorted(len(r.get("system_response") or "") for r in rec)
+        out["len_median"] = ln[len(ln) // 2] if ln else None
+        return out
+
+    arms = []
+    cov = {}
+    cp = ROOT / sw.get("coverage", "")
+    if sw.get("coverage") and cp.exists():
+        cov = json.load(open(cp, encoding="utf-8"))
+    for k in sorted(sw.get("arms") or {}, key=int):
+        b = block((sw["arms"])[k])
+        if b:
+            arms.append({"cutoff": int(k), "coverage": (cov.get("cutoffs") or {}).get(str(k)),
+                         **{kk: vv for kk, vv in b.items() if kk != "_raw"}, "_raw": b["_raw"]})
+
+    # 재실행 노이즈: 같은 설정(제일 작은 cutoff)의 이전 회차와 대조
+    noise = None
+    base = block(sw["baseline"]) if sw.get("baseline") else None
+    if base and arms:
+        a0 = arms[0]
+        A, B = a0["_raw"], base["_raw"]
+        sub = lambda x, y: (None if x is None or y is None else round((x - y) * 100, 2))
+        noise = {"cutoff": a0["cutoff"],
+                 "overall": {k: sub(A["overall"][k], B["overall"][k]) for k in ("fama", "mpa")},
+                 "by_task": {t: {k: sub(A["by_task"][t][k], B["by_task"][t][k])
+                                 for k in ("fama", "mpa")} for t in tasks}}
+        vals = [abs(v["fama"]) for v in noise["by_task"].values() if v["fama"] is not None]
+        noise["max_task_fama"] = round(max(vals), 2) if vals else None
+
+    return {"period": period, "ready": bool(arms), "tasks": tasks, "arms": arms,
+            "noise": noise,
+            "coverage": {k: v for k, v in cov.items() if k != "cutoffs"} or None,
+            "coverage_curve": cov.get("cutoffs")}
+
+
 @app.get("/api/memora/questions")
 def api_memora_questions(period: str, task: str):
     """과제 하나의 문항 목록. FAMA 낮은 순으로 놓아 실패부터 보게 함."""

@@ -141,6 +141,18 @@ memora:
       answers: results/mem0-classic-oss/memora-gen-monthly/answers.jsonl
       judge: results/mem0-classic-oss/memora-judge-monthly
       note: "30일 · 페르소나 10 · 세션 6,150 · 문항 150 · 평가 기준 1,315 · lambda 중앙 0.444"
+      # 검색 예산 스윕. Stage A 를 k=800 으로 한 번 돌리고 답변 단계에서 잘라 만든 팔들임.
+      # 저장소가 페르소나당 566개라 k=800 은 사실상 검색 필터 없음.
+      # k=50 팔은 위 monthly 와 같은 설정이라 전 구간 재실행 노이즈 측정을 겸함.
+      cutoff_sweep:
+        ingest: results/mem0-classic-oss/memora-monthly-k800-oss120b/memora_eval_results.jsonl
+        coverage: results/mem0-classic-oss/memora-coverage-monthly-remembering.json
+        baseline: results/mem0-classic-oss/memora-judge-monthly   # 같은 설정 이전 회차
+        arms:
+          50:  results/mem0-classic-oss/memora-judge-monthly-k50
+          100: results/mem0-classic-oss/memora-judge-monthly-k100
+          200: results/mem0-classic-oss/memora-judge-monthly-k200
+          400: results/mem0-classic-oss/memora-judge-monthly-k400
     quarterly:
       label: "Quarterly"
       ingest: results/mem0-classic-oss/memora-quarterly-oss120b/memora_eval_results.jsonl
