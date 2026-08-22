@@ -1002,8 +1002,11 @@ def load_memora(period: str) -> dict:
     return val
 
 
-def _spearman(xs, ys):
-    """순위 상관. scipy 없이 계산함 (동점은 평균 순위). src/memora/readout.py 와 같은 구현."""
+def _spearman_xy(xs, ys):
+    """두 변수의 순위 상관. scipy 없이 계산함 (동점은 평균 순위).
+    src/memora/readout.py 와 같은 구현.
+    ⚠ 위쪽 616행의 `_spearman(xs)` 는 '회차 순서와의 상관'을 재는 다른 함수임.
+    같은 이름을 쓰면 나중 정의가 덮어써서 Metrics 탭이 죽는다 (실제로 한 번 겪음)."""
     n = len(xs)
     if n < 3:
         return None
@@ -1089,7 +1092,7 @@ def api_memora(period: str = "weekly"):
 
     xs = [p["delete_rate"] for p in personas if p["delete_rate"] is not None]
     ys = [p["faa"] for p in personas if p["delete_rate"] is not None]
-    rho = _spearman(xs, ys) if len(xs) >= 3 else None
+    rho = _spearman_xy(xs, ys) if len(xs) >= 3 else None
 
     fams = [p["fama"] for p in personas if p["fama"] is not None]
     sd = None
@@ -1098,7 +1101,40 @@ def api_memora(period: str = "weekly"):
         sd = round((sum((x - mu) ** 2 for x in fams) / (len(fams) - 1)) ** 0.5, 2)
 
     alllen = sorted(v for v in d["lens"].values() if v)
+
+    # 기간 비교. 이 벤치마크의 본론이 기간 축이라 화면 맨 위에 올림.
+    # 문항이 페어링되지 않으므로 기간별 집계끼리만 견줌 (§6-7)
+    compare = []
+    for k in (cfg.get("periods") or {}):
+        try:
+            dd = load_memora(k)
+        except HTTPException:
+            continue
+        if not dd["records"]:
+            continue
+        rr = dd["records"]
+        ci, ca = {}, {}
+        for m in dd["convs"].values():
+            for kk, v in (m.get("intent") or {}).items():
+                ci[kk] = ci.get(kk, 0) + v
+            for kk, v in (m.get("actual") or {}).items():
+                ca[kk] = ca.get(kk, 0) + v
+        ln = sorted(v for v in dd["lens"].values() if v)
+        compare.append({
+            "key": k, "label": (cfg["periods"][k]).get("label", k),
+            "sessions": sum(m.get("sessions") or 0 for m in dd["convs"].values()),
+            "stored": sum(m.get("stored") or 0 for m in dd["convs"].values()),
+            "stored_each": (sum(m.get("stored") or 0 for m in dd["convs"].values())
+                            // max(1, len(dd["convs"]))),
+            "overall": _fama_block(rr),
+            "by_task": {t: _fama_block([r for r in rr if r["task"] == t]) for t in tasks},
+            "delete_rate": (round(100 * ca.get("DELETE", 0) / ci["delete"], 1)
+                            if ci.get("delete") else None),
+            "len_median": (ln[len(ln) // 2] if ln else None),
+        })
+
     return {"period": period, "periods": periods, "tasks": tasks, "ready": True,
+            "compare": compare,
             "note": d["cfg"].get("note", ""),
             "n_personas": len(personas), "n_questions": len(rec),
             "n_criteria": sum(len(r["criteria"]) for r in rec),

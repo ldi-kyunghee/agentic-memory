@@ -2757,10 +2757,45 @@ async function renderMemora() {
       <span class="small"><b>MPA</b>는 정답을 넣었는지만 봅니다. <b>FAMA</b>는 거기서 무효·삭제된 정보를 끌어다 쓴 만큼 깎습니다. 둘의 차이가 <b>페널티</b>입니다.</span>
     </div>
 
-    <div class="noisebar" data-desc="실측(weekly/academic_researcher): 답변을 500토큰에서 자르면 recommending 페널티가 36→28로 줄지만 remembering MPA가 77→60으로 무너져 전체는 오히려 나빠집니다. 그래서 길이 제한 없이 생성한 것을 대표값으로 씁니다.">
-      <b>📏 FAMA는 답변 길이에 민감합니다</b>: 길게 쓸수록 무효 항목을 언급할 확률이 올라갑니다.
-      <span class="small">이 레인의 답변 길이 중앙값은 <b>${d.len_median == null ? "–" : d.len_median.toLocaleString()}자</b>(최대 ${d.len_max == null ? "–" : d.len_max.toLocaleString()}자)입니다. 공식 하네스는 500토큰에서 끊습니다. <b>점수를 볼 때 길이를 함께 보세요.</b></span>
+    <div class="noisebar" data-desc="한 문항의 답변을 500토큰으로 자르면 recommending 페널티가 36→28로 줄지만 remembering MPA가 77→60으로 무너집니다(스모크 실측). 반면 문항끼리 견주면 긴 답변일수록 FAA가 오히려 높습니다(r=+0.16~+0.29, 3기간). 층위가 다른 두 관찰이라 길이로 문항 간 점수차를 설명하면 안 됩니다.">
+      <b>📏 길이로 점수차를 설명하지 마세요</b>
+      <span class="small">이 레인의 답변 길이 중앙값은 <b>${d.len_median == null ? "–" : d.len_median.toLocaleString()}자</b>(최대 ${d.len_max == null ? "–" : d.len_max.toLocaleString()}자)이고, 공식 하네스는 500토큰에서 끊습니다. 한 답변을 잘라보면 페널티가 줄지만, <b>문항끼리 견주면 긴 답변이 오히려 FAA가 높습니다</b>(r=+0.16~+0.29). 길이를 통제해도 MPA↔FAA 상충은 그대로 남습니다(편상관 −0.19~−0.43).</span>
     </div>
+
+    ${!d.compare || d.compare.length < 2 ? "" : `
+    <div class="card"><h4 data-desc="기간이 길수록 저장소가 커집니다. 이 벤치마크가 실제로 묻는 축입니다">기간 비교: 저장소가 커질 때</h4>
+    <div class="body mscroll" style="padding:0">
+    <table class="cmp beam"><tr><th>기간</th>
+      <th data-desc="페르소나 한 명당 저장된 메모리 수. 기간이 길수록 커지는 실제 원인 변수입니다">저장/인</th>
+      <th data-desc="최종 점수">FAMA</th>
+      <th data-desc="넣어야 할 것을 넣은 비율">MPA</th>
+      <th data-desc="빼야 할 것을 뺀 비율. 올라간다고 좋아진 것이 아닙니다 - 아래 설명을 보세요">FAA</th>
+      <th>페널티</th>
+      ${Object.keys(TASKS).map((t) => `<th data-desc="${esc(t)} FAMA">${esc(TASKS[t])}</th>`).join("")}
+      <th data-desc="mem0 DELETE 이벤트 수 ÷ 데이터셋 의도 수. 대상 일치는 확인하지 않은 개수 비율입니다">삭제</th></tr>
+      ${d.compare.map((c) => `<tr${c.key === d.period ? ' class="jm-tot"' : ""}>
+        <td class="brow bclick" data-mperiod="${esc(c.key)}"><b>${esc(c.label)}</b>
+          <br><span class="small muted">세션 ${c.sessions.toLocaleString()}</span></td>
+        <td class="small">${c.stored_each.toLocaleString()}</td>
+        <td class="bcell" style="${beamHeat(c.overall.fama / 100)}"><b>${c.overall.fama.toFixed(2)}</b></td>
+        <td class="bcell" style="${beamHeat(c.overall.mpa / 100)}">${c.overall.mpa.toFixed(2)}</td>
+        <td class="small">${c.overall.faa == null ? "–" : c.overall.faa.toFixed(2)}</td>
+        <td class="bdelta down">−${c.overall.penalty.toFixed(2)}</td>
+        ${Object.keys(TASKS).map((t) => {
+          const v = c.by_task[t] || {};
+          return `<td class="bcell" style="${beamHeat(v.fama == null ? null : v.fama / 100)}">${v.fama == null ? "–" : v.fama.toFixed(1)}</td>`;
+        }).join("")}
+        <td class="bcell" style="${rateHeat(c.delete_rate, true)}">${c.delete_rate == null ? "–" : c.delete_rate.toFixed(0) + "%"}</td></tr>`).join("")}
+    </table></div>
+    <div class="body"><span class="small">
+      <b>⚠ FAA가 올라가는 것을 성과로 읽지 마세요.</b> 저장소가 커질수록 FAA는 오르고 MPA는 무너집니다.
+      같은 원인입니다 - 검색이 정답을 못 꺼내오면 무효 항목도 같이 안 꺼내옵니다. 문항 단위로 봐도
+      MPA와 FAA는 서로 반대로 움직이고(Spearman −0.21 / −0.47 / −0.26), 답변 길이를 통제해도 남습니다
+      (편상관 −0.19 / −0.43 / −0.22). <b>페널티가 줄어드는 것도 잘 잊어서가 아니라 꺼내온 것이 없어서입니다.</b>
+      <br><br><b>기간끼리 문항이 짝지어지지 않습니다.</b> 문항 stem 교집합이 71~82개이고 문구까지 같은 것은 26~27개뿐입니다
+      (&quot;this week&quot;가 &quot;this month&quot;로 바뀌는 식). 기간별 집계끼리 견주는 것은 이 벤치마크의 설계 의도지만,
+      <b>차이를 특정 문항에 귀속하지는 마세요.</b>
+    </span></div></div>`}
 
     <div class="card"><h4 data-desc="과제 이름을 클릭하면 그 과제의 문항 목록을 FAMA 낮은 순으로 봅니다">과제별</h4>
     <div class="body" style="padding:0">
@@ -2841,14 +2876,18 @@ async function renderMemora() {
     <p class="small muted" style="margin-top:10px"><b>FAMA</b><br><code>max(0, MPA − λ(1−FAA))</code><br>λ = 망각 기준 수 ÷ 전체 기준 수</p>
     <p class="small muted" style="margin-top:10px"><b>점수 색</b></p>
     <div class="bleg">${[0, .25, .5, .75, 1].map((v) => `<span style="${beamHeat(v)}">${(v * 100).toFixed(0)}</span>`).join("")}</div>
-    <p class="small muted" style="margin-top:10px"><b>읽는 순서</b><br>① 과제별 페널티 → 무효 메모리를 얼마나 쓰나<br>② 삭제 수행률 → 저장소에 남아 있나<br>③ 상관 → 둘이 이어지나</p>
-    <p class="small muted" style="margin-top:10px">⚠ 기간마다 대화 집합이 다릅니다. <b>기간 간 절대 비교를 하지 마세요.</b></p>
+    <p class="small muted" style="margin-top:10px"><b>읽는 순서</b><br>① 기간 비교 → 저장소가 커지면 무엇이 무너지나<br>② 과제별 → 무너지는 방식이 과제마다 다름<br>③ 연산 발생비 → 저장소가 어떻게 요동치나<br>④ 페르소나별 → 폭만 보고 순위는 보지 않음</p>
+    <p class="small muted" style="margin-top:10px">⚠ 기간별 집계 비교는 이 벤치마크의 설계 의도입니다. 다만 문항이 짝지어지지 않으니 <b>차이를 특정 문항에 귀속하지 마세요.</b></p>
+    <p class="small muted" style="margin-top:10px">⚠ <b>FAA 상승 = 개선 아님.</b> 검색이 정답을 못 꺼내면 무효 항목도 같이 안 나옵니다. FAA와 페널티는 MPA와 함께 읽으세요.</p>
     <p class="small muted" style="margin-top:10px">⚠ 재실행 노이즈가 큽니다. 같은 페르소나 재실행에서 과제 FAMA가 12.67 움직인 실측이 있습니다. <b>페르소나 순위·소수점 차이를 읽지 마세요.</b></p>
     <p class="small muted" style="margin-top:10px">⚠ 이 화면은 상단바의 Generator·Judge 선택을 따르지 않습니다.</p>
     <p class="small muted" style="margin-top:10px">판독 근거는 <code>docs/mem0-classic-oss/memora-experiment.md</code></p>
   </div>`;
   bind();
-  $$("#content td.bclick").forEach((td) => (td.onclick = () => memoraQuestions(td.dataset.mtask, TASKS[td.dataset.mtask])));
+  $$("#content td.bclick[data-mtask]").forEach((td) =>
+    (td.onclick = () => memoraQuestions(td.dataset.mtask, TASKS[td.dataset.mtask])));
+  $$("#content td.bclick[data-mperiod]").forEach((td) =>
+    (td.onclick = () => { S.memoraPeriod = td.dataset.mperiod; renderMemora(); }));
 }
 
 // 과제 하나의 문항 목록. FAMA 낮은 순이라 실패부터 보임

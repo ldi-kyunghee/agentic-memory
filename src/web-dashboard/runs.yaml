@@ -140,7 +140,7 @@ memora:
       ingest: results/mem0-classic-oss/memora-monthly-oss120b/memora_eval_results.jsonl
       answers: results/mem0-classic-oss/memora-gen-monthly/answers.jsonl
       judge: results/mem0-classic-oss/memora-judge-monthly
-      note: "30일 · 페르소나 10 · 세션 6,150 · 문항 150 · 평가 기준 1,315 · lambda 중앙 0.441"
+      note: "30일 · 페르소나 10 · 세션 6,150 · 문항 150 · 평가 기준 1,315 · lambda 중앙 0.444"
     quarterly:
       label: "Quarterly"
       ingest: results/mem0-classic-oss/memora-quarterly-oss120b/memora_eval_results.jsonl

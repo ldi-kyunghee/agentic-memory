@@ -739,3 +739,6 @@ details.bans .jans { margin: 0 9px 9px; white-space: pre-wrap; }
 .bmi { flex: 0 0 28px; color: var(--faint); text-align: right; font-variant-numeric: tabular-nums; }
 .bmt { flex: 0 0 96px; color: var(--dim); white-space: nowrap; }
 .bmx { flex: 1; min-width: 0; }
+
+/* 열이 많은 표는 카드 안에서 가로로 스크롤시킨다. 페이지 본문은 절대 가로로 밀리지 않게. */
+.body.mscroll { overflow-x: auto; }
