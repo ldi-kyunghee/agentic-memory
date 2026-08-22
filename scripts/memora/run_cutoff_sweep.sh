@@ -16,7 +16,11 @@ PERIOD=${1:?"기간을 주세요: weekly | monthly | quarterly"}
 CUTOFFS=${2:-50,100,200,400}
 SEARCH_K=${SEARCH_K:-800}
 W=${W:-4}
-VER="${PERIOD}-k${SEARCH_K}"
+# ⚠ ingest_memora.py 는 결과를 `results/mem0-classic-oss/memora-{version}/` 에 그대로 씀.
+#   접미사를 붙여주지 않으므로 version 문자열에 -oss120b 까지 넣어야 기존 레인
+#   (memora-weekly-oss120b …) 과 이름이 맞음. 여기서 어긋나면 투입이 끝난 뒤에야
+#   경로를 못 찾고 죽음. 실제로 한 번 그럴 뻔했음.
+VER="${PERIOD}-k${SEARCH_K}-oss120b"
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT"
 
@@ -28,7 +32,7 @@ export JUDGE_MODEL=${JUDGE_MODEL:-openai/gpt-oss-120b}
 export ANSWER_REASONING_EFFORT=${ANSWER_REASONING_EFFORT:-high}
 export JUDGE_REASONING_EFFORT=${JUDGE_REASONING_EFFORT:-high}
 
-ING="results/mem0-classic-oss/memora-${VER}-oss120b/memora_eval_results.jsonl"
+ING="results/mem0-classic-oss/memora-${VER}/memora_eval_results.jsonl"
 
 echo "━━━ Memora cutoff 스윕: ${PERIOD} ━━━"
 echo "  검색 k=${SEARCH_K} · cutoff=${CUTOFFS} · 워커 ${W}"
