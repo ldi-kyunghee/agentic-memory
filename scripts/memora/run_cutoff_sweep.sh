@@ -43,13 +43,34 @@ if ! curl -sf "${OPENAI_BASE_URL}/models" | grep -q "${MEM0_LLM_MODEL}"; then
 fi
 echo "✓ 모델 확인됨"
 
-if [ -f "$ING" ]; then
-  echo "▶ Stage A 건너뜀 (이미 있음): $ING"
+# 데이터셋의 페르소나 수. 산출물이 이만큼 있어야 완주한 것임
+N_EXPECT=$(find "Memora/data/${PERIOD}" -maxdepth 1 -mindepth 1 -type d | wc -l)
+n_lines() { [ -s "$1" ] && grep -c . "$1" || echo 0; }
+
+# ⚠ `-f` 로만 보면 안 됨. 투입이 통째로 실패해도 0바이트 파일이 남아서 Stage A 를
+#   건너뛰고 빈 입력으로 답변 팔을 돌게 됨. 실제로 한 번 그럴 뻔했음.
+HAVE=$(n_lines "$ING")
+if [ "$HAVE" -ge "$N_EXPECT" ] && [ "$N_EXPECT" -gt 0 ]; then
+  echo "▶ Stage A 건너뜀 (완주본 있음, ${HAVE}/${N_EXPECT} 페르소나): $ING"
 else
-  echo "▶ Stage A 투입 (k=${SEARCH_K})"
+  if [ -e "$ING" ]; then
+    echo "▶ 이전 산출물이 불완전함 (${HAVE}/${N_EXPECT} 페르소나). 지우고 다시 투입함"
+    rm -rf "$(dirname "$ING")"
+  fi
+  echo "▶ Stage A 투입 (k=${SEARCH_K}, 페르소나 ${N_EXPECT})"
   uv run python eval/mem0-classic-oss/memora/ingest_memora.py \
     --data "Memora/data/${PERIOD}" --version "$VER" --top-k "$SEARCH_K" --max-workers "$W"
 fi
+
+# 투입이 끝났어도 페르소나가 모자라면 여기서 멈춤. 몇 시간짜리 답변·채점을
+# 반쪽 입력으로 태우지 않기 위함임
+HAVE=$(n_lines "$ING")
+if [ "$HAVE" -lt "$N_EXPECT" ]; then
+  echo "✗ Stage A 산출물이 ${HAVE}/${N_EXPECT} 페르소나뿐입니다. 답변 단계로 넘어가지 않습니다."
+  echo "  실패 로그: $(dirname "$ING")/tmp/*_error.log"
+  exit 1
+fi
+echo "✓ Stage A 완주 (${HAVE}/${N_EXPECT} 페르소나)"
 
 for K in ${CUTOFFS//,/ }; do
   GEN="results/mem0-classic-oss/memora-gen-${PERIOD}-k${K}/answers.jsonl"
