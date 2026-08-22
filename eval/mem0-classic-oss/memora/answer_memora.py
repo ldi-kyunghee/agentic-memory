@@ -1,7 +1,10 @@
 """Memora Stage A': 검색 결과로 답변을 생성함.
 
-Stage A가 문항마다 top-50을 저장해뒀으므로 여기서 검색을 다시 하지 않음.
-BEAM과 달리 cutoff 스윕이 없음. 공식 하네스가 단일 limit(50)만 쓰기 때문임.
+Stage A가 문항마다 검색 결과를 저장해뒀으므로 여기서 검색을 다시 하지 않음.
+
+기본 레인은 공식 하네스의 단일 limit(50)을 따름. cutoff 스윕은 Stage A 를 큰 k 로 한 번
+돌려두고 `--cutoff` 로 잘라 만듦 (BEAM 하네스와 동일한 방식). Memora 공식에는 cutoff 개념이
+없으므로 이것은 우리 진단용 팔이고, 공식 수치는 언제나 cutoff 50 임.
 
 프롬프트와 컨텍스트 포맷은 공식 하네스(`evals/agent_eval/memory_to_answer.py`)를 그대로 옮김.
 BEAM에서 배운 것이 이유임: 저장·검색을 고정해도 **답변 규약만으로 점수가 25% 움직임**
@@ -55,14 +58,19 @@ User's Relevant Memories:
 Please provide a helpful answer based on these memories."""
 
 
-def build_context(retrieved: list) -> tuple[str, int]:
+def build_context(retrieved: list, cutoff: int | None = None) -> tuple[str, int]:
     """공식 포맷: `N. {memory} (relevance: 0.87)`.
 
-    ⚠ 자르지 않음. Stage A 가 이미 top-50 으로 잘라 저장했음.
     ⚠ 정렬하지 않음. 공식은 검색 점수 순 그대로 씀.
+
+    cutoff 를 주면 앞에서 그만큼만 씀. Stage A 를 큰 k 로 한 번만 돌리고 답변 단계에서
+    잘라 쓰는 방식임 (BEAM 하네스와 동일). Stage A 재실행은 quarterly 기준 13.6시간이라
+    cutoff 마다 다시 투입할 수 없음. 미지정이면 저장된 전량을 씀.
     """
     if not retrieved:
         return "(No memories available)", 0
+    if cutoff:
+        retrieved = retrieved[:cutoff]
     lines = []
     for i, m in enumerate(retrieved, 1):
         score = m.get("score")
@@ -106,19 +114,21 @@ def answer_one(job: dict) -> dict:
             "response_duration_ms": (time.time() - start) * 1000}
 
 
-def main(results_path: str, out_path: str, max_workers: int, regen: bool):
+def main(results_path: str, out_path: str, max_workers: int, regen: bool,
+         cutoff: int | None = None):
     convs = [json.loads(l) for l in open(results_path, encoding="utf-8") if l.strip()]
     n_q = sum(len(c["questions"]) for c in convs)
     print(f"페르소나 {len(convs)}개 · 문항 {n_q}개 · 모델 {MODEL}")
     print(f"reasoning effort: {REASONING_EFFORT or '없음 (기본값)'}")
     print(f"컨텍스트 날짜 접두사: {'켬 (대조군)' if CTX_DATE else '끔 (공식 포맷)'}")
+    print(f"검색 cutoff: {cutoff if cutoff else '없음 (저장된 전량)'}")
 
     jobs = []
     for c in convs:
         for q in c["questions"]:
             if not regen and (q.get("answer") or {}).get("system_response", "").strip():
                 continue
-            ctx, used = build_context(q.get("retrieved") or [])
+            ctx, used = build_context(q.get("retrieved") or [], cutoff)
             jobs.append({"persona": c["persona"], "task": q["task"],
                          "question_id": q["question_id"], "question": q["question"],
                          "used": used, "stored": c.get("stored_memories"), "_ctx": ctx})
@@ -169,5 +179,8 @@ if __name__ == "__main__":
     p.add_argument("--out", required=True, help="저장 경로. in-place 덮어쓰기 금지")
     p.add_argument("--max-workers", type=int, default=4)
     p.add_argument("--regen", action="store_true", help="기존 answer 무시하고 전부 재생성")
+    p.add_argument("--cutoff", type=int, default=None,
+                   help="검색 결과를 앞에서 N개만 씀. 미지정이면 저장된 전량. "
+                        "Stage A 를 큰 k 로 한 번 돌리고 여기서 잘라 여러 팔을 만듦")
     a = p.parse_args()
-    main(a.results, a.out, a.max_workers, a.regen)
+    main(a.results, a.out, a.max_workers, a.regen, a.cutoff)
