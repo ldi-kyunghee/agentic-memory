@@ -99,6 +99,20 @@ grep -n "save_path\s*=\|out_dir\|--out" eval/mem0-classic-oss/memora/*.py
 - 파괴적 명령(`rm -rf`, `kill`, `git reset --hard`)은 별도 단계로 분리하고, 지금 도는
   작업이 없는지 먼저 확인함
 - 같은 이름 tmux 세션이 살아 있으면 `tmux new -d -s X`는 조용히 실패함
+- ⚠ **`tmux kill-session`으로 죽이면 `finally`가 안 돈다.** Qdrant 컬렉션 정리가 건너뛰어져
+  고아 컬렉션이 남음. BEAM 때 180개에서 Qdrant가 죽었으니 누적을 방치하면 안 됨.
+  강제 종료한 뒤에는 **반드시 남은 컬렉션을 확인하고 지움**:
+
+  ```bash
+  curl -s http://localhost:6333/collections | python3 -c "
+  import json,sys
+  c=[x['name'] for x in json.load(sys.stdin)['result']['collections']]
+  print(f'총 {len(c)}'); [print('  ',n) for n in sorted(c) if 'memora' in n or 'beam' in n]
+  "
+  ```
+
+  지울 때는 **접두사를 정확히 잡음.** `memora_monthly-k800_`과 `memora_monthly-k800-oss120b_`는
+  다른 실행임. 지금 도는 것을 지우지 않도록 삭제 전에 목록만 먼저 출력해 눈으로 확인함
 - `--max-workers`는 4가 기본 ([[CLAUDE.md]] 참조). 투입은 페르소나 단위 병렬이라
   페르소나 수보다 크게 줘도 소용없음
 
@@ -112,6 +126,7 @@ grep -n "save_path\s*=\|out_dir\|--out" eval/mem0-classic-oss/memora/*.py
 | 2026-08-22 | `--version`과 결과 디렉토리 경로 불일치. 투입 완주 후 죽는 구조 | 20분 (조기 발견) |
 | 2026-08-22 | `MEM0_LLM_MODEL` 누락 → `.env`의 Qwen3-4B를 불러 404 재시도만 쌓임 | 20분 |
 | 2026-08-22 | 0바이트 산출물을 `-f`로 검사해 Stage A를 건너뛸 뻔함 | 사전 차단 |
+| 2026-08-22 | `tmux kill-session`이 `finally`를 건너뛰어 고아 컬렉션 4개가 남음 | 수동 정리 |
 | 2026-08-21 | `_spearman` 이름 충돌로 Metrics 탭 전체가 죽음. 탭 전환만 보고 내용을 안 봄 | 하루 |
 | 2026-08-18 | 돌고 있던 채점의 출력 디렉토리를 `rm -rf`로 지움 | 1.5시간 |
 | 2026-08-18 | Qdrant 컬렉션을 안 지워 180개에서 서버가 죽음 | 500K·1M 투입 유실 |
