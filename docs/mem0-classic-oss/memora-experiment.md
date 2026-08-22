@@ -183,6 +183,25 @@ HaluMem·BEAM과 **같은 레인 안에서** mem0의 기억·망각 행동을 �
 ⚠ 컬렉션은 페르소나가 끝날 때마다 지움. BEAM에서 컬렉션이 180개까지 쌓여 Qdrant가 죽은 적이
 있음. `MEMORA_KEEP_COLLECTIONS=1`로 남길 수 있음.
 
+### 4-1. 모델 env (빼먹으면 404로 몇 시간을 태움)
+
+`.env`의 `OPENAI_MODEL`은 HaluMem 백본(`Qwen/Qwen3-4B-Instruct-2507`)이고 8002에는 그 모델이
+없음. 세 스크립트 모두 모델명을 env에서 읽으므로 **아래 셋을 반드시 명시함.**
+
+| env | 값 | 무엇 |
+|---|---|---|
+| `MEM0_LLM_MODEL` | `openai/gpt-oss-120b` | mem0 agent LLM (추출·갱신 결정) |
+| `ANSWER_MODEL` | `openai/gpt-oss-120b` | 답변 생성 |
+| `JUDGE_MODEL` | `openai/gpt-oss-120b` | 채점 |
+
+effort는 **agent만 기본값(medium), answer·judge는 high**임 (§3). `MEM0_REASONING_EFFORT`는
+설정하지 않음. 기존 그리드와 통제를 맞추기 위함임.
+
+실제로 `MEM0_LLM_MODEL`을 빼먹고 돌려서 `NotFoundError: The model
+'Qwen/Qwen3-4B-Instruct-2507' does not exist` 가 재시도로 쌓인 적이 있음. 그래서
+`scripts/memora/run_cutoff_sweep.sh`는 시작 전에 `/v1/models`를 조회해 모델이 실제로
+떠 있는지 확인하고, 없으면 투입을 시작하지 않음.
+
 ---
 
 ## 5. 스모크 판독 (2026-08-21, weekly / academic_researcher)
