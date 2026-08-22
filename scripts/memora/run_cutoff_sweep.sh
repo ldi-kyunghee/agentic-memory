@@ -24,28 +24,64 @@ VER="${PERIOD}-k${SEARCH_K}-oss120b"
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT"
 
+# ⚠ OPENAI_BASE_URL 은 `:-` 로 두면 안 됨. 셸이나 .env 에 8000 이 이미 잡혀 있으면
+#   그 값이 이겨서 **다른 사용자(dania)의 vLLM 으로 나감.** 실제로 한 번 그랬음.
+#   우리 서버는 8002 이고, 바꾸려면 MEMORA_BASE_URL 로 명시해야 함.
 export PYTHONUNBUFFERED=1
-export OPENAI_BASE_URL=${OPENAI_BASE_URL:-http://localhost:8002/v1}
+export OPENAI_BASE_URL=${MEMORA_BASE_URL:-http://localhost:8002/v1}
+export MEM0_EMBED_BASE_URL=${MEMORA_EMBED_URL:-http://localhost:8001/v1}
 export MEM0_LLM_MODEL=${MEM0_LLM_MODEL:-openai/gpt-oss-120b}
 export ANSWER_MODEL=${ANSWER_MODEL:-openai/gpt-oss-120b}
 export JUDGE_MODEL=${JUDGE_MODEL:-openai/gpt-oss-120b}
 export ANSWER_REASONING_EFFORT=${ANSWER_REASONING_EFFORT:-high}
 export JUDGE_REASONING_EFFORT=${JUDGE_REASONING_EFFORT:-high}
+# 우리 8002 는 --max-model-len 32768 로 띄움. 8000 (남의 것) 은 131072 라 이걸로 가름
+EXPECT_MAX_LEN=${EXPECT_MAX_LEN:-32768}
 
 ING="results/mem0-classic-oss/memora-${VER}/memora_eval_results.jsonl"
 
 echo "━━━ Memora cutoff 스윕: ${PERIOD} ━━━"
 echo "  검색 k=${SEARCH_K} · cutoff=${CUTOFFS} · 워커 ${W}"
 echo "  agent=${MEM0_LLM_MODEL}(effort 기본) answer/judge=${ANSWER_MODEL}(high)"
-echo "  base_url=${OPENAI_BASE_URL}"
+echo "  LLM=${OPENAI_BASE_URL} · 임베더=${MEM0_EMBED_BASE_URL}"
 
-# 모델이 실제로 떠 있는지 먼저 확인함. 몇 시간짜리 작업을 404 로 태우지 않기 위함
-if ! curl -sf "${OPENAI_BASE_URL}/models" | grep -q "${MEM0_LLM_MODEL}"; then
-  echo "✗ ${OPENAI_BASE_URL} 에 ${MEM0_LLM_MODEL} 이 없습니다. 서빙부터 확인하세요:"
-  curl -sf "${OPENAI_BASE_URL}/models" || echo "  (응답 없음)"
-  exit 1
-fi
-echo "✓ 모델 확인됨"
+# 사전 확인. 몇 시간짜리 작업을 404 로 태우거나 남의 서버로 보내지 않기 위함.
+# ⚠ 모델 이름만 보면 안 됨. 8000 의 남의 인스턴스도 같은 openai/gpt-oss-120b 를 서빙함.
+#   max_model_len 까지 대조해야 우리 것인지 가려짐.
+preflight() {
+  local url="$1" want_model="$2" want_len="$3" what="$4"
+  local body
+  if ! body=$(curl -sf --max-time 10 "${url}/models"); then
+    echo "✗ ${what}: ${url} 이 응답하지 않습니다. 서빙부터 띄우세요."
+    return 1
+  fi
+  local got
+  got=$(printf '%s' "$body" | python3 -c '
+import json, sys
+d = json.load(sys.stdin)["data"]
+m = {x["id"]: x.get("max_model_len") for x in d}
+print(json.dumps(m))
+') || { echo "✗ ${what}: ${url} 응답을 해석하지 못했습니다."; return 1; }
+
+  if ! printf '%s' "$got" | grep -q "\"${want_model}\""; then
+    echo "✗ ${what}: ${url} 에 ${want_model} 이 없습니다. 떠 있는 것: ${got}"
+    return 1
+  fi
+  if [ -n "$want_len" ]; then
+    local len
+    len=$(printf '%s' "$got" | python3 -c "import json,sys;print(json.load(sys.stdin).get('${want_model}'))")
+    if [ "$len" != "$want_len" ]; then
+      echo "✗ ${what}: ${url} 의 ${want_model} 이 max_model_len=${len} 입니다 (우리 것은 ${want_len})."
+      echo "  다른 사람의 인스턴스일 수 있습니다. 포트를 확인하세요:"
+      echo "    ss -ltnp | grep -E ':8000|:8002'"
+      return 1
+    fi
+  fi
+  echo "✓ ${what}: ${url} · ${want_model} · max_model_len=${len:-?}"
+}
+
+preflight "$OPENAI_BASE_URL" "$MEM0_LLM_MODEL" "$EXPECT_MAX_LEN" "LLM" || exit 1
+preflight "$MEM0_EMBED_BASE_URL" "${MEM0_EMBED_MODEL:-Qwen/Qwen3-Embedding-4B}" "" "임베더" || exit 1
 
 # 데이터셋의 페르소나 수. 산출물이 이만큼 있어야 완주한 것임
 N_EXPECT=$(find "Memora/data/${PERIOD}" -maxdepth 1 -mindepth 1 -type d | wc -l)
