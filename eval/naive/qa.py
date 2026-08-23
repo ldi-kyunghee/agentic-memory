@@ -123,21 +123,6 @@ def format_inputs_gpt_oss(query, documents):
 
     return prompt
 
-def generate_answer(prompt, model, **common_params):
-    if args.structured_outputs:
-        common_params['text_format'] = QA
-    response = llm.responses.parse(
-        model=model,
-        input=prompt,
-        **common_params
-    )
-
-    resp = response.output_parsed
-    result = response.model_dump_json()
-    if isinstance(result, str):
-        result = json.loads(result)
-    return result
-
 def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
     stop_token_ids = encoding.stop_tokens_for_assistant_actions()
