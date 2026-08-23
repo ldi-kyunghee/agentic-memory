@@ -263,9 +263,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    exp_dir = f"exp{args.exp_num}"
+    exp_name = f"exp{args.exp_num}"
 
-    retrieval_dir = f"{args.result_dir + exp_dir}/retrieval/"
+    retrieval_dir = f"{args.result_dir}/{exp_name}/retrieval/"
     retrieval_results = {}
     for result_file in os.listdir(retrieval_dir):
         with open(f"{retrieval_dir}/{result_file}", 'r') as file:
