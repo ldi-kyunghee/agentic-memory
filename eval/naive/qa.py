@@ -240,7 +240,7 @@ def run_qa(args, retrieval_results):
         if args.backend == "vllm":
             if "openai" in model_kwargs['model']:
                 if args.online:
-                    per_persona_llm_results = generate_online(per_persona_results, generation_kwargs, sampling_params)
+                    per_persona_llm_results = generate_online(per_persona_results, model=model_kwargs['model'], common_params=generation_kwargs)
                 else:
                     per_persona_llm_results = generate_answers_gpt_oss(
                         per_persona_results, generation_kwargs, sampling_params
