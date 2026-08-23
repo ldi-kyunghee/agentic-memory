@@ -24,9 +24,16 @@ W_ARMS=${W_ARMS:-$W}
 # PERSONAS 를 주면 축소 실행임. 본 실행 산출물을 덮지 않도록 이름에 -smoke 를 붙이고,
 # 완주 검사 기준도 지정한 페르소나 수로 바꿈. 러너를 고친 뒤에는 이걸로 먼저 통과시킴.
 #   PERSONAS=academic_researcher bash scripts/memora/run_cutoff_sweep.sh weekly 50,100
-# 답변 완주 하한(%). 100 이면 한 건만 비어도 멈춤. reasoning 모델은 사고 토큰 때문에
-# 소수가 finish_reason=length 로 비는 것이 정상이라 99 를 기본으로 둠.
-ANSWER_MIN_PCT=${ANSWER_MIN_PCT:-99}
+# 답변 완주 하한(%). 파이프라인이 통째로 깨진 것(0/300, 200/300)을 잡는 용도이고,
+# 소수의 사고 토큰 초과를 막는 용도가 아님.
+#
+# ⚠ 실측: 빈 답변은 cutoff 가 커질수록 늘고 **전부 reasoning 과제**임
+#    (quarterly k=50 0건 · k=100 0건 · k=200 3건 · k=400 6건 / 300).
+#    컨텍스트가 커지면 사고에 남는 예산이 줄어드는데 reasoning 이 사고를 제일 많이 씀.
+#    max_completion_tokens 는 이미 --max-model-len 천장이라 더 줄 수 없음.
+#    검색 품질과 무관한 손실이므로 **판독할 때 팔별 빈 답변 수를 함께 봐야 함.**
+#    완료 요약에 찍고 문서 표에도 적음.
+ANSWER_MIN_PCT=${ANSWER_MIN_PCT:-97}
 PERSONAS=${PERSONAS:-}
 SUFFIX=""
 [ -n "$PERSONAS" ] && SUFFIX="-smoke"
