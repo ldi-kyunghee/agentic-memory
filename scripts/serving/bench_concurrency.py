@@ -17,25 +17,34 @@ from concurrent.futures import ThreadPoolExecutor
 
 from openai import OpenAI
 
+# ⚠ 출력 길이를 실제와 맞추는 것이 핵심임. 디코드가 병목이라 처리량은 req/s 가 아니라
+#    **출력 tok/s** 로 결정됨. 2026-08-22 에 출력 250토큰으로 재고 "16워커면 충분"이라고
+#    판단했는데, 실측 요청은 667~2,218토큰이었고 그래서 추정이 크게 빗나갔음.
+#    실측은 vllm:generation_tokens_total 증분 / request_success_total 증분 으로 냄.
 BODY = ("The user discussed their research schedule, mentioned preferring morning work blocks, "
         "and noted a deadline for the grant proposal. They also talked about switching from "
         "coffee to tea, planning a trip to Kyoto, and rescheduling a meeting with their advisor. ") * 6
-PROMPT = ("You are a memory extraction system. Extract discrete facts from the conversation below "
-          "as a JSON list. Return only facts that would be useful to remember later.\n\n" + BODY)
+PROMPT = ("You are a memory extraction system. Read the conversation below and extract every "
+          "discrete fact worth remembering. For each fact give: the fact itself, why it matters, "
+          "how confident you are, and what it supersedes if anything. Be exhaustive and verbose; "
+          "cover preferences, schedule items, people, places, and any implied follow-ups. "
+          "Then summarize the user's current state in detail.\n\n" + BODY)
 
 
-def main(url, model, levels, n_per, max_tokens):
+def main(url, model, levels, n_per, max_tokens, effort=None):
     cli = OpenAI(base_url=url, api_key="dummy")
 
     def one(_):
         t = time.time()
+        kw = {"reasoning_effort": effort} if effort else {}
         r = cli.chat.completions.create(
             model=model, messages=[{"role": "user", "content": PROMPT}],
-            max_completion_tokens=max_tokens, temperature=0.0)
+            max_completion_tokens=max_tokens, temperature=0.0, **kw)
         return time.time() - t, (r.usage.completion_tokens if r.usage else 0)
 
-    print(f"엔드포인트 {url} · 모델 {model} · 레벨당 {n_per}건")
-    print(f"{'동시성':>6s}{'초':>8s}{'req/s':>9s}{'출력tok/s':>11s}{'지연 중앙':>11s}{'직전 대비':>11s}")
+    print(f"엔드포인트 {url} · 모델 {model} · 레벨당 {n_per}건 · 출력 상한 {max_tokens}"
+          f"{' · effort ' + effort if effort else ''}")
+    print(f"{'동시성':>6s}{'초':>8s}{'req/s':>9s}{'출력tok/s':>11s}{'지연 중앙':>11s}{'직전 대비':>11s}{'요청당 출력':>12s}")
     prev = None
     for c in levels:
         one(0)  # 워밍업
@@ -49,11 +58,13 @@ def main(url, model, levels, n_per, max_tokens):
         # ⚠ '선형 대비 효율'(배수/c)로 읽으면 안 됨. 단일 요청의 고정 지연 때문에 c=2 에서
         #   이미 0.8 밑으로 떨어져 무릎을 놓침. 실제로 볼 것은 **한 단계 올렸을 때의 증가분**임
         mark = "" if prev is None else f"{100 * (rps / prev - 1):+9.0f}%"
-        print(f"{c:6d}{dt:8.1f}{rps:9.2f}{tps:11.0f}{lat:10.2f}s{mark:>11s}")
+        out_avg = sum(r[1] for r in res) / max(len(res), 1)
+        print(f"{c:6d}{dt:8.1f}{rps:9.2f}{tps:11.0f}{lat:10.2f}s{mark:>11s}{out_avg:11.0f}")
         prev = rps
     print("\n읽는 법: '직전 대비' 증가가 뚝 떨어지는 지점이 무릎임. 그 앞 단계가 실용 상한임.")
     print("        투입은 페르소나 단위 병렬이라 페르소나 수(10)를 넘겨도 소용없음.")
     print("        답변·채점은 문항 단위라 그 제한이 없음.")
+    print("        ⚠ '요청당 출력'이 실제 작업(667~2,218토큰)과 비슷해야 이 표를 믿을 수 있음.")
 
 
 if __name__ == "__main__":
@@ -62,6 +73,10 @@ if __name__ == "__main__":
     p.add_argument("--model", default="openai/gpt-oss-120b")
     p.add_argument("--levels", default="1,2,4,8,16,24")
     p.add_argument("--n-per", type=int, default=16)
-    p.add_argument("--max-tokens", type=int, default=250)
+    p.add_argument("--max-tokens", type=int, default=2048,
+                   help="실측 요청의 출력이 667~2,218토큰이었음. 250 같은 작은 값으로 재면 "
+                        "디코드 병목을 못 보고 동시성 상한을 과대평가함")
+    p.add_argument("--effort", default=None, help="reasoning_effort (기본: 모델 기본값)")
     a = p.parse_args()
-    main(a.url, a.model, [int(x) for x in a.levels.split(",") if x.strip()], a.n_per, a.max_tokens)
+    main(a.url, a.model, [int(x) for x in a.levels.split(",") if x.strip()], a.n_per,
+         a.max_tokens, a.effort)
