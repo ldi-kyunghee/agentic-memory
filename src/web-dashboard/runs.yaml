@@ -135,6 +135,18 @@ memora:
       answers: results/mem0-classic-oss/memora-gen-weekly/answers.jsonl
       judge: results/mem0-classic-oss/memora-judge-weekly
       note: "7일 · 페르소나 10 · 세션 1,551 · 문항 150 · 평가 기준 735 · lambda 중앙 0.286"
+      # 저장소가 페르소나당 171개라 k=200 이 이미 전량임. 그래서 격자를 20/50/100/200 으로 둠
+      # (400 팔은 200 과 같은 결과가 나와 낭비임). 덤으로 BEAM 격자와 정확히 겹침.
+      cutoff_sweep:
+        ingest: results/mem0-classic-oss/memora-weekly-k400-oss120b/memora_eval_results.jsonl
+        coverage: results/mem0-classic-oss/memora-coverage-weekly-remembering.json
+        baseline: results/mem0-classic-oss/memora-judge-weekly
+        baseline_cutoff: 50      # 기존 weekly 레인은 공식 k=50 임. 20 과 비교하면 안 됨
+        arms:
+          20:  results/mem0-classic-oss/memora-judge-weekly-k20
+          50:  results/mem0-classic-oss/memora-judge-weekly-k50
+          100: results/mem0-classic-oss/memora-judge-weekly-k100
+          200: results/mem0-classic-oss/memora-judge-weekly-k200
     monthly:
       label: "Monthly"
       ingest: results/mem0-classic-oss/memora-monthly-oss120b/memora_eval_results.jsonl
@@ -148,6 +160,7 @@ memora:
         ingest: results/mem0-classic-oss/memora-monthly-k800-oss120b/memora_eval_results.jsonl
         coverage: results/mem0-classic-oss/memora-coverage-monthly-remembering.json
         baseline: results/mem0-classic-oss/memora-judge-monthly   # 같은 설정 이전 회차
+        baseline_cutoff: 50
         arms:
           50:  results/mem0-classic-oss/memora-judge-monthly-k50
           100: results/mem0-classic-oss/memora-judge-monthly-k100

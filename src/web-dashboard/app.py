@@ -1197,12 +1197,16 @@ def api_memora_cutoff(period: str = "monthly"):
             arms.append({"cutoff": int(k), "coverage": (cov.get("cutoffs") or {}).get(str(k)),
                          **{kk: vv for kk, vv in b.items() if kk != "_raw"}, "_raw": b["_raw"]})
 
-    # 재실행 노이즈: 같은 설정(제일 작은 cutoff)의 이전 회차와 대조
+    # 재실행 노이즈: **기존 레인과 같은 설정인 팔**의 이전 회차와 대조.
+    # ⚠ '제일 작은 cutoff' 로 잡으면 안 됨. weekly 격자는 20/50/100/200 인데 기존 레인은
+    #   공식 k=50 이라, 20 과 비교하면 검색 예산 차이가 노이즈로 둔갑함 (실제로 그랬음:
+    #   과제 최대가 5.33 대신 15.87 로 나왔음). runs.yaml 의 baseline_cutoff 로 지정함.
     noise = None
     base = block(sw["baseline"]) if sw.get("baseline") else None
-    if base and arms:
-        a0 = arms[0]
-        A, B = a0["_raw"], base["_raw"]
+    bc = sw.get("baseline_cutoff")
+    a0 = next((a for a in arms if a["cutoff"] == int(bc)), None) if bc else (arms[0] if arms else None)
+    if base and a0:
+        A, B = a0["_raw"], base["_raw"]  # noqa: E501
         sub = lambda x, y: (None if x is None or y is None else round((x - y) * 100, 2))
         noise = {"cutoff": a0["cutoff"],
                  "overall": {k: sub(A["overall"][k], B["overall"][k]) for k in ("fama", "mpa")},
