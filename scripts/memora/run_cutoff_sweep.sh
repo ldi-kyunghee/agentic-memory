@@ -24,6 +24,9 @@ W_ARMS=${W_ARMS:-$W}
 # PERSONAS 를 주면 축소 실행임. 본 실행 산출물을 덮지 않도록 이름에 -smoke 를 붙이고,
 # 완주 검사 기준도 지정한 페르소나 수로 바꿈. 러너를 고친 뒤에는 이걸로 먼저 통과시킴.
 #   PERSONAS=academic_researcher bash scripts/memora/run_cutoff_sweep.sh weekly 50,100
+# 답변 완주 하한(%). 100 이면 한 건만 비어도 멈춤. reasoning 모델은 사고 토큰 때문에
+# 소수가 finish_reason=length 로 비는 것이 정상이라 99 를 기본으로 둠.
+ANSWER_MIN_PCT=${ANSWER_MIN_PCT:-99}
 PERSONAS=${PERSONAS:-}
 SUFFIX=""
 [ -n "$PERSONAS" ] && SUFFIX="-smoke"
@@ -177,7 +180,19 @@ for K in ${CUTOFFS//,/ }; do
     uv run python eval/mem0-classic-oss/memora/answer_memora.py \
       --results "$ING" --out "$GEN" --cutoff "$K" --max-workers "$W_ARMS"
     HAVE_A=$(n_answered "$GEN")
-    [ "$HAVE_A" -ge "$N_Q" ] || { echo "✗ cutoff ${K}: 답변이 ${HAVE_A}/${N_Q} 뿐입니다"; exit 1; }
+    # ⚠ 100% 를 강제하면 안 됨. reasoning effort high 는 사고 토큰이 예산을 먹어
+    #   finish_reason=length 로 빈 답변이 소수 남음 (quarterly k=200 에서 300건 중 2건).
+    #   max_completion_tokens 가 이미 --max-model-len 천장이라 더 줄 수도 없음.
+    #   빈 답변은 채점에서 0 이 되는 것이 정직한 처리이므로 소수는 경고만 하고 넘어감.
+    #   BEAM 에서도 1,600건 중 2건이 같은 이유로 남았고 그대로 뒀음.
+    MIN_A=$(( N_Q * ANSWER_MIN_PCT / 100 ))
+    if [ "$HAVE_A" -lt "$MIN_A" ]; then
+      echo "✗ cutoff ${K}: 답변이 ${HAVE_A}/${N_Q} 뿐입니다 (하한 ${MIN_A}). 중단합니다"
+      exit 1
+    fi
+    if [ "$HAVE_A" -lt "$N_Q" ]; then
+      echo "⚠ cutoff ${K}: 답변 $(( N_Q - HAVE_A ))건이 비었습니다 (${HAVE_A}/${N_Q}). 0점으로 채점하고 진행합니다"
+    fi
   fi
 
   # ⚠ judge 는 답변 파일을 --results 로 받음 (--answers 아님). 이름이 헷갈리게 돼 있음
@@ -187,6 +202,15 @@ for K in ${CUTOFFS//,/ }; do
 done
 
 echo "━━━ 완료 ━━━"
+for K in ${CUTOFFS//,/ }; do
+  G="results/mem0-classic-oss/memora-gen-${PERIOD}${SUFFIX}-k${K}/answers.jsonl"
+  A=$(n_answered "$G")
+  # (`[ ... ] && echo` 로 써도 set -e 는 안 걸림. AND 리스트의 마지막이 아닌 명령의
+  #  실패는 errexit 대상이 아님. 읽기 쉬우라고 if 로 둠)
+  if [ "$A" -lt "$N_Q" ]; then
+    echo "  ⚠ cutoff ${K}: 빈 답변 $(( N_Q - A ))건 (0점 처리됨)"
+  fi
+done
 for K in ${CUTOFFS//,/ }; do
   echo "  cutoff ${K} -> results/mem0-classic-oss/memora-judge-${PERIOD}${SUFFIX}-k${K}"
 done
