@@ -5,7 +5,6 @@ import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-
 import numpy as np
 import torch
 from dotenv import load_dotenv
@@ -140,7 +139,7 @@ def generate_answer(prompt, model, **common_params):
     return result
 
 
-def generate_online(prompts, model: str, max_workers: int = 10, **common_params):
+def generate_online(prompts, model: str, common_params: dict = {}, max_workers: int = 10):
     # Question-Answering Evaluation
     results = []
 
