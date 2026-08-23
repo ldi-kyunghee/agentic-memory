@@ -58,7 +58,7 @@ def load_vllm(**model_kwargs):
 
     return llm
 
-def generate_answer_openai(queries: list[dict], **model_kwargs):
+def generate_answer_online(queries: list[dict], **model_kwargs):
     answers = []
     if args.structured_outputs:
         model_kwargs['text_format'] = QA
@@ -138,33 +138,6 @@ def generate_answer(prompt, model, **common_params):
         result = json.loads(result)
     return result
 
-
-def generate_online(prompts, model: str, common_params: dict = {}, max_workers: int = 10):
-    # Question-Answering Evaluation
-    results = []
-
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        futures = {}
-        for prompt in prompts:
-            future = executor.submit(
-                generate_answer,
-                prompt,
-                model,
-                **common_params
-            )
-            futures[future] = prompt
-
-        for future in tqdm(as_completed(futures), total=len(futures)):
-            item = futures[future]
-            result = future.result()
-            answer = result.get('answer')
-            reasoning = result.get('reasoning_content')
-            item['generated_answer'] = answer
-            item['reasoning'] = reasoning
-            results.append(item)
-
-    return results
-
 def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
     stop_token_ids = encoding.stop_tokens_for_assistant_actions()
@@ -219,18 +192,26 @@ def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sam
 def compile_outputs(queries: list[dict], answers: list[str]):
     results = []
     for item, answer in zip(queries, answers):
-        results.append(
-            {
-                "question": item["question"],
-                "generated_answer": answer,
-                "reference": item["answer"],
-                "retrieved": item["retrieved"],
-                "evidence": item["evidence"],
-                "question_type": item["question_type"],
-                "difficulty": item["difficulty"],
-            }
-        )
+        if isinstance(answer, dict):
+            reasoning_content = answer.pop('reasoning_content')
+            answer = answer.pop('answer')
+        else:
+            reasoning_content = None
 
+        result = {
+            "question": item["question"],
+            "generated_answer": answer,
+            "reference": item["answer"],
+            "retrieved": item["retrieved"],
+            "evidence": item["evidence"],
+            "question_type": item["question_type"],
+            "difficulty": item["difficulty"],
+        }
+
+        if reasoning_content:
+            result.update({"answer_reasoning": reasoning_content})
+
+        results.append(result)
     return results
 
 def run_qa(args, retrieval_results):
@@ -239,7 +220,8 @@ def run_qa(args, retrieval_results):
         if args.backend == "vllm":
             if "openai" in model_kwargs['model']:
                 if args.online:
-                    per_persona_llm_results = generate_online(per_persona_results, model=model_kwargs['model'], common_params=generation_kwargs)
+                    generation_kwargs['model'] = model_kwargs.pop('model')
+                    per_persona_llm_results = generate_online(per_persona_results, **generation_kwargs)
                 else:
                     per_persona_llm_results = generate_answers_gpt_oss(
                         per_persona_results, generation_kwargs, sampling_params
@@ -249,7 +231,7 @@ def run_qa(args, retrieval_results):
                     per_persona_results, generation_kwargs, sampling_params
                 )
         else:
-            per_persona_llm_results = generate_answer_openai(
+            per_persona_llm_results = generate_online(
                 per_persona_results, **model_kwargs
             )
         llm_results.append(per_persona_llm_results)
