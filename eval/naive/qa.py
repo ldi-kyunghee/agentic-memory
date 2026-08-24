@@ -65,7 +65,9 @@ def generate_answer_online(queries: list[dict], **model_kwargs):
 
     print(queries[:3])
         
-    for item in tqdm(queries, desc="Generating..."):
+    for item in queries:
+        if isinstance(item, str):
+            print(item)
         query = item["question"]
         documents = ""
         for doc in item["retrieved"]:
