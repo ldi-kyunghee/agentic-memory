@@ -172,6 +172,19 @@ memora:
       answers: results/mem0-classic-oss/memora-gen-quarterly/answers.jsonl
       judge: results/mem0-classic-oss/memora-judge-quarterly
       note: "90일 · 페르소나 10 · 세션 19,913 · 문항 300 · 평가 기준 4,365 · lambda 중앙 0.375"
+      # 저장소가 페르소나당 1,594개라 검색 k=2000 이 전량임. cutoff 는 monthly 와 같은 격자.
+      # ⚠ k=200 에서 빈 답변 3건, k=400 에서 6건 (전부 reasoning, finish_reason=length).
+      #   컨텍스트가 커지면 사고 예산이 줄어 생기는 것이고 검색 품질과 무관함. 0점 처리됨.
+      cutoff_sweep:
+        ingest: results/mem0-classic-oss/memora-quarterly-k2000-oss120b/memora_eval_results.jsonl
+        coverage: results/mem0-classic-oss/memora-coverage-quarterly-remembering.json
+        baseline: results/mem0-classic-oss/memora-judge-quarterly
+        baseline_cutoff: 50
+        arms:
+          50:  results/mem0-classic-oss/memora-judge-quarterly-k50
+          100: results/mem0-classic-oss/memora-judge-quarterly-k100
+          200: results/mem0-classic-oss/memora-judge-quarterly-k200
+          400: results/mem0-classic-oss/memora-judge-quarterly-k400
 
 # 숨김 그룹: 실험 갈래 하나를 통째로 접었다 편다. Metrics 사이드바에 그룹당 체크박스 하나.
 # ⚠ 숨김은 삭제가 아니다: 산출물·주석은 그대로 두고 노출만 막는다.

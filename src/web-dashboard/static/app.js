@@ -2743,13 +2743,21 @@ async function memoraCutoffCard(period) {
       <td class="small">${a.len_median == null ? "–" : a.len_median.toLocaleString()}</td></tr>`).join("")}
   </table></div>
 
-  <div class="body"><span class="small">
+  ${(() => {
+    // "저장소 전량" 지점은 기간마다 다름 (weekly 200 · monthly 800 · quarterly 2000).
+    // 800 으로 하드코딩했다가 weekly·quarterly 에서 틀린 값을 보여줬음. 곡선의 제일 큰 키를 씀
+    const cc = d.coverage_curve || {};
+    const keys = Object.keys(cc).map(Number).filter((x) => !isNaN(x)).sort((a, b) => a - b);
+    const top = keys.length ? keys[keys.length - 1] : null;
+    const full = top == null ? null : cc[String(top)];
+    return `<div class="body"><span class="small">
     <b>저장소가 페르소나당 ${c.store_median == null ? "?" : c.store_median.toLocaleString()}개입니다.</b>
-    cutoff 800은 검색 필터가 사실상 없는 상태입니다. 그런데도 근거 도달은
-    <b>${(d.coverage_curve || {})["800"] == null ? "–" : (d.coverage_curve || {})["800"].toFixed(1) + "%"}</b>가 상한이고,
+    ${top == null ? "" : `cutoff ${top.toLocaleString()}은 검색 필터가 사실상 없는 상태입니다.`} 그런데도 근거 도달은
+    <b>${full == null ? "–" : full.toFixed(1) + "%"}</b>가 상한이고,
     mem0가 한 번이라도 뽑은 것은 <b>${c.extracted == null ? "–" : c.extracted.toFixed(1) + "%"}</b>입니다.
     <b>그 차이는 검색을 아무리 늘려도 못 되찾습니다</b> (뽑았다가 지우거나 덮어쓴 몫).
-  </span></div>
+  </span></div>`;
+  })()}
 
   <div class="jbasis" data-desc="k를 올리면 어떤 문항에는 새 근거가 들어오고, 어떤 문항에는 무관한 메모리만 늘어납니다. 그 둘을 갈라 보면 점수 변화가 근거 때문인지 아닌지 알 수 있습니다.">
     <b>스윕 안의 자연 대조</b> (k${ne.lo} → k${ne.hi}, ${esc(c.task || "remembering")})
