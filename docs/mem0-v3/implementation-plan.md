@@ -73,7 +73,7 @@ v3 를 그냥 classic 과 붙이면 **투입과 검색이 동시에 바뀌어 �
 |---|---|---|---|
 | **A. classic** | 2콜 (ADD/UPDATE/DELETE) | 임베딩 | **이미 있음** (3벤치마크 전부) |
 | **B. v3 전체** | 1콜 ADD-only | 3신호 융합 | 새로 돌림 |
-| **C. 귀속용 프로브** | 1콜 ADD-only | 임베딩만 | Memora 만 (제일 쌈) |
+| **C. 귀속용 프로브** | 1콜 ADD-only | 임베딩만 | **지금은 뺌** (§2-5·2-6) |
 
 ### 팔 C 를 어떻게 만드는가 (확인 끝남)
 
@@ -98,6 +98,76 @@ v3 를 그냥 classic 과 붙이면 **투입과 검색이 동시에 바뀌어 �
 
 C 를 Memora 로 잡은 이유: 셋 중 제일 싸고(2.8h), **삭제·망각이 이 변경의 정면 표적**이라
 효과가 제일 선명함.
+
+---
+
+## 2-5. 구현 가능성 검증 (2026-08-24, 로컬 실측)
+
+**팔 C 를 빼고 A 대 B 만 하기로 함.** 팔 C 는 우리 코드가 들어가는 유일한 부분이라
+빼면 "양쪽 다 공식 구현" 이 됨. 귀속은 잃지만 나중에 싸게 붙일 수 있음(§2-6).
+
+`mem0ai[nlp]==2.0.18` 을 실제로 설치해 API 를 검사했음. 서버 없이 스키마·시그니처만 봄.
+
+### 되는 것
+
+| 항목 | 결과 |
+|---|---|
+| 설치 | `mem0ai[nlp]==2.0.18` + `fastembed`. Python 3.12 에서 충돌 없음 |
+| **config 스키마** | **우리 `build_memory()` config 가 무수정으로 통과함.** vLLM(OpenAI 호환) LLM, `openai_base_url` 지정 임베더, dims 2560, Qdrant host/port 전부 그대로 |
+| 반환 형태 | `add()` · `search()` 둘 다 `{"results": [...]}`. **파싱 코드 그대로 씀** |
+| 정리 | `vector_store.delete_col()` 있음. 컬렉션 누적 대책 그대로 |
+| 세 신호 | `mem0ai[nlp]` 설치 후 전부 동작 확인 |
+
+신호 동작 실측:
+
+```
+extract_entities("Did Martin Kim finish the Kyoto trip report for Acme Corp last Tuesday?")
+  -> [('PROPER','Martin Kim'), ('PROPER','Kyoto'), ('TOPIC','Kyoto trip report'),
+      ('PROPER','Acme Corp'), ('PROPER','Tuesday')]
+lemmatize_for_bm25(...)  -> 'martin kim finish kyoto trip report acme corp tuesday'
+ENTITY_BOOST_WEIGHT = 0.5
+```
+
+spaCy 모델 `en_core_web_sm`(12.2 MiB) 은 최초 호출 때 자동으로 받음. **서버 최초 1회
+인터넷 필요.**
+
+### 고쳐야 하는 곳 (어댑터 2군데)
+
+| classic 호출 | v3 | 성격 |
+|---|---|---|
+| `Memory.from_config(cfg)` | 동일 | 그대로 |
+| `.add(msgs, user_id=, metadata=)` | 동일 | 그대로 (+ `timestamp=` 신규) |
+| **`.search(q, user_id=, limit=k)`** | **`.search(q, filters={"user_id": u}, top_k=k)`** | **반드시 고침** |
+| **`.get_all(user_id=, limit=n)`** | **`.get_all(filters={"user_id": u}, top_k=n)`** | **반드시 고침** |
+| `.delete_all(user_id=)` | 동일 | 그대로 |
+| `.vector_store.delete_col()` | 동일 | 그대로 |
+
+`search` 는 `user_id` 를 **거부**하므로 안 고치면 예외가 남(안전). 하지만 **`limit` 은
+거부되지 않고 무시되어 `top_k=20` 이 쓰임.** `get_all` 도 같음(기본 20). 저장물 개수를
+20 으로 세게 됨.
+
+세 ingest 스크립트에서 이 두 호출 지점만 바꾸면 됨. **알고리즘은 한 줄도 안 짬.**
+
+### 뜻밖의 소득: `add(timestamp=)` 가 OSS 에 생김
+
+classic 에서 Cloud 전용이라 못 써서 `metadata['session_date']` 로 우회했던 것임
+(`memora-experiment.md` §3 "어쩔 수 없음"). v3 `add()` 시그니처에 `timestamp` 와
+`expiration_date` 가 있음.
+
+**이건 결정 사안임.** 넘기면 공식 Memora 하네스와 같아지고 v3 의 시간 기능이 살지만,
+A 대 B 의 차이에 "시간 메타데이터" 가 하나 더 얹힘. 안 넘기면 v3 를 불리하게 돌리는 것임.
+
+> 권고: **넘김.** 공식 하네스가 그렇게 하고 v3 설계가 거기 기댐. 대신 A→B 델타의 구성
+> 요소로 문서에 명시함.
+
+## 2-6. 팔 C 를 나중에 붙일 때
+
+빼기로 했지만 값이 없어진 것은 아님. A→B 차이가 크게 나오면 "투입 때문인지 검색
+때문인지" 를 반드시 묻게 됨. 그때 붙임.
+
+- 구현: 오라클 훅 자리에 `MEM0_ADD_ONLY=1` (§2 팔 C 항목)
+- 비용: Memora 만 하면 2.8h. 투입이 v3 만큼 빨라지므로 실제로는 더 쌈
+- **결과에 "mem0 add-only" 라고 이름 붙이지 않음.** "classic 갱신결정 제거" 임
 
 ---
 
@@ -222,12 +292,12 @@ v3 는 **ADD 이벤트만** 내므로 지금 분석의 일부가 의미를 잃�
 |---|---|---|
 | 1 | **API 호환 + 신호 생존 스모크.** `eval/mem0-v3` 만들고 페르소나 1개로 Memora 투입. §2-9 의 5개 어긋남과 5개 검증 항목을 전부 확인. **"완주" 로 통과시키지 않고 세 신호가 실제로 기여하는지를 `explain=True` 로 확인함** | 1시간 |
 | 2 | **Memora 전량 (팔 B).** 3기간. 삭제·망각 지표가 어떻게 바뀌는지 | 2.8h |
-| 3 | **Memora 팔 C** (classic + `MEM0_ADD_ONLY=1`). 귀속 | 2.8h |
 | 4 | **HaluMem 전량.** update 평가가 핵심 | 5.1h |
 | 5 | **BEAM 전량.** 제일 큼 | 4.7h |
 | 6 | 문서·대시보드 반영 | |
 
-**GPU 시간 합계 약 16시간** (팔 C 포함). 2장 기준, 우리만 쓸 때.
+**GPU 시간 합계 약 14시간** (스모크 1h + A 대 B 본실행 13h). 2장 기준, 우리만 쓸 때.
+팔 C 를 나중에 붙이면 +2.8h.
 
 ### 비용 근거
 
