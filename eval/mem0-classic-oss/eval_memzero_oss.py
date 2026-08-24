@@ -108,6 +108,33 @@ def build_memory(collection_name: str, history_db_path: str) -> Memory:
     return memory
 
 
+# MEM0_IMPL=v3 이면 위 세 개를 mem0 최신판(2.0.18) 어댑터로 덮어씀.
+# ingest_memora.py / ingest_beam.py 와 같은 방식이고, 하네스 로직은 A(classic)와 B(v3)가
+# 이 파일을 그대로 공유함. 계획은 docs/mem0-v3/implementation-plan.md.
+#
+# ⚠ 정의 **뒤에** 두어 덮어쓰는 형태임. 이 파일이 build_memory 를 정의하는 당사자라
+#   Memora/BEAM 처럼 import 를 가를 수가 없음.
+# ⚠ env 로 가르는 이유: ProcessPoolExecutor 자식이 모듈을 새로 import 하므로
+#   sys.modules 우회는 자식에서 조용히 classic 으로 되돌아감. env 는 물려받음.
+# ⚠ v3 는 별도 venv 임: uv run --project eval/mem0-v3 ...
+_IMPL = os.getenv("MEM0_IMPL", "classic")
+if _IMPL == "v3":
+    sys.path.insert(0, "eval/mem0-v3")
+    from compat import (  # noqa: F811,E402
+        build_memory, add_with_retry, search_with_retry,
+    )
+elif _IMPL != "classic":
+    raise SystemExit(f"MEM0_IMPL 은 classic 또는 v3 임 (받은 값: {_IMPL!r})")
+
+
+def _mem0_version() -> str:
+    try:
+        import mem0
+        return getattr(mem0, "__version__", "?")
+    except Exception:
+        return "?"
+
+
 def extract_user_name(persona_info: str) -> str:
     # 원본 eval_memzero.py와 동일 정규식 사용
     match = re.search(r"Name:\s*(.*?); Gender:", persona_info)
@@ -286,6 +313,7 @@ def process_user(user_data: dict, top_k: int, save_path: str, collection_name: s
             tracer.close()
 
 def main(data_path: str, version: str, top_k: int=20, user_num: int | None = None, max_workers: int = 1, trace: bool = False):
+    print(f"구현: mem0 {_IMPL} ({_mem0_version()})", flush=True)
     save_path = f"results/mem0-classic-oss/memzero-oss-{version}/"
     os.makedirs(os.path.join(save_path, "tmp"), exist_ok=True)
     collection_name = f"halumem_{version}"
