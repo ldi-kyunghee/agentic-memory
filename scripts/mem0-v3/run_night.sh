@@ -76,6 +76,14 @@ else
   $V3 $E/beam/ingest_beam.py --chats BEAM/chats/100K --version 100k-v3-smoke \
       --top-k 200 --conversations 0-0 --max-workers 1
 fi
+# ⚠ 완주 검사. 처음 판에는 이게 없어서 빈 산출물이 나왔는데도 '완료' 가 떴음.
+#   (임베더 4096 초과로 대화가 통째로 실패했는데 그냥 2단계로 넘어감)
+if [ "$(n_lines "$BEAM_OUT")" -lt 1 ]; then
+  echo "✗ BEAM 산출물이 비어 있음. 실패 로그:"
+  ls results/mem0-classic-oss/beam-100k-v3-smoke/tmp/*error* 2>/dev/null | head -3
+  exit 1
+fi
+echo "✓ BEAM 비율 측정 완주"
 
 # ---- 2. Memora weekly 투입 ----
 MEM_ING="results/mem0-classic-oss/memora-weekly-v3-oss120b/memora_eval_results.jsonl"
