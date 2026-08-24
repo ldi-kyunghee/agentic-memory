@@ -24,6 +24,13 @@ classic  memory.get_all(user_id=u, limit=n)       v3  get_all(filters={"user_id"
 ⚠ `search` 는 `user_id` 를 거부해서 예외가 남(안전). **`limit` 은 거부되지 않고 무시되어
 기본 `top_k=20` 이 쓰임.** `get_all` 도 같음. 안 고치면 20개만 검색하고 저장물을 20개로 셈.
 
+## 파이썬 3.12 고정
+
+`.python-version` 과 `requires-python = ">=3.12,<3.14"` 로 못 박았음.
+**spaCy 3.8.x 는 cp312 / cp313 휠만 있어 3.14 에서 설치가 실패함.** 서버 기본 파이썬이
+3.14 라 막지 않으면 uv 가 3.14 를 골라 죽음. classic 쪽은 spaCy 를 안 써서 3.14 로도
+돌아가므로 이 프로젝트만 다름.
+
 ## 순서
 
 ```bash
