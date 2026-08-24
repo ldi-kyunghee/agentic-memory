@@ -127,17 +127,27 @@ spaCy 모델 `en_core_web_sm`(12.2 MiB) 은 최초 호출 때 자동으로 받�
 
 세 ingest 스크립트에서 이 두 호출 지점만 바꾸면 됨. **알고리즘은 한 줄도 안 짬.**
 
-### 뜻밖의 소득: `add(timestamp=)` 가 OSS 에 생김
+### `add(timestamp=)` 은 v3 OSS 에서도 못 씀 (2026-08-24 정정)
 
-classic 에서 Cloud 전용이라 못 써서 `metadata['session_date']` 로 우회했던 것임
-(`memora-experiment.md` §3 "어쩔 수 없음"). v3 `add()` 시그니처에 `timestamp` 와
-`expiration_date` 가 있음.
+시그니처에 `timestamp` 와 `expiration_date` 가 생겨서 처음에 "classic 에서 Cloud 전용이던
+것이 열렸다" 고 판단했음. **틀렸음.** 소스를 확인하니 첫 줄에서 막음.
 
-**이건 결정 사안임.** 넘기면 공식 Memora 하네스와 같아지고 v3 의 시간 기능이 살지만,
-A 대 B 의 차이에 "시간 메타데이터" 가 하나 더 얹힘. 안 넘기면 v3 를 불리하게 돌리는 것임.
+```python
+if timestamp is not None:
+    raise ValueError(get_temporal_feature_error_message("sync", "add", "timestamp"))
+# "The timestamp parameter is not supported by the OSS Memory SDK."
+```
 
-> 권고: **넘김.** 공식 하네스가 그렇게 하고 v3 설계가 거기 기댐. 대신 A→B 델타의 구성
-> 요소로 문서에 명시함.
+**시그니처에만 있고 넘기면 예외임.** classic 과 똑같이 `metadata['session_date']` 로 감
+(`memora-experiment.md` §3 의 "어쩔 수 없음" 이 v3 에서도 유효함).
+
+> 부수 효과: A 와 B 의 차이 항목이 하나 줄어 비교가 깨끗해짐.
+
+`expiration_date` 는 실제로 동작함 (`_normalize_expiration_date` 후 메타데이터 저장).
+다만 세 벤치마크 어디에도 만료일 개념이 없어 쓸 자리가 없음.
+
+> ⚠ 교훈: **시그니처만 보고 기능이 있다고 판단하지 않음.** 본문에서 막는 경우가 있음.
+> v3 의 다른 새 인자(`rerank`, `reference_date`, `show_expired`)도 쓰기 전에 본문을 확인함.
 
 ## 2-6. 팔 C 를 접음 (그리고 그 이유)
 
