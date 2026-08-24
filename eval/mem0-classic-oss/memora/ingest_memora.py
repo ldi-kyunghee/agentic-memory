@@ -35,11 +35,35 @@ logging.getLogger("posthog").setLevel(logging.CRITICAL)  # mem0가 만드는 잡
 # 기존 Stage A의 mem0 설정/재시도 래퍼 그대로 재사용
 sys.path.insert(0, "eval/mem0-classic-oss")
 sys.path.insert(0, "src/mem0-classic-oss")
-from eval_memzero_oss import build_memory, add_with_retry, search_with_retry
+
+# MEM0_IMPL=v3 이면 mem0 최신판(2.0.18) 어댑터를 씀. 하네스 로직은 이 파일 그대로 공유해서
+# A(classic)와 B(v3)가 갈라지지 않게 함. 계획은 docs/mem0-v3/implementation-plan.md.
+#
+# ⚠ env 로 가르는 이유: 이 스크립트는 ProcessPoolExecutor(forkserver)를 씀. 자식은 모듈을
+#    다시 import 하므로 sys.modules 를 갈아끼우는 식의 우회는 자식에서 조용히 classic 으로
+#    되돌아감. env 는 자식이 물려받으므로 안전함.
+# ⚠ v3 는 별도 venv 임: uv run --project eval/mem0-v3 ...
+_IMPL = os.getenv("MEM0_IMPL", "classic")
+if _IMPL == "v3":
+    sys.path.insert(0, "eval/mem0-v3")
+    from compat import build_memory, add_with_retry, search_with_retry
+elif _IMPL == "classic":
+    from eval_memzero_oss import build_memory, add_with_retry, search_with_retry
+else:
+    raise SystemExit(f"MEM0_IMPL 은 classic 또는 v3 임 (받은 값: {_IMPL!r})")
+
 from tracing import TraceLogger, TracingLLM, TracingVectorStore
 from bm25_store import build_bm25_store
 
 # 공식 하네스의 role 매핑 그대로
+def _mem0_version() -> str:
+    try:
+        import mem0
+        return getattr(mem0, "__version__", "?")
+    except Exception:
+        return "?"
+
+
 ROLE_MAP = {"user_agent": "user", "ai_agent": "assistant",
             "user": "user", "assistant": "assistant"}
 
@@ -216,6 +240,7 @@ def main(data_dir: str, version: str, top_k: int, personas: str | None,
     os.makedirs(os.path.join(save_path, "tmp"), exist_ok=True)
     collection_name = f"memora_{version}"
 
+    print(f"구현: mem0 {_IMPL}" + (f" ({_mem0_version()})" if True else ""))
     print(f"기간: {period}, top_k: {top_k}")
     print(f"retriever: {'BM25 (Qdrant sparse + IDF)' if os.getenv('MEM0_RETRIEVER') == 'bm25' else '임베딩 (Qdrant dense)'}")
     print(f"reasoning effort override: {os.getenv('MEM0_REASONING_EFFORT') or '없음 (모델 기본값)'}")

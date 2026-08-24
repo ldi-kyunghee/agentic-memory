@@ -42,6 +42,24 @@ fastembed 기본 캐시가 `$TMPDIR/fastembed_cache` 임. Hamster 에서는 그 
 FASTEMBED_CACHE_PATH=~/projects/agentic-memory/.cache/fastembed
 ```
 
+## 하네스는 공유함 (`MEM0_IMPL`)
+
+세 벤치마크의 ingest 스크립트를 복사하지 않음. `MEM0_IMPL=v3` 이면 `compat` 을,
+아니면 classic 을 import 함. **하네스 로직은 A 와 B 가 같은 파일을 씀.**
+
+```bash
+# A (classic 0.1.118)
+uv run python eval/mem0-classic-oss/memora/ingest_memora.py ...
+
+# B (v3 2.0.18)
+MEM0_IMPL=v3 uv run --project eval/mem0-v3 python eval/mem0-classic-oss/memora/ingest_memora.py ...
+```
+
+⚠ **왜 env 인가.** ingest 스크립트는 `ProcessPoolExecutor` 를 씀. 실측 start method 가
+`spawn` 이라 자식은 모듈을 완전히 새로 import 함. `sys.modules` 를 갈아끼우는 우회는
+**자식에서 조용히 classic 으로 되돌아감.** env 는 자식이 물려받으므로 안전함.
+자식까지 v3 로 가는 것을 확인했음 (`mem0=2.0.18`, `build_memory=compat`).
+
 ## 순서
 
 ```bash

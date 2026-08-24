@@ -21,10 +21,16 @@ B(v3)의 로직이 나중에 갈라짐. 여기서 호출 규약만 번역하면 
    metadata['session_date'] 로 넣음.
 """
 import os
+import time
+import logging
 
 from mem0 import Memory
+from tenacity import retry, stop_after_attempt, wait_random_exponential, before_sleep_log
 
-__all__ = ["build_memory", "V3MemoryAdapter", "SEARCH_DEFAULTS"]
+__all__ = ["build_memory", "add_with_retry", "search_with_retry",
+           "V3MemoryAdapter", "SEARCH_DEFAULTS"]
+
+logger = logging.getLogger(__name__)
 
 # v3 에만 있는 손잡이. 기본값을 그대로 쓰는 것도 선택이므로 한곳에 모아 명시함.
 #   threshold : 융합 점수 하한. 공식 기본 0.1 을 유지함
@@ -121,3 +127,32 @@ def build_memory(collection_name: str, history_db_path: str) -> V3MemoryAdapter:
         memory.llm.client.chat.completions.create = _create
 
     return V3MemoryAdapter(memory)
+
+
+# ---- 재시도 래퍼 ----
+# classic `eval_memzero_oss.py` 의 것과 **파라미터를 완전히 동일하게** 둠. 여기가 다르면
+# 실패·재시도 양상이 달라져 A 대 B 비교에 변인이 하나 더 붙음.
+#   wait=wait_random_exponential(min=5, max=30) · stop=stop_after_attempt(5) · reraise=True
+
+@retry(
+    wait=wait_random_exponential(min=5, max=30),
+    stop=stop_after_attempt(5),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,  # 5회 실패 시 원본 exception 을 올려 유저 단위 격리로 넘김
+)
+def add_with_retry(memory, dialogue, user_id, metadata):
+    start = time.time()
+    result = memory.add(dialogue, user_id=user_id, metadata=metadata)
+    return result, (time.time() - start) * 1000  # 성공한 시도의 소요 시간만 기록
+
+
+@retry(
+    wait=wait_random_exponential(min=5, max=30),
+    stop=stop_after_attempt(5),
+    before_sleep=before_sleep_log(logger, logging.WARNING),
+    reraise=True,
+)
+def search_with_retry(memory, query, user_id, top_k):
+    start = time.time()
+    found = memory.search(query, user_id=user_id, limit=top_k)
+    return found, (time.time() - start) * 1000
