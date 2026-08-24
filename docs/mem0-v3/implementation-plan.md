@@ -236,6 +236,84 @@ gpt-oss-120b 임. LoCoMo +20 / LongMemEval +26 은 다른 데이터셋·다른 �
 
 ---
 
+## 2-7. 축소 실행 결과와 **비용 추정 대폭 정정** (2026-08-24)
+
+Memora weekly · `academic_researcher` · 158세션 · W=1 · GPU 2 한 장(TP=1). classic 스모크와
+**같은 페르소나·같은 세션·같은 서빙**이라 직접 비교됨.
+
+| | classic 0.1.118 | v3 2.0.18 |
+|---|---|---|
+| 세션당 투입 (중앙) | **4.61초** | **12.25초** |
+| 이벤트 | ADD 183 · UPDATE 39 · DELETE 12 | **ADD 1,005** |
+| 저장 메모리 | 171 | **1,005** (5.9배) |
+| 추출 텍스트 길이 (중앙) | 44자 | 151자 |
+
+**v3 가 2.66배 느림.** 계획 §4 에 "투입이 10.1배 빨라짐" 이라고 적었던 것과 정반대임.
+
+### 왜 틀렸나
+
+`update_decision` 이 투입 LLM 시간의 90.1% 라는 수치는 **HaluMem trace 에서 잰 것**임.
+HaluMem 은 세션이 길고 저장소가 커서 갱신 결정이 비쌈. **Memora 는 세션이 312토큰뿐이라
+갱신 결정이 애초에 싸다.** 한 벤치마크에서 잰 비율을 다른 벤치마크에 그대로 곱한 것이 오류임.
+
+### v3 가 느린 진짜 이유: 훨씬 많이 뽑아 저장함
+
+v3 의 `ADDITIVE_EXTRACTION_PROMPT` (33,653자) 가 명시적으로 시킴.
+
+> "You extract from **BOTH user and assistant messages**. ... Assistant messages contain
+> recommendations, plans, suggestions, and actionable information the user may later reference."
+> "Every piece of memorable information must be captured"
+
+같은 세션에서 뽑은 것을 나란히 놓으면 차이가 분명함.
+
+| classic (1건) | v3 (6건) |
+|---|---|
+| `Spent $10.89 on breakfast` | `The Earth completes one rotation at roughly 1,000 miles per hour...` |
+| | `Earth is an oblate spheroid, slightly wider at the equator...` |
+| | `Rapidly rotating planets such as Saturn and Jupiter also exhibit...` |
+| | `User spent $10.89 on breakfast, noting the expense felt like...` |
+| | (외 2건) |
+
+**어시스턴트가 설명한 일반 지식까지 저장함.** 우리 설정 실수가 아니라 v3 의 기본 동작임
+(풍부하게 저장하고 읽을 때 고르는 설계). 세션당 사실이 1.2개에서 6.4개로 늘고, 그만큼
+임베딩·BM25 인코딩·삽입이 늘어 느려짐.
+
+### 저장소 크기와는 무관함 (역전 없음)
+
+| | 1/4분위별 세션당 중앙 | 마지막/처음 |
+|---|---|---|
+| classic | 4.46 → 5.04 → 4.25 → 4.62초 | 1.04배 |
+| v3 | 11.87 → 13.30 → 12.20 → 12.59초 | 1.06배 |
+
+classic 실제 3기간에서도 평평함 (저장/인 168 → 1,598 인데 세션당 10.41 → 10.67초).
+**2.66배 차이가 규모와 무관하게 유지됨.**
+
+### 정정된 비용
+
+| | classic 투입 | v3 투입 | 답변·채점 | v3 소계 |
+|---|---|---|---|---|
+| HaluMem | 0.8h | 2.1h | 5.0h | **7.1h** |
+| BEAM | 20.4h | 54.2h | 2.7h | **56.9h** |
+| Memora | 12.3h | 32.7h | 1.6h | **34.3h** |
+| 합계 | 33.5h | 89.0h | 9.3h | **98.3h** |
+
+**계획에 적었던 14시간이 98시간이 됨 (7배).**
+
+> ⚠ HaluMem·BEAM 의 비율 2.66 은 **Memora 에서 잰 것을 빌려 쓴 값임.** 방금 저지른 것과
+> 같은 종류의 외삽임. BEAM 은 청크가 작아 33k 자짜리 추출 프롬프트의 고정 비용 비중이
+> 훨씬 클 수 있음 (prefix caching 이 켜져 있어 완화되긴 함). **BEAM 을 돌리기 전에
+> 청크 단위 축소 실행으로 비율을 따로 잼.**
+
+### 그래서 어떻게 할 것인가
+
+- **Memora (34h)**: 그대로 감. 하룻밤 반이면 됨. 삭제·망각이 이 변경의 정면 표적이라
+  값어치가 제일 큼
+- **HaluMem (7h)**: 그대로 감. update 평가(C/H/O)가 핵심 지표임
+- **BEAM (57h)**: **결정 필요.** 세 선택지
+  - 전량: 57시간
+  - 100K 버킷만: 2.6시간. 규모 축을 잃지만 능력 10종 비교는 살아 있음
+  - 보류
+
 ## 3. 구현
 
 ### 3-1. 격리: 별도 uv 프로젝트
