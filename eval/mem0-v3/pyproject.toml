@@ -1,0 +1,18 @@
+[project]
+name = "mem0-v3-eval"
+version = "0.1.0"
+description = "mem0 최신판(v3 알고리즘) 평가용. classic 0.1.118 과 한 venv 에 못 살아 분리함"
+requires-python = ">=3.12"
+dependencies = [
+    # ⚠ [nlp] extra 를 반드시 붙임. 없으면 spaCy 가 빠져 엔티티 신호가 조용히 죽고
+    #    lemmatization 도 원문을 그대로 돌려줌 (실측 확인). 예외는 안 나고 경고만 남음.
+    "mem0ai[nlp]==2.0.18",
+    # ⚠ fastembed 도 기본 의존성이 아님. 없으면 BM25 희소벡터 인코딩이 실패해
+    #    keyword_search 가 None 을 돌려줌. 역시 조용함.
+    "fastembed>=0.8.0",
+    "qdrant-client>=1.18.0",
+    "openai>=1.90.0,<1.110.0",
+    "python-dotenv>=1.2.2",
+    "tenacity>=9.0.0",
+    "tqdm>=4.66.0",
+]

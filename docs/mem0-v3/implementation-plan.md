@@ -115,7 +115,7 @@ spaCy 모델 `en_core_web_sm`(12.2 MiB) 은 최초 호출 때 자동으로 받�
 | classic 호출 | v3 | 성격 |
 |---|---|---|
 | `Memory.from_config(cfg)` | 동일 | 그대로 |
-| `.add(msgs, user_id=, metadata=)` | 동일 | 그대로 (+ `timestamp=` 신규) |
+| `.add(msgs, user_id=, metadata=)` | 동일 | 그대로. **`timestamp=` 은 못 씀** (아래) |
 | **`.search(q, user_id=, limit=k)`** | **`.search(q, filters={"user_id": u}, top_k=k)`** | **반드시 고침** |
 | **`.get_all(user_id=, limit=n)`** | **`.get_all(filters={"user_id": u}, top_k=n)`** | **반드시 고침** |
 | `.delete_all(user_id=)` | 동일 | 그대로 |
