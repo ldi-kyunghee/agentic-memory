@@ -53,7 +53,7 @@ def init_parser():
     parser.add_argument("--llm_config", type=str, default=None)
     return parser
 
-def load_vllm(**model_kwargs):
+
     llm = LLM(**model_kwargs)
 
     return llm
@@ -206,7 +206,7 @@ def run_qa(args, retrieval_results):
             if "openai" in model_kwargs['model']:
                 if args.online:
                     generation_kwargs['model'] = model_kwargs.pop('model')
-                    per_persona_llm_results = generate_online(per_persona_results, **generation_kwargs)
+                    per_persona_llm_results = generate_answer_online(per_persona_results, **generation_kwargs)
                 else:
                     per_persona_llm_results = generate_answers_gpt_oss(
                         per_persona_results, generation_kwargs, sampling_params
@@ -216,7 +216,7 @@ def run_qa(args, retrieval_results):
                     per_persona_results, generation_kwargs, sampling_params
                 )
         else:
-            per_persona_llm_results = generate_online(
+            per_persona_llm_results = generate_answer_online(
                 per_persona_results, **model_kwargs
             )
         llm_results.append(per_persona_llm_results)
