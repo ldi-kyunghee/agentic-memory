@@ -31,6 +31,17 @@ classic  memory.get_all(user_id=u, limit=n)       v3  get_all(filters={"user_id"
 3.14 라 막지 않으면 uv 가 3.14 를 골라 죽음. classic 쪽은 spaCy 를 안 써서 3.14 로도
 돌아가므로 이 프로젝트만 다름.
 
+## ⚠ 공유 서버: `FASTEMBED_CACHE_PATH` 를 반드시 지정
+
+fastembed 기본 캐시가 `$TMPDIR/fastembed_cache` 임. Hamster 에서는 그 경로가 이미
+**다른 사용자(dania) 소유**이고 내부 파일이 0600 이라 우리가 못 읽음. 지정하지 않으면
+매 실행마다 `Ignoring corrupted tree cache ... Permission denied` 를 뿜으며 우회함.
+13시간짜리 실행에서는 재다운로드 반복이나 실패로 번질 수 있음.
+
+```
+FASTEMBED_CACHE_PATH=~/projects/agentic-memory/.cache/fastembed
+```
+
 ## 순서
 
 ```bash

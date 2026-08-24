@@ -74,6 +74,29 @@ def main():
     except ImportError:
         check("fastembed 설치됨", False, "BM25 인코딩이 조용히 죽음")
 
+    # ⚠ 공유 서버 함정. fastembed 기본 캐시가 $TMPDIR/fastembed_cache 라 다른 사용자가
+    #    먼저 만들어 두면 우리 프로세스가 못 읽음 (실측: /tmp/fastembed_cache 가 dania
+    #    소유, 내부 파일이 0600). "Ignoring corrupted tree cache" 를 뿜으며 매번
+    #    우회하거나 재다운로드함. FASTEMBED_CACHE_PATH 로 우리 경로를 못 박음.
+    import tempfile
+    fe = os.getenv("FASTEMBED_CACHE_PATH")
+    default_fe = os.path.join(tempfile.gettempdir(), "fastembed_cache")
+    check("FASTEMBED_CACHE_PATH 가 지정됨 (공유 /tmp 회피)", bool(fe), fe or f"미지정 -> {default_fe}")
+    if fe:
+        try:
+            os.makedirs(fe, exist_ok=True)
+            probe = os.path.join(fe, ".write_probe")
+            with open(probe, "w") as f:
+                f.write("x")
+            os.remove(probe)
+            check("캐시 경로에 쓰기 가능", True, fe)
+        except Exception as e:
+            check("캐시 경로에 쓰기 가능", False, f"{type(e).__name__}: {e}")
+    else:
+        owner_ok = not os.path.exists(default_fe) or os.access(default_fe, os.W_OK | os.R_OK)
+        check("기본 캐시 경로를 읽고 쓸 수 있음", owner_ok,
+              f"{default_fe} 가 남의 것이면 매 실행마다 재다운로드함")
+
     col = f"v3verify_{uuid.uuid4().hex[:8]}"
     uid = "verify_user"
     print(f"\n=== 2. 투입 (컬렉션 {col}) ===")

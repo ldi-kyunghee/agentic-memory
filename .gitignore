@@ -21,3 +21,6 @@ CLAUDE.md
 # Memora 벤치마크 (ACL 2026 Findings) — Apache 2.0, 200MB
 # 재현: git clone --depth 1 https://github.com/geniesinc/Memora.git
 /Memora/
+
+# fastembed 등 로컬 모델 캐시 (공유 /tmp 회피용)
+.cache/
