@@ -53,7 +53,7 @@ def init_parser():
     parser.add_argument("--llm_config", type=str, default=None)
     return parser
 
-
+def load_vllm(**model_kwargs):
     llm = LLM(**model_kwargs)
 
     return llm
@@ -62,12 +62,8 @@ def generate_answer_online(queries: list[dict], **model_kwargs):
     answers = []
     if args.structured_outputs:
         model_kwargs['text_format'] = QA
-
-    print(queries[:3])
         
     for item in queries:
-        if isinstance(item, str):
-            print(item)
         query = item["question"]
         documents = ""
         for doc in item["retrieved"]:
@@ -264,7 +260,7 @@ if __name__ == "__main__":
     results_dir = f"results/naive/{exp_name}/question_answering/"
     os.makedirs(results_dir, exist_ok=True)
     for result_file, retrieval_result in retrieval_results.items():
-        results = run_qa(args, retrieval_results)
+        results = run_qa(args, retrieval_result)
         with open(results_dir + result_file, "w") as file:
             json.dump(results, file, indent=2)
 

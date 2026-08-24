@@ -73,22 +73,6 @@ def load_vllm(**model_kwargs):
     llm = LLM(**model_kwargs)
 
     return llm
-        
-def embed_online(queries: list, memories: list):
-    model = "Qwen/Qwen3-Embedding-4B"
-    open_api_key = "EMPTY"
-    open_api_base = "http://localhost:8001/v1/embeddings"
-
-    client = OpenAI(api_key=open_api_key, base_url=open_api_base)
-
-    corpus_responses = client.embeddings.create(input=memories, model=model)
-
-    query_responses = client.embeddings.create(input=queries, model=model)
-
-    corpus_embeddings = [data.embedding for data in corpus_responses.data]
-    query_embeddings = [data.embedding for data in query_responses.data]
-    return np.array(corpus_embeddings), np.array(query_embeddings)
-
 
 def embed_offline(queries: list, memories: list):
     corpus_outputs = embed_model.embed(memories)
@@ -275,29 +259,31 @@ def qdrant_retrieval(
 def run_retrieval(args, dataset):
     retrieval_results = []
     k = args.top_k if args.memory_type != 'hybrid' else None
+
+    if args.memory_type == 'hybrid':
+        qdrant_config["vectors_config"] = {
+            "embeddings": models.VectorParams(size=2560, distance=models.Distance.COSINE),
+        }
+        qdrant_config["sparse_vectors_config"] = {
+            "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
+        }
+    elif args.memory_type == 'embeddings':
+        qdrant_config["vectors_config"] = {
+            args.memory_type: models.VectorParams(size=2560, distance=models.Distance.COSINE)
+        }
+    else:
+        qdrant_config["sparse_vectors_config"] = {
+            args.memory_type: models.SparseVectorParams(modifier=models.Modifier.IDF)
+        }
+            
     for i, persona in enumerate(dataset):
         qas, per_persona_memories = per_persona_dataset(
             persona, args.memory_with_prior_question
         )
         k = len(per_persona_memories) if k is None else k
         collection_name = f"{proj_name}_{i}"
-        qdrant_config = {}
         
-        if args.memory_type == 'hybrid':
-            qdrant_config["vectors_config"] = {
-                "embeddings": models.VectorParams(size=2560, distance=models.Distance.COSINE),
-            }
-            qdrant_config["sparse_vectors_config"] = {
-                "bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)
-            }
-        elif args.memory_type == 'embeddings':
-            qdrant_config["vectors_config"] = {
-                args.memory_type: models.VectorParams(size=2560, distance=models.Distance.COSINE)
-            }
-        else:
-            qdrant_config["sparse_vectors_config"] = {
-                args.memory_type: models.SparseVectorParams(modifier=models.Modifier.IDF)
-            }
+        qdrant_config = {}
 
         client.create_collection(
             collection_name=collection_name,
