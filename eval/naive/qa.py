@@ -63,6 +63,8 @@ def generate_answer_online(queries: list[dict], **model_kwargs):
     if args.structured_outputs:
         model_kwargs['text_format'] = QA
 
+    print(queries[:3])
+        
     for item in tqdm(queries, desc="Generating..."):
         query = item["question"]
         documents = ""
