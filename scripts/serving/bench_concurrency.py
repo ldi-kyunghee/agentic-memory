@@ -69,6 +69,18 @@ def main(url, model, levels, n_per, max_tokens, effort=None):
     print("        답변·채점은 문항 단위라 그 제한이 없음.")
     print("        ⚠ '요청당 출력'이 실제 작업(667~2,218토큰)과 비슷해야 이 표를 믿을 수 있음.")
     print("        ⚠ 총 요청 = 워커당 x 동시성. 레벨마다 보낸 건수가 다르므로 '초' 는 서로 비교하지 않음.")
+    print("        ⚠ 투입(W_ING)은 --profile ingest, 답변·채점(W_ARM)은 --profile answer 로 따로 잼.")
+
+
+# 우리 작업은 두 모양임. 하나로 재면 다른 쪽을 크게 틀림.
+#   ingest : mem0 agent LLM. effort 기본(medium), 실측 출력 ~1,600토큰
+#   answer : 답변·채점. ANSWER/JUDGE_REASONING_EFFORT=high, 예산 32,768.
+#            사고 토큰이 대부분이라 요청당 KV 가 훨씬 큼. BEAM 에서 27k 까지 쓴 적 있음.
+# 2,048 로 재면 요청당 KV 가 실제의 1/10 이라 동시성 여유를 크게 과대평가함.
+PROFILES = {
+    "ingest": {"max_tokens": 2048, "effort": None},
+    "answer": {"max_tokens": 32768, "effort": "high"},
+}
 
 
 if __name__ == "__main__":
@@ -84,6 +96,12 @@ if __name__ == "__main__":
                    help="실측 요청의 출력이 667~2,218토큰이었음. 250 같은 작은 값으로 재면 "
                         "디코드 병목을 못 보고 동시성 상한을 과대평가함")
     p.add_argument("--effort", default=None, help="reasoning_effort (기본: 모델 기본값)")
+    p.add_argument("--profile", choices=sorted(PROFILES), default=None,
+                   help="ingest(agent LLM 모양) 또는 answer(답변·채점 모양). "
+                        "지정하면 --max-tokens/--effort 를 덮어씀")
     a = p.parse_args()
-    main(a.url, a.model, [int(x) for x in a.levels.split(",") if x.strip()], a.n_per,
-         a.max_tokens, a.effort)
+    mt, ef = a.max_tokens, a.effort
+    if a.profile:
+        mt, ef = PROFILES[a.profile]["max_tokens"], PROFILES[a.profile]["effort"]
+        print(f"프로필 {a.profile}: max_tokens={mt} effort={ef or '기본'}")
+    main(a.url, a.model, [int(x) for x in a.levels.split(",") if x.strip()], a.n_per, mt, ef)
