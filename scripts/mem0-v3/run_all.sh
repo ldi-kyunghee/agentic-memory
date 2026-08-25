@@ -34,7 +34,11 @@ export JUDGE_REASONING_EFFORT=${JUDGE_REASONING_EFFORT:-high}
 
 W_ING=${W_ING:-10}     # 투입. 구조적 상한: HaluMem 20유저 / BEAM 20대화 / Memora 10페르소나
 W_ARM=${W_ARM:-12}     # 답변·채점. 서버 무릎이 c=12 (실측)
-EXPECT_MAX_LEN=32768
+# v3 추출 프롬프트는 고정 시스템(~8.4k) + 기존메모리 top10 + 직전 10메시지 + 현재 청크로 조립됨.
+# BEAM 100K 에서 34,863 토큰까지 커져 32768 에서 대화 하나가 죽었음 (2026-08-25). 상한은
+# 대화 길이가 아니라 메시지 크기에 달려 있어 누적으로 늘지는 않음. 임베더는 32768 로 충분함.
+EXPECT_LLM_LEN=${EXPECT_LLM_LEN:-65536}
+EXPECT_EMB_LEN=${EXPECT_EMB_LEN:-32768}
 
 V3="uv run --project eval/mem0-v3 python"
 MAIN="uv run python"
@@ -74,11 +78,11 @@ body=$(curl -sf --max-time 10 "${OPENAI_BASE_URL}/models") || { echo "✗ LLM �
 len=$(printf '%s' "$body" | python3 -c "
 import json,sys
 print({x['id']: x.get('max_model_len') for x in json.load(sys.stdin)['data']}.get('${MEM0_LLM_MODEL}','NONE'))")
-[ "$len" = "$EXPECT_MAX_LEN" ] || { echo "✗ LLM max_model_len=${len} (기대 ${EXPECT_MAX_LEN}). 남의 인스턴스일 수 있음"; exit 1; }
+[ "$len" = "$EXPECT_LLM_LEN" ] || { echo "✗ LLM max_model_len=${len} (기대 ${EXPECT_LLM_LEN}). 남의 인스턴스이거나 32768 로 떠 있음"; exit 1; }
 elen=$(curl -sf --max-time 10 "${MEM0_EMBED_BASE_URL}/models" | python3 -c "
 import json,sys
 print({x['id']: x.get('max_model_len') for x in json.load(sys.stdin)['data']}.get('${MEM0_EMBED_MODEL}','NONE'))")
-[ "$elen" = "$EXPECT_MAX_LEN" ] || { echo "✗ 임베더 max_model_len=${elen} (기대 ${EXPECT_MAX_LEN}). v3 는 입력 블록 전체를 임베딩하므로 4096 이면 BEAM 이 실패함"; exit 1; }
+[ "$elen" = "$EXPECT_EMB_LEN" ] || { echo "✗ 임베더 max_model_len=${elen} (기대 ${EXPECT_EMB_LEN}). v3 는 입력 블록 전체를 임베딩하므로 4096 이면 BEAM 이 실패함"; exit 1; }
 echo "✓ LLM ${len} · 임베더 ${elen}"
 mkdir -p "$FASTEMBED_CACHE_PATH" && touch "$FASTEMBED_CACHE_PATH/.p" && rm -f "$FASTEMBED_CACHE_PATH/.p" \
   || { echo "✗ fastembed 캐시에 못 씀"; exit 1; }
