@@ -37,7 +37,7 @@ wait_for_server() {
     return 1
 }
 
-if [[ $3 == "vllm" ]]; then
+if [[ $2 == "vllm" ]]; then
     CUDA_VISIBLE_DEVICES=$1 uv run vllm serve \
 			    openai/gpt-oss-120b \
 			    --port 8000 \
