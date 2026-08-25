@@ -42,7 +42,7 @@ def main(url, model, levels, n_per, max_tokens, effort=None):
             max_completion_tokens=max_tokens, temperature=0.0, **kw)
         return time.time() - t, (r.usage.completion_tokens if r.usage else 0)
 
-    print(f"엔드포인트 {url} · 모델 {model} · 레벨당 {n_per}건 · 출력 상한 {max_tokens}"
+    print(f"엔드포인트 {url} · 모델 {model} · 워커당 {n_per}건 · 출력 상한 {max_tokens}"
           f"{' · effort ' + effort if effort else ''}")
     print(f"{'동시성':>6s}{'초':>8s}{'req/s':>9s}{'출력tok/s':>11s}{'지연 중앙':>11s}{'직전 대비':>11s}{'요청당 출력':>12s}")
     prev = None
@@ -50,7 +50,10 @@ def main(url, model, levels, n_per, max_tokens, effort=None):
         one(0)  # 워밍업
         t0 = time.time()
         with ThreadPoolExecutor(max_workers=c) as ex:
-            res = list(ex.map(one, range(n_per)))
+            # ⚠ 총 요청 수가 동시성에 비례해야 함. 고정하면 동시성이 그 수를 넘는 순간
+            #    남는 워커가 놀아서 모든 레벨이 같은 값으로 나옴 (2026-08-25 에 이걸로
+            #    "무릎이 12" 라고 잘못 판단했음. 12~48 이 전부 평평했던 이유임).
+            res = list(ex.map(one, range(n_per * c)))
         dt = time.time() - t0
         rps = len(res) / dt
         tps = sum(r[1] for r in res) / dt
@@ -65,6 +68,7 @@ def main(url, model, levels, n_per, max_tokens, effort=None):
     print("        투입은 페르소나 단위 병렬이라 페르소나 수(10)를 넘겨도 소용없음.")
     print("        답변·채점은 문항 단위라 그 제한이 없음.")
     print("        ⚠ '요청당 출력'이 실제 작업(667~2,218토큰)과 비슷해야 이 표를 믿을 수 있음.")
+    print("        ⚠ 총 요청 = 워커당 x 동시성. 레벨마다 보낸 건수가 다르므로 '초' 는 서로 비교하지 않음.")
 
 
 if __name__ == "__main__":
@@ -72,7 +76,10 @@ if __name__ == "__main__":
     p.add_argument("--url", default="http://localhost:8002/v1")
     p.add_argument("--model", default="openai/gpt-oss-120b")
     p.add_argument("--levels", default="1,2,4,8,16,24")
-    p.add_argument("--n-per", type=int, default=16)
+    p.add_argument("--n-per", type=int, default=4,
+                   help="**워커당** 요청 수. 총 요청 = n_per x 동시성. "
+                        "고정 총량으로 재면 동시성이 그 수를 넘는 순간 워커가 놀아 "
+                        "모든 레벨이 같아짐")
     p.add_argument("--max-tokens", type=int, default=2048,
                    help="실측 요청의 출력이 667~2,218토큰이었음. 250 같은 작은 값으로 재면 "
                         "디코드 병목을 못 보고 동시성 상한을 과대평가함")
