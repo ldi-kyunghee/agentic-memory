@@ -823,7 +823,8 @@ async function renderCost() {
   const detail = runs.map((r) => `
     <div class="card"><div class="hd">${esc(systemLabel(r.system))}
       <span class="muted">${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}</span>
-      ${r.running ? `<span class="runtag" data-desc="10분 안에 계측 파일이 갱신됐습니다. 아직 도는 중이라 완료값이 아닙니다">수집 중</span>` : ""}</div>
+      ${r.running ? `<span class="runtag" data-desc="10분 안에 계측 파일이 갱신됐습니다. 아직 도는 중이라 완료값이 아닙니다">수집 중</span>` : ""}
+      ${r.source === "trace-backfill" ? `<span class="srctag" data-desc="계측기를 붙이기 전에 끝난 런이라 trace 의 프롬프트 원문을 다시 토크나이즈해 되살렸습니다. 투입 단계만 있습니다">되살림</span>` : ""}</div>
       <div class="body mscroll">
         <table class="cmp"><thead><tr>
           <th>단계</th><th class="num">호출</th><th class="num">입력 토큰</th><th class="num">출력 토큰</th>
@@ -843,8 +844,10 @@ async function renderCost() {
             <td class="num${st.errors ? " down" : " muted"}">${st.errors.toLocaleString()}</td>
           </tr>`).join("")}
         </tbody></table>
-        ${Object.keys(r.stages).length === 1 && r.stages.ingest
-          ? `<p class="small muted">투입 단계만 있습니다. trace 에서 되살린 자료라 답변·채점은 안 잡힙니다.</p>` : ""}
+        ${r.source === "trace-backfill"
+          ? `<p class="small muted"><b>trace 에서 되살린 자료입니다.</b> tracer 가 mem0 의 LLM 만 감싸므로 투입 단계만 있고 임베딩 호출은 안 잡힙니다.</p>`
+          : (Object.keys(r.stages).length === 1 && r.stages.ingest
+             ? `<p class="small muted">아직 투입 단계만 쟀습니다. 답변·채점은 그 단계를 돌릴 때 채워집니다.</p>` : "")}
       </div>
     </div>`).join("");
 

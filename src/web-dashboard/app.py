@@ -965,7 +965,8 @@ def _cost_load(d) -> dict:
                 doc = json.load(fh)
         except Exception:
             continue
-        for k in ("system", "benchmark", "setting"):
+        # source 로 trace 되살림과 계측기 직접 측정을 가른다 (화면에서 다르게 설명해야 함)
+        for k in ("system", "benchmark", "setting", "source"):
             if doc.get(k):
                 meta[k] = doc[k]
         st = stages.setdefault(doc.get("stage", "unknown"), {
@@ -1053,6 +1054,7 @@ def api_cost():
         fresh = (_t.time() - (c.get("updated_at") or 0)) < 600   # 10분 안에 갱신 = 수집 중
         out.append({
             "run": d.name, "running": fresh,
+            "source": m.get("source", "meter"),
             "system": m.get("system", ""), "benchmark": m.get("benchmark", ""),
             "setting": m.get("setting", ""),
             "stages": stages,
