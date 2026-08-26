@@ -33,6 +33,7 @@ if [[ $3 == "vllm" ]]; then
     VLLM_PID=$!
 
     if wait_for_server 8000 "gpt-oss-120b"; then
+	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh $2 $3;
 	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh $2 $3;
     fi
 
