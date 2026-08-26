@@ -42,6 +42,15 @@ W_ARM=${W_ARM:-24}
 EXPECT_LLM_LEN=${EXPECT_LLM_LEN:-65536}
 EXPECT_EMB_LEN=${EXPECT_EMB_LEN:-32768}
 
+# ---- 비용 계측 (평가 코드 무수정, sitecustomize 방식) ----
+# 단계마다 COST_STAGE 를 바꿔 끼운다. 산출물은 cost/{설정}/{stage}__{pid}.json 이고
+# src/cost/report.py 가 합친다. 끄려면 COST_OFF=1 을 준다.
+if [ -z "${COST_OFF:-}" ]; then
+  export PYTHONPATH="$ROOT/src/cost${PYTHONPATH:+:$PYTHONPATH}"
+  export COST_SYSTEM="${COST_SYSTEM:-mem0-classic}"
+fi
+cost_dir() { [ -n "${COST_OFF:-}" ] && { echo ""; return; }; echo "$ROOT/cost/$1"; }
+
 MAIN="uv run python"
 
 stage() { echo "$1" > "$STAGE_FILE"; echo; echo "▶ $1"; }
@@ -87,6 +96,7 @@ if [ "$(n_lines "$ING")" -ge 20 ]; then
   echo "▶ 1/3 투입 건너뜀 (20유저 완주본 있음)"
 else
   stage "1/3 투입 (20유저)"
+  COST_DIR=$(cost_dir halumem-20u-mem0-classic) COST_STAGE=ingest COST_BENCH=halumem COST_SETTING=20u \
   $MAIN $E/eval_memzero_oss.py --data dataset/HaluMem-Medium.jsonl --version "$V" \
       --top-k 20 --max-workers "$W_ING" --trace || { echo "✗ 투입 실패"; exit 1; }
 fi
@@ -99,6 +109,7 @@ if [ "$(n_lines "$GEN")" -ge 20 ]; then
 else
   stage "2/3 답변 (QA 3,467)"
   mkdir -p "$(dirname "$GEN")"
+  COST_DIR=$(cost_dir halumem-20u-mem0-classic) COST_STAGE=answer COST_BENCH=halumem COST_SETTING=20u \
   $MAIN $E/gen_answers.py --results "$ING" --out "$GEN" \
       --max-workers "$W_ARM" || { echo "✗ 답변 실패"; exit 1; }
 fi
@@ -110,6 +121,7 @@ if [ -d "$JUD/judge" ] && [ "$(find "$JUD/judge" -name '*.json' | wc -l)" -ge 20
   echo "▶ 3/3 채점 건너뜀"
 else
   stage "3/3 채점 (기준 18,415)"
+  COST_DIR=$(cost_dir halumem-20u-mem0-classic) COST_STAGE=judge COST_BENCH=halumem COST_SETTING=20u \
   $MAIN $E/judge.py --results "$GEN" --out-dir "$JUD" \
       --max-workers "$W_ARM" || { echo "✗ 채점 실패"; exit 1; }
 fi

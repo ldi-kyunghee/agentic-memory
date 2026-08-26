@@ -40,6 +40,15 @@ W_ARM=${W_ARM:-12}     # 답변·채점. 서버 무릎이 c=12 (실측)
 EXPECT_LLM_LEN=${EXPECT_LLM_LEN:-65536}
 EXPECT_EMB_LEN=${EXPECT_EMB_LEN:-32768}
 
+# ---- 비용 계측 (평가 코드 무수정, sitecustomize 방식) ----
+# 단계마다 COST_STAGE 를 바꿔 끼운다. 산출물은 cost/{설정}/{stage}__{pid}.json 이고
+# src/cost/report.py 가 합친다. 끄려면 COST_OFF=1 을 준다.
+if [ -z "${COST_OFF:-}" ]; then
+  export PYTHONPATH="$ROOT/src/cost${PYTHONPATH:+:$PYTHONPATH}"
+  export COST_SYSTEM="${COST_SYSTEM:-mem0-v3}"
+fi
+cost_dir() { [ -n "${COST_OFF:-}" ] && { echo ""; return; }; echo "$ROOT/cost/$1"; }
+
 V3="uv run --project eval/mem0-v3 python"
 MAIN="uv run python"
 
@@ -94,6 +103,7 @@ if [ "$(n_lines "$HM_ING")" -ge 20 ]; then
   echo "▶ 1/8 HaluMem 투입 건너뜀 (20유저 완주본 있음)"
 else
   stage "1/8 HaluMem 투입 (20유저)"
+  COST_DIR=$(cost_dir halumem-20u-mem0-v3) COST_STAGE=ingest COST_BENCH=halumem COST_SETTING=20u \
   $V3 $E/eval_memzero_oss.py --data dataset/HaluMem-Medium.jsonl --version v3 \
       --top-k 20 --max-workers "$W_ING" || { echo "✗ HaluMem 투입 실패"; exit 1; }
 fi
@@ -105,6 +115,7 @@ if [ "$(n_lines "$HM_GEN")" -ge 20 ]; then
 else
   stage "2/8 HaluMem 답변 (QA 3,467)"
   mkdir -p "$(dirname "$HM_GEN")"
+  COST_DIR=$(cost_dir halumem-20u-mem0-v3) COST_STAGE=answer COST_BENCH=halumem COST_SETTING=20u \
   MEM0_IMPL=classic $MAIN $E/gen_answers.py --results "$HM_ING" --out "$HM_GEN" \
       --max-workers "$W_ARM" || { echo "✗ HaluMem 답변 실패"; exit 1; }
 fi
@@ -114,6 +125,7 @@ if [ -d "$HM_JUD" ] && [ "$(find "$HM_JUD" -name '*.json' | wc -l)" -ge 20 ]; th
   echo "▶ 3/8 HaluMem 채점 건너뜀"
 else
   stage "3/8 HaluMem 채점 (기준 18,415)"
+  COST_DIR=$(cost_dir halumem-20u-mem0-v3) COST_STAGE=judge COST_BENCH=halumem COST_SETTING=20u \
   MEM0_IMPL=classic $MAIN $E/judge.py --results "$HM_GEN" --out-dir "$HM_JUD" \
       --max-workers "$W_ARM" || { echo "✗ HaluMem 채점 실패"; exit 1; }
 fi
@@ -124,6 +136,7 @@ if [ "$(n_lines "$BM_ING")" -ge 20 ]; then
   echo "▶ 4/8 BEAM 투입 건너뜀"
 else
   stage "4/8 BEAM 100K 투입 (대화 20 · 청크 2,866)"
+  COST_DIR=$(cost_dir beam-100k-mem0-v3) COST_STAGE=ingest COST_BENCH=beam COST_SETTING=100k \
   $V3 $E/beam/ingest_beam.py --chats BEAM/chats/100K --version 100k-v3 \
       --top-k 200 --max-workers "$W_ING" || { echo "✗ BEAM 투입 실패"; exit 1; }
 fi
@@ -134,6 +147,7 @@ if [ "$(n_lines "$BM_GEN")" -ge 20 ]; then
   echo "▶ 5/8 BEAM 답변 건너뜀"
 else
   stage "5/8 BEAM 답변 (문항 400)"
+  COST_DIR=$(cost_dir beam-100k-mem0-v3) COST_STAGE=answer COST_BENCH=beam COST_SETTING=100k \
   MEM0_IMPL=classic $MAIN $E/beam/answer_beam.py --results "$BM_ING" --out "$BM_GEN" \
       --max-workers "$W_ARM" || { echo "✗ BEAM 답변 실패"; exit 1; }
 fi
@@ -143,6 +157,7 @@ if [ -d "$BM_JUD" ] && [ "$(find "$BM_JUD" -name '*.json' | wc -l)" -ge 1 ]; the
   echo "▶ 6/8 BEAM 채점 건너뜀"
 else
   stage "6/8 BEAM 채점"
+  COST_DIR=$(cost_dir beam-100k-mem0-v3) COST_STAGE=judge COST_BENCH=beam COST_SETTING=100k \
   MEM0_IMPL=classic $MAIN $E/beam/judge_beam.py --results "$BM_GEN" --out-dir "$BM_JUD" \
       --max-workers "$W_ARM" || { echo "✗ BEAM 채점 실패"; exit 1; }
 fi
@@ -155,6 +170,7 @@ for PER in monthly quarterly; do
     echo "▶ 7/8 Memora ${PER} 투입 건너뜀"
   else
     stage "7/8 Memora ${PER} 투입 (페르소나 ${N_P})"
+    COST_DIR=$(cost_dir memora-${PER}-mem0-v3) COST_STAGE=ingest COST_BENCH=memora COST_SETTING=${PER} \
     $V3 $E/memora/ingest_memora.py --data "Memora/data/$PER" \
         --version "${PER}-v3-oss120b" --top-k 50 --max-workers "$W_ING" \
         || { echo "✗ Memora ${PER} 투입 실패"; exit 1; }
@@ -166,6 +182,7 @@ for PER in monthly quarterly; do
     echo "▶ 8/8 Memora ${PER} 답변 건너뜀"
   else
     stage "8/8 Memora ${PER} 답변"
+    COST_DIR=$(cost_dir memora-${PER}-mem0-v3) COST_STAGE=answer COST_BENCH=memora COST_SETTING=${PER} \
     MEM0_IMPL=classic $MAIN $E/memora/answer_memora.py --results "$MO_ING" --out "$MO_GEN" \
         --max-workers "$W_ARM" || { echo "✗ Memora ${PER} 답변 실패"; exit 1; }
   fi
@@ -175,6 +192,7 @@ for PER in monthly quarterly; do
     echo "▶ 8/8 Memora ${PER} 채점 건너뜀"
   else
     stage "8/8 Memora ${PER} 채점"
+    COST_DIR=$(cost_dir memora-${PER}-mem0-v3) COST_STAGE=judge COST_BENCH=memora COST_SETTING=${PER} \
     MEM0_IMPL=classic $MAIN $E/memora/judge_memora.py --results "$MO_GEN" --out-dir "$MO_JUD" \
         --max-workers "$W_ARM" || { echo "✗ Memora ${PER} 채점 실패"; exit 1; }
   fi
