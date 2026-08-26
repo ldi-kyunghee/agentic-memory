@@ -80,7 +80,10 @@ if _DIR:
             _record(kind, kw.get("model"), getattr(resp, "usage", None), (time.time() - t0) * 1000)
             return resp
 
-        create.__wrapped__ = orig
+        # ⚠ 표식을 __wrapped__ 로 두면 안 된다. openai 의 원본 create 는 @required_args 가
+        #   functools.wraps 를 쓰기 때문에 **이미 __wrapped__ 를 갖고 있다.** 그걸 보고
+        #   "이미 감쌌다" 로 오판하면 설치를 건너뛰고 조용히 0 을 기록한다 (2026-08-26에 겪음).
+        create.__cost_meter__ = orig
         cls.create = create
 
     def _install():
@@ -90,9 +93,9 @@ if _DIR:
         except Exception:
             return  # openai 를 안 쓰는 프로세스(대시보드 등)에서는 조용히 넘어간다
         # 중복 설치 방지: 같은 인터프리터에서 두 번 감싸면 호출이 두 번 세진다
-        if not getattr(Completions.create, "__wrapped__", None):
+        if not getattr(Completions.create, "__cost_meter__", None):
             _wrap(Completions, "chat")
-        if not getattr(Embeddings.create, "__wrapped__", None):
+        if not getattr(Embeddings.create, "__cost_meter__", None):
             _wrap(Embeddings, "embed")
 
     def _dump():
@@ -118,3 +121,13 @@ if _DIR:
 
     _install()
     atexit.register(_dump)
+
+    def installed() -> dict:
+        """계측이 실제로 걸렸는지 확인용. 긴 실행 전에 이걸로 사전 점검한다."""
+        try:
+            from openai.resources.chat.completions import Completions
+            from openai.resources.embeddings import Embeddings
+            return {"chat": bool(getattr(Completions.create, "__cost_meter__", None)),
+                    "embed": bool(getattr(Embeddings.create, "__cost_meter__", None))}
+        except Exception:
+            return {"chat": False, "embed": False}
