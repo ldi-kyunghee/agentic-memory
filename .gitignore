@@ -24,4 +24,4 @@ CLAUDE.md
 
 # fastembed 등 로컬 모델 캐시 (공유 /tmp 회피용)
 .cache/
-cost/
+/cost/
