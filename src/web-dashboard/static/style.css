@@ -84,7 +84,8 @@
 .hidden { display: none !important; }
 html, body { margin: 0; height: 100%; }
 /* ⚠ -webkit-font-smoothing을 넣지 말 것 — 맥에서 글자가 얇아져 가독성이 떨어진다 */
-body { font: var(--fs-base)/var(--lh-base) var(--font-sans); color: var(--ink); background: var(--bg); }
+body { font: var(--fs-base)/var(--lh-base) var(--font-sans); color: var(--ink); background: var(--bg);
+  display: flex; flex-direction: column; height: 100vh; }
 /* 수치는 자릿수를 세로로 맞춘다 — 이 화면 작업의 대부분이 수치 대조라 체감이 가장 크다.
    수치를 표시하는 컴포넌트를 새로 만들면 이 목록에 추가한다. */
 table, .badge, .flag, .qnum, .jlab, .lqa, .ldelta, .lsd, .kci, .sdtag, .tot, .tot-h,
@@ -127,7 +128,9 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ---------- 레이아웃 (드래그 리사이즈) ---------- */
 /* ⚠ 그리드 값과 calc는 JS 리사이즈와 맞물려 있다. 건드리지 않는다. */
-#layout { display: grid; grid-template-columns: 240px 5px 1fr 5px 420px; height: calc(100vh - 46px); }
+/* ⚠ 예전에는 height: calc(100vh - 46px) 로 상단바 높이를 46px 로 못박아 뒀다. 정성분석 탭에서
+   컨트롤이 두 줄로 접히면 그만큼 아래가 잘렸다. body 를 세로 flex 로 두고 남는 높이를 준다. */
+#layout { display: grid; grid-template-columns: 240px 5px 1fr 5px 420px; flex: 1; min-height: 0; }
 #sidebar { border-right: 1px solid var(--rule); overflow-y: auto; background: var(--band); }
 /* ⚠ #layout 은 5칸 그리드다. 하위 탭 바를 #content 형제로 넣으면 칸이 하나 늘어 레이아웃이
    깨진다. 그래서 #content 를 감싸는 칸을 두고 그 안에서 세로로 쌓는다. */
