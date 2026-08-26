@@ -1037,13 +1037,15 @@ def api_cost():
                 "by_kind": st["by_kind"],
             }
         m = c["meta"]
-        # 배포 비용 = 투입 + 질의(답변). 채점은 평가용이라 따로 센다.
+        # 배포 비용 = 전체에서 채점을 뺀 것. 채점은 평가용이라 배포하면 안 낸다.
+        # ⚠ ("ingest","answer") 를 더하는 식으로 두면 단계 이름이 다른 계측이 통째로
+        #   0 으로 보인다. 빼는 쪽이 이름 규약에 안 묶여 안전하다.
         deploy = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
-        for name in ("ingest", "answer"):
-            st = stages.get(name)
-            if st:
-                for f in deploy:
-                    deploy[f] += st[f]
+        for name, st in stages.items():
+            if name == "judge":
+                continue
+            for f in deploy:
+                deploy[f] += st[f]
         out.append({
             "run": d.name,
             "system": m.get("system", ""), "benchmark": m.get("benchmark", ""),
