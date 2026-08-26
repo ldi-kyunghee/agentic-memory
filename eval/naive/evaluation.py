@@ -314,7 +314,7 @@ def vllm_offline_inference(llm, model_kwargs, sampling_params, generation_kwargs
 def main(args, max_workers: int = 10):
     data_dir = args.results_dir
     data_file = data_dir + args.results_file
-    output_dir = args.results_dir.replace('results', 'scores').replace('question_answering/', '')
+    output_dir = '/'.join(args.results_dir.replace('results', 'scores').replace('question_answering', '').split('/')).strip()
 
     if not output_dir.endswith('/'):
         output_dir += '/'

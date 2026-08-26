@@ -1,4 +1,6 @@
-RESULTS_DIR=results/naive/exp$1/question_answering/${2}
+EXP_NAME=exp$1
+DATASET_TYPE=$2
+RESULTS_DIR=results/naive/question_answering/${EXP_NAME}/${DATASET_TYPE}/
 RESULTS=$(ls $RESULTS_DIR)
 BACKEND=$3
 
