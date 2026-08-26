@@ -50,7 +50,6 @@ def flush():
 
 def init_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--exp_num", type=int)
     parser.add_argument("--data_path", type=str, default="dataset/")
     parser.add_argument("--dataset", type=str, default="HaluMem-Medium.jsonl")
     parser.add_argument("--n_persona", type=int, default=None)
@@ -302,7 +301,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    exp_name = f"exp{args.exp_num}"
     dataset = load_dataset(args)
 
     if args.n_persona is not None:
@@ -324,9 +322,9 @@ if __name__ == "__main__":
         time.sleep(3)
         flush()
 
-    results_dir = f'results/naive/{exp_name}/retrieval/'
     dataset_name = args.dataset.split("-")[-1].split(".")[0].lower()
-    results_file = f"{args.memory_type}_retrieval_{dataset_name}_top_{args.top_k}_results.json"
+    results_dir = f'results/naive/retrieval/{dataset_name}/'
+    results_file = f"{args.memory_type}_retrieval_top_{args.top_k}_results.json"
 
     os.makedirs(results_dir, exist_ok=True)
     with open(results_dir + results_file, "w") as file:

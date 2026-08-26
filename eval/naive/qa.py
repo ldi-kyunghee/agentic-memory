@@ -46,7 +46,7 @@ def flush():
 def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--exp_num", type=int)
-    parser.add_argument("--result_dir", type=str, default="results/naive/")
+    parser.add_argument("--retrieval_dir", type=str, default="results/naive/retrieval")
     parser.add_argument("--backend", choices=["vllm", "openai"], default="vllm")
     parser.add_argument("--online", action='store_true', default=False)
     parser.add_argument('--structured_outputs', action='store_true', default=False)
@@ -231,10 +231,9 @@ if __name__ == "__main__":
 
     exp_name = f"exp{args.exp_num}"
 
-    retrieval_dir = f"{args.result_dir}/{exp_name}/retrieval/"
     retrieval_results = {}
-    for result_file in os.listdir(retrieval_dir):
-        with open(f"{retrieval_dir}/{result_file}", 'r') as file:
+    for result_file in os.listdir(args.retrieval_dir):
+        with open(f"{args.retrieval_dir}/{result_file}", 'r') as file:
             retrieval_results[result_file] = json.load(file)
 
     if args.backend == "vllm":
@@ -257,7 +256,8 @@ if __name__ == "__main__":
         model_kwargs = load_config(args.llm_config)
         llm: Client = OpenAI()
 
-    results_dir = f"results/naive/{exp_name}/question_answering/"
+    dataset_name = args.retrieval_dir.split('/')[-1]
+    results_dir = f"results/naive/question_answering/{exp_name}/{dataset_name}/"
     os.makedirs(results_dir, exist_ok=True)
     for result_file, retrieval_result in retrieval_results.items():
         results = run_qa(args, retrieval_result)
