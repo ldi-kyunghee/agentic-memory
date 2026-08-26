@@ -2626,8 +2626,12 @@ const beamModeSwitch = () => `<p class="hrefsw beammode"><b>보기</b>
   <button class="seg${S.beamMode === "bucket" ? " on" : ""}" data-bm="bucket"
     data-desc="버킷 하나를 자세히 봅니다. 능력별 문항 목록과 문항 상세(답변 원문·rubric 채점)로 들어갈 수 있습니다">버킷별 상세</button></p>`;
 
-const bindBeamMode = () => $$("#content .beammode button").forEach((b) =>
-  (b.onclick = () => { S.beamMode = b.dataset.bm; renderBeam(); }));
+// BEAM 화면이 여럿이라 모드 배선에 시스템 칩 배선을 얹어 한 번에 커버한다.
+const bindBeamMode = () => {
+  $$("#content .beammode button").forEach((b) =>
+    (b.onclick = () => { S.beamMode = b.dataset.bm; renderBeam(); }));
+  wireSystemChips();
+};
 
 // 차이 칸 색. 0을 흰색으로 두고 ±0.4 를 양끝으로 잡는다 (실측 최대가 -0.434)
 function deltaHeat(v) {
@@ -2718,6 +2722,8 @@ async function renderBeamOverview() {
 
   el.innerHTML = `
     ${beamModeSwitch()}
+    ${systemChips("beam")}
+    ${S.sysSel.length > 1 ? `<p class="small muted">종합 화면은 규모·프롬프트 축 비교라 <b>${esc(systemLabel(mainSystem("beam")))}</b> 한 시스템만 그립니다. 시스템끼리 견주려면 <b>버킷별 상세</b>로 가세요.</p>` : ""}
 
     <div class="noisebar warn" data-desc="세 버킷의 대화 제목 겹침이 0입니다 (500K∩1M 0/35, 100K∩500K 0/20). 주제 구성도 8종/14종/13종으로 다릅니다.">
       <b>⚠ 규모 간 절대 비교를 하지 마세요.</b> BEAM은 버킷마다 <b>완전히 다른 대화</b>를 씁니다(제목 겹침 0).
