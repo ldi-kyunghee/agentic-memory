@@ -51,6 +51,47 @@ def load_registry_doc() -> dict:
     return _reg_cache["doc"]
 
 
+def systems_cfg() -> dict:
+    """메모리 시스템 레지스트리 (runs.yaml 의 systems 절).
+
+    벤치마크·세팅을 가로지르는 1급 비교 축이다. 새 시스템(LIGHT 등)은 runs.yaml 에
+    항목을 더하고 각 세팅의 by_system 에 경로를 달면 여기서부터 자동으로 따라간다.
+    """
+    return load_registry_doc().get("systems", {}) or {}
+
+
+def default_system() -> str:
+    """by_system 이 없는 세팅의 기존 경로가 어느 시스템 것인지. 없으면 첫 항목."""
+    sysd = systems_cfg()
+    for k, v in sysd.items():
+        if v.get("default"):
+            return k
+    return next(iter(sysd), "")
+
+
+def resolve_by_system(cfg: dict | None, system: str | None):
+    """세팅 설정에 시스템별 경로를 덮어씌운 사본. 그 시스템 산출물이 없으면 None.
+
+    ⚠ None 과 빈 dict 를 구분한다. None 은 "이 세팅에 그 시스템이 아예 없음"이고,
+      호출부는 404 대신 ready=False 로 내려 화면이 빈 칸을 그리게 해야 한다.
+      (실험이 아직 안 끝난 시스템을 미리 등록해두는 일이 잦음)
+    """
+    if cfg is None:
+        return None
+    if not system or system == default_system():
+        return cfg
+    by = (cfg.get("by_system") or {}).get(system)
+    if not by:
+        return None
+    return {**cfg, **by}
+
+
+def _setting_ready(cfg: dict, system: str | None) -> bool:
+    """이 세팅에 그 시스템의 채점본이 실제로 있는가. 세팅 목록의 ready 플래그용."""
+    r = resolve_by_system(cfg, system)
+    return bool(r) and (ROOT / r["judge"]).exists()
+
+
 def hide_groups() -> dict:
     """숨김 그룹 정의: 실험 갈래 하나를 통째로 접었다 펴는 단위. runs.yaml의 hide_groups 섹션."""
     return load_registry_doc().get("hide_groups", {}) or {}
@@ -707,15 +748,18 @@ def beam_cfg() -> dict:
 _beam_cache: dict = {}
 
 
-def load_beam(bucket: str) -> dict:
+def load_beam(bucket: str, system: str | None = None) -> dict:
     """버킷 하나의 채점본과 투입 산출물을 읽어 합침. mtime 기준 캐시.
 
     judge 레코드에 ability/cutoff/score/nugget_scores/used/stored 가 이미 들어 있음.
     투입 산출물에서는 대화 메타(주제·청크 수)와 검색된 메모리 원문만 가져옴.
     """
-    cfg = (beam_cfg().get("buckets") or {}).get(bucket)
-    if not cfg:
+    base = (beam_cfg().get("buckets") or {}).get(bucket)
+    if not base:
         raise HTTPException(404, f"unknown beam bucket: {bucket}")
+    cfg = resolve_by_system(base, system)
+    if cfg is None:                      # 이 버킷에 그 시스템 산출물이 아직 없음
+        return {"ready": False, "records": [], "convs": {}}
     jdir = ROOT / cfg["judge"]
     if not jdir.exists():
         return {"ready": False, "records": [], "convs": {}}
@@ -723,7 +767,8 @@ def load_beam(bucket: str) -> dict:
     key = tuple(sorted((f.name, f.stat().st_mtime_ns) for f in files))
     # ⚠ 버킷마다 칸을 따로 둔다. 한 칸짜리로 두면 종합 화면(/api/beam/overview)이 버킷 여섯 개를
     #    연달아 읽을 때 서로를 밀어내 매번 전부 다시 파싱한다 (버킷당 수천 레코드).
-    hit = _beam_cache.get(bucket)
+    ckey = (bucket, system or default_system())
+    hit = _beam_cache.get(ckey)
     if hit and hit[0] == key:
         return hit[1]
 
@@ -748,7 +793,7 @@ def load_beam(bucket: str) -> dict:
                     "questions": {f'{q["ability"]}#{q["idx"]}': q for q in (d.get("questions") or [])},
                 }
     val = {"ready": True, "records": records, "convs": convs, "cfg": cfg}
-    _beam_cache[bucket] = (key, val)
+    _beam_cache[ckey] = (key, val)
     return val
 
 
@@ -757,8 +802,145 @@ def _mean(xs):
     return round(sum(xs) / len(xs), 4) if xs else None
 
 
+@app.get("/api/systems")
+def api_systems():
+    """메모리 시스템 목록 + 벤치마크 세팅별 가용성.
+
+    화면의 시스템 선택기가 이걸로 그려진다. 아직 안 돌린 조합은 available=False 로
+    내려보내 회색으로 표시하게 한다 (목록에서 빼지 않는다 — 무엇이 남았는지 보여야 함).
+    """
+    sysd = systems_cfg()
+    dflt = default_system()
+    bcfg = beam_cfg().get("buckets") or {}
+    mcfg = memora_cfg().get("periods") or {}
+    hcfg = (load_registry_doc().get("halumem", {}) or {}).get("scales", {}) or {}
+
+    out = []
+    for key, v in sysd.items():
+        avail = {
+            "halumem": {k: _halumem_ready(c, key) for k, c in hcfg.items()},
+            "beam": {k: _setting_ready(c, key) for k, c in bcfg.items()},
+            "memora": {k: _setting_ready(c, key) for k, c in mcfg.items()},
+        }
+        out.append({
+            "key": key, "label": v.get("label", key), "version": v.get("version"),
+            "note": v.get("note", ""), "default": key == dflt,
+            "available": avail,
+            "any": any(x for grp in avail.values() for x in grp.values()),
+        })
+    return {"systems": out, "default": dflt}
+
+
+def _halumem_ready(cfg: dict, system: str) -> bool:
+    by = (cfg.get("by_system") or {}).get(system)
+    return bool(by) and (ROOT / by["judge"]).exists()
+
+
+# HaluMem 공식 집계 함수. 서브모듈 것을 그대로 쓴다 (채점 프로토콜 무수정 원칙).
+_HM_REC = ["memory_integrity_records", "memory_accuracy_records",
+           "memory_update_records", "question_answering_records"]
+
+
+def _halumem_aggregate(paths: list) -> dict:
+    """유저별 판정 파일들을 공식 함수로 집계. compare_halumem.py 와 같은 골격."""
+    import sys as _sys
+    sub = str(ROOT / "HaluMem" / "eval")
+    if sub not in _sys.path:
+        _sys.path.insert(0, sub)
+    from evaluation import aggregate_eval_results  # noqa: PLC0415
+
+    ev = {
+        "overall_score": {
+            "memory_integrity": {}, "memory_accuracy": {}, "memory_extraction_f1": 0,
+            "memory_update": {}, "question_answering": {},
+            "memory_type_accuracy": {k: {"memory_integrity_acc": 0, "memory_update_acc": 0, "total_num": 0}
+                                     for k in ["Event Memory", "Persona Memory", "Relationship Memory"]},
+            "time_consuming": {"add_dialogue_duration_time": 0,
+                               "search_memory_duration_time": 0, "total_duration_time": 0},
+        },
+        **{k: [] for k in _HM_REC},
+    }
+    for path in paths:
+        with open(path, encoding="utf-8") as fh:
+            u = json.load(fh)
+        for k in _HM_REC:
+            ev[k].extend(u.get(k, []))
+    return aggregate_eval_results(ev)
+
+
+_hm_cache: dict = {}
+
+
+@app.get("/api/halumem")
+def api_halumem(scale: str = "20u"):
+    """HaluMem 을 메모리 시스템 축으로 읽음. 백본 그리드(/api/metrics)와 별개 화면임.
+
+    ⚠ 시스템끼리 유저 수가 다를 수 있다 (classic 20유저 런이 없던 시기가 있었음).
+      그래서 **모든 시스템에 공통으로 있는 유저**로 교집합을 잡아 다시 집계한다.
+      유저 수가 다른 집계를 나란히 놓으면 알고리즘 차이가 아니라 표본 차이를 읽게 된다.
+    """
+    hcfg = (load_registry_doc().get("halumem", {}) or {}).get("scales", {}) or {}
+    cfg = hcfg.get(scale)
+    if not cfg:
+        raise HTTPException(404, f"unknown halumem scale: {scale}")
+    sysd = systems_cfg()
+
+    scales = [{"key": k, "label": v.get("label", k), "note": v.get("note", ""),
+               "ready": any(_halumem_ready(v, sk) for sk in sysd)}
+              for k, v in hcfg.items()]
+
+    files, missing = {}, []
+    for sk in sysd:
+        by = (cfg.get("by_system") or {}).get(sk)
+        jd = ROOT / by["judge"] if by else None
+        if not jd or not jd.exists():
+            missing.append(sk)
+            continue
+        files[sk] = {f.stem: f for f in jd.glob("*.json") if f.name != "eval_stat_result.json"}
+
+    if not files:
+        return {"scale": scale, "scales": scales, "ready": False,
+                "systems": [], "common_users": 0, "missing": missing}
+
+    common = set.intersection(*[set(v) for v in files.values()])
+    key = (scale, tuple(sorted(files)), tuple(sorted(common)),
+           tuple(sorted((str(f), f.stat().st_mtime_ns) for v in files.values() for f in v.values())))
+    if _hm_cache.get("k") == key:
+        stats = _hm_cache["v"]
+    else:
+        stats = {sk: _halumem_aggregate([files[sk][u] for u in sorted(common)]) for sk in files}
+        _hm_cache.update(k=key, v=stats)
+
+    rows = []
+    for sk, st in stats.items():
+        o = st["overall_score"]
+        rows.append({
+            "system": sk, "label": sysd[sk].get("label", sk), "version": sysd[sk].get("version"),
+            "integrity": o["memory_integrity"].get("weighted_recall(valid)"),
+            "extraction_f1": o.get("memory_extraction_f1"),
+            "target_acc": o["memory_accuracy"].get("target_accuracy(valid)"),
+            "interference_acc": o["memory_accuracy"].get("interference_accuracy(valid)"),
+            "weighted_acc": o["memory_accuracy"].get("weighted_accuracy(valid)"),
+            "update_c": o["memory_update"].get("correct_update_memory_ratio(valid)"),
+            "update_h": o["memory_update"].get("hallucination_update_memory_ratio(valid)"),
+            "update_o": o["memory_update"].get("omission_update_memory_ratio(valid)"),
+            "qa_c": o["question_answering"].get("correct_qa_ratio(valid)"),
+            "qa_h": o["question_answering"].get("hallucination_qa_ratio(valid)"),
+            "qa_o": o["question_answering"].get("omission_qa_ratio(valid)"),
+            "n": {"integrity": o["memory_integrity"].get("memory_num"),
+                  "accuracy": o["memory_accuracy"].get("memory_num"),
+                  "update": o["memory_update"].get("update_memory_num"),
+                  "qa": o["question_answering"].get("qa_num")},
+            "users_total": len(files[sk]),
+        })
+    order = list(sysd)
+    rows.sort(key=lambda r: order.index(r["system"]))
+    return {"scale": scale, "scales": scales, "ready": True, "note": cfg.get("note", ""),
+            "systems": rows, "common_users": len(common), "missing": missing}
+
+
 @app.get("/api/beam")
-def api_beam(bucket: str = "100k"):
+def api_beam(bucket: str = "100k", system: str = ""):
     """능력 x cutoff 집계. 이 화면의 주 산출물임.
 
     ⚠ cutoff 가 그 대화의 저장 메모리 수보다 크면 검색이 작동하지 않은 칸임.
@@ -768,10 +950,10 @@ def api_beam(bucket: str = "100k"):
     cuts = cfg.get("cutoffs") or [20, 50, 100, 200]
     abil_labels = cfg.get("abilities") or {}
     buckets = [{"key": k, "label": v.get("label", k), "note": v.get("note", ""),
-                "ready": (ROOT / v["judge"]).exists()}
+                "ready": _setting_ready(v, system)}
                for k, v in (cfg.get("buckets") or {}).items()]
 
-    d = load_beam(bucket)
+    d = load_beam(bucket, system)
     rec = d["records"]
     if not rec:
         return {"bucket": bucket, "buckets": buckets, "cutoffs": cuts, "ready": False,
@@ -832,7 +1014,7 @@ def _median(xs):
 
 
 @app.get("/api/beam/overview")
-def api_beam_overview():
+def api_beam_overview(system: str = ""):
     """모든 버킷을 한 번에. 규모 x 답변 프롬프트로 묶어 내려보냄.
 
     이 화면이 필요한 이유: BEAM 결론이 전부 '버킷 간' 또는 '프롬프트 간' 비교인데
@@ -847,11 +1029,14 @@ def api_beam_overview():
     abil_labels = cfg.get("abilities") or {}
     out = []
     for k, v in (cfg.get("buckets") or {}).items():
-        if not (ROOT / v["judge"]).exists():
+        # ⚠ 존재 확인도 선택된 시스템의 경로로 해야 한다. classic 경로로 확인하면
+        #   v3 가 안 돈 버킷이 ready 로 뜬 뒤 빈 표를 그린다.
+        vs = resolve_by_system(v, system)
+        if vs is None or not (ROOT / vs["judge"]).exists():
             out.append({"key": k, "label": v.get("label", k), "scale": v.get("scale"),
                         "prompt": v.get("prompt"), "ready": False})
             continue
-        d = load_beam(k)
+        d = load_beam(k, system)
         rec = d["records"]
         if not rec:
             out.append({"key": k, "label": v.get("label", k), "scale": v.get("scale"),
@@ -897,9 +1082,9 @@ def api_beam_overview():
 
 
 @app.get("/api/beam/questions")
-def api_beam_questions(bucket: str, ability: str):
+def api_beam_questions(bucket: str, ability: str, system: str = ""):
     """능력 하나의 문항 목록. cutoff 별 점수를 나란히 놓아 어느 문항이 흔들리는지 보게 함."""
-    d = load_beam(bucket)
+    d = load_beam(bucket, system)
     cuts = beam_cfg().get("cutoffs") or [20, 50, 100, 200]
     rows = [r for r in d["records"] if r["ability"] == ability]
     out = []
@@ -920,9 +1105,9 @@ def api_beam_questions(bucket: str, ability: str):
 
 
 @app.get("/api/beam/question")
-def api_beam_question(bucket: str, conv: str, ability: str, idx: int):
+def api_beam_question(bucket: str, conv: str, ability: str, idx: int, system: str = ""):
     """문항 하나의 cutoff 4벌을 나란히. nugget 채점과 투입된 메모리까지 보여줌."""
-    d = load_beam(bucket)
+    d = load_beam(bucket, system)
     rows = [r for r in d["records"] if r["conv"] == conv and r["ability"] == ability and r["idx"] == idx]
     if not rows:
         raise HTTPException(404, "no such question")
@@ -952,16 +1137,20 @@ def memora_cfg() -> dict:
 _memora_cache: dict = {}
 
 
-def load_memora(period: str) -> dict:
-    cfg = (memora_cfg().get("periods") or {}).get(period)
-    if not cfg:
+def load_memora(period: str, system: str | None = None) -> dict:
+    base = (memora_cfg().get("periods") or {}).get(period)
+    if not base:
         raise HTTPException(404, f"unknown memora period: {period}")
+    cfg = resolve_by_system(base, system)
+    if cfg is None:                      # 이 기간에 그 시스템 산출물이 아직 없음
+        return {"ready": False, "records": [], "convs": {}, "cfg": base}
     jdir = ROOT / cfg["judge"]
     if not jdir.exists():
         return {"ready": False, "records": [], "convs": {}, "cfg": cfg}
     files = sorted(jdir.glob("*.json"))
     key = tuple(sorted((f.name, f.stat().st_mtime_ns) for f in files))
-    hit = _memora_cache.get(period)
+    ckey = (period, system or default_system())
+    hit = _memora_cache.get(ckey)
     if hit and hit[0] == key:
         return hit[1]
 
@@ -998,7 +1187,7 @@ def load_memora(period: str) -> dict:
             for r in records}
 
     val = {"ready": bool(records), "records": records, "convs": convs, "lens": lens, "cfg": cfg}
-    _memora_cache[period] = (key, val)
+    _memora_cache[ckey] = (key, val)
     return val
 
 
@@ -1050,13 +1239,13 @@ def _fama_block(rows: list) -> dict:
 
 
 @app.get("/api/memora")
-def api_memora(period: str = "weekly"):
+def api_memora(period: str = "weekly", system: str = ""):
     cfg = memora_cfg()
     tasks = cfg.get("tasks") or {}
     periods = [{"key": k, "label": v.get("label", k), "note": v.get("note", ""),
-                "ready": (ROOT / v["judge"]).exists()}
+                "ready": _setting_ready(v, system)}
                for k, v in (cfg.get("periods") or {}).items()]
-    d = load_memora(period)
+    d = load_memora(period, system)
     rec = d["records"]
     if not rec:
         return {"period": period, "periods": periods, "tasks": tasks, "ready": False}
@@ -1107,7 +1296,7 @@ def api_memora(period: str = "weekly"):
     compare = []
     for k in (cfg.get("periods") or {}):
         try:
-            dd = load_memora(k)
+            dd = load_memora(k, system)
         except HTTPException:
             continue
         if not dd["records"]:
@@ -1222,9 +1411,9 @@ def api_memora_cutoff(period: str = "monthly"):
 
 
 @app.get("/api/memora/questions")
-def api_memora_questions(period: str, task: str):
+def api_memora_questions(period: str, task: str, system: str = ""):
     """과제 하나의 문항 목록. FAMA 낮은 순으로 놓아 실패부터 보게 함."""
-    d = load_memora(period)
+    d = load_memora(period, system)
     rows = [r for r in d["records"] if r["task"] == task]
     if not rows:
         raise HTTPException(404, "no questions for that task")
@@ -1242,9 +1431,9 @@ def api_memora_questions(period: str, task: str):
 
 
 @app.get("/api/memora/question")
-def api_memora_question(period: str, persona: str, question_id: str):
+def api_memora_question(period: str, persona: str, question_id: str, system: str = ""):
     """문항 하나. 기준별 판정과 답변 원문. 어떤 기준에서 깨졌는지 보는 화면임."""
-    d = load_memora(period)
+    d = load_memora(period, system)
     r = next((x for x in d["records"]
               if x["persona"] == persona and x["question_id"] == question_id), None)
     if not r:

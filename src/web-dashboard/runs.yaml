@@ -2,6 +2,55 @@
 # judges: 라벨 세트 이름 -> judge 디렉토리 (유저별 {uuid}.json). 초기 런들의 불규칙 네이밍은 여기서 흡수함.
 # A' 답변 생성(generator) 레인: 레인마다 results(jsonl)와 judge 세트가 다름.
 # base: true 인 레인은 각 런의 기본 results/judges를 그대로 사용. 그 외에는 {run} 템플릿 경로.
+# ─────────────────────────────────────────────────────────────────────
+# 메모리 시스템 축. 벤치마크·세팅을 가로지르는 1급 비교 축임.
+#
+# 새 시스템(LIGHT 등)을 붙이는 법: 여기에 항목 하나를 더하고, 각 벤치마크 세팅의
+# `by_system:` 에 같은 키로 산출물 경로를 달면 됨. 화면·집계는 자동으로 따라감.
+# `by_system` 이 없는 세팅의 기존 경로는 `default: true` 인 시스템 것으로 본다.
+#
+# ⚠ UI 에는 여기 label 만 노출한다. 내부 키(mem0-v3 …)나 실험 설계 용어(팔 A/B)를
+#   화면에 쓰지 않는다. 프로젝트 안에서만 통하는 이름은 협업자에게 안 통함.
+systems:
+  mem0-classic:
+    label: "mem0 classic"
+    version: "0.1.118"
+    default: true
+    note: "추출 2콜(사실 추출 → ADD/UPDATE/DELETE 결정) · 임베딩 단일 신호 검색"
+  mem0-v3:
+    label: "mem0 v3"
+    version: "2.0.18"
+    note: "추출 1콜 ADD-only(삭제·갱신 없음) · 임베딩+BM25+엔티티 융합 검색"
+
+# HaluMem 의 메모리 시스템 축. 백본·프롬프트 그리드(`runs:`)와 별개다.
+# 그리드는 agent 모델을 갈아끼우며 보던 옛 축이고 정성분석 탭에 그대로 남겨둠.
+halumem:
+  scales:
+    20u:
+      label: "20유저"
+      note: "HaluMem-Medium 전량 · QA 3,467 · 평가 기준 18,415 · agent/답변/채점 gpt-oss-120b"
+      by_system:
+        mem0-classic:
+          ingest: results/mem0-classic-oss/memzero-oss-oss120b20/memzero-oss_eval_results.jsonl
+          answers: results/mem0-classic-oss/genoss120/oss120b20.jsonl
+          judge: results/mem0-classic-oss/judge-oss120-genoss120-oss120b20/judge
+        mem0-v3:
+          ingest: results/mem0-classic-oss/memzero-oss-v3/memzero-oss_eval_results.jsonl
+          answers: results/mem0-classic-oss/memzero-oss-v3/gen-v3/memzero-oss_eval_results.jsonl
+          judge: results/mem0-classic-oss/memzero-oss-v3/judge-v3/judge
+    4u:
+      label: "4유저"
+      note: "20유저 런이 없던 동안 쓰던 비교 표본. 공통 4유저로 자른 값이라 20유저 값과 섞지 않는다"
+      by_system:
+        mem0-classic:
+          ingest: results/mem0-classic-oss/memzero-oss-oss120b4/memzero-oss_eval_results.jsonl
+          answers: results/mem0-classic-oss/genoss120-4u/oss120b4.jsonl
+          judge: results/mem0-classic-oss/judge-oss120-genoss120-4u-oss120b4/judge
+        mem0-v3:
+          ingest: results/mem0-classic-oss/memzero-oss-v3/memzero-oss_eval_results.jsonl
+          answers: results/mem0-classic-oss/memzero-oss-v3/gen-v3/memzero-oss_eval_results.jsonl
+          judge: results/mem0-classic-oss/memzero-oss-v3/judge-v3/judge
+
 generators:
   qwen4b:
     label: "Qwen3-4B"
@@ -81,6 +130,10 @@ beam:
       prompt: "mem0 하네스"
       ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-100k
+      by_system:
+        mem0-v3:
+          ingest: results/mem0-classic-oss/beam-100k-v3/beam_eval_results.jsonl
+          judge: results/mem0-classic-oss/beam-judge-oss120-100k-v3
       note: "20대화 400문항 · 청크 2,866 · 저장 메모리 100~407 (중앙값 278) · 답변 프롬프트 mem0 하네스 · agent gpt-oss-120b medium, 답변=채점 gpt-oss-120b high · top-200이 저장소를 넘는 문항 100/400"
     500k:
       label: "500K"
@@ -134,6 +187,11 @@ memora:
       ingest: results/mem0-classic-oss/memora-weekly-oss120b/memora_eval_results.jsonl
       answers: results/mem0-classic-oss/memora-gen-weekly/answers.jsonl
       judge: results/mem0-classic-oss/memora-judge-weekly
+      by_system:
+        mem0-v3:
+          ingest: results/mem0-classic-oss/memora-weekly-v3-oss120b/memora_eval_results.jsonl
+          answers: results/mem0-classic-oss/memora-gen-weekly-v3/answers.jsonl
+          judge: results/mem0-classic-oss/memora-judge-weekly-v3
       note: "7일 · 페르소나 10 · 세션 1,551 · 문항 150 · 평가 기준 735 · lambda 중앙 0.286"
       # 저장소가 페르소나당 171개라 k=200 이 이미 전량임. 그래서 격자를 20/50/100/200 으로 둠
       # (400 팔은 200 과 같은 결과가 나와 낭비임). 덤으로 BEAM 격자와 정확히 겹침.
@@ -152,6 +210,11 @@ memora:
       ingest: results/mem0-classic-oss/memora-monthly-oss120b/memora_eval_results.jsonl
       answers: results/mem0-classic-oss/memora-gen-monthly/answers.jsonl
       judge: results/mem0-classic-oss/memora-judge-monthly
+      by_system:
+        mem0-v3:
+          ingest: results/mem0-classic-oss/memora-monthly-v3-oss120b/memora_eval_results.jsonl
+          answers: results/mem0-classic-oss/memora-gen-monthly-v3/answers.jsonl
+          judge: results/mem0-classic-oss/memora-judge-monthly-v3
       note: "30일 · 페르소나 10 · 세션 6,150 · 문항 150 · 평가 기준 1,315 · lambda 중앙 0.444"
       # 검색 예산 스윕. Stage A 를 k=800 으로 한 번 돌리고 답변 단계에서 잘라 만든 팔들임.
       # 저장소가 페르소나당 566개라 k=800 은 사실상 검색 필터 없음.
@@ -171,6 +234,11 @@ memora:
       ingest: results/mem0-classic-oss/memora-quarterly-oss120b/memora_eval_results.jsonl
       answers: results/mem0-classic-oss/memora-gen-quarterly/answers.jsonl
       judge: results/mem0-classic-oss/memora-judge-quarterly
+      by_system:
+        mem0-v3:
+          ingest: results/mem0-classic-oss/memora-quarterly-v3-oss120b/memora_eval_results.jsonl
+          answers: results/mem0-classic-oss/memora-gen-quarterly-v3/answers.jsonl
+          judge: results/mem0-classic-oss/memora-judge-quarterly-v3
       note: "90일 · 페르소나 10 · 세션 19,913 · 문항 300 · 평가 기준 4,365 · lambda 중앙 0.375"
       # 저장소가 페르소나당 1,594개라 검색 k=2000 이 전량임. cutoff 는 monthly 와 같은 격자.
       # ⚠ k=200 에서 빈 답변 3건, k=400 에서 6건 (전부 reasoning, finish_reason=length).
