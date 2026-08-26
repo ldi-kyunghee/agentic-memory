@@ -132,8 +132,9 @@ async function boot() {
 
   S.backbone = backbones[0];
   syncPrompts("A");
-  setTab(S.tab);          // 벤치마크 탭은 번들 없이 바로 그린다
-  await applyRun();       // 정성분석용 번들은 뒤에서 채운다
+  // ⚠ 정성분석용 유저 번들은 여기서 안 받는다. 20유저 번들이 무거워 로딩 오버레이가
+  //   개요 화면을 몇 초씩 가렸다. 정성분석 탭을 처음 열 때 받는다.
+  setTab(S.tab);
 }
 
 /* 선택된 메모리 시스템을 쿼리스트링 조각으로. 기본 시스템이면 빈 값이라 서버가 기존 경로를 씀. */
@@ -379,6 +380,7 @@ function setTab(t) {
   $("#qual-ctls").classList.toggle("hidden", t !== "qual");
   $("#qualnav")?.classList.toggle("hidden", t !== "qual");
   document.body.classList.toggle("bench-mode", BENCH_TABS.includes(t));
+  if (t === "qual" && !S.bundle) { applyRun(); return; }  // applyRun -> loadBundle -> render
   render();
 }
 function setITab(t) { S.itab = t; $$("#insp-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.itab === t)); renderInspector(); }
