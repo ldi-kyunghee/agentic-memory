@@ -10,11 +10,10 @@
 <header id="topbar">
   <span class="brand">에이전트 메모리</span>
 
-  <!-- 메모리 시스템: 벤치마크·세팅을 가로지르는 1급 축. 새 시스템은 runs.yaml 의 systems 절에 붙는다. -->
-  <div class="grp"><label data-desc="메모리 시스템: 저장·갱신·검색을 담당하는 구현체. 벤치마크와 무관하게 이 축으로 비교한다. 아직 안 돌린 조합은 목록에 남되 회색으로 표시됨">메모리 시스템</label><div class="ctl"><select id="sel-system"></select></div></div>
-
-  <!-- 고정 변인: 드롭다운이던 것들. 전 실험 공통이라 읽기 전용 칩으로 줄임 -->
-  <div class="grp"><label data-desc="전 실험 공통 고정 변인. 예전에는 드롭다운이었으나 모든 런이 같은 값으로 수렴해 자리만 차지했다. 모델을 갈아끼우며 보던 화면은 정성분석 탭에 그대로 남아 있다">고정 변인</label><div class="ctl"><span id="fixed-vars" class="fixed"></span></div></div>
+  <!-- 메모리 시스템 선택은 각 벤치마크 탭 안으로 옮겼다. 탭마다 비교 대상이 다르고
+       n개를 동시에 견줘야 하는데, 상단 드롭다운은 하나씩만 고르게 해 화면을 통째로
+       갈아끼웠다. 같은 벤치마크 안에서 시스템끼리 비교하는 일이 더 잦다. -->
+  <div class="grp"><label data-desc="전 실험 공통 고정 변인. 모든 런이 같은 값이라 드롭다운을 없애고 읽기 전용으로 줄였다. 모델을 갈아끼우며 보던 화면은 정성분석 탭에 그대로 남아 있다">고정 변인</label><div class="ctl"><span id="fixed-vars" class="fixed"></span></div></div>
 
   <!-- ↓ 정성분석 탭에서만 보이는 옛 컨트롤. 기능은 그대로 살려둔다 -->
   <span id="qual-ctls" class="hidden">

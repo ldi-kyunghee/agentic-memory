@@ -16,8 +16,8 @@ const S = {
   backbone: null, prompt: null, backboneB: null, promptB: null, runB: null,
   bundle: null, bundleB: null, bundleCache: new Map(),
   tab: "overview", itab: "detail",
-  system: localStorage.getItem("mem_system") || "",   // 메모리 시스템 축 (빈 문자열 = 기본 시스템)
-  systems: [], qtab: "sessions",                       // qtab = 정성분석 탭 안의 하위 탭
+  systems: [], sysSel: [], sysDefault: "",   // 비교할 메모리 시스템들 (n개 선택)
+  qtab: "sessions",                          // qtab = 정성분석 탭 안의 하위 탭
   hmScale: "20u",
   session: null, qaFilter: "all", digestScope: "user",
   anchor: "run", anchorObj: null, pendingQuote: "",
@@ -113,23 +113,24 @@ async function boot() {
     } finally { busy(false); }
   };
 
-  // ---- 메모리 시스템 선택기 ----
+  // ---- 메모리 시스템 목록 (선택은 각 벤치마크 탭 안에서) ----
   try {
     const sd = await api("/api/systems");
     S.systems = sd.systems || [];
-    if (!S.system || !S.systems.some((x) => x.key === S.system)) S.system = sd.default || "";
-    $("#sel-system").innerHTML = S.systems.map((x) =>
-      `<option value="${esc(x.key)}"${x.key === S.system ? " selected" : ""}${x.any ? "" : " disabled"}>` +
-      `${esc(x.label)}${x.version ? ` (${esc(x.version)})` : ""}${x.any ? "" : " · 산출물 없음"}</option>`).join("");
-    $("#sel-system").onchange = () => {
-      S.system = $("#sel-system").value;
-      localStorage.setItem("mem_system", S.system);
-      render();
-    };
-  } catch (e) { $("#sel-system").innerHTML = `<option>–</option>`; }
+    S.sysDefault = sd.default || (S.systems[0]?.key ?? "");
+    const saved = JSON.parse(localStorage.getItem("mem_systems") || "null");
+    S.sysSel = Array.isArray(saved) && saved.length
+      ? saved.filter((k) => S.systems.some((x) => x.key === k))
+      : S.systems.map((x) => x.key);
+    if (!S.sysSel.length) S.sysSel = S.systems.map((x) => x.key);
+  } catch (e) { S.systems = []; S.sysSel = []; }
 
-  // 예전에 드롭다운이던 고정 변인. 값이 전 실험 공통이라 읽기 전용으로 줄였다.
-  $("#fixed-vars").textContent = "agent·답변·채점 gpt-oss-120b · 임베더 Qwen3-Embedding-4B";
+  // 고정 변인. 값이 전 실험 공통이라 드롭다운을 없애고 읽기 전용으로 줄였다.
+  // effort 는 단계마다 다르므로 함께 적는다 (수치를 인용할 때 effort 병기가 규약임).
+  $("#fixed-vars").innerHTML =
+    `<b>agent</b> gpt-oss-120b · medium &nbsp;|&nbsp; ` +
+    `<b>답변·채점</b> gpt-oss-120b · high &nbsp;|&nbsp; ` +
+    `<b>임베더</b> Qwen3-Embedding-4B · 2560d`;
 
   S.backbone = backbones[0];
   syncPrompts("A");
@@ -138,9 +139,53 @@ async function boot() {
   setTab(S.tab);
 }
 
-/* 선택된 메모리 시스템을 쿼리스트링 조각으로. 기본 시스템이면 빈 값이라 서버가 기존 경로를 씀. */
-function sysQ() { return `system=${encodeURIComponent(S.system || "")}`; }
-function systemLabel(k) { return S.systems.find((x) => x.key === k)?.label || k || "mem0 classic"; }
+/* 한 시스템을 쿼리스트링 조각으로. 기본 시스템이면 빈 값이라 서버가 기존 경로를 쓴다. */
+function sysQ(k) { return `system=${encodeURIComponent(k === S.sysDefault ? "" : (k || ""))}`; }
+function systemLabel(k) { return S.systems.find((x) => x.key === k)?.label || k || "?"; }
+function systemVer(k) { return S.systems.find((x) => x.key === k)?.version || ""; }
+
+/* 선택된 시스템 중 이 탭(벤치마크)·이 세팅에서 실제로 산출물이 있는 것만. */
+function selectedSystems(bench, setting) {
+  return S.sysSel.filter((k) => {
+    const s = S.systems.find((x) => x.key === k);
+    if (!s) return false;
+    if (!bench) return true;
+    const a = s.available?.[bench];
+    return setting ? !!a?.[setting] : Object.values(a || {}).some(Boolean);
+  });
+}
+
+/* 벤치마크 탭 안의 시스템 선택 칩. n개를 자유롭게 켜고 끈다.
+   ⚠ 산출물이 없는 조합은 목록에서 빼지 않고 회색으로 남긴다. 무엇이 아직 안 돌았는지 보여야 한다. */
+function systemChips(bench, setting) {
+  const rows = S.systems.map((x) => {
+    const av = setting ? !!x.available?.[bench]?.[setting]
+                       : Object.values(x.available?.[bench] || {}).some(Boolean);
+    const on = S.sysSel.includes(x.key);
+    return `<button class="syschip${on ? " on" : ""}${av ? "" : " na"}" data-sys="${esc(x.key)}"
+      data-desc="${esc(x.note || "")}${av ? "" : "<br><b>이 세팅에는 산출물이 없습니다.</b>"}"
+      ${av ? "" : "disabled"}>${esc(x.label)}<span class="ver">${esc(x.version || "")}</span></button>`;
+  }).join("");
+  return `<div class="sysbar"><span class="muted">비교할 메모리 시스템</span>${rows}</div>`;
+}
+
+/* 상세 드릴다운(문항 목록·개별 문항)은 한 시스템 것만 보여준다.
+   선택된 것 중 그 세팅에 산출물이 있는 첫 번째를 주 시스템으로 쓴다. */
+function mainSystem(bench, setting) {
+  const ok = selectedSystems(bench, setting);
+  return ok[0] || S.sysSel[0] || S.sysDefault;
+}
+
+function wireSystemChips() {
+  $$("#content button.syschip").forEach((b) => (b.onclick = () => {
+    const k = b.dataset.sys;
+    const i = S.sysSel.indexOf(k);
+    if (i >= 0) { if (S.sysSel.length > 1) S.sysSel.splice(i, 1); }
+    else S.sysSel.push(k);
+    localStorage.setItem("mem_systems", JSON.stringify(S.sysSel));
+    render();
+  }));
+}
 
 function runsFor(backbone) { return S.runs.filter((r) => r.backbone === backbone); }
 function resolveRun(backbone, prompt) { return S.runs.find((r) => r.backbone === backbone && r.prompt === prompt); }
@@ -655,28 +700,40 @@ async function renderOverview() {
   };
 
   // 비용 칸: 계측된 조합만 채운다. 미계측을 0으로 그리면 "공짜"로 읽힌다.
+  // 호출·입력·출력을 합치지 않고 셋으로 나눈다. 셋의 단가가 서로 달라 합계 하나로는 못 읽는다.
   const anyCost = rows.some((r) => sys.some((x) => r.cost?.[x.key]));
-  const kTok = (v) => v == null ? null : (v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? Math.round(v / 1e3) + "k" : String(v));
-  const costCell = (r, k) => {
+  const COST_SUB = [
+    ["calls", "호출", "LLM·임베딩 호출 수. 지연과 요청 단가에 붙는다"],
+    ["prompt_tokens", "입력", "프롬프트 토큰. 이 파이프라인들에서 비용의 대부분"],
+    ["completion_tokens", "출력", "생성 토큰. 단가가 입력보다 비싼 것이 보통이다"],
+  ];
+  const costCell = (r, k, f) => {
     const c = r.cost?.[k];
-    if (!c) return `<td class="num muted" data-desc="이 조합은 아직 계측 전입니다. 0이 아니라 '모름'입니다">미계측</td>`;
-    return `<td class="num" data-desc="배포 비용(채점 제외) · 호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}">${kTok(c.tokens)}<br><span class="muted">${kTok(c.calls)}콜</span></td>`;
+    if (!c) return `<td class="num muted na" data-desc="이 조합은 아직 계측 전입니다. <b>0이 아니라 '모름'</b>입니다">·</td>`;
+    const v = c[f];
+    return `<td class="num" data-desc="${esc(systemLabel(k))} · ${esc(r.label)}<br>배포 비용(채점 제외)<br>호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}">${kTok(v)}</td>`;
   };
 
   const head = `<tr><th>세팅</th><th>지표</th>` +
     sys.map((x) => `<th class="num" data-desc="${esc(x.note || "")}">${esc(x.label)}<br><span class="muted">${esc(x.version || "")}</span></th>`).join("") +
     sys.filter((x) => x.key !== base).map((x) => `<th class="num">${esc(x.label)} 차</th>`).join("") +
-    (anyCost ? sys.map((x) => `<th class="num" data-desc="배포 토큰(투입+답변, 채점 제외)과 호출 수">${esc(x.label)} 비용</th>`).join("") : "") +
+    (anyCost ? sys.map((x) => COST_SUB.map(([f, lab, desc]) =>
+        `<th class="num costcol${f === "calls" ? " grpstart" : ""}" data-desc="${esc(systemLabel(x.key))} · ${esc(desc)}">${esc(lab)}</th>`).join("")).join("") : "") +
     `<th>규모</th></tr>`;
 
+  // 비용 열이 시스템마다 3칸이라 어느 시스템 것인지 위에 한 줄 더 얹는다
+  const head2 = !anyCost ? "" : `<tr class="subhead"><th colspan="${2 + sys.length * 2 - (sys.length > 1 ? 0 : 1)}"></th>` +
+    sys.map((x) => `<th class="num costcol grpstart" colspan="3">${esc(x.label)} 비용</th>`).join("") +
+    `<th></th></tr>`;
+
   const body = Object.entries(groups).map(([bench, rs]) => `
-    <tr class="grp-head"><td colspan="${3 + sys.length * 2 + (anyCost ? sys.length : 0)}" data-desc="${esc(BENCH_NOTE[bench] || "")}">${esc(rs[0].label.split(" · ")[0])}</td></tr>
+    <tr class="grp-head"><td colspan="${3 + sys.length * 2 + (anyCost ? sys.length * 3 : 0)}" data-desc="${esc(BENCH_NOTE[bench] || "")}">${esc(rs[0].label.split(" · ")[0])}</td></tr>
     ${rs.map((r) => `<tr>
       <td>${esc(r.label.split(" · ").slice(1).join(" · ") || r.label)}</td>
       <td class="muted">${esc(r.metric)}</td>
       ${sys.map((x) => cell(r, x.key)).join("")}
       ${sys.filter((x) => x.key !== base).map((x) => diff(r, x.key)).join("")}
-      ${anyCost ? sys.map((x) => costCell(r, x.key)).join("") : ""}
+      ${anyCost ? sys.map((x) => COST_SUB.map(([f]) => costCell(r, x.key, f)).join("")).join("") : ""}
       <td class="muted">${esc(r.n || "")}</td>
     </tr>`).join("")}`).join("");
 
@@ -688,14 +745,23 @@ async function renderOverview() {
           같은 행 안에서 시스템끼리만 봅니다. 기준은 <b>${esc(systemLabel(base))}</b> 입니다.
           ${anyCost ? "" : `<br>비용 열은 계측된 런이 생기면 여기 붙습니다. <b>비용</b> 탭에 재는 법이 있습니다.`}
         </p>
-        <table class="cmp"><thead>${head}</thead><tbody>${body}</tbody></table>
+        <table class="cmp"><thead>${head2}${head}</thead><tbody>${body}</tbody></table>
       </div>
     </div>`;
 }
 
 /* ---------- 비용: 배포 관점의 비교 축 ---------- */
 
+const kTok = (v) => v == null ? "–" : (v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? Math.round(v / 1e3) + "k" : String(v));
+
 const COST_STAGE_LABEL = { ingest: "투입", answer: "답변", judge: "채점", unknown: "기타" };
+
+const BENCH_LABEL = { halumem: "HaluMem", beam: "BEAM", memora: "Memora" };
+const COST_COLS = [
+  ["calls", "호출", "LLM·임베딩 호출 수"],
+  ["prompt_tokens", "입력", "프롬프트 토큰. 이 파이프라인들에서 비용의 대부분"],
+  ["completion_tokens", "출력", "생성 토큰"],
+];
 
 async function renderCost() {
   const el = $("#content");
@@ -709,64 +775,86 @@ async function renderCost() {
   if (!runs.length) {
     el.innerHTML = `<div class="card"><div class="hd">비용</div><div class="body">
       <p class="muted">아직 계측된 런이 없습니다.</p>
-      <p class="muted">계측은 2026-08-26에 붙였습니다. 그 전에 끝난 런에는 자료가 없습니다.
-      실행 스크립트가 <code>cost/{벤치마크}-{세팅}-{시스템}/</code> 에 남깁니다.</p>
+      <p class="small muted">계측은 2026-08-26에 붙였습니다. 그 전에 끝난 런은 trace 에서 되살립니다
+      (<code>src/cost/backfill_trace.py</code>). 새 런은 실행 스크립트가
+      <code>cost/{벤치마크}-{세팅}-{시스템}/</code> 에 남깁니다.</p>
       </div></div>`;
     return;
   }
 
-  const n = (v) => v == null ? "–" : v.toLocaleString();
-  const groups = {};
-  runs.forEach((r) => { (groups[`${r.benchmark || "?"} · ${r.setting || "?"}`] ||= []).push(r); });
+  // 벤치마크 -> 세팅 -> 시스템 으로 접는다. 시스템마다 돌린 세팅이 달라 격자가 성기다.
+  const grid = {}, sysSeen = [];
+  runs.forEach((r) => {
+    const b = r.benchmark || "?", st = r.setting || "?", sy = r.system || r.run;
+    ((grid[b] ||= {})[st] ||= {})[sy] = r;
+    if (!sysSeen.includes(sy)) sysSeen.push(sy);
+  });
+  const sys = S.systems.map((x) => x.key).filter((k) => sysSeen.includes(k))
+    .concat(sysSeen.filter((k) => !S.systems.some((x) => x.key === k)));
 
-  const body = Object.entries(groups).map(([g, rs]) => `
-    <tr class="grp-head"><td colspan="9">${esc(g)}</td></tr>
-    ${rs.map((r) => `<tr>
-      <td>${esc(systemLabel(r.system) || r.run)}</td>
-      <td class="num">${n(r.deploy.calls)}</td>
-      <td class="num">${n(r.deploy.prompt_tokens)}</td>
-      <td class="num">${n(r.deploy.completion_tokens)}</td>
-      <td class="num"><b>${n(r.deploy.tokens)}</b></td>
-      <td class="num">${n(r.stages.answer?.ctx_p50)}</td>
-      <td class="num">${n(r.stages.answer?.ctx_p95)}</td>
-      <td class="num">${n(r.stages.answer?.ctx_max)}</td>
-      <td class="num muted">${n(r.stages.judge?.calls)}</td>
+  const cell = (r, f) => {
+    if (!r) return `<td class="num na" data-desc="이 조합은 계측 자료가 없습니다. <b>0이 아니라 '모름'</b>입니다">·</td>`;
+    const c = r.deploy;
+    const back = Object.values(r.stages).some((x) => x.ctx_p50 == null && x.calls);
+    return `<td class="num" data-desc="${esc(systemLabel(r.system))} · ${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}<br>` +
+      `배포 비용(채점 제외)<br>호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}` +
+      `${r.stages.judge ? `<br>채점 ${r.stages.judge.calls.toLocaleString()}콜 (배포 합계에서 제외)` : ""}">${kTok(c[f])}</td>`;
+  };
+
+  const head = `<tr class="subhead"><th rowspan="2">세팅</th>` +
+    sys.map((k) => `<th class="num costcol grpstart" colspan="3"
+      data-desc="${esc(S.systems.find((x) => x.key === k)?.note || "")}">${esc(systemLabel(k))}
+      <span class="muted">${esc(systemVer(k))}</span></th>`).join("") + `</tr>` +
+    `<tr>` + sys.map((k) => COST_COLS.map(([f, lab, desc], i) =>
+      `<th class="num costcol${i === 0 ? " grpstart" : ""}" data-desc="${esc(desc)}">${esc(lab)}</th>`).join("")).join("") + `</tr>`;
+
+  const body = Object.entries(grid).map(([b, settings]) => `
+    <tr class="grp-head"><td colspan="${1 + sys.length * 3}">${esc(BENCH_LABEL[b] || b)}</td></tr>
+    ${Object.entries(settings).map(([st, bysys]) => `<tr>
+      <td>${esc(st)}</td>
+      ${sys.map((k) => COST_COLS.map(([f], i) => {
+        const c = cell(bysys[k], f);
+        return i === 0 ? c.replace('class="num', 'class="num grpstart') : c;
+      }).join("")).join("")}
     </tr>`).join("")}`).join("");
 
+  // 단계별 상세: 투입/답변/채점과 컨텍스트 분포
   const detail = runs.map((r) => `
-    <div class="card"><div class="hd">${esc(systemLabel(r.system) || r.run)} · ${esc(r.benchmark)} ${esc(r.setting)}</div>
+    <div class="card"><div class="hd">${esc(systemLabel(r.system))}
+      <span class="muted">${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}</span></div>
       <div class="body mscroll">
         <table class="cmp"><thead><tr>
           <th>단계</th><th class="num">호출</th><th class="num">입력 토큰</th><th class="num">출력 토큰</th>
-          <th class="num">추론 토큰</th><th class="num">컨텍스트 p50</th><th class="num">p95</th><th class="num">최대</th>
-          <th class="num">실패</th>
+          <th class="num" data-desc="reasoning 모델이 사고에 쓴 토큰. 출력 토큰에 포함됩니다">추론 토큰</th>
+          <th class="num" data-desc="프롬프트 토큰의 중앙값">컨텍스트 p50</th>
+          <th class="num">p95</th><th class="num">최대</th><th class="num">실패</th>
         </tr></thead><tbody>
-          ${Object.entries(r.stages).map(([k, s]) => `<tr>
-            <td>${esc(COST_STAGE_LABEL[k] || k)}</td>
-            <td class="num">${n(s.calls)}</td><td class="num">${n(s.prompt_tokens)}</td>
-            <td class="num">${n(s.completion_tokens)}</td><td class="num">${n(s.reasoning_tokens)}</td>
-            <td class="num">${n(s.ctx_p50)}</td><td class="num">${n(s.ctx_p95)}</td><td class="num">${n(s.ctx_max)}</td>
-            <td class="num${s.errors ? " down" : " muted"}">${n(s.errors)}</td>
+          ${Object.entries(r.stages).map(([k, st]) => `<tr${k === "judge" ? ' class="dimrow"' : ""}>
+            <td data-desc="${k === "judge" ? "평가에만 드는 비용입니다. 배포 합계에서 뺐습니다" : "배포 시 실제로 내는 비용입니다"}">${esc(COST_STAGE_LABEL[k] || k)}</td>
+            <td class="num">${st.calls.toLocaleString()}</td>
+            <td class="num">${st.prompt_tokens.toLocaleString()}</td>
+            <td class="num">${st.completion_tokens.toLocaleString()}</td>
+            <td class="num muted">${st.reasoning_tokens.toLocaleString()}</td>
+            <td class="num">${st.ctx_p50 == null ? "–" : st.ctx_p50.toLocaleString()}</td>
+            <td class="num">${st.ctx_p95 == null ? "–" : st.ctx_p95.toLocaleString()}</td>
+            <td class="num">${st.ctx_max ? st.ctx_max.toLocaleString() : "–"}</td>
+            <td class="num${st.errors ? " down" : " muted"}">${st.errors.toLocaleString()}</td>
           </tr>`).join("")}
         </tbody></table>
+        ${Object.keys(r.stages).length === 1 && r.stages.ingest
+          ? `<p class="small muted">투입 단계만 있습니다. trace 에서 되살린 자료라 답변·채점은 안 잡힙니다.</p>` : ""}
       </div>
     </div>`).join("");
 
   el.innerHTML = `
-    <div class="card"><div class="hd">배포 비용 (투입 + 답변)</div>
+    <div class="card"><div class="hd">배포 비용 <span class="muted">투입 + 답변 · 채점 제외</span></div>
       <div class="body mscroll">
-        <p class="muted" style="margin:0 0 10px">
-          <b>채점은 뺐습니다.</b> 평가에만 드는 비용이라 배포하면 안 냅니다(맨 오른쪽에 참고로만 둠).<br>
-          컨텍스트는 <b>답변 단계의 프롬프트 토큰</b>입니다. 검색 예산이 같아도 총 컨텍스트는
-          방법마다 다릅니다.<br>
-          ⚠ 계측은 2026-08-26에 붙였습니다. 그 전에 끝난 런은 여기 안 나옵니다. 없는 것을 0으로 그리지 않습니다.
+        <p class="small muted" style="margin:0 0 10px">
+          <b>채점은 뺐습니다.</b> 평가에만 드는 비용이라 배포하면 안 냅니다.
+          호출·입력·출력을 합치지 않았습니다. <b>셋의 단가가 서로 다릅니다.</b><br>
+          <span class="na">·</span> 는 계측 자료가 없다는 뜻입니다. 0이 아닙니다.
         </p>
-        <table class="cmp"><thead><tr>
-          <th>메모리 시스템</th><th class="num">호출</th><th class="num">입력 토큰</th>
-          <th class="num">출력 토큰</th><th class="num">합계</th>
-          <th class="num">컨텍스트 p50</th><th class="num">p95</th><th class="num">최대</th>
-          <th class="num">채점 호출</th>
-        </tr></thead><tbody>${body}</tbody></table>
+        <table class="cmp costgrid"><thead>${head}</thead><tbody>${body}</tbody></table>
       </div>
     </div>
     ${detail}`;
@@ -793,13 +881,20 @@ async function renderHalumem() {
   try { d = await api(`/api/halumem?scale=${encodeURIComponent(S.hmScale)}`); }
   catch (e) { el.innerHTML = `<p class="muted">HaluMem 집계를 못 읽었습니다: ${esc(e.message || e)}</p>`; return; }
 
+  // 선택된 시스템만 남긴다. API 는 있는 것을 전부 주므로 화면에서 거른다.
+  if (d.systems?.length) {
+    const keep = new Set(selectedSystems("halumem", S.hmScale));
+    if (keep.size) d.systems = d.systems.filter((r) => keep.has(r.system));
+  }
+
   const scaleNav = (d.scales || []).map((x) =>
     `<button class="subtab${x.key === S.hmScale ? " active" : ""}" data-hm="${x.key}"
        data-desc="${esc(x.note || "")}"${x.ready ? "" : " disabled"}>${esc(x.label)}</button>`).join("");
 
   if (!d.ready || !d.systems.length) {
-    el.innerHTML = `<div class="subnav">${scaleNav}</div>
-      <p class="muted">이 규모에는 아직 산출물이 없습니다.</p>`;
+    el.innerHTML = `${systemChips("halumem", S.hmScale)}<div class="subnav">${scaleNav}</div>
+      <p class="muted">고른 시스템에는 이 규모의 산출물이 없습니다.</p>`;
+    wireSystemChips();
     $$("#content button[data-hm]").forEach((b) => (b.onclick = () => { S.hmScale = b.dataset.hm; render(); }));
     return;
   }
@@ -818,6 +913,7 @@ async function renderHalumem() {
     ? `<p class="muted">아직 안 돌린 시스템: ${d.missing.map((k) => esc(systemLabel(k))).join(", ")}</p>` : "";
 
   el.innerHTML = `
+    ${systemChips("halumem", S.hmScale)}
     <div class="subnav">${scaleNav}</div>
     <div class="card"><div class="hd">HaluMem · 메모리 시스템별</div>
       <div class="body mscroll">
@@ -844,6 +940,7 @@ async function renderHalumem() {
       </div>
     </div>`;
   $$("#content button[data-hm]").forEach((b) => (b.onclick = () => { S.hmScale = b.dataset.hm; render(); }));
+  wireSystemChips();
 }
 
 /* ---------- 메인 렌더 ---------- */
@@ -2549,7 +2646,7 @@ async function renderBeamOverview() {
   el.innerHTML = `<p class="muted">집계 중…</p>`;
   let d;
   try {
-    d = await api(`/api/beam/overview?${sysQ()}`);
+    d = await api(`/api/beam/overview?${sysQ(mainSystem('beam'))}`);
   } catch (e) {
     el.innerHTML = `${beamModeSwitch()}<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
     bindBeamMode();
@@ -2678,12 +2775,66 @@ async function renderBeamOverview() {
   bindBeamMode();
 }
 
+/* 여러 시스템의 같은 세팅을 한 번에 받아 능력별로 나란히 놓는다.
+   ⚠ 시스템마다 안 돌린 세팅이 있으므로 있는 것만 부른다 (없는 것을 0으로 그리지 않는다). */
+async function beamCompare(bucket, keys) {
+  const got = await Promise.all(keys.map((k) =>
+    api(`/api/beam?bucket=${encodeURIComponent(bucket)}&${sysQ(k)}`)
+      .then((r) => ({ k, r })).catch(() => ({ k, r: null }))));
+  return got.filter((x) => x.r && x.r.ready);
+}
+
+function beamCompareCard(rows, cuts) {
+  if (rows.length < 2) return "";
+  const cut = String(S.beamCmpCut || cuts[cuts.length - 1]);
+  const segs = cuts.map((c) => `<button class="seg${String(c) === cut ? " on" : ""}" data-cmpcut="${c}"
+    data-desc="검색 예산 ${c}개일 때로 맞춰 비교합니다">${c}</button>`).join("");
+
+  const abil = {};
+  rows.forEach(({ k, r }) => (r.abilities || []).forEach((a) => {
+    (abil[a.key] ||= { label: a.label, v: {} }).v[k] = a.cells?.[cut]?.score ?? null;
+  }));
+  const base = rows[0].k;
+  const n2 = (v) => v == null ? "–" : (v * 100).toFixed(2);
+  const dcell = (v, b) => (v == null || b == null) ? `<td class="num muted">–</td>`
+    : `<td class="num ${v > b ? "up" : v < b ? "down" : ""}">${v > b ? "+" : ""}${((v - b) * 100).toFixed(2)}</td>`;
+
+  const body = Object.entries(abil)
+    .sort((a, b) => (b[1].v[base] ?? 0) - (a[1].v[base] ?? 0))
+    .map(([key, a]) => `<tr>
+      <td data-desc="${esc(key)}">${esc(a.label)}</td>
+      ${rows.map(({ k }) => `<td class="num">${n2(a.v[k])}</td>`).join("")}
+      ${rows.slice(1).map(({ k }) => dcell(a.v[k], a.v[base])).join("")}
+    </tr>`).join("");
+
+  const overall = {};
+  rows.forEach(({ k, r }) => { overall[k] = r.overall?.[cut]?.score ?? null; });
+
+  return `<div class="card"><div class="hd">시스템 비교 · 능력별 <span class="muted">검색 예산 ${esc(cut)}</span></div>
+    <div class="body mscroll">
+      <p class="hrefsw"><b>검색 예산</b>${segs}</p>
+      <table class="cmp"><thead><tr><th>능력</th>
+        ${rows.map(({ k }) => `<th class="num">${esc(systemLabel(k))}<br><span class="muted">${esc(systemVer(k))}</span></th>`).join("")}
+        ${rows.slice(1).map(({ k }) => `<th class="num">${esc(systemLabel(k))} 차</th>`).join("")}
+      </tr></thead><tbody>
+        <tr class="tot-row"><td><b>전체</b></td>
+          ${rows.map(({ k }) => `<td class="num"><b>${n2(overall[k])}</b></td>`).join("")}
+          ${rows.slice(1).map(({ k }) => dcell(overall[k], overall[base])).join("")}
+        </tr>
+        ${body}
+      </tbody></table>
+    </div></div>`;
+}
+
 async function renderBeamBucket() {
   const el = $("#content");
   el.innerHTML = `<p class="muted">집계 중…</p>`;
+  const keys = selectedSystems("beam", S.beamBucket);
+  const sysk = keys[0] || mainSystem("beam", S.beamBucket);
+  const cmpRows = keys.length > 1 ? await beamCompare(S.beamBucket, keys) : [];
   let d;
   try {
-    d = await api(`/api/beam?bucket=${encodeURIComponent(S.beamBucket)}&${sysQ()}`);
+    d = await api(`/api/beam?bucket=${encodeURIComponent(S.beamBucket)}&${sysQ(sysk)}`);
   } catch (e) {
     el.innerHTML = `<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
     return;
@@ -2699,7 +2850,9 @@ async function renderBeamBucket() {
       <p class="muted">이 버킷은 아직 채점본이 없습니다.</p>`;
     bindBeamMode();
     bindBeamMode();
-  $$("#content .hrefsw:not(.beammode) button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
+  wireSystemChips();
+  $$("#content button[data-cmpcut]").forEach((b) => (b.onclick = () => { S.beamCmpCut = b.dataset.cmpcut; renderBeam(); }));
+  $$("#content .hrefsw:not(.beammode) button[data-bk]").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
     return;
   }
 
@@ -2730,7 +2883,10 @@ async function renderBeamBucket() {
   const eo = d.event_ordering;
   el.innerHTML = `
     ${beamModeSwitch()}
+    ${systemChips("beam", S.beamBucket)}
     <p class="hrefsw" data-desc="버킷마다 대화 집합이 다릅니다(제목 겹침 0). 절대 수치를 버킷 간에 비교하지 마세요."><b>버킷</b>${pick}</p>
+    ${beamCompareCard(cmpRows, CUT)}
+    ${cmpRows.length > 1 ? `<p class="small muted">아래는 <b>${esc(systemLabel(sysk))}</b> 한 시스템의 상세입니다.</p>` : ""}
     <p class="small muted">${esc(d.note || "")}<br>대화 ${d.n_convs}개 · 문항 ${d.n_questions}개 · 채점 ${d.n_records}건 · 저장 메모리 ${d.stored_min}~${d.stored_max}개</p>
 
     <div class="jbasis" data-desc="cutoff 는 Stage A' 에서 검색 결과 top-200 을 잘라 만든 조건입니다. 투입은 한 번만 했고 자르기만 달리했습니다.">
@@ -2802,7 +2958,9 @@ async function renderBeamBucket() {
     <p class="small muted" style="margin-top:10px">⚠ 이 화면은 HaluMem 과 데이터가 달라 상단바의 Generator·Judge 선택을 따르지 않습니다. 버킷마다 고정된 조합으로 집계됩니다.</p>
   </div>`;
   bindBeamMode();
-  $$("#content .hrefsw:not(.beammode) button").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
+  wireSystemChips();
+  $$("#content button[data-cmpcut]").forEach((b) => (b.onclick = () => { S.beamCmpCut = b.dataset.cmpcut; renderBeam(); }));
+  $$("#content .hrefsw:not(.beammode) button[data-bk]").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
   $$("#content td.bclick").forEach((td) => (td.onclick = () => {
     const [k, lab] = td.dataset.open.split("|");
     beamQuestions(k, lab);
@@ -2818,7 +2976,7 @@ async function beamQuestions(ability, label) {
   $("#jm-close").onclick = jmClose;
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
-  const d = await api(`/api/beam/questions?bucket=${encodeURIComponent(S.beamBucket)}&ability=${encodeURIComponent(ability)}&${sysQ()}`);
+  const d = await api(`/api/beam/questions?bucket=${encodeURIComponent(S.beamBucket)}&ability=${encodeURIComponent(ability)}&${sysQ(mainSystem('beam', S.beamBucket))}`);
   const CUT = d.cutoffs;
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
     <div class="jbasis" data-desc="같은 문항을 cutoff 만 바꿔 네 번 답변시키고 각각 채점했습니다. 흔들림이 큰 문항일수록 컨텍스트 양에 민감합니다.">
@@ -2853,7 +3011,7 @@ async function beamQuestions(ability, label) {
 async function beamDetail(conv, ability, idx, label) {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
-  const d = await api(`/api/beam/question?${sysQ()}&bucket=${encodeURIComponent(S.beamBucket)}`
+  const d = await api(`/api/beam/question?${sysQ(mainSystem('beam', S.beamBucket))}&bucket=${encodeURIComponent(S.beamBucket)}`
     + `&conv=${encodeURIComponent(conv)}&ability=${encodeURIComponent(ability)}&idx=${idx}`);
   const CS = d.cutoffs;
   const sc = (v) => `<span class="nsc n${String(v).replace(".", "")}">${v}</span>`;
@@ -3121,11 +3279,12 @@ function rateHeat(v, neutralOver) {
 async function memoraCutoffCard(period) {
   // ⚠ cutoff 스윕 팔은 mem0 classic 으로만 돌렸다. 다른 시스템을 보는 중에 이 카드를 그리면
   //   위쪽(선택 시스템)과 아래쪽(classic)이 한 화면에서 섞여 같은 것으로 읽힌다.
-  const base = S.systems.find((x) => x.default)?.key || "";
-  if (S.system && S.system !== base) {
+  const base = S.sysDefault;
+  const cur = mainSystem("memora", period);
+  if (cur && cur !== base) {
     return `<div class="card"><h4>검색 예산(cutoff) 스윕 · ${esc(period)}</h4>
       <div class="body"><p class="muted">스윕 팔은 <b>${esc(systemLabel(base))}</b> 으로만 돌렸습니다.
-      지금 보는 <b>${esc(systemLabel(S.system))}</b> 에는 없습니다.</p></div></div>`;
+      지금 보는 <b>${esc(systemLabel(cur))}</b> 에는 없습니다.</p></div></div>`;
   }
   let d;
   try { d = await api(`/api/memora/cutoff?period=${encodeURIComponent(period)}`); }
@@ -3197,12 +3356,60 @@ async function memoraCutoffCard(period) {
   </div>`;
 }
 
+/* 여러 시스템의 같은 기간을 한 번에 받아 과제별로 나란히 놓는다. */
+async function memoraCompare(period, keys) {
+  const got = await Promise.all(keys.map((k) =>
+    api(`/api/memora?period=${encodeURIComponent(period)}&${sysQ(k)}`)
+      .then((r) => ({ k, r })).catch(() => ({ k, r: null }))));
+  return got.filter((x) => x.r && x.r.ready);
+}
+
+const MEM_CMP_ROWS = [
+  ["fama", "FAMA", "넣어야 할 것에서 무효 항목 언급을 벌준 값. 이 벤치마크의 결론 지표", true],
+  ["mpa", "MPA", "넣어야 할 것을 넣은 비율. 빼야 할 것은 안 봄", false],
+  ["penalty", "페널티", "MPA 에서 FAMA 를 깎은 폭. 무효 항목을 끌어다 쓴 만큼", false],
+  ["faa", "FAA", "빼야 할 것을 뺀 비율. 낮으면 안 지운 것", false],
+];
+
+function memoraCompareCard(rows, tasks) {
+  if (rows.length < 2) return "";
+  const base = rows[0].k;
+  const n2 = (v) => v == null ? "–" : v.toFixed(2);
+  const dcell = (v, b, invert) => (v == null || b == null) ? `<td class="num muted">–</td>`
+    : `<td class="num ${(invert ? v < b : v > b) ? "up" : (invert ? v > b : v < b) ? "down" : ""}">${v > b ? "+" : ""}${(v - b).toFixed(2)}</td>`;
+
+  const line = (get, label, desc, strong, invert) => `<tr${strong ? ' class="tot-row"' : ""}>
+    <td data-desc="${esc(desc)}">${strong ? `<b>${esc(label)}</b>` : esc(label)}</td>
+    ${rows.map(({ k, r }) => `<td class="num">${strong ? `<b>${n2(get(r))}</b>` : n2(get(r))}</td>`).join("")}
+    ${rows.slice(1).map(({ k, r }) => dcell(get(r), get(rows[0].r), invert))}
+  </tr>`;
+
+  const overall = MEM_CMP_ROWS.map(([key, label, desc, strong]) =>
+    line((r) => r.overall?.[key], label, desc, strong, key === "penalty")).join("");
+
+  const byTask = Object.entries(tasks || {}).map(([t, tl]) =>
+    line((r) => r.by_task?.[t]?.fama, `${tl} FAMA`, `${t} 과제의 FAMA`, false, false)).join("");
+
+  const store = line((r) => r.stored, "저장 메모리", "투입이 끝난 뒤 저장소에 남은 개수", false, false);
+
+  return `<div class="card"><div class="hd">시스템 비교 · ${esc(rows[0].r.period)}</div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>지표</th>
+        ${rows.map(({ k }) => `<th class="num">${esc(systemLabel(k))}<br><span class="muted">${esc(systemVer(k))}</span></th>`).join("")}
+        ${rows.slice(1).map(({ k }) => `<th class="num">${esc(systemLabel(k))} 차</th>`).join("")}
+      </tr></thead><tbody>${overall}${byTask}${store}</tbody></table>
+    </div></div>`;
+}
+
 async function renderMemora() {
   const el = $("#content");
   el.innerHTML = `<p class="muted">집계 중…</p>`;
+  const keys = selectedSystems("memora", S.memoraPeriod);
+  const sysk = keys[0] || mainSystem("memora", S.memoraPeriod);
+  const cmpRows = keys.length > 1 ? await memoraCompare(S.memoraPeriod, keys) : [];
   let d;
   try {
-    d = await api(`/api/memora?period=${encodeURIComponent(S.memoraPeriod)}&${sysQ()}`);
+    d = await api(`/api/memora?period=${encodeURIComponent(S.memoraPeriod)}&${sysQ(sysk)}`);
   } catch (e) {
     el.innerHTML = `<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
     return;
@@ -3211,8 +3418,11 @@ async function renderMemora() {
     `<button class="seg${p.key === d.period ? " on" : ""}" data-mp="${esc(p.key)}"
       ${p.ready ? "" : "disabled"} data-desc="${esc(p.note || "")}${p.ready ? "" : "<br><b>아직 채점본이 없습니다</b>"}"
       >${esc(p.label)}</button>`).join("");
-  const bind = () => $$("#content .hrefsw button").forEach((b) =>
-    (b.onclick = () => { S.memoraPeriod = b.dataset.mp; renderMemora(); }));
+  const bind = () => {
+    $$("#content .hrefsw button[data-mp]").forEach((b) =>
+      (b.onclick = () => { S.memoraPeriod = b.dataset.mp; renderMemora(); }));
+    wireSystemChips();
+  };
 
   if (!d.ready) {
     el.innerHTML = `<p class="hrefsw"><b>기간</b>${pick}</p>
@@ -3235,7 +3445,10 @@ async function renderMemora() {
   };
 
   el.innerHTML = `
+    ${systemChips("memora", S.memoraPeriod)}
     <p class="hrefsw" data-desc="기간마다 세션 수와 누적 갱신·삭제 횟수가 다릅니다. 대화 집합도 다르므로 기간 간 절대 비교는 하지 마세요."><b>기간</b>${pick}</p>
+    ${memoraCompareCard(cmpRows, d.tasks)}
+    ${cmpRows.length > 1 ? `<p class="small muted">아래는 <b>${esc(systemLabel(sysk))}</b> 한 시스템의 상세입니다.</p>` : ""}
     <p class="small muted">${esc(d.note || "")}<br>페르소나 ${d.n_personas} · 세션 ${d.n_sessions.toLocaleString()} · 문항 ${d.n_questions} · 평가 기준 ${d.n_criteria.toLocaleString()} · 저장 메모리 ${d.stored.toLocaleString()}개</p>
 
     <div class="jbasis" data-desc="FAMA = max(0, MPA − λ(1−FAA)). MPA는 넣어야 할 것을 넣은 비율, FAA는 빼야 할 것을 뺀 비율, λ는 문항의 forgetting 기준 비중입니다.">
@@ -3387,7 +3600,7 @@ async function memoraQuestions(task, label) {
   $("#jm-close").onclick = jmClose;
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
-  const d = await api(`/api/memora/questions?period=${encodeURIComponent(S.memoraPeriod)}&task=${encodeURIComponent(task)}&${sysQ()}`);
+  const d = await api(`/api/memora/questions?period=${encodeURIComponent(S.memoraPeriod)}&task=${encodeURIComponent(task)}&${sysQ(mainSystem('memora', S.memoraPeriod))}`);
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
     <div class="jbasis" data-desc="FAMA 낮은 순입니다. 기준 충족은 '넣어야 할 것 / 빼야 할 것'을 각각 몇 개 맞혔는지입니다.">
       문항 ${d.questions.length}개를 <b>FAMA 낮은 순</b>으로 놓았습니다.
@@ -3419,7 +3632,7 @@ async function memoraQuestions(task, label) {
 async function memoraDetail(persona, qid, label) {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
-  const d = await api(`/api/memora/question?${sysQ()}&period=${encodeURIComponent(S.memoraPeriod)}`
+  const d = await api(`/api/memora/question?${sysQ(mainSystem('memora', S.memoraPeriod))}&period=${encodeURIComponent(S.memoraPeriod)}`
     + `&persona=${encodeURIComponent(persona)}&question_id=${encodeURIComponent(qid)}`);
   const crit = (t) => d.criteria.filter((c) => c.type === t);
   const block = (title, t, hint) => {

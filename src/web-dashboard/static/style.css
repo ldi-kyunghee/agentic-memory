@@ -807,3 +807,29 @@ table.cmp th:hover .colx { display: block; }
                     color: var(--dim); }
 .hidebar .restore:hover { color: var(--ink); border-color: var(--rule-firm); }
 .hidebar .restore.all { font-weight: 700; }
+
+/* ── 시스템 선택 칩 (벤치마크 탭 안) ────────────────────────────────────────
+   상단 드롭다운을 대신한다. n개를 켜고 끄며 실시간으로 비교한다. */
+.sysbar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin: 0 0 10px; }
+.sysbar > .muted { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em;
+                   text-transform: uppercase; margin-right: 3px; }
+.syschip { display: inline-flex; align-items: baseline; gap: 5px; cursor: pointer;
+           border: 1px solid var(--rule-firm); background: var(--panel); color: var(--dim);
+           border-radius: 999px; padding: 3px 11px; font-size: var(--fs-md); font-weight: 600; }
+.syschip .ver { font-size: var(--fs-nano); opacity: .75; font-weight: 500; }
+.syschip:hover:not([disabled]) { border-color: var(--accent); color: var(--ink); }
+.syschip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 800; }
+.syschip.on .ver { opacity: .85; }
+.syschip.na, .syschip[disabled] { opacity: .38; cursor: default; border-style: dashed; }
+
+/* ── 비용 표 ────────────────────────────────────────────────────────────────
+   시스템마다 3칸(호출·입력·출력)이라 묶음 경계가 안 보이면 어느 시스템 값인지 못 읽는다.
+   묶음 첫 칸에만 굵은 세로선을 준다. 색이 아니라 선으로 가른다. */
+table.cmp th.grpstart, table.cmp td.grpstart { border-left: 2px solid var(--rule-firm); }
+table.cmp tr.subhead th { background: var(--band); font-size: var(--fs-micro); font-weight: 800;
+                          color: var(--ink); text-align: center; }
+table.cmp th.costcol { text-align: right; }
+table.cmp td.na { color: var(--rule-firm); text-align: center; font-weight: 700; }
+table.cmp tr.dimrow > td { color: var(--dim); font-style: italic; }
+table.cmp tr.tot-row > td { background: var(--band); font-weight: 700; }
+table.cmp tr.tot-row:hover > td { background: var(--accent-bg); }
