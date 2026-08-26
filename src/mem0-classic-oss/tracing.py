@@ -1,3 +1,4 @@
+import os
 import json
 import time
 from datetime import datetime, timezone
@@ -102,8 +103,13 @@ class TracingLLM:
 
         # mem0 0.1.118: extraction call은 [system, user] 2개, update decision은 [user] 1개
         # -> system role의 유무가 purpose를 결정함
-        has_system = any(m.get("role") == "system" for m in messages)
-        purpose = "fact_extraction" if has_system else "update_decision"
+        # ⚠ 2.0.18(v3)은 ADD-only라 호출이 하나뿐이고 항상 system을 낀다. 같은 규칙을 쓰면
+        #   전부 fact_extraction으로 찍혀 classic의 추출 호출과 구분이 안 된다.
+        if os.getenv("MEM0_IMPL") == "v3":
+            purpose = "additive_extraction"
+        else:
+            has_system = any(m.get("role") == "system" for m in messages)
+            purpose = "fact_extraction" if has_system else "update_decision"
 
         llm = {"messages": messages, "response": response, **self._last_extra}
         self._tracer.log("llm_call", purpose=purpose, duration_ms=duration, llm=llm)
@@ -124,22 +130,36 @@ class TracingVectorStore:
         self._inner = inner
         self._tracer = tracer
 
-    def search(self, query, vectors, limit=5, filters=None, **kwargs):
+    def search(self, *args, **kwargs):
+        """인자를 그대로 넘긴다. **시그니처를 고정하면 안 된다.**
+
+        ⚠ 검색 예산 인자 이름이 mem0 버전마다 다르다: classic 0.1.118 은 `limit`,
+          2.0.18 은 `top_k`. 예전에는 여기서 `limit=5` 를 기본값으로 받아 무조건
+          다시 넘겼는데, 그러면 v3 의 Qdrant.search 가 `limit` 을 모르는 인자로 보고
+          TypeError 로 죽는다 (2026-08-26 BEAM v3 투입이 이걸로 전멸했음).
+          그래서 그대로 통과시키고, 기록할 값만 있는 쪽에서 읽는다.
+        """
         start = time.time()
-        results = self._inner.search(query=query, vectors=vectors, limit=limit, filters=filters, **kwargs)
+        results = self._inner.search(*args, **kwargs)
         duration = (time.time() - start) * 1000
-        hits = [
-            {
-                "id": str(r.id), 
-                "text": (r.payload or {}).get("data", ""), 
-                "score": round(float(r.score), 4)
-            }
-            for r in results
-        ]
-        
-        # retriever 종류를 trace에 남긴다 — BM25 레인과 임베딩 레인의 trace를 나중에 구분해야 한다
+
+        def _hit(r):
+            payload = getattr(r, "payload", None) or {}
+            score = getattr(r, "score", None)
+            return {"id": str(getattr(r, "id", "")),
+                    "text": payload.get("data", ""),
+                    "score": round(float(score), 4) if score is not None else None}
+
+        hits = [_hit(r) for r in (results or [])]
+
+        # 버전마다 다른 이름 중 있는 것을 쓴다. 위치 인자로 온 경우도 대비한다.
+        budget = kwargs.get("limit", kwargs.get("top_k"))
+        query = kwargs.get("query", args[0] if args else None)
+
+        # retriever 종류를 trace에 남긴다 - BM25 레인과 임베딩 레인의 trace를 나중에 구분해야 한다
         method = "bm25" if type(self._inner).__name__ == "BM25Store" else "dense"
-        self._tracer.log("retrieval", duration_ms=duration, retrieval={"method": method, "query": query, "limit": limit, "hits": hits})
+        self._tracer.log("retrieval", duration_ms=duration,
+                         retrieval={"method": method, "query": query, "limit": budget, "hits": hits})
         return results
     
     def __getattr__(self, name):
