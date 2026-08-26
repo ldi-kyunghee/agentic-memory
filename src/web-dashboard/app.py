@@ -1058,6 +1058,34 @@ def api_cost():
     return {"runs": out}
 
 
+def _cost_index() -> dict:
+    """(benchmark, setting, system) -> 배포 비용. 개요 표에 정확도와 나란히 붙이려고 만든다.
+
+    ⚠ 계측 안 된 조합은 키를 안 만든다. 화면에서 "없음"과 "0"을 구분해야 하기 때문이다.
+    """
+    idx = {}
+    if not _COST_ROOT.is_dir():
+        return idx
+    for d in sorted(_COST_ROOT.iterdir()):
+        if not d.is_dir():
+            continue
+        c = _cost_load(d)
+        if not c or not c["stages"]:
+            continue
+        m = c["meta"]
+        calls = pt = ct = 0
+        for name, st in c["stages"].items():
+            if name == "judge":
+                continue
+            calls += st["calls"]; pt += st["prompt_tokens"]; ct += st["completion_tokens"]
+        ans = c["stages"].get("answer") or {}
+        idx[(m.get("benchmark", ""), m.get("setting", ""), m.get("system", ""))] = {
+            "calls": calls, "tokens": pt + ct, "prompt_tokens": pt, "completion_tokens": ct,
+            "ctx_p50": _cost_pct(ans.get("hist") or [], 0.5),
+        }
+    return idx
+
+
 @app.get("/api/overview")
 def api_overview():
     """세 벤치마크 x 메모리 시스템 요약. 개요 탭의 유일한 소스임.
@@ -1072,6 +1100,7 @@ def api_overview():
     sysd = systems_cfg()
     sys_rows = [{"key": k, "label": v.get("label", k), "version": v.get("version"),
                  "default": bool(v.get("default"))} for k, v in sysd.items()]
+    cidx = _cost_index()
     rows = []
 
     for scale, cfg in ((load_registry_doc().get("halumem", {}) or {}).get("scales", {}) or {}).items():
@@ -1085,6 +1114,7 @@ def api_overview():
             "n": f"공통 유저 {d['common_users']}명",
             "cells": {r["system"]: (r["qa_c"] * 100 if r["qa_c"] is not None else None)
                       for r in d["systems"]},
+            "cost": {sk: cidx.get(("halumem", scale, sk)) for sk in sysd},
         })
 
     for bk, bcfg in (beam_cfg().get("buckets") or {}).items():
@@ -1100,7 +1130,8 @@ def api_overview():
         rows.append({"bench": "beam", "setting": bk,
                      "label": f"BEAM · {bcfg.get('label', bk)}",
                      "metric": "전체 평균", "unit": "%", "n": f"레코드 {ns:,}",
-                     "cells": cells})
+                     "cells": cells,
+                     "cost": {sk: cidx.get(("beam", bk, sk)) for sk in sysd}})
 
     for pk, pcfg in (memora_cfg().get("periods") or {}).items():
         cells, ns = {}, None
@@ -1118,7 +1149,8 @@ def api_overview():
                      "label": f"Memora · {pcfg.get('label', pk)}",
                      "metric": "FAMA", "unit": "",
                      "n": f"문항 {ns:,}" if ns else "",
-                     "cells": cells})
+                     "cells": cells,
+                     "cost": {sk: cidx.get(("memora", pk, sk)) for sk in sysd}})
 
     return {"systems": sys_rows, "rows": rows}
 

@@ -552,18 +552,29 @@ async function renderOverview() {
     return `<td class="num ${cls}">${v > 0 ? "+" : ""}${v.toFixed(2)}</td>`;
   };
 
+  // 비용 칸: 계측된 조합만 채운다. 미계측을 0으로 그리면 "공짜"로 읽힌다.
+  const anyCost = rows.some((r) => sys.some((x) => r.cost?.[x.key]));
+  const kTok = (v) => v == null ? null : (v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? Math.round(v / 1e3) + "k" : String(v));
+  const costCell = (r, k) => {
+    const c = r.cost?.[k];
+    if (!c) return `<td class="num muted" data-desc="이 조합은 아직 계측 전입니다. 0이 아니라 '모름'입니다">미계측</td>`;
+    return `<td class="num" data-desc="배포 비용(채점 제외) · 호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}">${kTok(c.tokens)}<br><span class="muted">${kTok(c.calls)}콜</span></td>`;
+  };
+
   const head = `<tr><th>세팅</th><th>지표</th>` +
     sys.map((x) => `<th class="num" data-desc="${esc(x.note || "")}">${esc(x.label)}<br><span class="muted">${esc(x.version || "")}</span></th>`).join("") +
     sys.filter((x) => x.key !== base).map((x) => `<th class="num">${esc(x.label)} 차</th>`).join("") +
+    (anyCost ? sys.map((x) => `<th class="num" data-desc="배포 토큰(투입+답변, 채점 제외)과 호출 수">${esc(x.label)} 비용</th>`).join("") : "") +
     `<th>규모</th></tr>`;
 
   const body = Object.entries(groups).map(([bench, rs]) => `
-    <tr class="grp-head"><td colspan="${3 + sys.length * 2}" data-desc="${esc(BENCH_NOTE[bench] || "")}">${esc(rs[0].label.split(" · ")[0])}</td></tr>
+    <tr class="grp-head"><td colspan="${3 + sys.length * 2 + (anyCost ? sys.length : 0)}" data-desc="${esc(BENCH_NOTE[bench] || "")}">${esc(rs[0].label.split(" · ")[0])}</td></tr>
     ${rs.map((r) => `<tr>
       <td>${esc(r.label.split(" · ").slice(1).join(" · ") || r.label)}</td>
       <td class="muted">${esc(r.metric)}</td>
       ${sys.map((x) => cell(r, x.key)).join("")}
       ${sys.filter((x) => x.key !== base).map((x) => diff(r, x.key)).join("")}
+      ${anyCost ? sys.map((x) => costCell(r, x.key)).join("") : ""}
       <td class="muted">${esc(r.n || "")}</td>
     </tr>`).join("")}`).join("");
 
@@ -573,6 +584,7 @@ async function renderOverview() {
         <p class="muted" style="margin:0 0 10px">
           ⚠ <b>벤치마크 간 절대값을 견주지 않습니다.</b> 지표 정의가 서로 다릅니다.
           같은 행 안에서 시스템끼리만 봅니다. 기준은 <b>${esc(systemLabel(base))}</b> 입니다.
+          ${anyCost ? "" : `<br>비용 열은 계측된 런이 생기면 여기 붙습니다. <b>비용</b> 탭에 재는 법이 있습니다.`}
         </p>
         <table class="cmp"><thead>${head}</thead><tbody>${body}</tbody></table>
       </div>
