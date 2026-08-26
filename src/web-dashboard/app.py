@@ -939,6 +939,123 @@ def api_halumem(scale: str = "20u"):
             "systems": rows, "common_users": len(common), "missing": missing}
 
 
+# ── 비용 축 ────────────────────────────────────────────────────────────────
+# 배포 관점의 비교 축이다. 정확도만 놓고 방법을 고르면 실제로 못 쓴다.
+# 계측은 `src/cost/sitecustomize.py` 가 실제로 선을 타고 나간 호출을 세서 남긴 것이다.
+# 디렉토리 이름 규약: cost/{benchmark}-{setting}-{system}/{stage}__{pid}.json
+_COST_ROOT = ROOT / "cost"
+_cost_cache: dict = {}
+
+
+def _cost_load(d) -> dict:
+    """런 하나(디렉토리 하나)의 프로세스별 계측을 합침. mtime 기준 캐시."""
+    files = sorted(d.glob("*.json"))
+    if not files:
+        return {}
+    key = tuple((f.name, f.stat().st_mtime_ns) for f in files)
+    hit = _cost_cache.get(d.name)
+    if hit and hit[0] == key:
+        return hit[1]
+
+    stages: dict = {}
+    meta: dict = {}
+    for f in files:
+        try:
+            with open(f, encoding="utf-8") as fh:
+                doc = json.load(fh)
+        except Exception:
+            continue
+        for k in ("system", "benchmark", "setting"):
+            if doc.get(k):
+                meta[k] = doc[k]
+        st = stages.setdefault(doc.get("stage", "unknown"), {
+            "calls": 0, "prompt_tokens": 0, "completion_tokens": 0,
+            "reasoning_tokens": 0, "wall_ms": 0.0, "errors": 0, "prompt_max": 0,
+            "hist": [], "by_kind": {}})
+        for r in doc.get("rows", []):
+            for fld in ("calls", "prompt_tokens", "completion_tokens", "reasoning_tokens", "wall_ms", "errors"):
+                st[fld] += r.get(fld, 0)
+            st["prompt_max"] = max(st["prompt_max"], r.get("prompt_max", 0))
+            k = st["by_kind"].setdefault(r.get("kind", "?"), {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0})
+            for fld in ("calls", "prompt_tokens", "completion_tokens"):
+                k[fld] += r.get(fld, 0)
+            h = r.get("hist") or []
+            if len(h) > len(st["hist"]):
+                st["hist"] = st["hist"] + [0] * (len(h) - len(st["hist"]))
+            for i, v in enumerate(h):
+                st["hist"][i] += v
+    val = {"meta": meta, "stages": stages}
+    _cost_cache[d.name] = (key, val)
+    return val
+
+
+_COST_BUCKET = 250  # src/cost/sitecustomize.py 의 _BUCKET 과 반드시 같아야 함
+
+
+def _cost_pct(hist: list, q: float):
+    n = sum(hist)
+    if not n:
+        return None
+    target, run = n * q, 0
+    for i, v in enumerate(hist):
+        run += v
+        if run >= target:
+            return i * _COST_BUCKET + _COST_BUCKET // 2
+    return len(hist) * _COST_BUCKET
+
+
+@app.get("/api/cost")
+def api_cost():
+    """계측된 모든 런의 비용. 벤치마크·세팅·시스템으로 묶어 내려보냄.
+
+    ⚠ 계측은 2026-08-26에 붙였다. 그 전에 끝난 런에는 비용 자료가 없다.
+      화면에서 "미계측" 으로 구분해 보여주고, 없는 것을 0으로 그리지 않는다.
+    """
+    if not _COST_ROOT.is_dir():
+        return {"runs": [], "note": "계측 산출물이 아직 없음"}
+    out = []
+    for d in sorted(_COST_ROOT.iterdir()):
+        if not d.is_dir():
+            continue
+        c = _cost_load(d)
+        if not c or not c["stages"]:
+            continue
+        tot = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0,
+               "reasoning_tokens": 0, "wall_ms": 0.0}
+        stages = {}
+        for name, st in c["stages"].items():
+            for f in tot:
+                tot[f] += st[f]
+            stages[name] = {
+                "calls": st["calls"], "prompt_tokens": st["prompt_tokens"],
+                "completion_tokens": st["completion_tokens"],
+                "reasoning_tokens": st["reasoning_tokens"],
+                "wall_ms": round(st["wall_ms"], 1), "errors": st["errors"],
+                "ctx_p50": _cost_pct(st["hist"], 0.5),
+                "ctx_p95": _cost_pct(st["hist"], 0.95),
+                "ctx_max": st["prompt_max"],
+                "by_kind": st["by_kind"],
+            }
+        m = c["meta"]
+        # 배포 비용 = 투입 + 질의(답변). 채점은 평가용이라 따로 센다.
+        deploy = {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0}
+        for name in ("ingest", "answer"):
+            st = stages.get(name)
+            if st:
+                for f in deploy:
+                    deploy[f] += st[f]
+        out.append({
+            "run": d.name,
+            "system": m.get("system", ""), "benchmark": m.get("benchmark", ""),
+            "setting": m.get("setting", ""),
+            "stages": stages,
+            "total": {**tot, "wall_ms": round(tot["wall_ms"], 1),
+                      "tokens": tot["prompt_tokens"] + tot["completion_tokens"]},
+            "deploy": {**deploy, "tokens": deploy["prompt_tokens"] + deploy["completion_tokens"]},
+        })
+    return {"runs": out}
+
+
 @app.get("/api/overview")
 def api_overview():
     """세 벤치마크 x 메모리 시스템 요약. 개요 탭의 유일한 소스임.

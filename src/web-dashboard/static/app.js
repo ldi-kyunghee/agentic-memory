@@ -579,6 +579,85 @@ async function renderOverview() {
     </div>`;
 }
 
+/* ---------- 비용: 배포 관점의 비교 축 ---------- */
+
+const COST_STAGE_LABEL = { ingest: "투입", answer: "답변", judge: "채점", unknown: "기타" };
+
+async function renderCost() {
+  const el = $("#content");
+  $("#qualnav")?.classList.add("hidden");
+  el.innerHTML = `<p class="muted">계측 읽는 중…</p>`;
+  let d;
+  try { d = await api("/api/cost"); }
+  catch (e) { el.innerHTML = `<p class="muted">비용 계측을 못 읽었습니다: ${esc(e.message || e)}</p>`; return; }
+
+  const runs = d.runs || [];
+  if (!runs.length) {
+    el.innerHTML = `<div class="card"><div class="hd">비용</div><div class="body">
+      <p class="muted">아직 계측된 런이 없습니다.</p>
+      <p class="muted">계측은 2026-08-26에 붙였습니다. 그 전에 끝난 런에는 자료가 없습니다.
+      실행 스크립트가 <code>cost/{벤치마크}-{세팅}-{시스템}/</code> 에 남깁니다.</p>
+      </div></div>`;
+    return;
+  }
+
+  const n = (v) => v == null ? "–" : v.toLocaleString();
+  const groups = {};
+  runs.forEach((r) => { (groups[`${r.benchmark || "?"} · ${r.setting || "?"}`] ||= []).push(r); });
+
+  const body = Object.entries(groups).map(([g, rs]) => `
+    <tr class="grp-head"><td colspan="9">${esc(g)}</td></tr>
+    ${rs.map((r) => `<tr>
+      <td>${esc(systemLabel(r.system) || r.run)}</td>
+      <td class="num">${n(r.deploy.calls)}</td>
+      <td class="num">${n(r.deploy.prompt_tokens)}</td>
+      <td class="num">${n(r.deploy.completion_tokens)}</td>
+      <td class="num"><b>${n(r.deploy.tokens)}</b></td>
+      <td class="num">${n(r.stages.answer?.ctx_p50)}</td>
+      <td class="num">${n(r.stages.answer?.ctx_p95)}</td>
+      <td class="num">${n(r.stages.answer?.ctx_max)}</td>
+      <td class="num muted">${n(r.stages.judge?.calls)}</td>
+    </tr>`).join("")}`).join("");
+
+  const detail = runs.map((r) => `
+    <div class="card"><div class="hd">${esc(systemLabel(r.system) || r.run)} · ${esc(r.benchmark)} ${esc(r.setting)}</div>
+      <div class="body mscroll">
+        <table class="cmp"><thead><tr>
+          <th>단계</th><th class="num">호출</th><th class="num">입력 토큰</th><th class="num">출력 토큰</th>
+          <th class="num">추론 토큰</th><th class="num">컨텍스트 p50</th><th class="num">p95</th><th class="num">최대</th>
+          <th class="num">실패</th>
+        </tr></thead><tbody>
+          ${Object.entries(r.stages).map(([k, s]) => `<tr>
+            <td>${esc(COST_STAGE_LABEL[k] || k)}</td>
+            <td class="num">${n(s.calls)}</td><td class="num">${n(s.prompt_tokens)}</td>
+            <td class="num">${n(s.completion_tokens)}</td><td class="num">${n(s.reasoning_tokens)}</td>
+            <td class="num">${n(s.ctx_p50)}</td><td class="num">${n(s.ctx_p95)}</td><td class="num">${n(s.ctx_max)}</td>
+            <td class="num${s.errors ? " down" : " muted"}">${n(s.errors)}</td>
+          </tr>`).join("")}
+        </tbody></table>
+      </div>
+    </div>`).join("");
+
+  el.innerHTML = `
+    <div class="card"><div class="hd">배포 비용 (투입 + 답변)</div>
+      <div class="body mscroll">
+        <p class="muted" style="margin:0 0 10px">
+          <b>채점은 뺐습니다.</b> 평가에만 드는 비용이라 배포하면 안 냅니다(맨 오른쪽에 참고로만 둠).<br>
+          컨텍스트는 <b>답변 단계의 프롬프트 토큰</b>입니다. 검색 예산이 같아도 총 컨텍스트는
+          방법마다 다릅니다.<br>
+          ⚠ 계측은 2026-08-26에 붙였습니다. 그 전에 끝난 런은 여기 안 나옵니다. 없는 것을 0으로 그리지 않습니다.
+        </p>
+        <table class="cmp"><thead><tr>
+          <th>메모리 시스템</th><th class="num">호출</th><th class="num">입력 토큰</th>
+          <th class="num">출력 토큰</th><th class="num">합계</th>
+          <th class="num">컨텍스트 p50</th><th class="num">p95</th><th class="num">최대</th>
+          <th class="num">채점 호출</th>
+        </tr></thead><tbody>${body}</tbody></table>
+      </div>
+    </div>
+    ${detail}`;
+}
+
 /* ---------- HaluMem: 메모리 시스템 축 ---------- */
 
 const HM_ROWS = [
@@ -657,13 +736,14 @@ async function renderHalumem() {
 
 /* 벤치마크 탭은 HaluMem 유저 번들과 무관하다. 번들 로딩을 기다리지 않게 먼저 가른다.
    (예전에는 render() 첫 줄의 `if (!S.bundle) return` 이 BEAM·Memora 까지 막고 있었음) */
-const BENCH_TABS = ["overview", "halumem", "beam", "memora"];
+const BENCH_TABS = ["overview", "halumem", "beam", "memora", "cost"];
 
 function render() {
   if (BENCH_TABS.includes(S.tab)) {
     if (S.tab === "overview") renderOverview();
     else if (S.tab === "halumem") renderHalumem();
     else if (S.tab === "beam") renderBeam();
+    else if (S.tab === "cost") renderCost();
     else renderMemora();
     return;
   }
