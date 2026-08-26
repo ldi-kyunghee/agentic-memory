@@ -6,7 +6,12 @@
 # 약 41시간. 단계마다 이미 끝난 것은 건너뛰고, 실패하면 거기서 멈춰 뒤를 안 태움.
 # **10분마다 진행 요약 한 줄**을 찍어서 tmux 창에 들어오면 어디쯤인지 바로 보이게 함.
 #
-# 팔 A(classic) 산출물은 이미 있음. 여기서 만드는 것은 전부 팔 B(v3)임.
+# mem0 classic 산출물은 이미 있음. 여기서 만드는 것은 전부 mem0 v3 것임.
+#
+# ⚠ 투입 단계는 **항상 --trace 를 켠다.** 2026-08-26에 실행 시간을 줄이려고 껐다가,
+#   나중에 비용(호출 수·토큰·컨텍스트 크기)을 되살릴 방법이 통째로 사라졌음.
+#   trace 는 프롬프트 원문과 응답을 남기므로 사후에 무엇이든 다시 셀 수 있음.
+#   용량은 런당 수십~수백 MB 수준이라(전체 2.7G) 끌 이유가 못 됨.
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -105,7 +110,7 @@ else
   stage "1/8 HaluMem 투입 (20유저)"
   COST_DIR=$(cost_dir halumem-20u-mem0-v3) COST_STAGE=ingest COST_BENCH=halumem COST_SETTING=20u \
   $V3 $E/eval_memzero_oss.py --data dataset/HaluMem-Medium.jsonl --version v3 \
-      --top-k 20 --max-workers "$W_ING" || { echo "✗ HaluMem 투입 실패"; exit 1; }
+      --top-k 20 --max-workers "$W_ING" --trace || { echo "✗ HaluMem 투입 실패"; exit 1; }
 fi
 [ "$(n_lines "$HM_ING")" -ge 20 ] || { echo "✗ HaluMem 투입이 $(n_lines "$HM_ING")/20 유저"; exit 1; }
 
@@ -138,7 +143,7 @@ else
   stage "4/8 BEAM 100K 투입 (대화 20 · 청크 2,866)"
   COST_DIR=$(cost_dir beam-100k-mem0-v3) COST_STAGE=ingest COST_BENCH=beam COST_SETTING=100k \
   $V3 $E/beam/ingest_beam.py --chats BEAM/chats/100K --version 100k-v3 \
-      --top-k 200 --max-workers "$W_ING" || { echo "✗ BEAM 투입 실패"; exit 1; }
+      --top-k 200 --max-workers "$W_ING" --trace || { echo "✗ BEAM 투입 실패"; exit 1; }
 fi
 [ "$(n_lines "$BM_ING")" -ge 20 ] || { echo "✗ BEAM 투입이 $(n_lines "$BM_ING")/20 대화"; exit 1; }
 
@@ -172,7 +177,7 @@ for PER in monthly quarterly; do
     stage "7/8 Memora ${PER} 투입 (페르소나 ${N_P})"
     COST_DIR=$(cost_dir memora-${PER}-mem0-v3) COST_STAGE=ingest COST_BENCH=memora COST_SETTING=${PER} \
     $V3 $E/memora/ingest_memora.py --data "Memora/data/$PER" \
-        --version "${PER}-v3-oss120b" --top-k 50 --max-workers "$W_ING" \
+        --version "${PER}-v3-oss120b" --top-k 50 --max-workers "$W_ING" --trace \
         || { echo "✗ Memora ${PER} 투입 실패"; exit 1; }
   fi
   [ "$(n_lines "$MO_ING")" -ge "$N_P" ] || { echo "✗ Memora ${PER} 투입 미완주"; exit 1; }
