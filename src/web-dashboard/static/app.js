@@ -2918,6 +2918,14 @@ function rateHeat(v, neutralOver) {
 // 검색 예산(cutoff) 스윕. 저장소·검색은 그대로 두고 답변에 넣는 개수만 바꾼 팔들임.
 // 이 카드가 답하는 질문: mem0 의 병목이 저장인가 검색인가.
 async function memoraCutoffCard(period) {
+  // ⚠ cutoff 스윕 팔은 mem0 classic 으로만 돌렸다. 다른 시스템을 보는 중에 이 카드를 그리면
+  //   위쪽(선택 시스템)과 아래쪽(classic)이 한 화면에서 섞여 같은 것으로 읽힌다.
+  const base = S.systems.find((x) => x.default)?.key || "";
+  if (S.system && S.system !== base) {
+    return `<div class="card"><h4>검색 예산(cutoff) 스윕 · ${esc(period)}</h4>
+      <div class="body"><p class="muted">스윕 팔은 <b>${esc(systemLabel(base))}</b> 으로만 돌렸습니다.
+      지금 보는 <b>${esc(systemLabel(S.system))}</b> 에는 없습니다.</p></div></div>`;
+  }
   let d;
   try { d = await api(`/api/memora/cutoff?period=${encodeURIComponent(period)}`); }
   catch (e) { return ""; }
