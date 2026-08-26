@@ -3,7 +3,7 @@ BACKEND=$3
 DATASET=$5
 WITH_PRIOR_QUESTION=$4
 
-CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_naive.sh ${BACKEND} ${DATASET} ${WITH_PRIOR_QUESTION}
+# CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_naive.sh ${BACKEND} ${DATASET} ${WITH_PRIOR_QUESTION}
 
 HEALTH_TIMEOUT=300
 HEALTH_INTERVAL=5
@@ -47,5 +47,6 @@ if [[ $3 == "vllm" ]]; then
     kill -15 $VLLM_PID
     
 else
+    CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
     CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
 fi
