@@ -8,7 +8,7 @@ CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_naive.sh ${BACKEND} ${DATASET} ${
 HEALTH_TIMEOUT=300
 HEALTH_INTERVAL=5
 
-DATASET_TYPE=$(python -c "import sys; dataset = sys.argv[1]; print(dataset.split('.')[0].split('-')[-1])" "${DATASET}")
+DATASET_TYPE=$(python -c "import sys; dataset = sys.argv[1]; print(dataset.split('.')[0].split('-')[-1].lower())" "${DATASET}")
 
 wait_for_server() {
     local port=$1
