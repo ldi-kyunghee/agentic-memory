@@ -682,11 +682,7 @@ const QUAL_TABS = [
 function renderQual() {
   const nav = QUAL_TABS.map(([k, lab, desc]) =>
     `<button class="subtab${S.qtab === k ? " active" : ""}" data-qtab="${k}" data-desc="${esc(desc)}">${esc(lab)}</button>`).join("");
-  let host = $("#qualnav");
-  if (!host) {
-    $("#content").insertAdjacentHTML("beforebegin", `<div id="qualnav" class="subnav"></div>`);
-    host = $("#qualnav");
-  }
+  const host = $("#qualnav");
   host.classList.remove("hidden");
   host.innerHTML = nav;
   $$("#qualnav button").forEach((b) => (b.onclick = () => { S.qtab = b.dataset.qtab; render(); }));
