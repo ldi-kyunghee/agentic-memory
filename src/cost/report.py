@@ -8,7 +8,7 @@ import glob as globmod
 import json
 import os
 
-BUCKET = 1000
+BUCKET = 250  # sitecustomize._BUCKET 과 반드시 같아야 함
 
 
 def load(d: str) -> dict:

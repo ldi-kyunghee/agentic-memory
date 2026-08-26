@@ -27,9 +27,10 @@ import time
 _DIR = os.getenv("COST_DIR")
 
 if _DIR:
-    # 프롬프트 길이 분포용 히스토그램: 1k 토큰 폭, 0~128k. 마지막 칸은 넘침.
-    _BUCKET = 1000
-    _NBUCKET = 129
+    # 프롬프트 길이 분포용 히스토그램: 250 토큰 폭, 0~128k. 마지막 칸은 넘침.
+    # ⚠ 폭을 1k 로 두면 짧은 프롬프트가 전부 0번 칸에 몰려 p50 이 500 으로 뭉갠다.
+    _BUCKET = 250
+    _NBUCKET = 513
 
     _lock = threading.Lock()
     _acc: dict = {}
@@ -120,7 +121,16 @@ if _DIR:
             pass  # 계측 실패가 본 파이프라인을 막지 않는다
 
     _install()
+    # ⚠ atexit 만으로는 워커를 못 잡는다. multiprocessing 자식은 os._exit() 로 끝나서
+    #   atexit 핸들러를 돌지 않는다 (2026-08-26 실측: 워커 2개 호출이 통째로 유실됨).
+    #   multiprocessing 자체의 종료 훅에도 같이 건다. 부모에서는 둘 다 돌지만 같은 파일을
+    #   같은 내용으로 덮으므로 무해하다.
     atexit.register(_dump)
+    try:
+        from multiprocessing.util import Finalize
+        Finalize(None, _dump, exitpriority=16)
+    except Exception:
+        pass
 
     def installed() -> dict:
         """계측이 실제로 걸렸는지 확인용. 긴 실행 전에 이걸로 사전 점검한다."""
