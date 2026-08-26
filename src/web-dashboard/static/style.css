@@ -742,3 +742,25 @@ details.bans .jans { margin: 0 9px 9px; white-space: pre-wrap; }
 
 /* 열이 많은 표는 카드 안에서 가로로 스크롤시킨다. 페이지 본문은 절대 가로로 밀리지 않게. */
 .body.mscroll { overflow-x: auto; }
+
+/* ── 하위 탭 바 (정성분석 탭 안, HaluMem 규모 전환) ───────────────────────────
+   상단 탭과 층위를 구분해야 해서 굵기·배경을 낮춘다. 상단 탭과 같은 모양이면
+   어느 것이 벤치마크 축이고 어느 것이 그 안의 갈래인지 안 읽힌다. */
+.subnav { display: flex; gap: 2px; padding: 6px 10px 0; border-bottom: 1px solid var(--rule);
+          background: var(--panel); }
+.subtab { font-size: var(--fs-md); font-weight: 600; color: var(--dim); background: none;
+          border: 1px solid transparent; border-bottom: none; padding: 5px 12px;
+          border-radius: 5px 5px 0 0; cursor: pointer; }
+.subtab:hover:not([disabled]) { color: var(--ink); background: var(--band); }
+.subtab.active { color: var(--ink); background: var(--panel); border-color: var(--rule);
+                 margin-bottom: -1px; font-weight: 800; }
+.subtab[disabled] { opacity: .4; cursor: default; }
+
+/* 개요 표의 벤치마크 묶음 머리 */
+table.cmp tr.grp-head > td { background: var(--band); font-weight: 800; font-size: var(--fs-xs);
+                             color: var(--dim); letter-spacing: .04em; }
+table.cmp tr.grp-head:hover > td { background: var(--band); }
+
+/* 차이 열 부호. 색만으로 뜻을 싣지 않도록 부호를 항상 함께 찍는다 (app.js 에서 +/- 붙임) */
+table.cmp td.num.up { color: var(--ok-ink); font-weight: 700; }
+table.cmp td.num.down { color: var(--bad); font-weight: 700; }

@@ -939,6 +939,71 @@ def api_halumem(scale: str = "20u"):
             "systems": rows, "common_users": len(common), "missing": missing}
 
 
+@app.get("/api/overview")
+def api_overview():
+    """세 벤치마크 x 메모리 시스템 요약. 개요 탭의 유일한 소스임.
+
+    벤치마크마다 대표 지표가 다르다. 억지로 하나로 통일하지 않고 무엇을 재는지 함께 내려보낸다.
+      HaluMem  QA Correct   (골든 메모리가 있어 저장·갱신도 재지만 최종 성능은 QA 임)
+      BEAM     전체 평균    (능력 10종 x cutoff 4개 전 레코드 평균)
+      Memora   FAMA         (넣어야 할 것과 빼야 할 것을 합친 공식 지표)
+
+    ⚠ 벤치마크 간 절대값을 견주지 않는다. 같은 행(같은 벤치마크) 안에서 시스템끼리만 본다.
+    """
+    sysd = systems_cfg()
+    sys_rows = [{"key": k, "label": v.get("label", k), "version": v.get("version"),
+                 "default": bool(v.get("default"))} for k, v in sysd.items()]
+    rows = []
+
+    for scale, cfg in ((load_registry_doc().get("halumem", {}) or {}).get("scales", {}) or {}).items():
+        d = api_halumem(scale=scale)
+        if not d["ready"]:
+            continue
+        rows.append({
+            "bench": "halumem", "setting": scale,
+            "label": f"HaluMem · {cfg.get('label', scale)}",
+            "metric": "QA Correct", "unit": "%",
+            "n": f"공통 유저 {d['common_users']}명",
+            "cells": {r["system"]: (r["qa_c"] * 100 if r["qa_c"] is not None else None)
+                      for r in d["systems"]},
+        })
+
+    for bk, bcfg in (beam_cfg().get("buckets") or {}).items():
+        cells, ns = {}, None
+        for sk in sysd:
+            dd = load_beam(bk, sk)
+            rec = dd["records"]
+            cells[sk] = _mean([r["score"] for r in rec]) * 100 if rec else None
+            if rec:
+                ns = len(rec)
+        if not any(v is not None for v in cells.values()):
+            continue
+        rows.append({"bench": "beam", "setting": bk,
+                     "label": f"BEAM · {bcfg.get('label', bk)}",
+                     "metric": "전체 평균", "unit": "%", "n": f"레코드 {ns:,}",
+                     "cells": cells})
+
+    for pk, pcfg in (memora_cfg().get("periods") or {}).items():
+        cells, ns = {}, None
+        for sk in sysd:
+            dd = load_memora(pk, sk)
+            if not dd["records"]:
+                cells[sk] = None
+                continue
+            agg = _fama_block(dd["records"])  # FAMA 는 이미 x100 반올림된 값임
+            cells[sk] = agg.get("fama")
+            ns = agg.get("n")
+        if not any(v is not None for v in cells.values()):
+            continue
+        rows.append({"bench": "memora", "setting": pk,
+                     "label": f"Memora · {pcfg.get('label', pk)}",
+                     "metric": "FAMA", "unit": "",
+                     "n": f"문항 {ns:,}" if ns else "",
+                     "cells": cells})
+
+    return {"systems": sys_rows, "rows": rows}
+
+
 @app.get("/api/beam")
 def api_beam(bucket: str = "100k", system: str = ""):
     """능력 x cutoff 집계. 이 화면의 주 산출물임.

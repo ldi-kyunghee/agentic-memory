@@ -15,7 +15,10 @@ const S = {
   generator: "oss120",  // A' 레인 기본값 (없는 런은 mini -> qwen4b 폴백)
   backbone: null, prompt: null, backboneB: null, promptB: null, runB: null,
   bundle: null, bundleB: null, bundleCache: new Map(),
-  tab: "sessions", itab: "detail",
+  tab: "overview", itab: "detail",
+  system: localStorage.getItem("mem_system") || "",   // 메모리 시스템 축 (빈 문자열 = 기본 시스템)
+  systems: [], qtab: "sessions",                       // qtab = 정성분석 탭 안의 하위 탭
+  hmScale: "20u",
   session: null, qaFilter: "all", digestScope: "user",
   anchor: "run", anchorObj: null, pendingQuote: "",
   comments: [], fielddict: {}, traceCache: new Map(), anchorCacheB: new Map(),
@@ -109,10 +112,33 @@ async function boot() {
     } finally { busy(false); }
   };
 
+  // ---- 메모리 시스템 선택기 ----
+  try {
+    const sd = await api("/api/systems");
+    S.systems = sd.systems || [];
+    if (!S.system || !S.systems.some((x) => x.key === S.system)) S.system = sd.default || "";
+    $("#sel-system").innerHTML = S.systems.map((x) =>
+      `<option value="${esc(x.key)}"${x.key === S.system ? " selected" : ""}${x.any ? "" : " disabled"}>` +
+      `${esc(x.label)}${x.version ? ` (${esc(x.version)})` : ""}${x.any ? "" : " · 산출물 없음"}</option>`).join("");
+    $("#sel-system").onchange = () => {
+      S.system = $("#sel-system").value;
+      localStorage.setItem("mem_system", S.system);
+      render();
+    };
+  } catch (e) { $("#sel-system").innerHTML = `<option>–</option>`; }
+
+  // 예전에 드롭다운이던 고정 변인. 값이 전 실험 공통이라 읽기 전용으로 줄였다.
+  $("#fixed-vars").textContent = "agent·답변·채점 gpt-oss-120b · 임베더 Qwen3-Embedding-4B";
+
   S.backbone = backbones[0];
   syncPrompts("A");
-  await applyRun();
+  setTab(S.tab);          // 벤치마크 탭은 번들 없이 바로 그린다
+  await applyRun();       // 정성분석용 번들은 뒤에서 채운다
 }
+
+/* 선택된 메모리 시스템을 쿼리스트링 조각으로. 기본 시스템이면 빈 값이라 서버가 기존 경로를 씀. */
+function sysQ() { return `system=${encodeURIComponent(S.system || "")}`; }
+function systemLabel(k) { return S.systems.find((x) => x.key === k)?.label || k || "mem0 classic"; }
 
 function runsFor(backbone) { return S.runs.filter((r) => r.backbone === backbone); }
 function resolveRun(backbone, prompt) { return S.runs.find((r) => r.backbone === backbone && r.prompt === prompt); }
@@ -346,7 +372,15 @@ function anchorOfElement(el) {
 
 /* ---------- 탭/앵커 ---------- */
 
-function setTab(t) { S.tab = t; $$("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === t)); render(); }
+function setTab(t) {
+  S.tab = t;
+  $$("#tabs button").forEach((b) => b.classList.toggle("active", b.dataset.tab === t));
+  // 옛 컨트롤(User·Generator·Judge·Agent A/B)은 정성분석 탭에서만 의미가 있다.
+  $("#qual-ctls").classList.toggle("hidden", t !== "qual");
+  $("#qualnav")?.classList.toggle("hidden", t !== "qual");
+  document.body.classList.toggle("bench-mode", BENCH_TABS.includes(t));
+  render();
+}
 function setITab(t) { S.itab = t; $$("#insp-tabs button").forEach((b) => b.classList.toggle("active", b.dataset.itab === t)); renderInspector(); }
 function setAnchor(anchor, obj, focusDetail = true) {
   S.anchor = anchor; S.anchorObj = obj;
@@ -478,18 +512,190 @@ function anchorsForB(sid) {
   return S.anchorCacheB.get(sid);
 }
 
+/* ---------- 개요: 세 벤치마크 x 메모리 시스템 ---------- */
+
+const BENCH_NOTE = {
+  halumem: "골든 메모리가 있어 저장·정확도·갱신을 직접 잰다. 표의 값은 최종 성능인 QA Correct 임",
+  beam: "골든 메모리가 없어 QA 하나만 재는 대신 문항마다 능력 라벨이 붙는다. 능력 10종 x 검색 예산 4개 전 레코드 평균임",
+  memora: "넣어야 할 것과 빼야 할 것을 함께 잰다. FAMA = 넣기 정확도에서 무효 항목 언급을 벌준 값임",
+};
+
+async function renderOverview() {
+  const el = $("#content");
+  $("#qualnav")?.classList.add("hidden");
+  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  let d;
+  try { d = await api("/api/overview"); }
+  catch (e) { el.innerHTML = `<p class="muted">개요를 못 읽었습니다: ${esc(e.message || e)}</p>`; return; }
+
+  const sys = d.systems || [];
+  const rows = d.rows || [];
+  if (!rows.length) { el.innerHTML = `<p class="muted">아직 집계할 산출물이 없습니다.</p>`; return; }
+
+  const groups = {};
+  rows.forEach((r) => { (groups[r.bench] ||= []).push(r); });
+
+  const cell = (r, k) => {
+    const v = r.cells[k];
+    if (v == null) return `<td class="num muted" data-desc="이 조합은 아직 안 돌렸습니다">–</td>`;
+    return `<td class="num">${v.toFixed(2)}</td>`;
+  };
+  // 기준 시스템 대비 차이. 같은 행 안에서만 의미가 있다.
+  const base = sys.find((x) => x.default)?.key || sys[0]?.key;
+  const diff = (r, k) => {
+    const a = r.cells[base], b = r.cells[k];
+    if (a == null || b == null || k === base) return `<td class="num muted">–</td>`;
+    const v = b - a;
+    const cls = v > 0 ? "up" : v < 0 ? "down" : "";
+    return `<td class="num ${cls}">${v > 0 ? "+" : ""}${v.toFixed(2)}</td>`;
+  };
+
+  const head = `<tr><th>세팅</th><th>지표</th>` +
+    sys.map((x) => `<th class="num" data-desc="${esc(x.note || "")}">${esc(x.label)}<br><span class="muted">${esc(x.version || "")}</span></th>`).join("") +
+    sys.filter((x) => x.key !== base).map((x) => `<th class="num">${esc(x.label)} 차</th>`).join("") +
+    `<th>규모</th></tr>`;
+
+  const body = Object.entries(groups).map(([bench, rs]) => `
+    <tr class="grp-head"><td colspan="${3 + sys.length * 2}" data-desc="${esc(BENCH_NOTE[bench] || "")}">${esc(rs[0].label.split(" · ")[0])}</td></tr>
+    ${rs.map((r) => `<tr>
+      <td>${esc(r.label.split(" · ").slice(1).join(" · ") || r.label)}</td>
+      <td class="muted">${esc(r.metric)}</td>
+      ${sys.map((x) => cell(r, x.key)).join("")}
+      ${sys.filter((x) => x.key !== base).map((x) => diff(r, x.key)).join("")}
+      <td class="muted">${esc(r.n || "")}</td>
+    </tr>`).join("")}`).join("");
+
+  el.innerHTML = `
+    <div class="card"><div class="hd">벤치마크 x 메모리 시스템</div>
+      <div class="body mscroll">
+        <p class="muted" style="margin:0 0 10px">
+          ⚠ <b>벤치마크 간 절대값을 견주지 않습니다.</b> 지표 정의가 서로 다릅니다.
+          같은 행 안에서 시스템끼리만 봅니다. 기준은 <b>${esc(systemLabel(base))}</b> 입니다.
+        </p>
+        <table class="cmp"><thead>${head}</thead><tbody>${body}</tbody></table>
+      </div>
+    </div>`;
+}
+
+/* ---------- HaluMem: 메모리 시스템 축 ---------- */
+
+const HM_ROWS = [
+  ["integrity", "메모리 온전성", "골든 메모리를 저장물이 얼마나 담고 있는가 (중요도 가중 recall)"],
+  ["extraction_f1", "추출 F1", "세션에서 뽑아낸 메모리와 골든의 F1"],
+  ["target_acc", "Target 정확도", "저장한 메모리가 대화에 근거하는가"],
+  ["interference_acc", "Interference 미포함률", "미끼 메모리를 안 저장했는가. 높을수록 좋음"],
+  ["update_c", "update Correct", "갱신 대상을 올바르게 반영했는가"],
+  ["update_o", "update Omission", "갱신을 아예 안 썼거나 핵심을 빠뜨림. 낮을수록 좋음"],
+  ["qa_c", "QA Correct", "최종 답변 정확도. 이 벤치마크의 결론 지표임"],
+  ["qa_h", "QA Hallucination", "근거 없는 답변. 낮을수록 좋음"],
+];
+
+async function renderHalumem() {
+  const el = $("#content");
+  $("#qualnav")?.classList.add("hidden");
+  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  let d;
+  try { d = await api(`/api/halumem?scale=${encodeURIComponent(S.hmScale)}`); }
+  catch (e) { el.innerHTML = `<p class="muted">HaluMem 집계를 못 읽었습니다: ${esc(e.message || e)}</p>`; return; }
+
+  const scaleNav = (d.scales || []).map((x) =>
+    `<button class="subtab${x.key === S.hmScale ? " active" : ""}" data-hm="${x.key}"
+       data-desc="${esc(x.note || "")}"${x.ready ? "" : " disabled"}>${esc(x.label)}</button>`).join("");
+
+  if (!d.ready || !d.systems.length) {
+    el.innerHTML = `<div class="subnav">${scaleNav}</div>
+      <p class="muted">이 규모에는 아직 산출물이 없습니다.</p>`;
+    $$("#content button[data-hm]").forEach((b) => (b.onclick = () => { S.hmScale = b.dataset.hm; render(); }));
+    return;
+  }
+
+  const sys = d.systems;
+  const base = sys[0];
+  const fmt = (v) => v == null ? "–" : (v * 100).toFixed(2);
+  const dcell = (r, key) => {
+    const a = base[key], b = r[key];
+    if (a == null || b == null || r === base) return `<td class="num muted">–</td>`;
+    const v = (b - a) * 100;
+    return `<td class="num ${v > 0 ? "up" : v < 0 ? "down" : ""}">${v > 0 ? "+" : ""}${v.toFixed(2)}</td>`;
+  };
+
+  const missing = (d.missing || []).length
+    ? `<p class="muted">아직 안 돌린 시스템: ${d.missing.map((k) => esc(systemLabel(k))).join(", ")}</p>` : "";
+
+  el.innerHTML = `
+    <div class="subnav">${scaleNav}</div>
+    <div class="card"><div class="hd">HaluMem · 메모리 시스템별</div>
+      <div class="body mscroll">
+        <p class="muted" style="margin:0 0 10px">
+          ${esc(d.note || "")}<br>
+          <b>공통 유저 ${d.common_users}명으로 맞춰 다시 집계한 값입니다.</b>
+          시스템끼리 돌린 유저 수가 다를 수 있어(${sys.map((r) => `${esc(r.label)} ${r.users_total}명`).join(" · ")}),
+          교집합으로 자르지 않으면 알고리즘 차이가 아니라 표본 차이를 읽게 됩니다.
+        </p>
+        ${missing}
+        <table class="cmp"><thead><tr><th>지표</th>
+          ${sys.map((r) => `<th class="num">${esc(r.label)}<br><span class="muted">${esc(r.version || "")}</span></th>`).join("")}
+          ${sys.slice(1).map((r) => `<th class="num">${esc(r.label)} 차</th>`).join("")}
+        </tr></thead><tbody>
+          ${HM_ROWS.map(([k, lab, desc]) => `<tr>
+            <td data-desc="${esc(desc)}">${esc(lab)}</td>
+            ${sys.map((r) => `<td class="num">${fmt(r[k])}</td>`).join("")}
+            ${sys.slice(1).map((r) => dcell(r, k)).join("")}
+          </tr>`).join("")}
+        </tbody></table>
+        <p class="muted" style="margin-top:10px">
+          판정 건수 ${sys.map((r) => `${esc(r.label)}: 온전성 ${r.n.integrity?.toLocaleString?.() ?? r.n.integrity} · update ${r.n.update} · QA ${r.n.qa}`).join(" / ")}
+        </p>
+      </div>
+    </div>`;
+  $$("#content button[data-hm]").forEach((b) => (b.onclick = () => { S.hmScale = b.dataset.hm; render(); }));
+}
+
 /* ---------- 메인 렌더 ---------- */
 
+/* 벤치마크 탭은 HaluMem 유저 번들과 무관하다. 번들 로딩을 기다리지 않게 먼저 가른다.
+   (예전에는 render() 첫 줄의 `if (!S.bundle) return` 이 BEAM·Memora 까지 막고 있었음) */
+const BENCH_TABS = ["overview", "halumem", "beam", "memora"];
+
 function render() {
+  if (BENCH_TABS.includes(S.tab)) {
+    if (S.tab === "overview") renderOverview();
+    else if (S.tab === "halumem") renderHalumem();
+    else if (S.tab === "beam") renderBeam();
+    else renderMemora();
+    return;
+  }
   if (!S.bundle) return;
-  if (S.tab === "sessions") renderSessions();
-  else if (S.tab === "qa") renderQA();
-  else if (S.tab === "compare") renderCompare();
-  else if (S.tab === "metrics") renderMetrics();
-  else if (S.tab === "beam") renderBeam();
-  else if (S.tab === "memora") renderMemora();
-  else renderDigest();
+  renderQual();
   renderInspector();
+}
+
+/* 정성분석 탭: 옛 화면을 하위 탭으로 보존한다. 지우지 않는 이유는 나중에 다시 볼 일이 있어서임. */
+const QUAL_TABS = [
+  ["sessions", "세션", "세션 단위 탐색: QA·대화·골든/추출 대조"],
+  ["qa", "QA", "전체 QA를 판정(C/H/O)별로 필터링해 실패 사례부터 훑기"],
+  ["compare", "대조", "A/B 세팅의 유저 전체 요약·QA 판정 대조표"],
+  ["metrics", "백본 그리드", "백본×프롬프트 그리드의 HaluMem 지표 테이블. 모델을 갈아끼우며 보던 옛 축임"],
+  ["digest", "코멘트", "이 유저에 대한 모든 분석가의 코멘트 모아보기 + export"],
+];
+
+function renderQual() {
+  const nav = QUAL_TABS.map(([k, lab, desc]) =>
+    `<button class="subtab${S.qtab === k ? " active" : ""}" data-qtab="${k}" data-desc="${esc(desc)}">${esc(lab)}</button>`).join("");
+  let host = $("#qualnav");
+  if (!host) {
+    $("#content").insertAdjacentHTML("beforebegin", `<div id="qualnav" class="subnav"></div>`);
+    host = $("#qualnav");
+  }
+  host.classList.remove("hidden");
+  host.innerHTML = nav;
+  $$("#qualnav button").forEach((b) => (b.onclick = () => { S.qtab = b.dataset.qtab; render(); }));
+
+  if (S.qtab === "sessions") renderSessions();
+  else if (S.qtab === "qa") renderQA();
+  else if (S.qtab === "compare") renderCompare();
+  else if (S.qtab === "metrics") renderMetrics();
+  else renderDigest();
 }
 
 /* ---------- 구성 통계 (골든 = 데이터셋 속성 / 추출 = 모델 산출물) ---------- */
@@ -2144,7 +2350,7 @@ async function renderBeamOverview() {
   el.innerHTML = `<p class="muted">집계 중…</p>`;
   let d;
   try {
-    d = await api(`/api/beam/overview`);
+    d = await api(`/api/beam/overview?${sysQ()}`);
   } catch (e) {
     el.innerHTML = `${beamModeSwitch()}<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
     bindBeamMode();
@@ -2278,7 +2484,7 @@ async function renderBeamBucket() {
   el.innerHTML = `<p class="muted">집계 중…</p>`;
   let d;
   try {
-    d = await api(`/api/beam?bucket=${encodeURIComponent(S.beamBucket)}`);
+    d = await api(`/api/beam?bucket=${encodeURIComponent(S.beamBucket)}&${sysQ()}`);
   } catch (e) {
     el.innerHTML = `<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
     return;
@@ -2413,7 +2619,7 @@ async function beamQuestions(ability, label) {
   $("#jm-close").onclick = jmClose;
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
-  const d = await api(`/api/beam/questions?bucket=${encodeURIComponent(S.beamBucket)}&ability=${encodeURIComponent(ability)}`);
+  const d = await api(`/api/beam/questions?bucket=${encodeURIComponent(S.beamBucket)}&ability=${encodeURIComponent(ability)}&${sysQ()}`);
   const CUT = d.cutoffs;
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
     <div class="jbasis" data-desc="같은 문항을 cutoff 만 바꿔 네 번 답변시키고 각각 채점했습니다. 흔들림이 큰 문항일수록 컨텍스트 양에 민감합니다.">
@@ -2448,7 +2654,7 @@ async function beamQuestions(ability, label) {
 async function beamDetail(conv, ability, idx, label) {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
-  const d = await api(`/api/beam/question?bucket=${encodeURIComponent(S.beamBucket)}`
+  const d = await api(`/api/beam/question?${sysQ()}&bucket=${encodeURIComponent(S.beamBucket)}`
     + `&conv=${encodeURIComponent(conv)}&ability=${encodeURIComponent(ability)}&idx=${idx}`);
   const CS = d.cutoffs;
   const sc = (v) => `<span class="nsc n${String(v).replace(".", "")}">${v}</span>`;
@@ -2789,7 +2995,7 @@ async function renderMemora() {
   el.innerHTML = `<p class="muted">집계 중…</p>`;
   let d;
   try {
-    d = await api(`/api/memora?period=${encodeURIComponent(S.memoraPeriod)}`);
+    d = await api(`/api/memora?period=${encodeURIComponent(S.memoraPeriod)}&${sysQ()}`);
   } catch (e) {
     el.innerHTML = `<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
     return;
@@ -2974,7 +3180,7 @@ async function memoraQuestions(task, label) {
   $("#jm-close").onclick = jmClose;
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
-  const d = await api(`/api/memora/questions?period=${encodeURIComponent(S.memoraPeriod)}&task=${encodeURIComponent(task)}`);
+  const d = await api(`/api/memora/questions?period=${encodeURIComponent(S.memoraPeriod)}&task=${encodeURIComponent(task)}&${sysQ()}`);
   el.innerHTML = `<div style="padding:16px 20px;overflow-y:auto">
     <div class="jbasis" data-desc="FAMA 낮은 순입니다. 기준 충족은 '넣어야 할 것 / 빼야 할 것'을 각각 몇 개 맞혔는지입니다.">
       문항 ${d.questions.length}개를 <b>FAMA 낮은 순</b>으로 놓았습니다.
@@ -3006,7 +3212,7 @@ async function memoraQuestions(task, label) {
 async function memoraDetail(persona, qid, label) {
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
-  const d = await api(`/api/memora/question?period=${encodeURIComponent(S.memoraPeriod)}`
+  const d = await api(`/api/memora/question?${sysQ()}&period=${encodeURIComponent(S.memoraPeriod)}`
     + `&persona=${encodeURIComponent(persona)}&question_id=${encodeURIComponent(qid)}`);
   const crit = (t) => d.criteria.filter((c) => c.type === t);
   const block = (title, t, hint) => {
