@@ -772,3 +772,8 @@ table.cmp tr.grp-head:hover > td { background: var(--band); }
 /* 차이 열 부호. 색만으로 뜻을 싣지 않도록 부호를 항상 함께 찍는다 (app.js 에서 +/- 붙임) */
 table.cmp td.num.up { color: var(--ok-ink); font-weight: 700; }
 table.cmp td.num.down { color: var(--bad); font-weight: 700; }
+
+/* 정성분석 전용 컨트롤 묶음. 래퍼가 flex 흐름을 끊으면 상단바가 세 줄로 부푼다.
+   display:contents 로 자식(.grp)이 #topbar 의 flex 항목이 되게 한다.
+   .hidden 은 !important 라 이 규칙보다 세다 (숨김이 우선). */
+#qual-ctls { display: contents; }
