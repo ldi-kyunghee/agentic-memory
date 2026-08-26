@@ -839,3 +839,6 @@ table.cmp td.num.running { color: var(--dim); }
 table.cmp td.num.running sup { font-size: var(--fs-nano); opacity: .8; }
 .runtag { font-size: var(--fs-micro); font-weight: 700; color: var(--warn-ink, #8a5a00);
           background: var(--warn-bg, #fff4d6); border-radius: var(--r-1); padding: 1px 6px; margin-left: 6px; }
+.srctag { font-size: var(--fs-micro); font-weight: 700; color: var(--dim);
+          background: var(--band); border: 1px solid var(--rule); border-radius: var(--r-1);
+          padding: 1px 6px; margin-left: 6px; }
