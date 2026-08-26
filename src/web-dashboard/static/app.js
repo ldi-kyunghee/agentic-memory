@@ -711,7 +711,8 @@ async function renderOverview() {
     const c = r.cost?.[k];
     if (!c) return `<td class="num muted na" data-desc="이 조합은 아직 계측 전입니다. <b>0이 아니라 '모름'</b>입니다">·</td>`;
     const v = c[f];
-    return `<td class="num" data-desc="${esc(systemLabel(k))} · ${esc(r.label)}<br>배포 비용(채점 제외)<br>호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}">${kTok(v)}</td>`;
+    const run = c.running ? `<br><b>⏳ 아직 수집 중입니다. 완료값이 아닙니다.</b>` : "";
+    return `<td class="num${c.running ? " running" : ""}" data-desc="${esc(systemLabel(k))} · ${esc(r.label)}<br>배포 비용(채점 제외)<br>호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}${run}">${kTok(v)}${c.running ? "<sup>⏳</sup>" : ""}</td>`;
   };
 
   const head = `<tr><th>세팅</th><th>지표</th>` +
@@ -722,7 +723,7 @@ async function renderOverview() {
     `<th>규모</th></tr>`;
 
   // 비용 열이 시스템마다 3칸이라 어느 시스템 것인지 위에 한 줄 더 얹는다
-  const head2 = !anyCost ? "" : `<tr class="subhead"><th colspan="${2 + sys.length * 2 - (sys.length > 1 ? 0 : 1)}"></th>` +
+  const head2 = !anyCost ? "" : `<tr class="subhead"><th colspan="${1 + sys.length * 2}"></th>` +
     sys.map((x) => `<th class="num costcol grpstart" colspan="3">${esc(x.label)} 비용</th>`).join("") +
     `<th></th></tr>`;
 
@@ -795,10 +796,10 @@ async function renderCost() {
   const cell = (r, f) => {
     if (!r) return `<td class="num na" data-desc="이 조합은 계측 자료가 없습니다. <b>0이 아니라 '모름'</b>입니다">·</td>`;
     const c = r.deploy;
-    const back = Object.values(r.stages).some((x) => x.ctx_p50 == null && x.calls);
-    return `<td class="num" data-desc="${esc(systemLabel(r.system))} · ${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}<br>` +
+    return `<td class="num${r.running ? " running" : ""}" data-desc="${esc(systemLabel(r.system))} · ${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}<br>` +
+      `${r.running ? "<b>⏳ 아직 수집 중입니다. 완료값이 아닙니다.</b><br>" : ""}` +
       `배포 비용(채점 제외)<br>호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}` +
-      `${r.stages.judge ? `<br>채점 ${r.stages.judge.calls.toLocaleString()}콜 (배포 합계에서 제외)` : ""}">${kTok(c[f])}</td>`;
+      `${r.stages.judge ? `<br>채점 ${r.stages.judge.calls.toLocaleString()}콜 (배포 합계에서 제외)` : ""}">${kTok(c[f])}${r.running ? "<sup>⏳</sup>" : ""}</td>`;
   };
 
   const head = `<tr class="subhead"><th rowspan="2">세팅</th>` +
@@ -821,7 +822,8 @@ async function renderCost() {
   // 단계별 상세: 투입/답변/채점과 컨텍스트 분포
   const detail = runs.map((r) => `
     <div class="card"><div class="hd">${esc(systemLabel(r.system))}
-      <span class="muted">${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}</span></div>
+      <span class="muted">${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}</span>
+      ${r.running ? `<span class="runtag" data-desc="10분 안에 계측 파일이 갱신됐습니다. 아직 도는 중이라 완료값이 아닙니다">수집 중</span>` : ""}</div>
       <div class="body mscroll">
         <table class="cmp"><thead><tr>
           <th>단계</th><th class="num">호출</th><th class="num">입력 토큰</th><th class="num">출력 토큰</th>

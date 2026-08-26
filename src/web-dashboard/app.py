@@ -984,7 +984,10 @@ def _cost_load(d) -> dict:
                 st["hist"] = st["hist"] + [0] * (len(h) - len(st["hist"]))
             for i, v in enumerate(h):
                 st["hist"][i] += v
-    val = {"meta": meta, "stages": stages}
+    # ⚠ 계측기는 실행 중에도 주기적으로 흘려쓴다. 방금 갱신된 디렉토리는 **아직 도는 중**일 수
+    #   있으므로 그 사실을 함께 내려보낸다. 안 그러면 절반 찬 값을 완료본으로 읽는다.
+    val = {"meta": meta, "stages": stages,
+           "updated_at": max((f.stat().st_mtime for f in files), default=0)}
     _cost_cache[d.name] = (key, val)
     return val
 
@@ -1046,8 +1049,10 @@ def api_cost():
                 continue
             for f in deploy:
                 deploy[f] += st[f]
+        import time as _t
+        fresh = (_t.time() - (c.get("updated_at") or 0)) < 600   # 10분 안에 갱신 = 수집 중
         out.append({
-            "run": d.name,
+            "run": d.name, "running": fresh,
             "system": m.get("system", ""), "benchmark": m.get("benchmark", ""),
             "setting": m.get("setting", ""),
             "stages": stages,
@@ -1079,9 +1084,11 @@ def _cost_index() -> dict:
                 continue
             calls += st["calls"]; pt += st["prompt_tokens"]; ct += st["completion_tokens"]
         ans = c["stages"].get("answer") or {}
+        import time as _t
         idx[(m.get("benchmark", ""), m.get("setting", ""), m.get("system", ""))] = {
             "calls": calls, "tokens": pt + ct, "prompt_tokens": pt, "completion_tokens": ct,
             "ctx_p50": _cost_pct(ans.get("hist") or [], 0.5),
+            "running": (_t.time() - (c.get("updated_at") or 0)) < 600,
         }
     return idx
 

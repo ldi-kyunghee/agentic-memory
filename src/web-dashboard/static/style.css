@@ -833,3 +833,9 @@ table.cmp td.na { color: var(--rule-firm); text-align: center; font-weight: 700;
 table.cmp tr.dimrow > td { color: var(--dim); font-style: italic; }
 table.cmp tr.tot-row > td { background: var(--band); font-weight: 700; }
 table.cmp tr.tot-row:hover > td { background: var(--accent-bg); }
+
+/* 아직 도는 중인 계측: 절반 찬 값을 완료본으로 읽지 않게 표시한다 */
+table.cmp td.num.running { color: var(--dim); }
+table.cmp td.num.running sup { font-size: var(--fs-nano); opacity: .8; }
+.runtag { font-size: var(--fs-micro); font-weight: 700; color: var(--warn-ink, #8a5a00);
+          background: var(--warn-bg, #fff4d6); border-radius: var(--r-1); padding: 1px 6px; margin-left: 6px; }
