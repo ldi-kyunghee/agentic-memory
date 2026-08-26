@@ -8,6 +8,8 @@ CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_naive.sh ${BACKEND} ${DATASET} ${
 HEALTH_TIMEOUT=300
 HEALTH_INTERVAL=5
 
+DATASET_TYPE=$(python -c "import sys; dataset = sys.argv[1]; print(dataset.split('.')[0].split('-')[-1])" "${DATASET}")
+
 wait_for_server() {
     local port=$1
     local name=$2
@@ -38,12 +40,12 @@ if [[ $3 == "vllm" ]]; then
     VLLM_PID=$!
 
     if wait_for_server 8000 "gpt-oss-120b"; then
-	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh ${EXP_NUM} ${BACKEND};
-	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${BACKEND};
+	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND};
+	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND};
     fi
 
     kill -15 $VLLM_PID
     
 else
-    CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${BACKEND}
+    CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
 fi

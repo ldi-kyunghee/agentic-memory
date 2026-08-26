@@ -315,6 +315,10 @@ def main(args, max_workers: int = 10):
     data_dir = args.results_dir
     data_file = data_dir + args.results_file
     output_dir = args.results_dir.replace('results', 'scores').replace('question_answering/', '')
+
+    if not output_dir.endswith('/'):
+        output_dir += '/'
+        
     output_file = output_dir + args.results_file.replace("results", "scores")
 
     os.makedirs(output_dir, exist_ok=True)
