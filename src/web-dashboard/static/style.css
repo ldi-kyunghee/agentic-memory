@@ -780,3 +780,30 @@ table.cmp td.num.down { color: var(--bad); font-weight: 700; }
    display:contents 로 자식(.grp)이 #topbar 의 flex 항목이 되게 한다.
    .hidden 은 !important 라 이 규칙보다 세다 (숨김이 우선). */
 #qual-ctls { display: contents; }
+
+/* ── 표 상호작용 ─────────────────────────────────────────────────────────────
+   십자 강조는 배경만 옅게 깐다. 테두리나 굵기를 건드리면 표가 흔들려 읽기 어려워진다. */
+table.cmp td.xcol, table.cmp th.xcol { background: var(--accent-bg); }
+table.cmp tr.xrow > td { background: var(--accent-bg); }
+table.cmp tr.xrow > td.xcol { background: var(--accent-bg3); }
+
+table.cmp td.colhid, table.cmp th.colhid {
+  padding: 0; width: 0; max-width: 0; overflow: hidden;
+  border-left-width: 0; border-right-width: 0; font-size: 0; color: transparent;
+}
+table.cmp th { position: relative; }
+.colx {
+  position: absolute; top: 1px; right: 1px; display: none;
+  border: none; background: none; cursor: pointer; padding: 0 3px;
+  font-size: var(--fs-nano); color: var(--dim); line-height: 1.2;
+}
+table.cmp th:hover .colx { display: block; }
+.colx:hover { color: var(--bad); }
+
+.hidebar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+           padding: 4px 0 6px; font-size: var(--fs-xs); }
+.hidebar .restore { border: 1px solid var(--rule); background: var(--panel); cursor: pointer;
+                    border-radius: var(--r-1); padding: 1px 7px; font-size: var(--fs-micro);
+                    color: var(--dim); }
+.hidebar .restore:hover { color: var(--ink); border-color: var(--rule-firm); }
+.hidebar .restore.all { font-weight: 700; }

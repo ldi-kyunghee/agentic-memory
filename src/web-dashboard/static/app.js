@@ -99,6 +99,7 @@ async function boot() {
 
   initResizers();
   initDescBar();
+  initTableEnhancer();
   initSelectionComment();
   startPolling();
 
@@ -514,6 +515,107 @@ function anchorsForB(sid) {
   return S.anchorCacheB.get(sid);
 }
 
+/* ---------- 표 상호작용 (모든 표 공통) ----------
+   요구: 마우스를 올리면 그 셀이 어느 행·어느 열인지 바로 보이고, 알아야 할 디테일이 뜨고,
+   보고 싶은 것만 남길 수 있어야 한다. 표마다 따로 만들지 않고 여기 한 곳에서 건다.
+
+   ⚠ 툴팁은 기존 전역 핸들러(initDescBar)가 data-desc 를 읽어 띄운다. 여기서는 셀에
+     data-desc 가 없을 때만 "열 · 행 · 값" 을 만들어 넣는다. 표 위 리스너가 document
+     리스너보다 먼저(버블링 순서) 돌기 때문에 그 자리에서 채워도 늦지 않다. */
+
+function enhanceTables(root) {
+  (root || $("#content")).querySelectorAll("table.cmp").forEach((t) => {
+    if (t.dataset.enh) return;
+    t.dataset.enh = "1";
+    enhanceTable(t);
+  });
+}
+
+function headerTexts(t) {
+  const hr = t.tHead?.rows?.[t.tHead.rows.length - 1];
+  return hr ? [...hr.cells].map((c) => c.textContent.replace(/\s+/g, " ").trim()) : [];
+}
+
+function rowLabel(tr) {
+  const c = tr.cells[0];
+  return c ? c.textContent.replace(/\s+/g, " ").trim() : "";
+}
+
+function enhanceTable(t) {
+  const heads = headerTexts(t);
+
+  // ---- 십자 강조 + 툴팁 자동 합성 ----
+  t.addEventListener("mouseover", (e) => {
+    const cell = e.target.closest("td, th");
+    if (!cell || !t.contains(cell)) return;
+    const tr = cell.parentElement;
+    if (tr.classList.contains("grp-head")) return;
+
+    const i = cell.cellIndex;
+    t.querySelectorAll(".xcol").forEach((x) => x.classList.remove("xcol"));
+    t.querySelectorAll(".xrow").forEach((x) => x.classList.remove("xrow"));
+    tr.classList.add("xrow");
+    [...t.rows].forEach((r) => {
+      if (r.classList.contains("grp-head")) return;
+      const c = r.cells[i];
+      if (c) c.classList.add("xcol");
+    });
+
+    if (!cell.dataset.desc && cell.tagName === "TD" && i > 0) {
+      const v = cell.textContent.replace(/\s+/g, " ").trim();
+      const col = heads[i] || "";
+      const row = rowLabel(tr);
+      if (v && v !== "–") cell.dataset.desc = `<b>${esc(col)}</b> · ${esc(row)}<br>${esc(v)}`;
+    }
+  });
+  t.addEventListener("mouseleave", () => {
+    t.querySelectorAll(".xcol").forEach((x) => x.classList.remove("xcol"));
+    t.querySelectorAll(".xrow").forEach((x) => x.classList.remove("xrow"));
+  });
+
+  // ---- 열 숨기기 ----
+  const hidden = new Set();
+  const bar = document.createElement("div");
+  bar.className = "hidebar hidden";
+  t.parentElement.insertBefore(bar, t);
+
+  const apply = () => {
+    [...t.rows].forEach((r) => {
+      [...r.cells].forEach((c, i) => {
+        if (r.classList.contains("grp-head")) return;
+        c.classList.toggle("colhid", hidden.has(i));
+      });
+    });
+    bar.innerHTML = hidden.size
+      ? `<span class="muted">숨긴 열</span>` +
+        [...hidden].map((i) => `<button class="restore" data-i="${i}">${esc(heads[i] || i)} ✕</button>`).join("") +
+        `<button class="restore all">전부 되돌리기</button>`
+      : "";
+    bar.classList.toggle("hidden", hidden.size === 0);
+  };
+
+  bar.addEventListener("click", (e) => {
+    const b = e.target.closest("button.restore");
+    if (!b) return;
+    if (b.classList.contains("all")) hidden.clear();
+    else hidden.delete(Number(b.dataset.i));
+    apply();
+  });
+
+  const hr = t.tHead?.rows?.[t.tHead.rows.length - 1];
+  if (hr) {
+    [...hr.cells].forEach((th, i) => {
+      if (i === 0) return;   // 첫 열은 행 이름이라 숨기지 않는다
+      const x = document.createElement("button");
+      x.className = "colx";
+      x.textContent = "✕";
+      x.title = "이 열 숨기기";
+      x.onclick = (ev) => { ev.stopPropagation(); hidden.add(i); apply(); };
+      th.appendChild(x);
+    });
+  }
+}
+
 /* ---------- 개요: 세 벤치마크 x 메모리 시스템 ---------- */
 
 const BENCH_NOTE = {
@@ -749,6 +851,13 @@ async function renderHalumem() {
 /* 벤치마크 탭은 HaluMem 유저 번들과 무관하다. 번들 로딩을 기다리지 않게 먼저 가른다.
    (예전에는 render() 첫 줄의 `if (!S.bundle) return` 이 BEAM·Memora 까지 막고 있었음) */
 const BENCH_TABS = ["overview", "halumem", "beam", "memora", "cost"];
+
+/* 렌더러가 #content 를 갈아끼운 뒤 표 상호작용을 다시 건다.
+   비동기 렌더러가 많아 렌더 함수마다 부르는 대신 DOM 변화를 보고 건다. */
+function initTableEnhancer() {
+  const mo = new MutationObserver(() => enhanceTables());
+  mo.observe($("#content"), { childList: true, subtree: true });
+}
 
 function render() {
   if (BENCH_TABS.includes(S.tab)) {
