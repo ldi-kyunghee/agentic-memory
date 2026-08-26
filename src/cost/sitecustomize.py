@@ -67,6 +67,23 @@ if _DIR:
             if pt:
                 s["prompt_max"] = max(s["prompt_max"], pt)
                 s["hist"][min(pt // _BUCKET, _NBUCKET - 1)] += 1
+        _maybe_flush()
+
+    _last_flush = [0.0]
+    _FLUSH_SEC = float(os.getenv("COST_FLUSH_SEC", "5"))
+
+    def _maybe_flush():
+        """주기적으로 흘려쓴다.
+
+        ⚠ 종료 훅에 기대면 안 된다. ProcessPoolExecutor 워커는 os._exit() 로 끝나서
+          atexit 도 multiprocessing.util.Finalize 도 안 돈다 (2026-08-26 실측: 워커가
+          호출을 다 기록해놓고도 파일을 한 개도 안 남겼음). 그래서 기록 중에 흘려쓴다.
+        """
+        now = time.time()
+        if now - _last_flush[0] < _FLUSH_SEC:
+            return
+        _last_flush[0] = now
+        _dump()
 
     def _wrap(cls, kind):
         orig = cls.create
