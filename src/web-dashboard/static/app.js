@@ -3537,26 +3537,27 @@ function memoraCompareCard(rows, tasks) {
   const overall = MEM_CMP_ROWS.map(([key, label, desc, strong]) =>
     line((r) => r.overall?.[key], label, desc, strong, key === "penalty")).join("");
 
-  const byTask = Object.entries(tasks || {}).map(([t, tl]) =>
-    line((r) => r.by_task?.[t]?.fama, `${tl} FAMA`, `${t} 과제의 FAMA`, false, false)).join("");
-
+  // ⚠ 과제별 FAMA 는 아래 '과제별' 표가 시스템 줄로 이미 보여준다. 여기서 또 그리면 같은 것을
+  //   두 군데서 읽게 되고, 값이 어긋나 보일 때 어느 쪽이 맞는지 헷갈린다.
   const store = line((r) => r.stored, "저장 메모리", "투입이 끝난 뒤 저장소에 남은 개수", false, false);
 
-  return `<div class="card"><div class="hd">시스템 비교 · ${esc(rows[0].r.period)}</div>
+  return `<div class="card"><div class="hd">전체 지표 <span class="muted">${esc(rows[0].r.period)} · 과제별은 아래 표</span></div>
     <div class="body mscroll">
       <table class="cmp"><thead><tr><th>지표</th>
         ${rows.map(({ k }) => `<th class="num">${esc(systemLabel(k))}<br><span class="muted">${esc(systemVer(k))}</span></th>`).join("")}
         ${rows.slice(1).map(({ k }) => `<th class="num">${esc(systemLabel(k))} 차</th>`).join("")}
-      </tr></thead><tbody>${overall}${byTask}${store}</tbody></table>
+      </tr></thead><tbody>${overall}${store}</tbody></table>
     </div></div>`;
 }
 
+/* Memora 상세 표도 BEAM 과 같은 방식으로 시스템을 줄로 넣는다. 칸 구조는 그대로 둔다. */
 async function renderMemora() {
   const el = $("#content");
   softLoading(true, "집계 중…");
   const keys = selectedSystems("memora", S.memoraPeriod);
   const sysk = keys[0] || mainSystem("memora", S.memoraPeriod);
   const cmpRows = keys.length > 1 ? await memoraCompare(S.memoraPeriod, keys) : [];
+  const mMulti = cmpRows.length > 1;
   let d;
   try {
     d = await api(`/api/memora?period=${encodeURIComponent(S.memoraPeriod)}&${sysQ(sysk)}`);
@@ -3650,17 +3651,19 @@ ${await memoraCutoffCard(d.period)}
 
     <div class="card"><h4 data-desc="과제 이름을 클릭하면 그 과제의 문항 목록을 FAMA 낮은 순으로 봅니다">과제별</h4>
     <div class="body" style="padding:0">
-    <table class="cmp beam"><tr><th>과제</th><th>문항</th>
+    <table class="cmp beam"><tr><th>과제</th>${mMulti ? `<th data-desc="고른 메모리 시스템마다 한 줄씩입니다. 칸 구조는 그대로입니다">시스템</th>` : ""}<th>문항</th>
       <th data-desc="FAMA = max(0, MPA − λ(1−FAA)). 최종 점수">FAMA</th>
       <th data-desc="넣어야 할 것을 넣은 비율. 망각을 안 보는 종래 지표">MPA</th>
       <th data-desc="빼야 할 것을 뺀 비율. forgetting 기준이 있는 문항만으로 평균냅니다">FAA</th>
       <th data-desc="MPA − FAMA. 무효 메모리를 끌어다 쓴 대가">페널티</th>
       <th data-desc="이 과제의 평가 기준 수. 넣기(memory_presence) / 빼기(forgetting_absence)">기준 넣기/빼기</th></tr>
-      ${Object.keys(TASKS).map((t) => {
-        const v = d.by_task[t] || {};
-        return `<tr><td class="brow bclick" data-mtask="${esc(t)}"
+      ${Object.keys(TASKS).flatMap((t) => (mMulti ? cmpRows : [null]).map((row, i) => {
+        const v = (row ? (row.r.by_task || {}) : d.by_task)[t] || {};
+        return `<tr${i > 0 ? ' class="subrow"' : ""}>
+          ${i === 0 ? `<td class="brow bclick" ${mMulti ? `rowspan="${cmpRows.length}"` : ""} data-mtask="${esc(t)}"
           data-desc="클릭하면 문항 목록을 봅니다"><b>${esc(TASKS[t])}</b>
-          <br><span class="small muted">${esc(t)}</span></td>
+          <br><span class="small muted">${esc(t)}</span></td>` : ""}
+          ${mMulti ? `<td class="syscell">${esc(systemLabel(row.k))}</td>` : ""}
           <td>${v.n ?? "–"}</td>
           <td class="bcell" style="${beamHeat(v.fama == null ? null : v.fama / 100)}"><b>${n2(v.fama)}</b></td>
           <td class="bcell" style="${beamHeat(v.mpa == null ? null : v.mpa / 100)}">${n2(v.mpa)}</td>
@@ -3669,7 +3672,7 @@ ${await memoraCutoffCard(d.period)}
             ${v.n_forget ? "" : `data-desc="${esc("λ=0이라 FAMA가 MPA와 같아집니다. 잘해서 0이 아니라 뺄 것이 없어서 0입니다.")}"`}
             >${v.n_forget ? "−" + (v.penalty ?? 0).toFixed(2) : "–"}</td>
           <td class="small muted">${(v.n_presence || 0)} / ${(v.n_forget || 0)}</td></tr>`;
-      }).join("")}
+      })).join("")}
       <tr class="jm-tot"><td class="brow"><b>전체</b></td><td>${d.overall.n}</td>
         <td class="bcell" style="${beamHeat(d.overall.fama / 100)}"><b>${n2(d.overall.fama)}</b></td>
         <td class="bcell" style="${beamHeat(d.overall.mpa / 100)}">${n2(d.overall.mpa)}</td>
