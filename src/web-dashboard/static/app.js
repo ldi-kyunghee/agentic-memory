@@ -167,15 +167,21 @@ function systemChips(bench, setting) {
       data-desc="${esc(x.note || "")}${av ? "" : "<br><b>이 세팅에는 산출물이 없습니다.</b>"}"
       ${av ? "" : "disabled"}>${esc(x.label)}<span class="ver">${esc(x.version || "")}</span></button>`;
   }).join("");
+  // ⚠ 상세 기준 선택기를 여기 두지 않는다. 이 자리에서는 그것이 바꾸는 표가 한참 아래에 있어
+  //   어느 버튼이 어디에 붙은 것인지 안 읽힌다. 그 선택기는 실제로 바꾸는 패널 머리에 둔다.
+  return `<div class="sysbar"><span class="muted">비교할 메모리 시스템</span>${rows}</div>`;
+}
+
+/* 한 시스템만 그리는 패널(문항 드릴다운 등)의 머리에 붙이는 선택기.
+   바로 아래 내용이 바뀌므로 어느 버튼이 무엇을 바꾸는지 눈으로 이어진다. */
+function panelSystemPicker(bench, setting) {
   const ok = selectedSystems(bench, setting);
-  // 상세 화면(문항 목록·검색 결과·스윕 등)은 한 시스템만 그린다. 어느 것을 그릴지 고르게 한다.
-  // ⚠ 이게 없으면 늘 첫 번째 시스템으로 고정돼, 다른 것을 골라도 아래 표가 안 바뀐다.
-  const mainSel = ok.length > 1
-    ? `<span class="mainsel"><span class="muted">상세 기준</span>` +
-      ok.map((k) => `<button class="seg${mainSystem(bench, setting) === k ? " on" : ""}" data-mainsys="${esc(k)}"
-        data-desc="아래 상세 표·스윕·문항 목록을 <b>${esc(systemLabel(k))}</b> 기준으로 그립니다">${esc(systemLabel(k))}</button>`).join("") +
-      `</span>` : "";
-  return `<div class="sysbar"><span class="muted">비교할 메모리 시스템</span>${rows}${mainSel}</div>`;
+  if (ok.length < 2) return "";
+  const cur = mainSystem(bench, setting);
+  return `<span class="mainsel"><span class="muted">이 패널 기준</span>` +
+    ok.map((k) => `<button class="jbtn${cur === k ? " on" : ""}" data-mainsys="${esc(k)}"
+      data-desc="이 패널을 <b>${esc(systemLabel(k))}</b> 기준으로 다시 그립니다">${esc(systemLabel(k))}</button>`).join("") +
+    `</span>`;
 }
 
 /* 상세 드릴다운(문항 목록·개별 문항)은 한 시스템 것만 보여준다.
@@ -188,11 +194,6 @@ function mainSystem(bench, setting) {
 }
 
 function wireSystemChips() {
-  $$("#content button[data-mainsys]").forEach((b) => (b.onclick = () => {
-    S.sysMain = b.dataset.mainsys;
-    localStorage.setItem("mem_sys_main", S.sysMain);
-    render();
-  }));
   $$("#content button.syschip").forEach((b) => (b.onclick = () => {
     const k = b.dataset.sys;
     const i = S.sysSel.indexOf(k);
@@ -576,6 +577,21 @@ function anchorsForB(sid) {
   return S.anchorCacheB.get(sid);
 }
 
+/* ---------- 갱신 중 표시 ----------
+   ⚠ 예전에는 비동기 렌더러가 시작할 때 #content 를 "집계 중…" 으로 갈아엎었다. 버튼 하나 누를
+     때마다 화면이 통째로 비었다가 새 값이 뜨니 앞뒤를 눈으로 잇지 못해 비교분석이 어려웠다.
+     지금은 **옛 내용을 그대로 두고** 작은 알약만 띄운다. 새 HTML 이 준비되면 그때 갈아끼운다. */
+function softLoading(on, msg) {
+  let pill = $("#softload");
+  if (!on) { pill?.remove(); return; }
+  if (!pill) {
+    pill = document.createElement("div");
+    pill.id = "softload";
+    document.body.appendChild(pill);
+  }
+  pill.innerHTML = `<span class="sp"></span>${esc(msg || "갱신 중…")}`;
+}
+
 /* ---------- 표 상호작용 (모든 표 공통) ----------
    요구: 마우스를 올리면 그 셀이 어느 행·어느 열인지 바로 보이고, 알아야 할 디테일이 뜨고,
    보고 싶은 것만 남길 수 있어야 한다. 표마다 따로 만들지 않고 여기 한 곳에서 건다.
@@ -688,7 +704,7 @@ const BENCH_NOTE = {
 async function renderOverview() {
   const el = $("#content");
   $("#qualnav")?.classList.add("hidden");
-  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  softLoading(true, "집계 중…");
   let d;
   try { d = await api("/api/overview"); }
   catch (e) { el.innerHTML = `<p class="muted">개요를 못 읽었습니다: ${esc(e.message || e)}</p>`; return; }
@@ -801,7 +817,7 @@ const COST_COLS = [
 async function renderCost() {
   const el = $("#content");
   $("#qualnav")?.classList.add("hidden");
-  el.innerHTML = `<p class="muted">계측 읽는 중…</p>`;
+  softLoading(true, "계측 읽는 중…");
   let d;
   try { d = await api("/api/cost"); }
   catch (e) { el.innerHTML = `<p class="muted">비용 계측을 못 읽었습니다: ${esc(e.message || e)}</p>`; return; }
@@ -934,7 +950,7 @@ const HM_TYPE_ROWS = [
 async function renderHalumem() {
   const el = $("#content");
   $("#qualnav")?.classList.add("hidden");
-  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  softLoading(true, "집계 중…");
   let d;
   try { d = await api(`/api/halumem?scale=${encodeURIComponent(S.hmScale)}`); }
   catch (e) { el.innerHTML = `<p class="muted">HaluMem 집계를 못 읽었습니다: ${esc(e.message || e)}</p>`; return; }
@@ -1034,7 +1050,7 @@ const BENCH_TABS = ["overview", "halumem", "beam", "memora", "cost"];
 /* 렌더러가 #content 를 갈아끼운 뒤 표 상호작용을 다시 건다.
    비동기 렌더러가 많아 렌더 함수마다 부르는 대신 DOM 변화를 보고 건다. */
 function initTableEnhancer() {
-  const mo = new MutationObserver(() => enhanceTables());
+  const mo = new MutationObserver(() => { enhanceTables(); softLoading(false); });
   mo.observe($("#content"), { childList: true, subtree: true });
 }
 
@@ -2729,7 +2745,7 @@ async function renderBeam() {
 // 규모 × 답변 프롬프트를 한 화면에. BEAM 결론이 전부 이 축들의 대조라 버킷별 화면으로는 안 보인다.
 async function renderBeamOverview() {
   const el = $("#content");
-  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  softLoading(true, "집계 중…");
   let d;
   try {
     d = await api(`/api/beam/overview?${sysQ(mainSystem('beam'))}`);
@@ -2916,7 +2932,7 @@ function beamCompareCard(rows, cuts) {
 
 async function renderBeamBucket() {
   const el = $("#content");
-  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  softLoading(true, "집계 중…");
   const keys = selectedSystems("beam", S.beamBucket);
   const sysk = keys[0] || mainSystem("beam", S.beamBucket);
   const cmpRows = keys.length > 1 ? await beamCompare(S.beamBucket, keys) : [];
@@ -2943,6 +2959,53 @@ async function renderBeamBucket() {
   $$("#content .hrefsw:not(.beammode) button[data-bk]").forEach((b) => (b.onclick = () => { S.beamBucket = b.dataset.bk; renderBeam(); }));
     return;
   }
+
+  /* 시스템을 여러 개 고르면 능력마다 시스템 수만큼 줄을 넣는다.
+     ⚠ 칸(cutoff 열) 구조는 그대로 둔다. 별도 비교표를 옆에 만들면 같은 것을 두 군데서 읽게 되고,
+       "상세 기준" 하나를 골라 화면을 갈아끼우면 나머지 시스템이 안 보인다. */
+  const multi = cmpRows.length > 1;
+  const abilOf = (k, key) => (cmpRows.find((x) => x.k === k)?.r.abilities || []).find((y) => y.key === key);
+  const ovOf = (k) => cmpRows.find((x) => x.k === k)?.r.overall || {};
+
+  const rowsFor = (a) => {
+    if (!multi) {
+      return `<tr data-ab="${esc(a.key)}">
+        <td class="brow bclick" data-open="${esc(a.key)}|${esc(a.label)}"
+          data-desc="클릭하면 이 능력의 문항 ${CUT.length}벌 채점을 문항 단위로 볼 수 있습니다"><b>${esc(a.label)}</b>
+          <br><span class="small muted">${esc(a.key)}</span></td>
+        ${CUT.map((k) => cellHTML(a.cells[String(k)])).join("")}
+        ${deltaHTML(a.delta)}<td>${spark(a.cells)}</td></tr>`;
+    }
+    return cmpRows.map(({ k }, i) => {
+      const aa = abilOf(k, a.key);
+      const cells = aa?.cells || {};
+      return `<tr data-ab="${esc(a.key)}"${i === 0 ? "" : ' class="subrow"'}>
+        ${i === 0 ? `<td class="brow bclick" rowspan="${cmpRows.length}" data-open="${esc(a.key)}|${esc(a.label)}"
+          data-desc="클릭하면 이 능력의 문항을 문항 단위로 볼 수 있습니다 (문항 상세는 한 시스템만 그립니다)"><b>${esc(a.label)}</b>
+          <br><span class="small muted">${esc(a.key)}</span></td>` : ""}
+        <td class="syscell">${esc(systemLabel(k))}</td>
+        ${CUT.map((c) => cellHTML(cells[String(c)])).join("")}
+        ${deltaHTML(aa?.delta ?? null)}<td>${spark(cells)}</td></tr>`;
+    }).join("");
+  };
+
+  const totalRows = () => {
+    if (!multi) {
+      return `<tr class="jm-tot"><td class="brow"><b>전체</b></td>
+        ${CUT.map((k) => cellHTML(d.overall[String(k)])).join("")}
+        ${deltaHTML(d.overall[String(CUT[CUT.length-1])] && d.overall[String(CUT[0])]
+          ? d.overall[String(CUT[CUT.length-1])].score - d.overall[String(CUT[0])].score : null)}<td></td></tr>`;
+    }
+    return cmpRows.map(({ k }, i) => {
+      const ov = ovOf(k);
+      const hi = ov[String(CUT[CUT.length-1])], lo = ov[String(CUT[0])];
+      return `<tr class="jm-tot">
+        ${i === 0 ? `<td class="brow" rowspan="${cmpRows.length}"><b>전체</b></td>` : ""}
+        <td class="syscell">${esc(systemLabel(k))}</td>
+        ${CUT.map((c) => cellHTML(ov[String(c)])).join("")}
+        ${deltaHTML(hi && lo ? hi.score - lo.score : null)}<td></td></tr>`;
+    }).join("");
+  };
 
   // cutoff 가 저장소보다 큰 칸을 표시. 그 칸은 검색이 작동하지 않은 조건임
   const cellHTML = (c) => {
@@ -2973,8 +3036,6 @@ async function renderBeamBucket() {
     ${beamModeSwitch()}
     ${systemChips("beam", S.beamBucket)}
     <p class="hrefsw" data-desc="버킷마다 대화 집합이 다릅니다(제목 겹침 0). 절대 수치를 버킷 간에 비교하지 마세요."><b>버킷</b>${pick}</p>
-    ${beamCompareCard(cmpRows, CUT)}
-    ${cmpRows.length > 1 ? `<p class="small muted">아래는 <b>${esc(systemLabel(sysk))}</b> 한 시스템의 상세입니다.</p>` : ""}
     <p class="small muted">${esc(d.note || "")}<br>대화 ${d.n_convs}개 · 문항 ${d.n_questions}개 · 채점 ${d.n_records}건 · 저장 메모리 ${d.stored_min}~${d.stored_max}개</p>
 
     <div class="jbasis" data-desc="cutoff 는 Stage A' 에서 검색 결과 top-200 을 잘라 만든 조건입니다. 투입은 한 번만 했고 자르기만 달리했습니다.">
@@ -2984,18 +3045,11 @@ async function renderBeamBucket() {
 
     <div class="card"><h4 data-desc="행은 능력 10종, 열은 cutoff. 마지막 열은 top-${CUT[CUT.length-1]} 에서 top-${CUT[0]} 을 뺀 값으로, 클수록 검색 예산에 민감한 능력입니다">능력 × 검색 예산</h4>
     <div class="body" style="padding:0">
-    <table class="cmp beam"><tr><th>능력</th>${CUT.map((k) => `<th data-desc="답변자에게 메모리 ${k}개까지 제공">top-${k}</th>`).join("")}
+    <table class="cmp beam"><tr><th>능력</th>${multi ? `<th data-desc="고른 메모리 시스템마다 한 줄씩입니다. 칸 구조는 그대로입니다">시스템</th>` : ""}
+      ${CUT.map((k) => `<th data-desc="답변자에게 메모리 ${k}개까지 제공">top-${k}</th>`).join("")}
       <th data-desc="top-${CUT[CUT.length-1]} 빼기 top-${CUT[0]}. 양수면 컨텍스트를 늘릴수록 좋아지는 능력">차이</th><th>추세</th></tr>
-      ${d.abilities.map((a) => `<tr data-ab="${esc(a.key)}">
-        <td class="brow bclick" data-open="${esc(a.key)}|${esc(a.label)}"
-          data-desc="클릭하면 이 능력의 문항 ${CUT.length}벌 채점을 문항 단위로 볼 수 있습니다"><b>${esc(a.label)}</b>
-          <br><span class="small muted">${esc(a.key)}</span></td>
-        ${CUT.map((k) => cellHTML(a.cells[String(k)])).join("")}
-        ${deltaHTML(a.delta)}<td>${spark(a.cells)}</td></tr>`).join("")}
-      <tr class="jm-tot"><td class="brow"><b>전체</b></td>
-        ${CUT.map((k) => cellHTML(d.overall[String(k)])).join("")}
-        ${deltaHTML(d.overall[String(CUT[CUT.length-1])] && d.overall[String(CUT[0])]
-          ? d.overall[String(CUT[CUT.length-1])].score - d.overall[String(CUT[0])].score : null)}<td></td></tr>
+      ${d.abilities.map((a) => rowsFor(a)).join("")}
+      ${totalRows()}
     </table></div></div>
 
     ${!eo ? "" : `
@@ -3059,9 +3113,17 @@ async function renderBeamBucket() {
 async function beamQuestions(ability, label) {
   $("#jmodal").classList.remove("hidden");
   $("#jmodal-head").innerHTML = `<b>BEAM · ${esc(label)}</b>
-    <span class="jchip">${esc(ability)}</span><span style="margin-left:auto"></span>
+    <span class="jchip">${esc(ability)}</span>
+    ${panelSystemPicker("beam", S.beamBucket)}
+    <span style="margin-left:auto"></span>
     <button class="jbtn" id="jm-close">✕</button>`;
   $("#jm-close").onclick = jmClose;
+  // 이 패널만 다시 그린다. 화면 전체를 재렌더링하지 않는다.
+  $$("#jmodal-head button[data-mainsys]").forEach((b) => (b.onclick = () => {
+    S.sysMain = b.dataset.mainsys;
+    localStorage.setItem("mem_sys_main", S.sysMain);
+    beamQuestions(ability, label);
+  }));
   const el = $("#jmodal-body");
   el.innerHTML = `<p class="muted" style="padding:20px">불러오는 중…</p>`;
   const d = await api(`/api/beam/questions?bucket=${encodeURIComponent(S.beamBucket)}&ability=${encodeURIComponent(ability)}&${sysQ(mainSystem('beam', S.beamBucket))}`);
@@ -3491,7 +3553,7 @@ function memoraCompareCard(rows, tasks) {
 
 async function renderMemora() {
   const el = $("#content");
-  el.innerHTML = `<p class="muted">집계 중…</p>`;
+  softLoading(true, "집계 중…");
   const keys = selectedSystems("memora", S.memoraPeriod);
   const sysk = keys[0] || mainSystem("memora", S.memoraPeriod);
   const cmpRows = keys.length > 1 ? await memoraCompare(S.memoraPeriod, keys) : [];

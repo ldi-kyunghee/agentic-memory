@@ -847,3 +847,26 @@ table.cmp td.num.running sup { font-size: var(--fs-nano); opacity: .8; }
 .sysbar .mainsel { display: inline-flex; align-items: center; gap: 4px;
                    margin-left: 10px; padding-left: 12px; border-left: 1px solid var(--rule); }
 .sysbar .mainsel .muted { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em; }
+
+/* 갱신 중 알약: 화면을 비우지 않고 오른쪽 아래에만 뜬다.
+   전체 오버레이(#loading)와 달리 옛 값을 계속 읽을 수 있어야 비교가 이어진다. */
+#softload { position: fixed; right: 16px; bottom: 52px; z-index: 40;
+  display: flex; align-items: center; gap: 7px;
+  background: var(--chrome-bg); color: #fff; border-radius: 999px;
+  padding: 6px 14px; font-size: var(--fs-md); font-weight: 700;
+  box-shadow: 0 3px 12px rgba(0,0,0,.22); }
+#softload .sp { width: 11px; height: 11px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.35); border-top-color: #fff;
+  animation: sl-spin .7s linear infinite; }
+@keyframes sl-spin { to { transform: rotate(360deg); } }
+
+/* 패널 기준 선택: 바로 아래 내용을 바꾸므로 패널 머리에 붙인다 */
+.mainsel { display: inline-flex; align-items: center; gap: 4px; margin-left: 12px;
+           padding-left: 12px; border-left: 1px solid var(--rule); }
+.mainsel .muted { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em; }
+.jbtn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* 능력 표에서 시스템 줄. 능력 이름 칸과 층위를 가른다 */
+table.beam td.syscell { font-size: var(--fs-xs); font-weight: 700; color: var(--dim);
+                        background: var(--band); white-space: nowrap; }
+table.beam tr.subrow > td { border-top-color: var(--rule-soft); }
