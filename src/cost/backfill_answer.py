@@ -47,8 +47,29 @@ def load_builders(bench: str):
     raise SystemExit(f"✗ 모르는 벤치마크: {bench}")
 
 
+def stored_response(q: dict, bench: str, cutoff):
+    """저장된 답변을 꺼낸다. 벤치마크마다 담는 모양이 다르다.
+
+      HaluMem  q["system_response"]                 (문자열)
+      BEAM     q["answers"][str(cutoff)]["system_response"]   (cutoff 별로 네 벌)
+      Memora   q["answer"]["system_response"]
+    """
+    if bench == "halumem":
+        return q.get("system_response")
+    if bench == "beam":
+        a = q.get("answers")
+        if isinstance(a, dict) and a:
+            key = str(cutoff) if cutoff and str(cutoff) in a else sorted(a, key=lambda x: int(x))[-1]
+            return (a.get(key) or {}).get("system_response")
+        return q.get("system_response")
+    a = q.get("answer")
+    if isinstance(a, dict):
+        return a.get("system_response")
+    return a or q.get("system_response")
+
+
 def jobs_from(bench: str, path: str, cutoff):
-    """(프롬프트 재료, 저장된 답변) 목록."""
+    """(질문, 프롬프트 재료, 저장된 답변) 목록."""
     out = []
     with open(path, encoding="utf-8") as f:
         for line in f:
@@ -59,11 +80,11 @@ def jobs_from(bench: str, path: str, cutoff):
                 for s in d.get("sessions") or []:
                     for q in (s.get("questions") or []):
                         if q.get("context") is not None:
-                            out.append((q["question"], q["context"], q.get("system_response")))
+                            out.append((q["question"], q["context"], stored_response(q, bench, cutoff)))
             else:
                 for q in (d.get("questions") or []):
                     if q.get("retrieved") is not None:
-                        out.append((q["question"], q["retrieved"], q.get("system_response")))
+                        out.append((q["question"], q["retrieved"], stored_response(q, bench, cutoff)))
     return out
 
 
