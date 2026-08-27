@@ -822,7 +822,11 @@ def api_unregistered():
             for v in o:
                 walk(v)
         elif isinstance(o, str) and o.startswith("results/"):
-            reg_paths.add(o.split("/")[1])
+            # results/mem0-classic-oss/<디렉토리>/... 이므로 세 번째 조각이 디렉토리 이름이다.
+            # ⚠ 두 번째를 보면 전부 "mem0-classic-oss" 로 잡혀 아무것도 등록 안 된 것처럼 나온다.
+            parts = o.split("/")
+            if len(parts) >= 3:
+                reg_paths.add(parts[2])
 
     walk(doc)
 
