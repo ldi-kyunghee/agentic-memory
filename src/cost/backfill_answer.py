@@ -41,6 +41,9 @@ def load_builders(bench: str):
         return (lambda q, r, cut: m.SYSTEM_PROMPT + "\n\n"
                 + m.USER_PROMPT.format(question=q, memories=m.build_context(r, cut)[0]))
     if bench == "halumem":
+        # ⚠ PROMPT_MEMZERO 는 HaluMem 서브모듈에 있다 (gen_answers.py 도 거기서 가져온다).
+        #   BEAM/src 에도 같은 이름의 prompts.py 가 있으므로 경로 순서를 명시한다.
+        sys.path.insert(0, os.path.join(ROOT, "HaluMem", "eval"))
         sys.path.insert(0, E)
         from prompts import PROMPT_MEMZERO
         return (lambda q, ctx, cut: PROMPT_MEMZERO.format(context=ctx, question=q))
