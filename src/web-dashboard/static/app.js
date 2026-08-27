@@ -1011,6 +1011,23 @@ function noiseNote(n) {
   </div>`;
 }
 
+/* C/H/O 처럼 100%로 합쳐지는 세 값은 쌓은 막대가 표보다 빨리 읽힌다.
+   어디로 새는지(환각인지 누락인지)가 한눈에 보여야 한다. */
+function choBar(c, h, o, labels) {
+  const t = (c || 0) + (h || 0) + (o || 0);
+  if (!t) return `<span class="chobar"></span>`;
+  const pc = (v) => (v || 0) / t * 100;
+  return `<span class="chobar" data-desc="${esc(labels)}<br>${(pc(c)).toFixed(1)}% / ${(pc(h)).toFixed(1)}% / ${(pc(o)).toFixed(1)}%">
+    <i class="c" style="width:${pc(c)}%"></i><i class="h" style="width:${pc(h)}%"></i><i class="o" style="width:${pc(o)}%"></i></span>`;
+}
+
+/* 0~1 비율 하나를 막대로. 숫자만 있으면 두 시스템의 폭 차이가 안 잡힌다. */
+function ratioBar(v, good = true) {
+  if (v == null) return `<span class="rbar"></span>`;
+  const w = Math.max(1, Math.round(v * 100));
+  return `<span class="rbar"><i class="${good ? "g" : "b"}" style="width:${w}%"></i></span>`;
+}
+
 /* 메모리 유형별. 전체 평균에는 어느 종류에서 무너지는지가 안 보인다. */
 function hmTypeCard(sys) {
   const types = [...new Set(sys.flatMap((r) => Object.keys(r.by_type || {})))];
@@ -1095,15 +1112,15 @@ async function renderHalumem() {
           교집합으로 자르지 않으면 알고리즘 차이가 아니라 표본 차이를 읽게 됩니다.
         </p>
         ${missing}
-        <table class="cmp"><thead><tr><th>지표</th>
-          ${sys.map((r) => `<th class="num">${esc(r.label)}<br><span class="muted">${esc(r.version || "")}</span></th>`).join("")}
+        <table class="cmp hmtbl"><thead><tr><th>지표</th>
+          ${sys.map((r) => `<th class="num" colspan="2">${esc(r.label)}<br><span class="muted">${esc(r.version || "")}</span></th>`).join("")}
           ${sys.slice(1).map((r) => `<th class="num">${esc(r.label)} 차</th>`).join("")}
         </tr></thead><tbody>
           ${HM_GROUPS.map(([g, rows]) => `
-            <tr class="grp-head"><td colspan="${1 + sys.length * 2 - 1}">${esc(g)}</td></tr>
+            <tr class="grp-head"><td colspan="${1 + sys.length * 3}">${esc(g)}</td></tr>
             ${rows.map(([k, lab, desc, good]) => `<tr${k === "qa_c" ? ' class="tot-row"' : ""}>
               <td data-desc="${esc(desc)}">${k === "qa_c" ? `<b>${esc(lab)}</b>` : esc(lab)}</td>
-              ${sys.map((r) => `<td class="num">${fmt(r[k])}</td>`).join("")}
+              ${sys.map((r) => `<td class="num">${fmt(r[k])}</td><td class="bar">${ratioBar(r[k], good)}</td>`).join("")}
               ${sys.slice(1).map((r) => dcell(r, k, good)).join("")}
             </tr>`).join("")}`).join("")}
         </tbody></table>
@@ -1114,6 +1131,24 @@ async function renderHalumem() {
         </p>
       </div>
     </div>
+    <div class="card"><div class="hd">어디로 새는가 <span class="muted">C / H / O 구성</span></div>
+      <div class="body">
+        <p class="small muted" style="margin:0 0 10px">세 값이 100%로 합쳐집니다.
+        <b>초록 = 맞음, 빨강 = 환각(틀린 내용), 회색 = 누락(못 냄)</b>.
+        같은 점수라도 환각으로 잃은 것과 누락으로 잃은 것은 고쳐야 할 곳이 다릅니다.</p>
+        <table class="cmp"><thead><tr><th>단계</th><th>메모리 시스템</th><th style="width:46%">구성</th>
+          <th class="num">맞음</th><th class="num">환각</th><th class="num">누락</th></tr></thead><tbody>
+          ${[["갱신", "update_c", "update_h", "update_o"], ["답변", "qa_c", "qa_h", "qa_o"]]
+            .flatMap(([lab, ck, hk, ok]) => sys.map((r, i) => `<tr data-sysi="${i}">
+              ${i === 0 ? `<td rowspan="${sys.length}"><b>${esc(lab)}</b></td>` : ""}
+              <td class="syscell">${esc(r.label)}</td>
+              <td>${choBar(r[ck], r[hk], r[ok], `${lab} · ${r.label}`)}</td>
+              <td class="num"><b>${fmt(r[ck])}</b></td>
+              <td class="num">${fmt(r[hk])}</td>
+              <td class="num">${fmt(r[ok])}</td>
+            </tr>`)).join("")}
+        </tbody></table>
+      </div></div>
     ${hmTypeCard(sys)}
     <div class="card"><div class="hd">더 파보기</div><div class="body">
       <p class="small muted">이 표는 집계입니다. 개별 세션·문항·검색 결과를 보려면 <b>정성분석</b> 탭으로 가세요.

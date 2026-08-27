@@ -935,3 +935,18 @@ table.costtbl td.na { color: var(--rule-firm); text-align: center; font-weight: 
 .ctxbar .mk { position: absolute; top: -1px; width: 2px; height: 13px; }
 .ctxbar .mk.p50 { background: var(--accent); }
 .ctxbar .mk.mx { background: var(--bad); }
+
+/* ── HaluMem 지표 막대 ──────────────────────────────────────────────────────
+   숫자만 있으면 두 시스템의 폭 차이가 안 잡힌다. 값 옆에 폭을 함께 둔다. */
+table.hmtbl td.bar { padding: 4px 10px 4px 2px; width: 92px; }
+.rbar { display: block; height: 9px; background: var(--band); border-radius: 3px; overflow: hidden; }
+.rbar i { display: block; height: 9px; }
+.rbar i.g { background: var(--ok); }
+.rbar i.b { background: var(--bad); }
+
+/* C/H/O 쌓은 막대: 맞음·환각·누락. 색 의미는 이 프로젝트의 판정 색과 맞춘다 */
+.chobar { display: flex; height: 14px; border-radius: 3px; overflow: hidden; background: var(--band); }
+.chobar i { display: block; height: 14px; }
+.chobar i.c { background: var(--ok); }
+.chobar i.h { background: var(--bad); }
+.chobar i.o { background: var(--rule-firm); }
