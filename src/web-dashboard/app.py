@@ -855,6 +855,9 @@ def api_unregistered():
 
     walk(doc)
 
+    import fnmatch as _fn
+    ignore = load_registry_doc().get("unregistered_ignore") or []
+
     res = ROOT / "results" / "mem0-classic-oss"
     out = []
     if res.is_dir():
@@ -862,6 +865,9 @@ def api_unregistered():
             if not d.is_dir() or d.name in reg_paths:
                 continue
             if any(p.match(d.name) for p in reg_pats):
+                continue
+            # 화면에 띄울 생각이 없는 보조 산출물(스모크·반복 채점·캘리브레이션)은 경고에서 뺀다.
+            if any(_fn.fnmatch(d.name, g) for g in ignore):
                 continue
             # ⚠ **채점본만** 잡는다. 투입·답변 같은 중간 산출물까지 세면 200개가 넘게 나와
             #   경고가 소음이 되고, 정작 중요한 것이 묻힌다. 화면이 그리는 단위는 채점본이다.
