@@ -12,3 +12,4 @@ uv run eval/naive/naive_memory.py --top_k 10 --memory_with_prior_question $3 --n
 uv run eval/naive/naive_memory.py --top_k 10 --memory_with_prior_question $3 --embed_config embed_config.yaml --n_persona 4 --dataset ${DATASET} --memory_type embeddings
 
 uv run eval/naive/naive_memory.py --top_k 10 --memory_with_prior_question $3 --memory_type hybrid --embed_config embed_config.yaml --n_persona 4 --dataset ${DATASET}
+

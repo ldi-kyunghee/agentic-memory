@@ -12,3 +12,5 @@ _run.sh
 eval/bm25/evaluation.ipynb
 .vorg.db
 *.~undo-tree~
+results/naive/_old/
+results/naive/old_experiments/
