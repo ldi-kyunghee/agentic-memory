@@ -35,6 +35,10 @@ export OPENAI_API_KEY=${OPENAI_API_KEY:-dummy}
 export ANSWER_MODEL=${ANSWER_MODEL:-openai/gpt-oss-120b}
 export JUDGE_MODEL=${JUDGE_MODEL:-openai/gpt-oss-120b}
 export ANSWER_REASONING_EFFORT=${ANSWER_REASONING_EFFORT:-high}
+# ⚠ answer_beam.py 의 BEAM_ANSWER_PROMPT 기본값은 `beam`(BEAM 공식)인데, classic 대표 레인은
+#   `mem0` 하네스 프롬프트로 돌렸다. 안 맞추면 메모리 시스템 차이가 아니라 프롬프트 차이를 잰다
+#   (2026-08-26 실제로 그렇게 나갔고 부호가 뒤집혔음). **기본값에 기대지 말고 항상 명시한다.**
+export BEAM_ANSWER_PROMPT=${BEAM_ANSWER_PROMPT:-mem0}
 export JUDGE_REASONING_EFFORT=${JUDGE_REASONING_EFFORT:-high}
 
 W_ING=${W_ING:-10}     # 투입. 구조적 상한: HaluMem 20유저 / BEAM 20대화 / Memora 10페르소나

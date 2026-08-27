@@ -121,33 +121,53 @@ quarterly 에서 전체 점수가 붙는 이유는 상쇄임. v3 는 MPA 가 더
 
 ---
 
-## 3. BEAM 100K (2026-08-26)
+## 3. BEAM 100K (2026-08-26, 2026-08-27 정정)
+
+> ⚠ **처음 낸 수치는 틀렸다.** 답변 생성 프롬프트가 두 팔에서 서로 달랐다.
+> `answer_beam.py` 의 `BEAM_ANSWER_PROMPT` 기본값이 `beam`(BEAM 공식)인데
+> `scripts/mem0-v3/run_all.sh` 가 그 값을 안 줬다. classic 쪽 대표 레인은 `mem0` 하네스
+> 프롬프트로 돌린 것이라, 둘을 견주면 **메모리 시스템 차이가 아니라 프롬프트 차이를 읽게 된다.**
+> BEAM 공식 프롬프트는 "설명 없이 답만 출력" 지시가 있어 전체 점수를 0.11~0.135 낮춘다
+> (`beam-experiment.md` §7). 아래는 **프롬프트를 맞춘** 값이다.
 
 대화 20 · 능력 10종 × 문항 16 × 대화 20 = 1,600. judge `openai/gpt-oss-120b` high.
+양쪽 모두 **BEAM 공식 답변 프롬프트**.
 
 | 능력 | classic | v3 | 차 |
 |---|---|---|---|
-| **contradiction_resolution** | 49.30 | **7.42** | **−41.88** |
-| instruction_following | 79.38 | 57.97 | **−21.41** |
-| abstention | 46.25 | 25.62 | **−20.63** |
-| preference_following | 84.22 | 73.80 | −10.42 |
-| temporal_reasoning | 35.47 | 28.44 | −7.03 |
-| information_extraction | 70.47 | 68.28 | −2.19 |
-| event_ordering | 37.44 | 35.64 | −1.79 |
-| knowledge_update | 43.44 | 42.19 | −1.25 |
-| summarization | 37.73 | 38.78 | +1.06 |
-| multi_session_reasoning | 42.13 | 45.77 | +3.64 |
-| **전체** | **52.58** | **42.39** | **−10.19** |
+| **multi_session_reasoning** | 31.28 | **45.77** | **+14.50** |
+| **information_extraction** | 58.09 | **68.28** | **+10.20** |
+| temporal_reasoning | 23.75 | 28.44 | +4.69 |
+| instruction_following | 54.37 | 57.97 | +3.59 |
+| summarization | 35.49 | 38.78 | +3.29 |
+| event_ordering | 32.40 | 35.64 | +3.24 |
+| contradiction_resolution | 5.94 | 7.42 | +1.48 |
+| preference_following | 74.58 | 73.80 | −0.78 |
+| knowledge_update | 44.38 | 42.19 | −2.19 |
+| **abstention** | 44.38 | **25.62** | **−18.75** |
+| **전체** | **40.47** | **42.39** | **+1.93** |
 
-**contradiction_resolution 49.30 → 7.42 이 이 실험 전체에서 가장 큰 단일 수치임.**
-모순 해소는 "앞에서 A 라고 했다가 뒤에서 B 라고 했을 때 B 로 답하는가" 를 봄. ADD-only 는
-A 를 지우지도 고치지도 않으므로 A 와 B 가 함께 저장되고 검색에 함께 딸려옴. 설계가
-그대로 점수로 나온 자리임.
+**전체는 v3 가 +1.93 으로 근소하게 앞선다.** 처음 적었던 −10.19 는 프롬프트 차이였다.
 
-multi_session_reasoning +3.64 는 Memora 의 reasoning 상승과 같은 방향임. 흩어진 근거를
-모으는 문항에서는 3신호 융합 검색이 유리함.
+### 3-1. 철회한 주장: "모순 해소 49.30 → 7.42"
 
----
+처음에 이 실험에서 가장 큰 수치라고 적었다. **틀렸다.**
+같은 classic 투입·같은 검색 결과 위에서 프롬프트만 BEAM 공식으로 바꾸면 49.30 이 **5.94** 로 떨어진다.
+v3 의 7.42 는 그 기준에서 **+1.48 로 오히려 높다.**
+
+무너뜨린 것은 ADD-only 가 아니라 답변 규약이었다. "설명 없이 답만 출력" 지시가 있으면
+모순을 짚어 설명하는 답을 안 쓴다. rubric 은 그 설명을 요구한다.
+
+> 판독 규율: **한 벌만 보고 큰 수치에 서사를 붙이지 않는다.** 같은 축의 대조군이 리포에
+> 이미 있었는데(`100k-beamprompt`) 그것과 맞추지 않았다.
+
+### 3-2. 프롬프트를 맞춘 뒤 남는 차이
+
+- **multi_session_reasoning +14.50 · information_extraction +10.20** 이 v3 의 진짜 강점이다.
+  흩어진 근거를 모으는 문항인데, Memora 의 reasoning 상승(§2)과 같은 방향이다.
+- **abstention −18.75** 가 v3 의 진짜 약점이다. 근거가 없을 때 없다고 말하는 능력인데,
+  ADD-only 가 지우지 않아 저장소에 남은 옛 항목이 "근거가 있다"고 착각하게 만드는 것으로 보인다.
+  (검증 안 됨. §4-1 과 같은 성격의 미결 항목임)
 
 ## 4. HaluMem (2026-08-26) · ⚠ 4유저 비교
 
@@ -212,18 +232,18 @@ Interference 47.02 · update C 22.36 / H 3.84 / O 72.87 · QA C 64.06 / H 20.25 
 | 벤치마크 | 전체 | v3 가 이기는 자리 | v3 가 지는 자리 |
 |---|---|---|---|
 | HaluMem (4u) | QA 동률 | 추출 F1 +15.98 · 온전성 +8.60 | Interference −10.14 |
-| BEAM 100K | **−10.19** | multi_session_reasoning +3.64 | **contradiction_resolution −41.88** |
+| BEAM 100K | **+1.93** | multi_session_reasoning +14.50 · information_extraction +10.20 | **abstention −18.75** |
 | Memora weekly | +3.37 | reasoning +29.33 | remembering −11.05 |
 | Memora monthly | −5.11 | reasoning +18.00 | remembering −18.96 |
 | Memora quarterly | −0.22 | reasoning +7.50 | recommending −5.29 |
 
 **세 벤치마크가 같은 축을 가리킴.** 흩어진 근거를 모으는 문항(reasoning,
 multi_session_reasoning, 추출)에서 v3 가 이기고, 지금 무엇이 참인지 묻는 문항
-(contradiction_resolution, remembering, Interference)에서 짐. 벤치마크가 어느 쪽을
-많이 물어보느냐가 전체 점수의 부호를 정함.
+(remembering, Interference, abstention)에서 짐. 벤치마크가 어느 쪽을 많이 물어보느냐가
+전체 점수의 부호를 정함.
 
-BEAM 이 가장 크게 갈린 이유는 능력 10종 중 모순 해소·지시 준수·판단 보류가 전부
-"현재 상태" 계열이기 때문임. Memora 는 세 과제가 두 축에 나뉘어 있어 상쇄됨.
+> ⚠ 2026-08-27 정정 전에는 이 자리에 "BEAM 에서 모순 해소가 무너졌다" 고 적혀 있었다.
+> 그것은 프롬프트 차이였다 (§3-1). **부호가 뒤집힌 자리가 있으므로 옛 판독을 인용하지 않는다.**
 
 ---
 
