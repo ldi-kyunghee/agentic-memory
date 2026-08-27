@@ -2920,55 +2920,13 @@ async function renderBeamOverview() {
   bindBeamMode();
 }
 
-/* 여러 시스템의 같은 세팅을 한 번에 받아 능력별로 나란히 놓는다.
+/* 여러 시스템의 같은 세팅을 한 번에 받는다. 능력 표에 시스템을 줄로 넣는 데 쓴다.
    ⚠ 시스템마다 안 돌린 세팅이 있으므로 있는 것만 부른다 (없는 것을 0으로 그리지 않는다). */
 async function beamCompare(bucket, keys) {
   const got = await Promise.all(keys.map((k) =>
     api(`/api/beam?bucket=${encodeURIComponent(bucket)}&${sysQ(k)}`)
       .then((r) => ({ k, r })).catch(() => ({ k, r: null }))));
   return got.filter((x) => x.r && x.r.ready);
-}
-
-function beamCompareCard(rows, cuts) {
-  if (rows.length < 2) return "";
-  const cut = String(S.beamCmpCut || cuts[cuts.length - 1]);
-  const segs = cuts.map((c) => `<button class="seg${String(c) === cut ? " on" : ""}" data-cmpcut="${c}"
-    data-desc="검색 예산 ${c}개일 때로 맞춰 비교합니다">${c}</button>`).join("");
-
-  const abil = {};
-  rows.forEach(({ k, r }) => (r.abilities || []).forEach((a) => {
-    (abil[a.key] ||= { label: a.label, v: {} }).v[k] = a.cells?.[cut]?.score ?? null;
-  }));
-  const base = rows[0].k;
-  const n2 = (v) => v == null ? "–" : (v * 100).toFixed(2);
-  const dcell = (v, b) => (v == null || b == null) ? `<td class="num muted">–</td>`
-    : `<td class="num ${v > b ? "up" : v < b ? "down" : ""}">${v > b ? "+" : ""}${((v - b) * 100).toFixed(2)}</td>`;
-
-  const body = Object.entries(abil)
-    .sort((a, b) => (b[1].v[base] ?? 0) - (a[1].v[base] ?? 0))
-    .map(([key, a]) => `<tr>
-      <td data-desc="${esc(key)}">${esc(a.label)}</td>
-      ${rows.map(({ k }) => `<td class="num">${n2(a.v[k])}</td>`).join("")}
-      ${rows.slice(1).map(({ k }) => dcell(a.v[k], a.v[base])).join("")}
-    </tr>`).join("");
-
-  const overall = {};
-  rows.forEach(({ k, r }) => { overall[k] = r.overall?.[cut]?.score ?? null; });
-
-  return `<div class="card"><div class="hd">시스템 비교 · 능력별 <span class="muted">검색 예산 ${esc(cut)}</span></div>
-    <div class="body mscroll">
-      <p class="hrefsw"><b>검색 예산</b>${segs}</p>
-      <table class="cmp"><thead><tr><th>능력</th>
-        ${rows.map(({ k }) => `<th class="num">${esc(systemLabel(k))}<br><span class="muted">${esc(systemVer(k))}</span></th>`).join("")}
-        ${rows.slice(1).map(({ k }) => `<th class="num">${esc(systemLabel(k))} 차</th>`).join("")}
-      </tr></thead><tbody>
-        <tr class="tot-row"><td><b>전체</b></td>
-          ${rows.map(({ k }) => `<td class="num"><b>${n2(overall[k])}</b></td>`).join("")}
-          ${rows.slice(1).map(({ k }) => dcell(overall[k], overall[base])).join("")}
-        </tr>
-        ${body}
-      </tbody></table>
-    </div></div>`;
 }
 
 async function renderBeamBucket() {
