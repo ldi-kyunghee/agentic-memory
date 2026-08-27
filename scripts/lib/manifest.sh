@@ -42,6 +42,10 @@ env.update({
     "retriever": os.getenv("MEM0_RETRIEVER") or "dense",
     "base_url": os.getenv("OPENAI_BASE_URL"),
 })
+# LIGHT 전용 플래그. 다른 시스템 실행에서는 값이 없어 빈 dict 로 남음 (additive).
+light = {k: v for k, v in os.environ.items() if k.startswith("LIGHT_")}
+if light:
+    env["light_flags"] = light
 with open(path, "w", encoding="utf-8") as f:
     json.dump(doc, f, ensure_ascii=False, indent=2)
 print("  이력 기록 -> " + path)

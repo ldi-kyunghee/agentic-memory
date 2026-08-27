@@ -33,6 +33,10 @@ systems:
     label: "mem0 v3"
     version: "2.0.18"
     note: "추출 1콜 ADD-only(삭제·갱신 없음) · 임베딩+BM25+엔티티 융합 검색"
+  light:
+    label: "LIGHT"
+    version: "BEAM 3e12035 이식"
+    note: "BEAM 논문 제안 방법. pair 단위 KV 색인→원문 반환 + working memory 100 + scratchpad fold + 질의 시 noise filter(LLM 다회). 검색 예산 k 는 같아도 총 컨텍스트는 항상 더 큼"
 
 # HaluMem 의 메모리 시스템 축. 백본·프롬프트 그리드(`runs:`)와 별개다.
 # 그리드는 agent 모델을 갈아끼우며 보던 옛 축이고 정성분석 탭에 그대로 남겨둠.
@@ -50,6 +54,10 @@ halumem:
           ingest: results/mem0-classic-oss/memzero-oss-v3/memzero-oss_eval_results.jsonl
           answers: results/mem0-classic-oss/memzero-oss-v3/gen-v3/memzero-oss_eval_results.jsonl
           judge: results/mem0-classic-oss/memzero-oss-v3/judge-v3/judge
+        light:
+          ingest: results/light/memzero-20u-light/memzero-oss_eval_results.jsonl
+          answers: results/light/memzero-20u-light/gen/memzero-oss_eval_results.jsonl
+          judge: results/light/memzero-20u-light/judge-light/judge
     4u:
       label: "4유저"
       note: "20유저 런이 없던 동안 쓰던 비교 표본. 공통 4유저로 자른 값이라 20유저 값과 섞지 않는다"
@@ -172,6 +180,9 @@ beam:
         mem0-v3:
           ingest: results/mem0-classic-oss/beam-100k-v3/beam_eval_results.jsonl
           judge: results/mem0-classic-oss/beam-judge-oss120-100k-v3
+        light:
+          ingest: results/light/beam-100k-light/beam_eval_results.jsonl
+          judge: results/light/beam-judge-100k-light
       note: "<b>메모리 시스템 비교는 이 레인에서 합니다.</b> mem0 v3 본실험이 이 프롬프트로 돌았습니다.<br>대조군 · 100K와 검색 결과가 한 글자도 다르지 않고 답변 생성 프롬프트만 BEAM 공식(answer_generation_for_rag) · '설명 없이 답만 출력' 지시가 있어 답변 길이 중앙값이 669자에서 76자로 줄었음 · 전체 점수는 0.11~0.135 낮음 (10개 능력 중 8개가 p<0.001로 하락)"
     500k-beamprompt:
       label: "500K · BEAM 공식 프롬프트"
@@ -179,6 +190,10 @@ beam:
       prompt: "BEAM 공식"
       ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-500k
+      by_system:
+        light:
+          ingest: results/light/beam-500k-light/beam_eval_results.jsonl
+          judge: results/light/beam-judge-500k-light
       note: "대조군 · 500K와 검색 결과가 동일하고 답변 생성 프롬프트만 BEAM 공식"
     1m-beamprompt:
       label: "1M · BEAM 공식 프롬프트"
@@ -208,6 +223,10 @@ memora:
           ingest: results/mem0-classic-oss/memora-weekly-v3-oss120b/memora_eval_results.jsonl
           answers: results/mem0-classic-oss/memora-gen-weekly-v3/answers.jsonl
           judge: results/mem0-classic-oss/memora-judge-weekly-v3
+        light:
+          ingest: results/light/memora-weekly-light/memora_eval_results.jsonl
+          answers: results/light/memora-gen-weekly-light/answers.jsonl
+          judge: results/light/memora-judge-weekly-light
       note: "7일 · 페르소나 10 · 세션 1,551 · 문항 150 · 평가 기준 735 · lambda 중앙 0.286"
       # 저장소가 페르소나당 171개라 k=200 이 이미 전량임. 그래서 격자를 20/50/100/200 으로 둠
       # (400 팔은 200 과 같은 결과가 나와 낭비임). 덤으로 BEAM 격자와 정확히 겹침.
@@ -231,6 +250,10 @@ memora:
           ingest: results/mem0-classic-oss/memora-monthly-v3-oss120b/memora_eval_results.jsonl
           answers: results/mem0-classic-oss/memora-gen-monthly-v3/answers.jsonl
           judge: results/mem0-classic-oss/memora-judge-monthly-v3
+        light:
+          ingest: results/light/memora-monthly-light/memora_eval_results.jsonl
+          answers: results/light/memora-gen-monthly-light/answers.jsonl
+          judge: results/light/memora-judge-monthly-light
       note: "30일 · 페르소나 10 · 세션 6,150 · 문항 150 · 평가 기준 1,315 · lambda 중앙 0.444"
       # 검색 예산 스윕. Stage A 를 k=800 으로 한 번 돌리고 답변 단계에서 잘라 만든 팔들임.
       # 저장소가 페르소나당 566개라 k=800 은 사실상 검색 필터 없음.
@@ -255,6 +278,10 @@ memora:
           ingest: results/mem0-classic-oss/memora-quarterly-v3-oss120b/memora_eval_results.jsonl
           answers: results/mem0-classic-oss/memora-gen-quarterly-v3/answers.jsonl
           judge: results/mem0-classic-oss/memora-judge-quarterly-v3
+        light:
+          ingest: results/light/memora-quarterly-light/memora_eval_results.jsonl
+          answers: results/light/memora-gen-quarterly-light/answers.jsonl
+          judge: results/light/memora-judge-quarterly-light
       note: "90일 · 페르소나 10 · 세션 19,913 · 문항 300 · 평가 기준 4,365 · lambda 중앙 0.375"
       # 저장소가 페르소나당 1,594개라 검색 k=2000 이 전량임. cutoff 는 monthly 와 같은 격자.
       # ⚠ k=200 에서 빈 답변 3건, k=400 에서 6건 (전부 reasoning, finish_reason=length).

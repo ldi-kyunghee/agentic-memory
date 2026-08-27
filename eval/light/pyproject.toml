@@ -1,0 +1,18 @@
+[project]
+name = "light-eval"
+version = "0.1.0"
+description = "LIGHT(BEAM 논문 제안 방법) 평가용. 원본은 BEAM/src/answer_probing_questions/light.py 커밋 3e12035 임"
+# ⚠ 3.14 를 막음. langchain 계열이 cp314 휠이 없거나 불안정함. mem0-v3 와 같은 사유.
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    # SemanticChunker (scratchpad 를 의미 단위로 쪼개는 noise filter 전처리)
+    "langchain-experimental>=0.3.4",
+    "langchain-core>=0.3.0",
+    # in-process 벡터 인덱스는 numpy 코사인으로 직접 함. FAISS·sentence-transformers 불필요
+    # (임베딩은 서버 vLLM 의 Qwen3-Embedding-4B 를 OpenAI 호환 API 로 씀)
+    "numpy>=1.26.0",
+    "openai>=1.90.0,<1.110.0",
+    "python-dotenv>=1.2.2",
+    "tenacity>=9.0.0",
+    "tqdm>=4.66.0",
+]

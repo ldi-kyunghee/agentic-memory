@@ -94,6 +94,29 @@ def build_context(retrieved: list, cutoff: int) -> tuple[str, int]:
     return "\n".join(lines), len(sliced)
 
 
+def build_context_light(q: dict, conv: dict, cutoff: int) -> tuple[str, int, dict]:
+    """LIGHT 산출물용 조립. mem0 와 달리 검색 원문 + working memory + scratchpad 세 층임.
+
+    ⚠ 시간 정렬을 하지 않음 — LIGHT 원본 조립은 리트리버 랭크 순 그대로임 (light.py:531).
+    14K 예산이 cutoff 차이를 흡수할 수 있으므로 실제 포함 수(in_budget)를 함께 반환함.
+    조립 규칙은 eval/light/core.assemble_context 한 곳에만 둠 (여기서 재구현하면 어긋남).
+    """
+    import sys as _sys
+    _sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     "..", "..", "light"))
+    from core import assemble_context
+    lf = (conv.get("light") or {}).get("flags") or {}
+    episodic = [m["memory"] for m in q["retrieved"][:cutoff]]
+    ctx, budget = assemble_context(
+        episodic,
+        (conv.get("light") or {}).get("working") or [],
+        [(q.get("light") or {}).get("scratchpad") or ""],
+        reader_max_tokens=lf.get("reader_max_tokens", 14000),
+        wm_recent_first=lf.get("wm_recent_first", False),
+        scratchpad_budget=lf.get("scratchpad_budget", False))
+    return ctx, len(episodic), budget
+
+
 def answer_one(job: dict) -> dict:
     """(대화, 문항, cutoff) 하나에 대한 답변 생성."""
     prompt = build_prompt(job["question"], job["_ctx"])
@@ -127,13 +150,16 @@ def answer_one(job: dict) -> dict:
     for tag in ("RESPONSE:", "ANSWER:"):   # 모델이 프롬프트 꼬리를 따라 쓰는 경우 잘라냄
         if tag in text:
             text = text.rsplit(tag, 1)[-1].strip()
-    return {
+    out = {
         "conv": job["conv"], "ability": job["ability"], "idx": job["idx"],
         "cutoff": job["cutoff"], "used": job["used"], "stored": job["stored"],
         "system_response": text, "prompt_kind": PROMPT_KIND,
         "finish_reason": finish,
         "response_duration_ms": (time.time() - start) * 1000,
     }
+    if job.get("_budget"):
+        out["in_budget"] = job["_budget"]   # LIGHT: 14K 예산에 실제 들어간 수 (판독용)
+    return out
 
 
 def main(results_path: str, out_path: str, max_workers: int, regen: bool):
@@ -151,11 +177,18 @@ def main(results_path: str, out_path: str, max_workers: int, regen: bool):
                 # 빈 답변은 있으나 마나이므로 재생성 대상으로 둠
                 if not regen and (have.get(str(k)) or {}).get("system_response", "").strip():
                     continue
-                ctx, used = build_context(q["retrieved"], k)
+                # LIGHT 산출물이면 그 시스템의 조립 규칙을 씀 (light 블록의 존재로 가름 —
+                # env 로 가르면 산출물과 어긋날 수 있음)
+                if c.get("light") is not None:
+                    ctx, used, budget = build_context_light(q, c, k)
+                else:
+                    ctx, used = build_context(q["retrieved"], k)
+                    budget = None
                 jobs.append({
                     "conv": c["conv_id"], "ability": q["ability"], "idx": q["idx"],
                     "question": q["question"], "cutoff": k,
                     "used": used, "stored": stored, "_ctx": ctx,
+                    "_budget": budget,
                 })
     print(f"생성 대상 {len(jobs)}개 (문항 {sum(len(c['questions']) for c in convs)} × cutoff {len(CUTOFFS)})")
     if not jobs:

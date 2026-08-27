@@ -80,6 +80,32 @@ def build_context(retrieved: list, cutoff: int | None = None) -> tuple[str, int]
     return "\n".join(lines), len(retrieved)
 
 
+def build_context_light(q: dict, conv: dict, cutoff: int | None) -> tuple[str, int, dict]:
+    """LIGHT 산출물용 조립 (검색 원문 + working memory + scratchpad).
+
+    조립 규칙은 eval/light/core.assemble_context 한 곳에만 둠. mem0 공식 포맷
+    (relevance 꼬리)과 다른 것이 맞음 — 각 시스템의 컨텍스트는 그 시스템의 규약임.
+    """
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                                      "..", "..", "light"))
+    from core import assemble_context
+    lf = (conv.get("light") or {}).get("flags") or {}
+    retrieved = q.get("retrieved") or []
+    if cutoff:
+        retrieved = retrieved[:cutoff]
+    episodic = [m["memory"] for m in retrieved]
+    ctx, budget = assemble_context(
+        episodic,
+        (conv.get("light") or {}).get("working") or [],
+        [(q.get("light") or {}).get("scratchpad") or ""],
+        reader_max_tokens=lf.get("reader_max_tokens", 14000),
+        wm_recent_first=lf.get("wm_recent_first", False),
+        scratchpad_budget=lf.get("scratchpad_budget", False))
+    return ctx, len(episodic), budget
+
+
 def answer_one(job: dict) -> dict:
     kwargs = dict(model=MODEL, messages=[
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -108,10 +134,13 @@ def answer_one(job: dict) -> dict:
             else:
                 time.sleep(5 * (attempt + 1))
 
-    return {"persona": job["persona"], "task": job["task"], "question_id": job["question_id"],
-            "system_response": text, "used": job["used"], "stored": job["stored"],
-            "ctx_date": CTX_DATE, "finish_reason": finish,
-            "response_duration_ms": (time.time() - start) * 1000}
+    out = {"persona": job["persona"], "task": job["task"], "question_id": job["question_id"],
+           "system_response": text, "used": job["used"], "stored": job["stored"],
+           "ctx_date": CTX_DATE, "finish_reason": finish,
+           "response_duration_ms": (time.time() - start) * 1000}
+    if job.get("_budget"):
+        out["in_budget"] = job["_budget"]   # LIGHT: 14K 예산에 실제 들어간 수 (판독용)
+    return out
 
 
 def main(results_path: str, out_path: str, max_workers: int, regen: bool,
@@ -128,10 +157,15 @@ def main(results_path: str, out_path: str, max_workers: int, regen: bool,
         for q in c["questions"]:
             if not regen and (q.get("answer") or {}).get("system_response", "").strip():
                 continue
-            ctx, used = build_context(q.get("retrieved") or [], cutoff)
+            if c.get("light") is not None:
+                ctx, used, budget = build_context_light(q, c, cutoff)
+            else:
+                ctx, used = build_context(q.get("retrieved") or [], cutoff)
+                budget = None
             jobs.append({"persona": c["persona"], "task": q["task"],
                          "question_id": q["question_id"], "question": q["question"],
-                         "used": used, "stored": c.get("stored_memories"), "_ctx": ctx})
+                         "used": used, "stored": c.get("stored_memories"), "_ctx": ctx,
+                         "_budget": budget})
     print(f"생성 대상 {len(jobs)}개")
     if not jobs:
         print("생성할 것이 없음. --regen 을 붙이면 전부 다시 만듦")
