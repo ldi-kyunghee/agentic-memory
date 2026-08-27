@@ -130,11 +130,10 @@ beam:
       prompt: "mem0 하네스"
       ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-100k
-      by_system:
-        mem0-v3:
-          ingest: results/mem0-classic-oss/beam-100k-v3/beam_eval_results.jsonl
-          judge: results/mem0-classic-oss/beam-judge-oss120-100k-v3
-      note: "20대화 400문항 · 청크 2,866 · 저장 메모리 100~407 (중앙값 278) · 답변 프롬프트 mem0 하네스 · agent gpt-oss-120b medium, 답변=채점 gpt-oss-120b high · top-200이 저장소를 넘는 문항 100/400"
+      # ⚠ 이 버킷은 **mem0 하네스** 답변 프롬프트 레인이다. v3 는 BEAM 공식 프롬프트로 돌았으므로
+      #   여기 두면 안 된다 (2026-08-26에 그렇게 뒀다가 프롬프트 차이를 시스템 차이로 읽었음).
+      #   v3 는 아래 `100k-beamprompt` 에 있다.
+      note: "⚠ 이 레인은 답변 프롬프트가 <b>mem0 하네스</b>라 mem0 classic 만 있습니다. mem0 v3 는 BEAM 공식 프롬프트로 돌아서 <b>100K · BEAM 공식 프롬프트</b> 레인에 있고, 시스템 비교는 거기서 합니다.<br>20대화 400문항 · 청크 2,866 · 저장 메모리 100~407 (중앙값 278) · 답변 프롬프트 mem0 하네스 · agent gpt-oss-120b medium, 답변=채점 gpt-oss-120b high · top-200이 저장소를 넘는 문항 100/400"
     500k:
       label: "500K"
       scale: "500K"
@@ -156,7 +155,12 @@ beam:
       prompt: "BEAM 공식"
       ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-100k-beamprompt
-      note: "대조군 · 100K와 검색 결과가 한 글자도 다르지 않고 답변 생성 프롬프트만 BEAM 공식(answer_generation_for_rag) · '설명 없이 답만 출력' 지시가 있어 답변 길이 중앙값이 669자에서 76자로 줄었음 · 전체 점수는 0.11~0.135 낮음 (10개 능력 중 8개가 p<0.001로 하락)"
+      # v3 본실험이 이 프롬프트로 돌았다. 시스템 비교는 **여기서** 한다.
+      by_system:
+        mem0-v3:
+          ingest: results/mem0-classic-oss/beam-100k-v3/beam_eval_results.jsonl
+          judge: results/mem0-classic-oss/beam-judge-oss120-100k-v3
+      note: "<b>메모리 시스템 비교는 이 레인에서 합니다.</b> mem0 v3 본실험이 이 프롬프트로 돌았습니다.<br>대조군 · 100K와 검색 결과가 한 글자도 다르지 않고 답변 생성 프롬프트만 BEAM 공식(answer_generation_for_rag) · '설명 없이 답만 출력' 지시가 있어 답변 길이 중앙값이 669자에서 76자로 줄었음 · 전체 점수는 0.11~0.135 낮음 (10개 능력 중 8개가 p<0.001로 하락)"
     500k-beamprompt:
       label: "500K · BEAM 공식 프롬프트"
       scale: "500K"
