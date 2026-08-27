@@ -43,7 +43,7 @@ elif _IMPL == "classic":
 else:
     raise SystemExit(f"MEM0_IMPL 은 classic 또는 v3 임 (받은 값: {_IMPL!r})")
 
-from tracing import TraceLogger, TracingLLM, TracingVectorStore
+from tracing import TraceLogger, TracingLLM, TracingVectorStore, attach_tracing
 from bm25_store import build_bm25_store
 
 
@@ -128,8 +128,7 @@ def process_conversation(conv_dir: str, bucket: str, top_k: int, save_path: str,
         if trace_dir:
             tracer = TraceLogger(os.path.join(trace_dir, f"{key}.jsonl"),
                                  system="mem0-classic-oss", run=collection_name, user=key)
-            memory.llm = TracingLLM(memory.llm, tracer)
-            memory.vector_store = TracingVectorStore(memory.vector_store, tracer)
+            attach_tracing(memory, tracer)   # LLM · 임베딩 · 벡터 저장소를 한 번에
 
         with open(os.path.join(conv_dir, "chat.json"), encoding="utf-8") as f:
             batches = parse_chat(json.load(f))

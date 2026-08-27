@@ -52,7 +52,7 @@ elif _IMPL == "classic":
 else:
     raise SystemExit(f"MEM0_IMPL 은 classic 또는 v3 임 (받은 값: {_IMPL!r})")
 
-from tracing import TraceLogger, TracingLLM, TracingVectorStore
+from tracing import TraceLogger, TracingLLM, TracingVectorStore, attach_tracing
 from bm25_store import build_bm25_store
 
 # 공식 하네스의 role 매핑 그대로
@@ -147,8 +147,7 @@ def process_persona(persona_dir: str, period: str, top_k: int, save_path: str,
         if trace_dir:
             tracer = TraceLogger(os.path.join(trace_dir, f"{key}.jsonl"),
                                  system="mem0-classic-oss", run=collection_name, user=key)
-            memory.llm = TracingLLM(memory.llm, tracer)
-            memory.vector_store = TracingVectorStore(memory.vector_store, tracer)
+            attach_tracing(memory, tracer)   # LLM · 임베딩 · 벡터 저장소를 한 번에
 
         sessions = load_sessions(persona_dir)
         questions, date_range = load_questions(persona_dir, persona)

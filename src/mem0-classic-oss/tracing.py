@@ -83,11 +83,16 @@ class TracingLLM:
                 extra["finish_reason"] = choice.finish_reason
                 usage = getattr(resp, "usage", None)
                 if usage is not None:
+                    # ⚠ 예전에는 completion_tokens 만 남겼다. 이 파이프라인들은 **입력 토큰이
+                    #   비용의 대부분**이라 그것 없이는 사후에 비용을 못 센다 (2026-08-26에 겪음).
+                    extra["prompt_tokens"] = getattr(usage, "prompt_tokens", None)
                     extra["completion_tokens"] = getattr(usage, "completion_tokens", None)
+                    extra["total_tokens"] = getattr(usage, "total_tokens", None)
                     details = getattr(usage, "completion_tokens_details", None)
                     rt = getattr(details, "reasoning_tokens", None)
                     if rt:
                         extra["reasoning_tokens"] = rt
+                extra["model"] = getattr(resp, "model", None) or kwargs.get("model")
             except Exception:
                 pass  # trace 부가정보 실패가 본 파이프라인을 막지 않도록
             self._last_extra = extra
@@ -118,6 +123,87 @@ class TracingLLM:
     def __getattr__(self, name):
         return getattr(self._inner, name)
 
+
+
+class TracingEmbedder:
+    """임베딩 호출을 전부 남긴다.
+
+    ⚠ 왜 필요한가: 예전 tracer 는 LLM 만 감쌌다. 그래서 임베딩 호출이 trace 에 한 줄도 없었고,
+      나중에 비용을 되살릴 때 **임베딩만 통째로 비었다.** 2026-08-27에 `retrieval` 이벤트와
+      쓰기 이벤트로 역산해봤으나 실측과 2.1배 어긋났다 (쓰기 하나가 호출 하나가 아니다).
+      추측할 수 있는 값이 아니므로 그 자리에서 남긴다.
+
+    mem0 0.1.118 은 `embed` 만, 2.0.18 은 `embed_batch` 도 있다. 있는 것만 감싼다.
+    """
+
+    def __init__(self, inner, tracer: TraceLogger):
+        self._inner = inner
+        self._tracer = tracer
+        self._last = {}
+        self._hook_client()
+
+    def _hook_client(self):
+        comp = getattr(getattr(self._inner, "client", None), "embeddings", None)
+        if comp is None:
+            return
+        orig = comp.create
+
+        def create(*args, **kwargs):
+            resp = orig(*args, **kwargs)
+            info = {"model": kwargs.get("model")}
+            try:
+                usage = getattr(resp, "usage", None)
+                if usage is not None:
+                    info["prompt_tokens"] = getattr(usage, "prompt_tokens", None)
+                    info["total_tokens"] = getattr(usage, "total_tokens", None)
+                inp = kwargs.get("input")
+                info["n_input"] = len(inp) if isinstance(inp, list) else 1
+            except Exception:
+                pass
+            self._last = info
+            return resp
+
+        comp.create = create
+
+    def _log(self, kind, memory_action, n_items, duration, sample):
+        self._tracer.log("embed_call", purpose=memory_action or kind,
+                         duration_ms=duration,
+                         embed={"kind": kind, "n_items": n_items,
+                                "text_sample": (sample or "")[:200], **self._last})
+
+    def embed(self, text, memory_action=None, *a, **kw):
+        start = time.time()
+        self._last = {}
+        out = self._inner.embed(text, memory_action, *a, **kw)
+        self._log("embed", memory_action, 1, (time.time() - start) * 1000,
+                  text if isinstance(text, str) else None)
+        return out
+
+    def embed_batch(self, texts, memory_action=None, *a, **kw):
+        start = time.time()
+        self._last = {}
+        out = self._inner.embed_batch(texts, memory_action, *a, **kw)
+        self._log("embed_batch", memory_action, len(texts or []), (time.time() - start) * 1000,
+                  (texts or [None])[0] if texts else None)
+        return out
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+
+def attach_tracing(memory, tracer: TraceLogger):
+    """메모리 객체의 **모든 외부 호출 지점**에 tracer 를 건다.
+
+    ⚠ 새 메모리 시스템을 붙일 때도 이 함수를 쓴다. 호출부마다 직접 감싸면 하나씩 빠지고,
+      빠진 것은 사후에 되살릴 방법이 없다 (임베딩이 실제로 그렇게 빠져 있었다).
+    """
+    if getattr(memory, "llm", None) is not None:
+        memory.llm = TracingLLM(memory.llm, tracer)
+    if getattr(memory, "embedding_model", None) is not None:
+        memory.embedding_model = TracingEmbedder(memory.embedding_model, tracer)
+    if getattr(memory, "vector_store", None) is not None:
+        memory.vector_store = TracingVectorStore(memory.vector_store, tracer)
+    return memory
 
 
 class TracingVectorStore:

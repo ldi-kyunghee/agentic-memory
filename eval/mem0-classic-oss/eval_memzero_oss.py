@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.WARNING)  # tenacity 재시도 경고를 콘�
 logging.getLogger("mem0.vector_stores.qdrant").setLevel(logging.ERROR)  # Resetting Index 관련 Warning 숨기는 목적
 
 sys.path.insert(0, "src/mem0-classic-oss")  # tracing.py import를 위해 src를 sys.path에 추가
-from tracing import TraceLogger, TracingLLM, TracingVectorStore
+from tracing import TraceLogger, TracingLLM, TracingVectorStore, attach_tracing
 from custom_prompt import CUSTOM_FACT_EXTRACTION_PROMPT
 from oracle import OracleLLM
 from bm25_store import build_bm25_store
@@ -214,9 +214,9 @@ def process_user(user_data: dict, top_k: int, save_path: str, collection_name: s
                 run=collection_name,
                 user=uuid
             )
-            # instance 속성 교체로 mem0 내부 llm/retrieval 트래픽을 trace에 기록함
-            memory.llm = TracingLLM(memory.llm, tracer)
-            memory.vector_store = TracingVectorStore(memory.vector_store, tracer)
+            # 외부 호출 지점을 한 곳에서 전부 건다 (LLM · 임베딩 · 벡터 저장소).
+            # ⚠ 개별로 감싸면 하나씩 빠진다. 실제로 임베딩이 빠져 있었고 사후에 되살릴 수 없었다.
+            attach_tracing(memory, tracer)
 
         out = {"uuid": uuid, "user_name": user_name, "sessions": []}
 
