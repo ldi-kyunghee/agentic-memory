@@ -17,6 +17,7 @@ const S = {
   bundle: null, bundleB: null, bundleCache: new Map(),
   tab: "overview", itab: "detail",
   systems: [], sysSel: [], sysDefault: "",   // 비교할 메모리 시스템들 (n개 선택)
+  sysMain: localStorage.getItem("mem_sys_main") || "",  // 상세 화면이 따라갈 시스템
   qtab: "sessions",                          // qtab = 정성분석 탭 안의 하위 탭
   hmScale: "20u",
   session: null, qaFilter: "all", digestScope: "user",
@@ -166,17 +167,32 @@ function systemChips(bench, setting) {
       data-desc="${esc(x.note || "")}${av ? "" : "<br><b>이 세팅에는 산출물이 없습니다.</b>"}"
       ${av ? "" : "disabled"}>${esc(x.label)}<span class="ver">${esc(x.version || "")}</span></button>`;
   }).join("");
-  return `<div class="sysbar"><span class="muted">비교할 메모리 시스템</span>${rows}</div>`;
+  const ok = selectedSystems(bench, setting);
+  // 상세 화면(문항 목록·검색 결과·스윕 등)은 한 시스템만 그린다. 어느 것을 그릴지 고르게 한다.
+  // ⚠ 이게 없으면 늘 첫 번째 시스템으로 고정돼, 다른 것을 골라도 아래 표가 안 바뀐다.
+  const mainSel = ok.length > 1
+    ? `<span class="mainsel"><span class="muted">상세 기준</span>` +
+      ok.map((k) => `<button class="seg${mainSystem(bench, setting) === k ? " on" : ""}" data-mainsys="${esc(k)}"
+        data-desc="아래 상세 표·스윕·문항 목록을 <b>${esc(systemLabel(k))}</b> 기준으로 그립니다">${esc(systemLabel(k))}</button>`).join("") +
+      `</span>` : "";
+  return `<div class="sysbar"><span class="muted">비교할 메모리 시스템</span>${rows}${mainSel}</div>`;
 }
 
 /* 상세 드릴다운(문항 목록·개별 문항)은 한 시스템 것만 보여준다.
    선택된 것 중 그 세팅에 산출물이 있는 첫 번째를 주 시스템으로 쓴다. */
 function mainSystem(bench, setting) {
   const ok = selectedSystems(bench, setting);
+  // 사용자가 고른 기준이 이 세팅에 있으면 그것을 쓴다. 없으면 첫 번째로 떨어진다.
+  if (S.sysMain && ok.includes(S.sysMain)) return S.sysMain;
   return ok[0] || S.sysSel[0] || S.sysDefault;
 }
 
 function wireSystemChips() {
+  $$("#content button[data-mainsys]").forEach((b) => (b.onclick = () => {
+    S.sysMain = b.dataset.mainsys;
+    localStorage.setItem("mem_sys_main", S.sysMain);
+    render();
+  }));
   $$("#content button.syschip").forEach((b) => (b.onclick = () => {
     const k = b.dataset.sys;
     const i = S.sysSel.indexOf(k);
@@ -738,7 +754,23 @@ async function renderOverview() {
       <td class="muted">${esc(r.n || "")}</td>
     </tr>`).join("")}`).join("");
 
+  // 등록 안 된 산출물이 있으면 개요 맨 위에서 알린다. 조용히 빠지지 않게 한다.
+  let unreg = "";
+  try {
+    const u = await api("/api/unregistered");
+    if (u.total) {
+      unreg = `<div class="noisebar warn" data-desc="이름만 보고 자동 등록하지 않는 이유: 디렉토리 이름에 안 담기는 변인이 있습니다. 2026-08-26에 BEAM 답변 프롬프트가 두 팔에서 달랐는데 경로로는 알 수 없었고 결론의 부호가 뒤집혔습니다.">
+        <b>등록 안 된 산출물 ${u.total}개</b>가 있습니다. 화면에 안 나옵니다.
+        <span class="small">${u.unregistered.slice(0, 6).map((x) =>
+          `<code>${esc(x.dir)}</code>${x.manifest ? "" : "<sup>?</sup>"}`).join(" · ")}${u.total > 6 ? " …" : ""}<br>
+        <code>run.json</code> 이 있는 것은 실행 시점 env 가 함께 남아 있어 바로 등록할 수 있습니다.
+        <sup>?</sup> 표시는 이력이 없어 <b>어떤 조건으로 돌았는지 산출물만으로는 알 수 없다</b>는 뜻입니다.</span>
+      </div>`;
+    }
+  } catch (e) {}
+
   el.innerHTML = `
+    ${unreg}
     <div class="card"><div class="hd">벤치마크 x 메모리 시스템</div>
       <div class="body mscroll">
         <p class="muted" style="margin:0 0 10px">

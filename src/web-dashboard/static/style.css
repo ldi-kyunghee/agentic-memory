@@ -842,3 +842,8 @@ table.cmp td.num.running sup { font-size: var(--fs-nano); opacity: .8; }
 .srctag { font-size: var(--fs-micro); font-weight: 700; color: var(--dim);
           background: var(--band); border: 1px solid var(--rule); border-radius: var(--r-1);
           padding: 1px 6px; margin-left: 6px; }
+
+/* 상세 기준 선택: 비교 칩과 층위를 구분해야 해서 왼쪽에 구분선을 두고 각지게 둔다 */
+.sysbar .mainsel { display: inline-flex; align-items: center; gap: 4px;
+                   margin-left: 10px; padding-left: 12px; border-left: 1px solid var(--rule); }
+.sysbar .mainsel .muted { font-size: var(--fs-micro); font-weight: 700; letter-spacing: .03em; }

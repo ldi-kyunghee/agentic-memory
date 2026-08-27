@@ -802,6 +802,54 @@ def _mean(xs):
     return round(sum(xs) / len(xs), 4) if xs else None
 
 
+@app.get("/api/unregistered")
+def api_unregistered():
+    """산출물은 있는데 `runs.yaml` 에 안 걸린 것을 찾아 알린다.
+
+    왜 자동 등록이 아니라 알림인가: **디렉토리 이름에 안 담기는 변인이 있다.**
+    2026-08-26에 BEAM 답변 프롬프트가 두 팔에서 달랐는데 경로로는 알 수 없었고 결론의 부호가
+    뒤집혔다. 이름으로 유추해 자동 등록하면 같은 실수를 더 빨리, 조용히 저지른다.
+    그래서 **실행이 남긴 `run.json`(실제 env)을 함께 보여주고 등록은 사람이 확정**한다.
+    """
+    reg_paths = set()
+    doc = load_registry_doc()
+
+    def walk(o):
+        if isinstance(o, dict):
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+        elif isinstance(o, str) and o.startswith("results/"):
+            reg_paths.add(o.split("/")[1])
+
+    walk(doc)
+
+    res = ROOT / "results" / "mem0-classic-oss"
+    out = []
+    if res.is_dir():
+        for d in sorted(res.iterdir()):
+            if not d.is_dir() or d.name in reg_paths:
+                continue
+            # 채점본이나 투입 산출물이 실제로 있는 것만 (빈 디렉토리·임시물 제외)
+            has = any(d.glob("*.jsonl")) or any(d.glob("judge/*.json")) or any(d.glob("*.json"))
+            if not has:
+                continue
+            man = d / "run.json"
+            info = None
+            if man.exists():
+                try:
+                    with open(man, encoding="utf-8") as f:
+                        info = json.load(f)
+                except Exception:
+                    info = None
+            out.append({"dir": d.name, "manifest": info,
+                        "mtime": max((f.stat().st_mtime for f in d.rglob("*") if f.is_file()), default=0)})
+    out.sort(key=lambda x: -x["mtime"])
+    return {"unregistered": out[:40], "total": len(out)}
+
+
 @app.get("/api/systems")
 def api_systems():
     """메모리 시스템 목록 + 벤치마크 세팅별 가용성.
