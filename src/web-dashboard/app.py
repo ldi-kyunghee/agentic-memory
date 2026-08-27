@@ -802,6 +802,21 @@ def _mean(xs):
     return round(sum(xs) / len(xs), 4) if xs else None
 
 
+def _looks_like_judge_dir(d) -> bool:
+    """평평한 채점본 디렉토리인가 (beam-judge-* / memora-judge-* 모양). 앞 몇 개만 열어 본다."""
+    if (d / "eval_stat_result.json").exists():
+        return True
+    for f in list(d.glob("*.json"))[:3]:
+        try:
+            with open(f, encoding="utf-8") as fh:
+                head = fh.read(400)
+        except Exception:
+            continue
+        if '"records"' in head:
+            return True
+    return False
+
+
 @app.get("/api/unregistered")
 def api_unregistered():
     """산출물은 있는데 `runs.yaml` 에 안 걸린 것을 찾아 알린다.
@@ -836,9 +851,9 @@ def api_unregistered():
         for d in sorted(res.iterdir()):
             if not d.is_dir() or d.name in reg_paths:
                 continue
-            # 채점본이나 투입 산출물이 실제로 있는 것만 (빈 디렉토리·임시물 제외)
-            has = any(d.glob("*.jsonl")) or any(d.glob("judge/*.json")) or any(d.glob("*.json"))
-            if not has:
+            # ⚠ **채점본만** 잡는다. 투입·답변 같은 중간 산출물까지 세면 200개가 넘게 나와
+            #   경고가 소음이 되고, 정작 중요한 것이 묻힌다. 화면이 그리는 단위는 채점본이다.
+            if not (any(d.glob("judge/*.json")) or _looks_like_judge_dir(d)):
                 continue
             man = d / "run.json"
             info = None
