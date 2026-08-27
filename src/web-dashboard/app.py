@@ -931,12 +931,25 @@ def api_halumem(scale: str = "20u"):
                   "accuracy": o["memory_accuracy"].get("memory_num"),
                   "update": o["memory_update"].get("update_memory_num"),
                   "qa": o["question_answering"].get("qa_num")},
+            # 메모리 유형별. 어느 종류에서 무너지는지가 전체 평균에는 안 보인다.
+            "by_type": {k: {"integrity": v.get("memory_integrity_acc"),
+                            "update": v.get("memory_update_acc"),
+                            "acc": v.get("memory_acc"),
+                            "n": v.get("total_num")}
+                        for k, v in (o.get("memory_type_accuracy") or {}).items()},
+            "stored": o["memory_accuracy"].get("memory_num"),
             "users_total": len(files[sk]),
         })
     order = list(sysd)
     rows.sort(key=lambda r: order.index(r["system"]))
+    # 판독 한계선: 같은 세팅을 반복 실행했을 때 QA 가 흔들린 폭. 이보다 작은 차이는 순위로 말하지 않는다.
+    noise = None
+    try:
+        noise = api_metrics().get("noise")
+    except Exception:
+        pass
     return {"scale": scale, "scales": scales, "ready": True, "note": cfg.get("note", ""),
-            "systems": rows, "common_users": len(common), "missing": missing}
+            "systems": rows, "common_users": len(common), "missing": missing, "noise": noise}
 
 
 # ── 비용 축 ────────────────────────────────────────────────────────────────

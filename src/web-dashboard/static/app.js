@@ -867,15 +867,34 @@ async function renderCost() {
 
 /* ---------- HaluMem: 메모리 시스템 축 ---------- */
 
-const HM_ROWS = [
-  ["integrity", "메모리 온전성", "골든 메모리를 저장물이 얼마나 담고 있는가 (중요도 가중 recall)"],
-  ["extraction_f1", "추출 F1", "세션에서 뽑아낸 메모리와 골든의 F1"],
-  ["target_acc", "Target 정확도", "저장한 메모리가 대화에 근거하는가"],
-  ["interference_acc", "Interference 미포함률", "미끼 메모리를 안 저장했는가. 높을수록 좋음"],
-  ["update_c", "update Correct", "갱신 대상을 올바르게 반영했는가"],
-  ["update_o", "update Omission", "갱신을 아예 안 썼거나 핵심을 빠뜨림. 낮을수록 좋음"],
-  ["qa_c", "QA Correct", "최종 답변 정확도. 이 벤치마크의 결론 지표임"],
-  ["qa_h", "QA Hallucination", "근거 없는 답변. 낮을수록 좋음"],
+/* 지표를 단계별로 묶는다. 저장 -> 정확도 -> 갱신 -> 답변 순으로 파이프라인을 따라간다.
+   good: 높을수록 좋으면 true, 낮을수록 좋으면 false (차이 칸 색을 뒤집는다). */
+const HM_GROUPS = [
+  ["저장", [
+    ["integrity", "메모리 온전성", "골든 메모리를 저장물이 얼마나 담고 있는가 (중요도 가중 recall)", true],
+    ["extraction_f1", "추출 F1", "세션에서 뽑아낸 메모리와 골든의 F1", true],
+  ]],
+  ["정확도", [
+    ["target_acc", "Target 정확도", "저장한 메모리가 대화에 근거하는가", true],
+    ["interference_acc", "Interference 미포함률", "미끼 메모리를 <b>안</b> 저장했는가. 높을수록 좋음", true],
+    ["weighted_acc", "가중 정확도", "중요도로 가중한 정확도", true],
+  ]],
+  ["갱신 (C/H/O)", [
+    ["update_c", "Correct", "갱신 내용을 올바르게 반영했는가", true],
+    ["update_h", "Hallucination", "갱신했는데 내용이 틀림. 낮을수록 좋음", false],
+    ["update_o", "Omission", "갱신을 아예 안 썼거나 핵심을 빠뜨림. 낮을수록 좋음", false],
+  ]],
+  ["답변 (C/H/O)", [
+    ["qa_c", "Correct", "최종 답변 정확도. <b>이 벤치마크의 결론 지표</b>", true],
+    ["qa_h", "Hallucination", "근거 없는 답변. 낮을수록 좋음", false],
+    ["qa_o", "Omission", "답을 못 낸 것. 낮을수록 좋음", false],
+  ]],
+];
+
+const HM_TYPE_ROWS = [
+  ["acc", "정확도"],
+  ["integrity", "온전성"],
+  ["update", "갱신"],
 ];
 
 async function renderHalumem() {
@@ -907,11 +926,17 @@ async function renderHalumem() {
   const sys = d.systems;
   const base = sys[0];
   const fmt = (v) => v == null ? "–" : (v * 100).toFixed(2);
-  const dcell = (r, key) => {
+  // good=false 인 지표(환각·누락)는 내려가는 것이 좋으므로 색을 뒤집는다.
+  const dcell = (r, key, good = true) => {
     const a = base[key], b = r[key];
     if (a == null || b == null || r === base) return `<td class="num muted">–</td>`;
     const v = (b - a) * 100;
-    return `<td class="num ${v > 0 ? "up" : v < 0 ? "down" : ""}">${v > 0 ? "+" : ""}${v.toFixed(2)}</td>`;
+    const better = good ? v > 0 : v < 0;
+    const worse = good ? v < 0 : v > 0;
+    const band = d.noise && key.startsWith("qa_") ? (d.noise[key + "_range"] ?? d.noise[key]) : null;
+    const inBand = band != null && Math.abs(v) < band;
+    return `<td class="num ${inBand ? "muted" : better ? "up" : worse ? "down" : ""}"
+      ${inBand ? `data-desc="차이 ${v.toFixed(2)}p 는 재실행 노이즈 폭(±${band})보다 작습니다. <b>순위로 말하지 않습니다.</b>"` : ""}>${v > 0 ? "+" : ""}${v.toFixed(2)}${inBand ? "<sup>≈</sup>" : ""}</td>`;
   };
 
   const missing = (d.missing || []).length
@@ -933,12 +958,15 @@ async function renderHalumem() {
           ${sys.map((r) => `<th class="num">${esc(r.label)}<br><span class="muted">${esc(r.version || "")}</span></th>`).join("")}
           ${sys.slice(1).map((r) => `<th class="num">${esc(r.label)} 차</th>`).join("")}
         </tr></thead><tbody>
-          ${HM_ROWS.map(([k, lab, desc]) => `<tr>
-            <td data-desc="${esc(desc)}">${esc(lab)}</td>
-            ${sys.map((r) => `<td class="num">${fmt(r[k])}</td>`).join("")}
-            ${sys.slice(1).map((r) => dcell(r, k)).join("")}
-          </tr>`).join("")}
+          ${HM_GROUPS.map(([g, rows]) => `
+            <tr class="grp-head"><td colspan="${1 + sys.length * 2 - 1}">${esc(g)}</td></tr>
+            ${rows.map(([k, lab, desc, good]) => `<tr${k === "qa_c" ? ' class="tot-row"' : ""}>
+              <td data-desc="${esc(desc)}">${k === "qa_c" ? `<b>${esc(lab)}</b>` : esc(lab)}</td>
+              ${sys.map((r) => `<td class="num">${fmt(r[k])}</td>`).join("")}
+              ${sys.slice(1).map((r) => dcell(r, k, good)).join("")}
+            </tr>`).join("")}`).join("")}
         </tbody></table>
+        ${noiseNote(d.noise)}
         <p class="muted" style="margin-top:10px">
           판정 건수 ${sys.map((r) => `${esc(r.label)}: 온전성 ${r.n.integrity?.toLocaleString?.() ?? r.n.integrity} · update ${r.n.update} · QA ${r.n.qa}`).join(" / ")}
         </p>
