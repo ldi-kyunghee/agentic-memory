@@ -850,7 +850,7 @@ async function renderOverview() {
 
 const kTok = (v) => v == null ? "–" : (v >= 1e6 ? (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? Math.round(v / 1e3) + "k" : String(v));
 
-const COST_STAGE_LABEL = { ingest: "투입", answer: "답변", judge: "채점", unknown: "기타" };
+const COST_STAGE_LABEL = { ingest: "투입", query: "질의(검색·필터)", answer: "답변", judge: "채점", unknown: "기타" };
 
 const BENCH_LABEL = { halumem: "HaluMem", beam: "BEAM", memora: "Memora" };
 
@@ -975,7 +975,7 @@ async function renderCost() {
   // 단계별 분해는 따로 접어 둔다. 위 표가 결론이고 이건 근거다.
   const stageTable = runs.map((r) => `<tr>
       <td>${esc(systemLabel(r.system))}<span class="muted small"> · ${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}</span></td>
-      ${["ingest", "answer", "judge"].map((k) => {
+      ${["ingest", "query", "answer", "judge"].map((k) => {
         const st = r.stages[k];
         if (!st) return `<td class="num na" data-desc="이 단계는 계측 자료가 없습니다. <b>0이 아니라 모름</b>입니다">·</td>`;
         return `<td class="num${k === "judge" ? " sub" : ""}" data-desc="${esc(COST_STAGE_LABEL[k])} · 호출 ${st.calls.toLocaleString()} · 입력 ${st.prompt_tokens.toLocaleString()} · 출력 ${st.completion_tokens.toLocaleString()}${st.errors ? `<br>실패 ${st.errors}` : ""}">${kTok(st.prompt_tokens + st.completion_tokens)}</td>`;
@@ -994,7 +994,9 @@ async function renderCost() {
     <div class="card"><div class="hd">단계별 분해 <span class="muted">근거</span></div>
       <div class="body mscroll">
         <table class="cmp costtbl"><thead><tr><th>런</th>
-          <th class="num">투입</th><th class="num">답변</th>
+          <th class="num">투입</th>
+          <th class="num" data-desc="질의 시점의 검색·필터 비용. LIGHT 는 질문마다 scratchpad 조각 수만큼 LLM 을 불러 여기가 큼. mem0 는 검색뿐이라 거의 0">질의</th>
+          <th class="num">답변</th>
           <th class="num sub" data-desc="평가에만 드는 비용입니다. 배포 합계에서 뺐습니다">채점</th>
           <th class="num">전체</th><th>출처</th>
         </tr></thead><tbody>${stageTable}</tbody></table>

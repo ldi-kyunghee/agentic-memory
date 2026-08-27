@@ -106,6 +106,7 @@ def process_persona(persona_dir: str, period: str, top_k: int,
         date_by_gid = {c["gid"]: c["metadata"].get("session_date") for c in episodic}
         sid_by_gid = {c["gid"]: c["metadata"].get("session_id") for c in episodic}
         chunk_cache: dict = {}
+        os.environ["COST_STAGE"] = "query"   # 검색·필터는 질의 비용
         for q in questions:
             if tracer:
                 tracer.set_context(stage="qa_retrieval", ref={"qid": q.get("question_id")})
@@ -128,6 +129,7 @@ def process_persona(persona_dir: str, period: str, top_k: int,
                           "n_bad": nf["n_bad"]}
             q["search_duration_ms"] = (time.time() - t0) * 1000
 
+        os.environ["COST_STAGE"] = "ingest"
         out = {
             "persona": persona, "period": period,
             "user_id": f"light_{key}",

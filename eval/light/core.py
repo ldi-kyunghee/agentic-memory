@@ -17,6 +17,26 @@ import hashlib
 import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+
+
+@contextmanager
+def cost_stage(name: str):
+    """비용 계측의 단계 라벨을 잠시 바꿈.
+
+    LIGHT 는 한 프로세스가 투입과 질의를 연달아 하므로 이걸로 갈라야 필터 비용이
+    투입으로 안 찍힘 (sitecustomize 가 기록 시점의 COST_STAGE 를 읽음).
+    단계가 순차라 스레드 충돌 없음 (추출 스레드풀과 필터 스레드풀이 시간상 안 겹침).
+    """
+    prev = os.environ.get("COST_STAGE")
+    os.environ["COST_STAGE"] = name
+    try:
+        yield
+    finally:
+        if prev is None:
+            os.environ.pop("COST_STAGE", None)
+        else:
+            os.environ["COST_STAGE"] = prev
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(_ROOT, "BEAM", "src"))

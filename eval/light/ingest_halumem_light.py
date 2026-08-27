@@ -115,6 +115,7 @@ def process_user(user_data: dict, save_path: str, run_name: str,
                 continue
 
             scratchpad_now = folder.content if folder else ""
+            os.environ["COST_STAGE"] = "query"   # 이 아래 update_probe·질문은 질의 비용
 
             # ③ update_probe: 그 시점 top-10 스냅샷 (judge 의 update C/H/O 입력)
             #    KV 추출물을 줌 — update 채점은 "저장물이 갱신을 반영했는가" 라서
@@ -157,6 +158,7 @@ def process_user(user_data: dict, save_path: str, run_name: str,
                 q["search_duration_ms"] = (time.time() - t0) * 1000
                 qs.append(q)
             new_session["questions"] = qs
+            os.environ["COST_STAGE"] = "ingest"
             out["sessions"].append(new_session)
             print(f"[{user_name}] {si + 1}/{len(sessions)} sessions done", flush=True)
 

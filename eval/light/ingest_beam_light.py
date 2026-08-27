@@ -100,6 +100,9 @@ def process_conversation(conv_dir: str, bucket: str, top_k: int,
         questions = load_questions(conv_dir)
         chunk_cache: dict = {}
         import time as _t
+        # 검색·필터는 투입이 아니라 질의 비용 — 계측 단계를 가름 (C-probe 에서 필터가
+        # 투입으로 찍히는 것을 확인함, 2026-08-28)
+        os.environ["COST_STAGE"] = "query"
         for q in questions:
             if tracer:
                 tracer.set_context(stage="qa_retrieval",
@@ -122,6 +125,7 @@ def process_conversation(conv_dir: str, bucket: str, top_k: int,
                           "n_bad": nf["n_bad"]}
             q["search_duration_ms"] = (_t.time() - t0) * 1000
 
+        os.environ["COST_STAGE"] = "ingest"
         out = {
             "conv_id": key, "bucket": bucket, "user_id": f"light_{key}",
             "category": topic.get("category"), "title": topic.get("title"),

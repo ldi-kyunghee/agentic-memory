@@ -36,11 +36,16 @@ if _DIR:
     _acc: dict = {}
 
     def _slot(kind: str, model: str) -> dict:
-        key = f"{kind}:{model}"
+        # ⚠ stage 는 기록 시점의 env 를 읽는다. LIGHT 처럼 한 프로세스가 투입과 질의를
+        #   연달아 하는 시스템은 실행 중에 COST_STAGE 를 바꿔 단계를 가른다
+        #   (mem0 는 프로세스=단계라 정적이어도 맞았지만 LIGHT 에서 필터 비용이
+        #   전부 투입으로 찍혔음 — 2026-08-28).
+        stage = os.getenv("COST_STAGE", "unknown")
+        key = f"{stage}:{kind}:{model}"
         s = _acc.get(key)
         if s is None:
             s = {
-                "kind": kind, "model": model, "calls": 0,
+                "stage": stage, "kind": kind, "model": model, "calls": 0,
                 "prompt_tokens": 0, "completion_tokens": 0, "reasoning_tokens": 0,
                 "wall_ms": 0.0, "errors": 0,
                 "prompt_max": 0, "hist": [0] * _NBUCKET,
@@ -123,17 +128,21 @@ if _DIR:
             rows = list(_acc.values())
         try:
             os.makedirs(_DIR, exist_ok=True)
-            stage = os.getenv("COST_STAGE", "unknown")
-            path = os.path.join(_DIR, f"{stage}__{os.getpid()}.json")
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump({
-                    "stage": stage,
-                    "system": os.getenv("COST_SYSTEM", ""),
-                    "benchmark": os.getenv("COST_BENCH", ""),
-                    "setting": os.getenv("COST_SETTING", ""),
-                    "pid": os.getpid(),
-                    "rows": rows,
-                }, f, ensure_ascii=False)
+            # stage 별로 파일을 나눠 쓴다 (로더가 파일 단위로 stage 를 읽음)
+            by_stage: dict = {}
+            for r in rows:
+                by_stage.setdefault(r.get("stage", "unknown"), []).append(r)
+            for stage, srows in by_stage.items():
+                path = os.path.join(_DIR, f"{stage}__{os.getpid()}.json")
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump({
+                        "stage": stage,
+                        "system": os.getenv("COST_SYSTEM", ""),
+                        "benchmark": os.getenv("COST_BENCH", ""),
+                        "setting": os.getenv("COST_SETTING", ""),
+                        "pid": os.getpid(),
+                        "rows": srows,
+                    }, f, ensure_ascii=False)
         except Exception:
             pass  # 계측 실패가 본 파이프라인을 막지 않는다
 
