@@ -967,12 +967,21 @@ async function renderHalumem() {
             </tr>`).join("")}`).join("")}
         </tbody></table>
         ${noiseNote(d.noise)}
-        <p class="muted" style="margin-top:10px">
-          판정 건수 ${sys.map((r) => `${esc(r.label)}: 온전성 ${r.n.integrity?.toLocaleString?.() ?? r.n.integrity} · update ${r.n.update} · QA ${r.n.qa}`).join(" / ")}
+        <p class="small muted" style="margin-top:10px">
+          판정 건수 ${sys.map((r) => `${esc(r.label)}: 온전성 ${r.n.integrity?.toLocaleString?.() ?? r.n.integrity} · 정확도 ${r.n.accuracy?.toLocaleString?.() ?? "–"} · update ${r.n.update} · QA ${r.n.qa}`).join(" / ")}<br>
+          정확도 판정 건수만 시스템마다 다른 것은 <b>저장한 메모리 수가 다르기 때문</b>입니다. 나머지는 데이터셋 고정이라 같습니다.
         </p>
       </div>
-    </div>`;
+    </div>
+    ${hmTypeCard(sys)}
+    <div class="card"><div class="hd">더 파보기</div><div class="body">
+      <p class="small muted">이 표는 집계입니다. 개별 세션·문항·검색 결과를 보려면 <b>정성분석</b> 탭으로 가세요.
+      세션 단위 탐색, QA 실패 훑기, A/B 대조, 백본 그리드, Trace 가 그대로 있습니다.</p>
+      <button class="seg" id="go-qual">정성분석 탭 열기</button>
+    </div></div>`;
   $$("#content button[data-hm]").forEach((b) => (b.onclick = () => { S.hmScale = b.dataset.hm; render(); }));
+  const gq = $("#go-qual");
+  if (gq) gq.onclick = () => setTab("qual");
   wireSystemChips();
 }
 
