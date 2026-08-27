@@ -853,11 +853,42 @@ const kTok = (v) => v == null ? "–" : (v >= 1e6 ? (v / 1e6).toFixed(1) + "M" :
 const COST_STAGE_LABEL = { ingest: "투입", answer: "답변", judge: "채점", unknown: "기타" };
 
 const BENCH_LABEL = { halumem: "HaluMem", beam: "BEAM", memora: "Memora" };
-const COST_COLS = [
-  ["calls", "호출", "LLM·임베딩 호출 수"],
-  ["prompt_tokens", "입력", "프롬프트 토큰. 이 파이프라인들에서 비용의 대부분"],
-  ["completion_tokens", "출력", "생성 토큰"],
-];
+
+/* ---------- 비용 ----------
+   배포 관점의 비교 축이다. 정확도만 놓고 방법을 고르면 실제로 못 쓴다.
+
+   읽는 순서를 화면 순서로 만든다.
+     ① 무엇이 얼마나 드나  (막대: 입력·출력 구성이 한눈에)
+     ② 일 하나당 얼마나 드나 (규모가 다른 세팅을 견주려면 단위당이어야 한다)
+     ③ 한 번에 얼마나 밀어넣나 (컨텍스트 분포: 창 크기·지연·단가에 직결)
+     ④ 단계별 분해            (투입 대 답변. 어디서 드는지)
+*/
+
+const COST_UNIT = {           // 세팅별 '일 한 단위'. 단위당 비용을 내려면 분모가 필요하다.
+  halumem: { "20u": [3467, "문항"], "4u": [705, "문항"] },
+  beam: { "100k": [400, "문항"], "100k-beamprompt": [400, "문항"],
+          "500k": [700, "문항"], "1m": [700, "문항"] },
+  memora: { weekly: [150, "문항"], monthly: [150, "문항"], quarterly: [300, "문항"] },
+};
+
+function costBar(pt, ct, max) {
+  const w = 128, tot = (pt || 0) + (ct || 0);
+  if (!tot || !max) return `<span class="cbar"></span>`;
+  const full = Math.max(2, Math.round(w * tot / max));
+  const pw = Math.round(full * (pt || 0) / tot);
+  return `<span class="cbar" style="width:${w}px">
+    <i class="in" style="width:${pw}px"></i><i class="out" style="width:${full - pw}px"></i></span>`;
+}
+
+/* 컨텍스트 분포를 p50–p95–최대 로 그린다. 숫자 셋을 나란히 적는 것보다 폭이 눈에 들어온다. */
+function ctxBar(p50, p95, mx, scale) {
+  if (!p50 || !scale) return `<span class="cbar"></span>`;
+  const w = 110, x = (v) => Math.min(w, Math.round(w * (v || 0) / scale));
+  return `<span class="ctxbar" style="width:${w}px" data-desc="p50 ${p50.toLocaleString()} · p95 ${(p95 || 0).toLocaleString()} · 최대 ${(mx || 0).toLocaleString()} 토큰">
+    <i class="rng" style="left:${x(p50)}px;width:${Math.max(2, x(p95) - x(p50))}px"></i>
+    <i class="mk p50" style="left:${x(p50)}px"></i>
+    <i class="mk mx" style="left:${x(mx)}px"></i></span>`;
+}
 
 async function renderCost() {
   const el = $("#content");
@@ -871,126 +902,103 @@ async function renderCost() {
   if (!runs.length) {
     el.innerHTML = `<div class="card"><div class="hd">비용</div><div class="body">
       <p class="muted">아직 계측된 런이 없습니다.</p>
-      <p class="small muted">계측은 2026-08-26에 붙였습니다. 그 전에 끝난 런은 trace 에서 되살립니다
-      (<code>src/cost/backfill_trace.py</code>). 새 런은 실행 스크립트가
-      <code>cost/{벤치마크}-{세팅}-{시스템}/</code> 에 남깁니다.</p>
-      </div></div>`;
+      <p class="small muted">새 런은 실행 스크립트가 <code>cost/</code> 에 남깁니다.
+      지나간 런은 <code>src/cost/backfill_trace.py</code>(투입) ·
+      <code>src/cost/backfill_answer.py</code>(답변) 로 되살립니다.</p></div></div>`;
     return;
   }
 
-  // 벤치마크 -> 세팅 -> 시스템 으로 접는다. 시스템마다 돌린 세팅이 달라 격자가 성기다.
-  const grid = {}, sysSeen = [];
+  // 세팅(벤치마크+세팅) 단위로 묶고, 그 안에서 시스템을 견준다. 세팅을 가로질러 견주면 안 된다.
+  const groups = {};
   runs.forEach((r) => {
-    const b = r.benchmark || "?", st = r.setting || "?", sy = r.system || r.run;
-    ((grid[b] ||= {})[st] ||= {})[sy] = r;
-    if (!sysSeen.includes(sy)) sysSeen.push(sy);
+    const key = `${r.benchmark}|${r.setting}`;
+    (groups[key] ||= { bench: r.benchmark, setting: r.setting, by: {} }).by[r.system || r.run] = r;
   });
-  const sys = S.systems.map((x) => x.key).filter((k) => sysSeen.includes(k))
-    .concat(sysSeen.filter((k) => !S.systems.some((x) => x.key === k)));
+  const order = S.systems.map((x) => x.key);
+  const sysOf = (g) => Object.keys(g.by).sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
-  const cell = (r, f) => {
-    if (!r) return `<td class="num na" data-desc="이 조합은 계측 자료가 없습니다. <b>0이 아니라 '모름'</b>입니다">·</td>`;
-    const c = r.deploy;
-    return `<td class="num${r.running ? " running" : ""}" data-desc="${esc(systemLabel(r.system))} · ${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}<br>` +
-      `${r.running ? "<b>⏳ 아직 수집 중입니다. 완료값이 아닙니다.</b><br>" : ""}` +
-      `배포 비용(채점 제외)<br>호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}` +
-      `${r.stages.judge ? `<br>채점 ${r.stages.judge.calls.toLocaleString()}콜 (배포 합계에서 제외)` : ""}">${kTok(c[f])}${r.running ? "<sup>⏳</sup>" : ""}</td>`;
+  const card = (g) => {
+    const keys = sysOf(g);
+    const unit = COST_UNIT[g.bench]?.[g.setting];
+    const maxTok = Math.max(...keys.map((k) => g.by[k].deploy.tokens || 0));
+    const maxCtx = Math.max(...keys.flatMap((k) =>
+      Object.values(g.by[k].stages).map((st) => st.ctx_max || 0)), 1);
+
+    const rows = keys.map((k, i) => {
+      const r = g.by[k];
+      const c = r.deploy;
+      const ans = r.stages.answer, ing = r.stages.ingest;
+      const per = unit ? (c.tokens / unit[0]) : null;
+      const tags = `${r.running ? `<span class="runtag">수집 중</span>` : ""}${r.source === "trace-backfill" ? `<span class="srctag">되살림</span>` : ""}`;
+      return `<tr data-sysi="${i}">
+        <td class="sysname">${esc(systemLabel(k))}${tags}</td>
+        <td class="num">${kTok(c.calls)}</td>
+        <td class="bar">${costBar(c.prompt_tokens, c.completion_tokens, maxTok)}</td>
+        <td class="num"><b>${kTok(c.tokens)}</b></td>
+        <td class="num sub">${kTok(c.prompt_tokens)}</td>
+        <td class="num sub">${kTok(c.completion_tokens)}</td>
+        <td class="num">${per == null ? "–" : Math.round(per).toLocaleString()}</td>
+        <td class="bar">${ctxBar(ans?.ctx_p50 ?? ing?.ctx_p50, ans?.ctx_p95 ?? ing?.ctx_p95, ans?.ctx_max ?? ing?.ctx_max, maxCtx)}</td>
+        <td class="num sub">${(ans?.ctx_p50 ?? ing?.ctx_p50 ?? 0).toLocaleString()}</td>
+      </tr>`;
+    }).join("");
+
+    // 세팅 안에서 몇 배 차이인지. 이 표의 결론이라 맨 위에 한 줄로 박는다.
+    const vals = keys.map((k) => g.by[k].deploy.tokens).filter((v) => v > 0);
+    const ratio = vals.length > 1 ? (Math.max(...vals) / Math.min(...vals)) : null;
+    const top = ratio ? keys.reduce((a, b) => g.by[a].deploy.tokens > g.by[b].deploy.tokens ? a : b) : null;
+
+    return `<div class="card costcard">
+      <div class="hd">${esc(BENCH_LABEL[g.bench] || g.bench)}
+        <span class="muted">${esc(g.setting)}</span>
+        ${unit ? `<span class="unit">${unit[0].toLocaleString()}${unit[1]}</span>` : ""}
+        ${ratio ? `<span class="ratio" data-desc="같은 일을 시키는 데 든 토큰의 배수입니다">${esc(systemLabel(top))}가 ${ratio.toFixed(2)}배</span>` : ""}
+      </div>
+      <div class="body mscroll">
+        <table class="cmp costtbl"><thead><tr>
+          <th>메모리 시스템</th>
+          <th class="num" data-desc="LLM·임베딩 호출 수. 지연과 요청 단가에 붙습니다">호출</th>
+          <th data-desc="가로 길이는 총 토큰, 진한 쪽이 입력·연한 쪽이 출력입니다">구성</th>
+          <th class="num">총 토큰</th>
+          <th class="num sub" data-desc="프롬프트 토큰. 이 파이프라인들에서 비용의 대부분">입력</th>
+          <th class="num sub" data-desc="생성 토큰">출력</th>
+          <th class="num" data-desc="문항 하나를 처리하는 데 든 토큰. 규모가 다른 세팅을 견주려면 이 값을 봅니다">문항당</th>
+          <th data-desc="답변 프롬프트 토큰의 p50~p95 구간과 최대치. 창 크기와 지연에 직결됩니다">컨텍스트</th>
+          <th class="num sub">p50</th>
+        </tr></thead><tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
   };
 
-  const head = `<tr class="subhead"><th rowspan="2">세팅</th>` +
-    sys.map((k) => `<th class="num costcol grpstart" colspan="3"
-      data-desc="${esc(S.systems.find((x) => x.key === k)?.note || "")}">${esc(systemLabel(k))}
-      <span class="muted">${esc(systemVer(k))}</span></th>`).join("") + `</tr>` +
-    `<tr>` + sys.map((k) => COST_COLS.map(([f, lab, desc], i) =>
-      `<th class="num costcol${i === 0 ? " grpstart" : ""}" data-desc="${esc(desc)}">${esc(lab)}</th>`).join("")).join("") + `</tr>`;
-
-  const body = Object.entries(grid).map(([b, settings]) => `
-    <tr class="grp-head"><td colspan="${1 + sys.length * 3}">${esc(BENCH_LABEL[b] || b)}</td></tr>
-    ${Object.entries(settings).map(([st, bysys]) => `<tr>
-      <td>${esc(st)}</td>
-      ${sys.map((k) => COST_COLS.map(([f], i) => {
-        const c = cell(bysys[k], f);
-        return i === 0 ? c.replace('class="num', 'class="num grpstart') : c;
-      }).join("")).join("")}
-    </tr>`).join("")}`).join("");
-
-  // 단계별 상세: 투입/답변/채점과 컨텍스트 분포
-  const detail = runs.map((r) => `
-    <div class="card"><div class="hd">${esc(systemLabel(r.system))}
-      <span class="muted">${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}</span>
-      ${r.running ? `<span class="runtag" data-desc="10분 안에 계측 파일이 갱신됐습니다. 아직 도는 중이라 완료값이 아닙니다">수집 중</span>` : ""}
-      ${r.source === "trace-backfill" ? `<span class="srctag" data-desc="계측기를 붙이기 전에 끝난 런이라 trace 의 프롬프트 원문을 다시 토크나이즈해 되살렸습니다. 투입 단계만 있습니다">되살림</span>` : ""}</div>
-      <div class="body mscroll">
-        <table class="cmp"><thead><tr>
-          <th>단계</th><th class="num">호출</th><th class="num">입력 토큰</th><th class="num">출력 토큰</th>
-          <th class="num" data-desc="reasoning 모델이 사고에 쓴 토큰. 출력 토큰에 포함됩니다">추론 토큰</th>
-          <th class="num" data-desc="프롬프트 토큰의 중앙값">컨텍스트 p50</th>
-          <th class="num">p95</th><th class="num">최대</th><th class="num">실패</th>
-        </tr></thead><tbody>
-          ${Object.entries(r.stages).map(([k, st]) => `<tr${k === "judge" ? ' class="dimrow"' : ""}>
-            <td data-desc="${k === "judge" ? "평가에만 드는 비용입니다. 배포 합계에서 뺐습니다" : "배포 시 실제로 내는 비용입니다"}">${esc(COST_STAGE_LABEL[k] || k)}</td>
-            <td class="num">${st.calls.toLocaleString()}</td>
-            <td class="num">${st.prompt_tokens.toLocaleString()}</td>
-            <td class="num">${st.completion_tokens.toLocaleString()}</td>
-            <td class="num muted">${st.reasoning_tokens.toLocaleString()}</td>
-            <td class="num">${st.ctx_p50 == null ? "–" : st.ctx_p50.toLocaleString()}</td>
-            <td class="num">${st.ctx_p95 == null ? "–" : st.ctx_p95.toLocaleString()}</td>
-            <td class="num">${st.ctx_max ? st.ctx_max.toLocaleString() : "–"}</td>
-            <td class="num${st.errors ? " down" : " muted"}">${st.errors.toLocaleString()}</td>
-          </tr>`).join("")}
-        </tbody></table>
-        ${r.source === "trace-backfill"
-          ? `<p class="small muted"><b>trace 에서 되살린 자료입니다.</b> tracer 가 mem0 의 LLM 만 감싸므로 투입 단계만 있고 임베딩 호출은 안 잡힙니다.</p>`
-          : (Object.keys(r.stages).length === 1 && r.stages.ingest
-             ? `<p class="small muted">아직 투입 단계만 쟀습니다. 답변·채점은 그 단계를 돌릴 때 채워집니다.</p>` : "")}
-      </div>
-    </div>`).join("");
+  // 단계별 분해는 따로 접어 둔다. 위 표가 결론이고 이건 근거다.
+  const stageTable = runs.map((r) => `<tr>
+      <td>${esc(systemLabel(r.system))}<span class="muted small"> · ${esc(BENCH_LABEL[r.benchmark] || r.benchmark)} ${esc(r.setting)}</span></td>
+      ${["ingest", "answer", "judge"].map((k) => {
+        const st = r.stages[k];
+        if (!st) return `<td class="num na" data-desc="이 단계는 계측 자료가 없습니다. <b>0이 아니라 모름</b>입니다">·</td>`;
+        return `<td class="num${k === "judge" ? " sub" : ""}" data-desc="${esc(COST_STAGE_LABEL[k])} · 호출 ${st.calls.toLocaleString()} · 입력 ${st.prompt_tokens.toLocaleString()} · 출력 ${st.completion_tokens.toLocaleString()}${st.errors ? `<br>실패 ${st.errors}` : ""}">${kTok(st.prompt_tokens + st.completion_tokens)}</td>`;
+      }).join("")}
+      <td class="num">${kTok(r.total.tokens)}</td>
+      <td class="small muted">${r.source === "trace-backfill" ? "되살림" : "계측"}</td>
+    </tr>`).join("");
 
   el.innerHTML = `
-    <div class="card"><div class="hd">배포 비용 <span class="muted">투입 + 답변 · 채점 제외</span></div>
-      <div class="body mscroll">
-        <p class="small muted" style="margin:0 0 10px">
-          <b>채점은 뺐습니다.</b> 평가에만 드는 비용이라 배포하면 안 냅니다.
-          호출·입력·출력을 합치지 않았습니다. <b>셋의 단가가 서로 다릅니다.</b><br>
-          <span class="na">·</span> 는 계측 자료가 없다는 뜻입니다. 0이 아닙니다.
-        </p>
-        <table class="cmp costgrid"><thead>${head}</thead><tbody>${body}</tbody></table>
-      </div>
+    <div class="costintro">
+      <b>배포 비용</b>은 투입과 답변만 셉니다. <b>채점은 평가에만 드는 비용</b>이라 뺐습니다(아래 분해표에 따로 있습니다).<br>
+      <span class="small">호출·입력·출력을 합치지 않은 이유는 <b>셋의 단가가 서로 다르기</b> 때문입니다.
+      <span class="na">·</span> 는 계측 자료가 없다는 뜻이고 0이 아닙니다.</span>
     </div>
-    ${detail}`;
+    ${Object.values(groups).map(card).join("")}
+    <div class="card"><div class="hd">단계별 분해 <span class="muted">근거</span></div>
+      <div class="body mscroll">
+        <table class="cmp costtbl"><thead><tr><th>런</th>
+          <th class="num">투입</th><th class="num">답변</th>
+          <th class="num sub" data-desc="평가에만 드는 비용입니다. 배포 합계에서 뺐습니다">채점</th>
+          <th class="num">전체</th><th>출처</th>
+        </tr></thead><tbody>${stageTable}</tbody></table>
+      </div>
+    </div>`;
 }
-
-/* ---------- HaluMem: 메모리 시스템 축 ---------- */
-
-/* 지표를 단계별로 묶는다. 저장 -> 정확도 -> 갱신 -> 답변 순으로 파이프라인을 따라간다.
-   good: 높을수록 좋으면 true, 낮을수록 좋으면 false (차이 칸 색을 뒤집는다). */
-const HM_GROUPS = [
-  ["저장", [
-    ["integrity", "메모리 온전성", "골든 메모리를 저장물이 얼마나 담고 있는가 (중요도 가중 recall)", true],
-    ["extraction_f1", "추출 F1", "세션에서 뽑아낸 메모리와 골든의 F1", true],
-  ]],
-  ["정확도", [
-    ["target_acc", "Target 정확도", "저장한 메모리가 대화에 근거하는가", true],
-    ["interference_acc", "Interference 미포함률", "미끼 메모리를 <b>안</b> 저장했는가. 높을수록 좋음", true],
-    ["weighted_acc", "가중 정확도", "중요도로 가중한 정확도", true],
-  ]],
-  ["갱신 (C/H/O)", [
-    ["update_c", "Correct", "갱신 내용을 올바르게 반영했는가", true],
-    ["update_h", "Hallucination", "갱신했는데 내용이 틀림. 낮을수록 좋음", false],
-    ["update_o", "Omission", "갱신을 아예 안 썼거나 핵심을 빠뜨림. 낮을수록 좋음", false],
-  ]],
-  ["답변 (C/H/O)", [
-    ["qa_c", "Correct", "최종 답변 정확도. <b>이 벤치마크의 결론 지표</b>", true],
-    ["qa_h", "Hallucination", "근거 없는 답변. 낮을수록 좋음", false],
-    ["qa_o", "Omission", "답을 못 낸 것. 낮을수록 좋음", false],
-  ]],
-];
-
-const HM_TYPE_ROWS = [
-  ["acc", "정확도"],
-  ["integrity", "온전성"],
-  ["update", "갱신"],
-];
 
 /* 판독 한계선. 같은 세팅을 반복 실행했을 때 QA 가 흔들린 폭이다.
    이보다 작은 차이를 순위로 말하면 노이즈를 읽는 것이다. */

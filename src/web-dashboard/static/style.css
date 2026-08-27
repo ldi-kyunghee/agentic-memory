@@ -903,3 +903,35 @@ table.cmp tr[data-sysi="2"] td.syscell { border-left-color: #2f9e6f; }
 table.cmp tr[data-sysi="3"] td.syscell { border-left-color: #9a5fd0; }
 table.cmp tr[data-sysi="1"] > td:not(.brow) { background: rgba(0,0,0,.022); }
 table.cmp tr[data-sysi="3"] > td:not(.brow) { background: rgba(0,0,0,.022); }
+
+/* ── 비용 탭 ────────────────────────────────────────────────────────────────
+   읽는 순서를 화면 순서로 만든다: 얼마나 드나 → 일 하나당 → 한 번에 얼마나 밀어넣나.
+   숫자만 늘어놓으면 배수가 안 읽혀서 막대를 함께 둔다. */
+.costintro { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--r-2, 6px);
+             padding: 10px 14px; margin: 0 0 12px; font-size: var(--fs-sm); line-height: 1.55; }
+.costintro .na { color: var(--rule-firm); font-weight: 700; }
+
+.costcard .hd { display: flex; align-items: baseline; gap: 8px; }
+.costcard .hd .unit { font-size: var(--fs-micro); font-weight: 700; color: var(--dim);
+                      background: var(--band); border-radius: 999px; padding: 1px 8px; }
+.costcard .hd .ratio { margin-left: auto; font-size: var(--fs-sm); font-weight: 800;
+                       color: var(--bad); background: var(--bad-bg); border-radius: 999px; padding: 2px 10px; }
+
+table.costtbl td.sysname { font-weight: 700; white-space: nowrap; }
+table.costtbl th.sub, table.costtbl td.sub { color: var(--dim); font-weight: 400; }
+table.costtbl td.bar { padding: 4px 8px; }
+table.costtbl td.na { color: var(--rule-firm); text-align: center; font-weight: 700; }
+
+/* 총 토큰 막대: 진한 쪽 입력, 연한 쪽 출력. 길이는 그 세팅 안에서만 견준다 */
+.cbar { display: inline-flex; height: 11px; border-radius: 3px; overflow: hidden;
+        background: var(--band); vertical-align: middle; }
+.cbar .in { background: var(--accent); }
+.cbar .out { background: var(--accent-line, #b3c3f2); }
+
+/* 컨텍스트 분포: p50~p95 구간 막대 + 최대치 표식 */
+.ctxbar { position: relative; display: inline-block; height: 11px; vertical-align: middle;
+          background: var(--band); border-radius: 3px; }
+.ctxbar .rng { position: absolute; top: 0; height: 11px; background: var(--accent-bg3); border-radius: 3px; }
+.ctxbar .mk { position: absolute; top: -1px; width: 2px; height: 13px; }
+.ctxbar .mk.p50 { background: var(--accent); }
+.ctxbar .mk.mx { background: var(--bad); }
