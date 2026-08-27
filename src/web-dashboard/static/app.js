@@ -947,6 +947,38 @@ const HM_TYPE_ROWS = [
   ["update", "갱신"],
 ];
 
+/* 판독 한계선. 같은 세팅을 반복 실행했을 때 QA 가 흔들린 폭이다.
+   이보다 작은 차이를 순위로 말하면 노이즈를 읽는 것이다. */
+function noiseNote(n) {
+  if (!n) return "";
+  return `<div class="jbasis" data-desc="같은 런을 ${n.n_repeats}회 반복 생성·채점해 잰 값입니다. 흔드는 것은 judge 가 아니라 답변 생성입니다.">
+    <b>판독 한계선</b>: 같은 세팅을 ${n.n_repeats}회 다시 돌렸을 때 QA Correct 가 <b>±${n.qa_c_range}p</b> 흔들렸습니다
+    (SD ${n.qa_c}). <b>이보다 작은 차이는 순위로 말하지 않습니다.</b>
+    <span class="small">표에서 그 폭 안에 드는 차이는 회색 <sup>≈</sup> 로 표시했습니다.</span>
+  </div>`;
+}
+
+/* 메모리 유형별. 전체 평균에는 어느 종류에서 무너지는지가 안 보인다. */
+function hmTypeCard(sys) {
+  const types = [...new Set(sys.flatMap((r) => Object.keys(r.by_type || {})))];
+  if (!types.length) return "";
+  const f = (v) => v == null ? "–" : (v * 100).toFixed(2);
+  return `<div class="card"><div class="hd">메모리 유형별</div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>유형</th><th>지표</th>
+        ${sys.map((r) => `<th class="num">${esc(r.label)}</th>`).join("")}
+        <th class="num" data-desc="이 유형의 골든 메모리 수">건수</th>
+      </tr></thead><tbody>
+        ${types.map((t) => HM_TYPE_ROWS.map(([k, lab], i) => `<tr${i > 0 ? ' class="subrow"' : ""}>
+          ${i === 0 ? `<td rowspan="${HM_TYPE_ROWS.length}"><b>${esc(t.replace(" Memory", ""))}</b></td>` : ""}
+          <td>${esc(lab)}</td>
+          ${sys.map((r) => `<td class="num">${f(r.by_type?.[t]?.[k])}</td>`).join("")}
+          ${i === 0 ? `<td rowspan="${HM_TYPE_ROWS.length}" class="num muted">${(sys[0].by_type?.[t]?.n ?? 0).toLocaleString()}</td>` : ""}
+        </tr>`).join("")).join("")}
+      </tbody></table>
+    </div></div>`;
+}
+
 async function renderHalumem() {
   const el = $("#content");
   $("#qualnav")?.classList.add("hidden");
@@ -1056,11 +1088,20 @@ function initTableEnhancer() {
 
 function render() {
   if (BENCH_TABS.includes(S.tab)) {
-    if (S.tab === "overview") renderOverview();
-    else if (S.tab === "halumem") renderHalumem();
-    else if (S.tab === "beam") renderBeam();
-    else if (S.tab === "cost") renderCost();
-    else renderMemora();
+    const fn = S.tab === "overview" ? renderOverview
+      : S.tab === "halumem" ? renderHalumem
+      : S.tab === "beam" ? renderBeam
+      : S.tab === "cost" ? renderCost : renderMemora;
+    // ⚠ 렌더러가 죽으면 갱신 알약이 영영 안 걷히고 옛 화면이 그대로 남아, 새 값이 안 뜬 것을
+    //   느린 것으로 오해하게 된다. 실패를 화면에 드러낸다.
+    Promise.resolve()
+      .then(() => fn())
+      .catch((e) => {
+        softLoading(false);
+        $("#content").innerHTML = `<div class="noisebar warn"><b>이 화면을 그리다 실패했습니다.</b>
+          <span class="small">${esc(e && (e.stack || e.message) || String(e))}</span></div>`;
+        console.error(e);
+      });
     return;
   }
   if (!S.bundle) return;
