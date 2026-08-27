@@ -3246,6 +3246,11 @@ async function renderBeamBucket() {
     </div></div>`}
 
     <div class="card"><h4 data-desc="대화마다 주제와 저장 메모리 규모가 다릅니다. 저장이 적은 대화는 큰 cutoff 에서 검색이 작동하지 않습니다">대화별 (${d.n_convs})</h4>
+    <div class="body"><div class="noisebar" data-desc="mem0 v3 BEAM 100K 을 같은 코드·같은 데이터로 두 번 돌려 잰 값입니다 (2026-08-27). 총합은 +0.17% 로 거의 같지만 대화 하나하나는 크게 흔들립니다.">
+      <b>⚠ 대화 단위 저장량으로 순위를 말하지 마세요.</b> 같은 설정을 다시 돌리면
+      대화별 저장 메모리가 <b>중앙 4.1% · 최대 11.1%</b> 흔들립니다.
+      <span class="small">20대화 총합 수준에서는 ±0.2% 라 비교에 쓸 수 있습니다.</span>
+    </div></div>
     <div class="body" style="padding:0">
     <table class="cmp beam"><tr><th>대화</th><th>주제</th>${multi ? `<th>시스템</th>` : ""}<th>청크</th>
       <th data-desc="투입이 끝난 뒤 저장소에 남은 메모리 수. 시스템마다 다릅니다">저장</th>
