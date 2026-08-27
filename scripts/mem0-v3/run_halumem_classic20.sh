@@ -14,6 +14,7 @@ set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT"
+source "$ROOT/scripts/lib/manifest.sh"
 E=eval/mem0-classic-oss
 R=results/mem0-classic-oss
 V=oss120b20
@@ -101,6 +102,7 @@ else
       --top-k 20 --max-workers "$W_ING" --trace || { echo "✗ 투입 실패"; exit 1; }
 fi
 [ "$(n_lines "$ING")" -ge 20 ] || { echo "✗ 투입이 $(n_lines "$ING")/20 유저"; exit 1; }
+write_manifest "$(dirname "$ING")" mem0-classic halumem 20u ingest
 
 # ============ 2. 답변 ============
 GEN="$R/genoss120/${V}.jsonl"
@@ -114,6 +116,7 @@ else
       --max-workers "$W_ARM" || { echo "✗ 답변 실패"; exit 1; }
 fi
 [ "$(n_lines "$GEN")" -ge 20 ] || { echo "✗ 답변이 $(n_lines "$GEN")/20 유저"; exit 1; }
+write_manifest "$(dirname "$GEN")" mem0-classic halumem 20u answer
 
 # ============ 3. 채점 ============
 JUD="$R/judge-oss120-genoss120-${V}"
@@ -127,6 +130,7 @@ else
 fi
 n_jud=$(find "$JUD/judge" -name '*.json' 2>/dev/null | wc -l)
 [ "$n_jud" -ge 20 ] || { echo "✗ 채점이 ${n_jud}/20 유저"; exit 1; }
+write_manifest "$JUD" mem0-classic halumem 20u judge
 
 stage "완료"
 echo "━━━ 전부 완료 ($(hms $(( $(date +%s) - START )))) ━━━"

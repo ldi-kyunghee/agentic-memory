@@ -16,6 +16,7 @@ set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 cd "$ROOT"
+source "$ROOT/scripts/lib/manifest.sh"
 E=eval/mem0-classic-oss
 R=results/mem0-classic-oss
 STAGE_FILE=/tmp/v3all.stage
@@ -117,6 +118,7 @@ else
       --top-k 20 --max-workers "$W_ING" --trace || { echo "✗ HaluMem 투입 실패"; exit 1; }
 fi
 [ "$(n_lines "$HM_ING")" -ge 20 ] || { echo "✗ HaluMem 투입이 $(n_lines "$HM_ING")/20 유저"; exit 1; }
+write_manifest "$(dirname "$HM_ING")" mem0-v3 halumem 20u ingest
 
 HM_GEN="$R/memzero-oss-v3/gen-v3/memzero-oss_eval_results.jsonl"
 if [ "$(n_lines "$HM_GEN")" -ge 20 ]; then
@@ -150,6 +152,7 @@ else
       --top-k 200 --max-workers "$W_ING" --trace || { echo "✗ BEAM 투입 실패"; exit 1; }
 fi
 [ "$(n_lines "$BM_ING")" -ge 20 ] || { echo "✗ BEAM 투입이 $(n_lines "$BM_ING")/20 대화"; exit 1; }
+write_manifest "$(dirname "$BM_ING")" mem0-v3 beam 100k ingest
 
 BM_GEN="$R/beam-genoss120-100k-v3/answers.jsonl"
 if [ "$(n_lines "$BM_GEN")" -ge 20 ]; then
@@ -185,6 +188,7 @@ for PER in monthly quarterly; do
         || { echo "✗ Memora ${PER} 투입 실패"; exit 1; }
   fi
   [ "$(n_lines "$MO_ING")" -ge "$N_P" ] || { echo "✗ Memora ${PER} 투입 미완주"; exit 1; }
+write_manifest "$(dirname "$MO_ING")" mem0-v3 memora "$PER" ingest
 
   MO_GEN="$R/memora-gen-${PER}-v3/answers.jsonl"
   if [ "$(n_lines "$MO_GEN")" -ge "$N_P" ]; then
@@ -205,6 +209,13 @@ for PER in monthly quarterly; do
     MEM0_IMPL=classic $MAIN $E/memora/judge_memora.py --results "$MO_GEN" --out-dir "$MO_JUD" \
         --max-workers "$W_ARM" || { echo "✗ Memora ${PER} 채점 실패"; exit 1; }
   fi
+done
+
+# 채점까지 끝난 뒤 이력을 한 번에 남긴다. 단계마다 env 가 같으므로 시점 차이는 없다.
+write_manifest "$HM_JUD" mem0-v3 halumem 20u judge
+write_manifest "$BM_JUD" mem0-v3 beam 100k judge
+for PER in monthly quarterly; do
+  write_manifest "$R/memora-judge-${PER}-v3" mem0-v3 memora "$PER" judge
 done
 
 stage "완료"
