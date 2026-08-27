@@ -6,6 +6,7 @@
 
 import os
 import json
+import time as _time
 import sqlite3
 import threading
 from datetime import datetime, timezone
@@ -967,7 +968,7 @@ def api_halumem(scale: str = "20u"):
                "ready": any(_halumem_ready(v, sk) for sk in sysd)}
               for k, v in hcfg.items()]
 
-    files, missing = {}, []
+    files, missing, running = {}, [], set()
     for sk in sysd:
         by = (cfg.get("by_system") or {}).get(sk)
         jd = ROOT / by["judge"] if by else None
@@ -975,6 +976,14 @@ def api_halumem(scale: str = "20u"):
             missing.append(sk)
             continue
         files[sk] = {f.stem: f for f in jd.glob("*.json") if f.name != "eval_stat_result.json"}
+        # ⚠ 채점이 도는 중이면 유저가 계속 늘어난다. 그 시점 값을 완료본으로 읽으면 안 된다.
+        #   (2026-08-27 실측: 20유저 런이 채점 중인데 개요가 부분 집계를 확정값처럼 보여줬음)
+        try:
+            newest = max(f.stat().st_mtime for f in files[sk].values())
+            if _time.time() - newest < 900:
+                running.add(sk)
+        except ValueError:
+            pass
 
     if not files:
         return {"scale": scale, "scales": scales, "ready": False,
@@ -1005,6 +1014,7 @@ def api_halumem(scale: str = "20u"):
             "qa_c": o["question_answering"].get("correct_qa_ratio(valid)"),
             "qa_h": o["question_answering"].get("hallucination_qa_ratio(valid)"),
             "qa_o": o["question_answering"].get("omission_qa_ratio(valid)"),
+            "running": sk in running,
             "n": {"integrity": o["memory_integrity"].get("memory_num"),
                   "accuracy": o["memory_accuracy"].get("memory_num"),
                   "update": o["memory_update"].get("update_memory_num"),
@@ -1027,7 +1037,8 @@ def api_halumem(scale: str = "20u"):
     except Exception:
         pass
     return {"scale": scale, "scales": scales, "ready": True, "note": cfg.get("note", ""),
-            "systems": rows, "common_users": len(common), "missing": missing, "noise": noise}
+            "systems": rows, "common_users": len(common), "missing": missing, "noise": noise,
+            "running": sorted(running)}
 
 
 # ── 비용 축 ────────────────────────────────────────────────────────────────
@@ -1212,6 +1223,7 @@ def api_overview():
         if not d["ready"]:
             continue
         rows.append({
+            "running": bool(d.get("running")),
             "bench": "halumem", "setting": scale,
             "label": f"HaluMem · {cfg.get('label', scale)}",
             "metric": "QA Correct", "unit": "%",

@@ -703,7 +703,9 @@ async function renderOverview() {
   const cell = (r, k) => {
     const v = r.cells[k];
     if (v == null) return `<td class="num muted" data-desc="이 조합은 아직 안 돌렸습니다">–</td>`;
-    return `<td class="num">${v.toFixed(2)}</td>`;
+    // ⚠ 채점이 도는 중이면 부분 집계다. 완료본으로 읽지 않게 표시한다.
+    return `<td class="num${r.running ? " running" : ""}"${r.running
+      ? ` data-desc="<b>⏳ 아직 채점 중입니다.</b> 지금 끝난 유저까지만 집계한 값이라 완료값이 아닙니다."` : ""}>${v.toFixed(2)}${r.running ? "<sup>⏳</sup>" : ""}</td>`;
   };
   // 기준 시스템 대비 차이. 같은 행 안에서만 의미가 있다.
   const base = sys.find((x) => x.default)?.key || sys[0]?.key;
@@ -973,10 +975,16 @@ async function renderHalumem() {
 
   const missing = (d.missing || []).length
     ? `<p class="muted">아직 안 돌린 시스템: ${d.missing.map((k) => esc(systemLabel(k))).join(", ")}</p>` : "";
+  const running = (d.running || []).length
+    ? `<div class="noisebar warn" data-escape="1"><b>⏳ 채점이 도는 중입니다</b>:
+       ${d.running.map((k) => esc(systemLabel(k))).join(", ")}.
+       지금 끝난 유저까지만 집계한 값이라 <b>완료값이 아닙니다.</b>
+       공통 유저 수(${d.common_users}명)도 채점이 진행되면서 늘어납니다.</div>` : "";
 
   el.innerHTML = `
     ${systemChips("halumem", S.hmScale)}
     <div class="subnav">${scaleNav}</div>
+    ${running}
     <div class="card"><div class="hd">HaluMem · 메모리 시스템별</div>
       <div class="body mscroll">
         <p class="muted" style="margin:0 0 10px">
