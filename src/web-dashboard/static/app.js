@@ -3599,7 +3599,6 @@ async function renderMemora() {
     ${systemChips("memora", S.memoraPeriod)}
     <p class="hrefsw" data-desc="기간마다 세션 수와 누적 갱신·삭제 횟수가 다릅니다. 대화 집합도 다르므로 기간 간 절대 비교는 하지 마세요."><b>기간</b>${pick}</p>
     ${memoraCompareCard(cmpRows, d.tasks)}
-    ${cmpRows.length > 1 ? `<p class="small muted">아래는 <b>${esc(systemLabel(sysk))}</b> 한 시스템의 상세입니다.</p>` : ""}
     <p class="small muted">${esc(d.note || "")}<br>페르소나 ${d.n_personas} · 세션 ${d.n_sessions.toLocaleString()} · 문항 ${d.n_questions} · 평가 기준 ${d.n_criteria.toLocaleString()} · 저장 메모리 ${d.stored.toLocaleString()}개</p>
 
     <div class="jbasis" data-desc="FAMA = max(0, MPA − λ(1−FAA)). MPA는 넣어야 할 것을 넣은 비율, FAA는 빼야 할 것을 뺀 비율, λ는 문항의 forgetting 기준 비중입니다.">
@@ -3673,13 +3672,25 @@ ${await memoraCutoffCard(d.period)}
             >${v.n_forget ? "−" + (v.penalty ?? 0).toFixed(2) : "–"}</td>
           <td class="small muted">${(v.n_presence || 0)} / ${(v.n_forget || 0)}</td></tr>`;
       })).join("")}
-      <tr class="jm-tot"><td class="brow"><b>전체</b></td><td>${d.overall.n}</td>
-        <td class="bcell" style="${beamHeat(d.overall.fama / 100)}"><b>${n2(d.overall.fama)}</b></td>
-        <td class="bcell" style="${beamHeat(d.overall.mpa / 100)}">${n2(d.overall.mpa)}</td>
-        <td>${n2(d.overall.faa)}</td>
-        <td class="bdelta down">−${n2(d.overall.penalty)}</td>
-        <td class="small muted">${d.overall.n_presence} / ${d.overall.n_forget}</td></tr>
+      ${(mMulti ? cmpRows : [null]).map((row, i) => {
+        // ⚠ 시스템 열이 생기면 전체 행도 그 칸을 채워야 한다. 안 그러면 한 칸씩 밀려
+        //   FAMA 자리에 문항 수가 오는 식으로 읽힌다.
+        const ov = (row ? row.r.overall : d.overall) || {};
+        return `<tr class="jm-tot">
+          ${i === 0 ? `<td class="brow" ${mMulti ? `rowspan="${cmpRows.length}"` : ""}><b>전체</b></td>` : ""}
+          ${mMulti ? `<td class="syscell">${esc(systemLabel(row.k))}</td>` : ""}
+          <td>${ov.n ?? "–"}</td>
+          <td class="bcell" style="${beamHeat(ov.fama == null ? null : ov.fama / 100)}"><b>${n2(ov.fama)}</b></td>
+          <td class="bcell" style="${beamHeat(ov.mpa == null ? null : ov.mpa / 100)}">${n2(ov.mpa)}</td>
+          <td>${n2(ov.faa)}</td>
+          <td class="bdelta down">−${n2(ov.penalty)}</td>
+          <td class="small muted">${ov.n_presence ?? "–"} / ${ov.n_forget ?? "–"}</td></tr>`;
+      }).join("")}
     </table></div></div>
+
+    ${mMulti ? `<div class="noisebar" data-desc="이 아래 표들은 시스템별로 나누지 않았습니다. 페르소나·연산·검색 예산은 한 시스템 안에서 읽는 것이 목적이라 여러 벌을 겹치면 오히려 안 읽힙니다.">
+      여기부터는 <b>${esc(systemLabel(sysk))}</b> 한 시스템의 상세입니다.
+      <span class="small">위의 전체 지표·과제별 표는 고른 시스템을 모두 보여줍니다.</span></div>` : ""}
 
     <div class="card"><h4 data-desc="데이터셋이 각 세션에서 의도한 메모리 연산 횟수와, mem0가 실제로 발생시킨 연산 횟수를 나란히 놓은 것입니다. 대상까지 맞는지는 확인하지 않은 개수 비교입니다">연산 발생비 (데이터셋 의도 대비 개수)</h4>
     <div class="body" style="padding:0">
