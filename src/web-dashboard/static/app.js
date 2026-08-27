@@ -929,7 +929,9 @@ async function renderCost() {
       const c = r.deploy;
       const ans = r.stages.answer, ing = r.stages.ingest;
       const per = unit ? (c.tokens / unit[0]) : null;
-      const tags = `${r.running ? `<span class="runtag">수집 중</span>` : ""}${r.source === "trace-backfill" ? `<span class="srctag">되살림</span>` : ""}`;
+      // ⚠ 되살린 자료에는 임베딩 호출이 없다. 그 사실과 대신 잰 값을 뱃지 툴팁에 담는다.
+      const tags = `${r.running ? `<span class="runtag" data-desc="계측 파일이 방금 갱신됐습니다. 아직 도는 중이라 완료값이 아닙니다">수집 중</span>` : ""}`
+        + `${r.source === "trace-backfill" ? `<span class="srctag" data-desc="계측기를 붙이기 전에 끝난 런이라 trace 의 프롬프트 원문을 다시 토크나이즈해 되살렸습니다.<br><b>임베딩 호출은 안 잡힙니다</b> (tracer 가 LLM 만 감쌈).<br>trace 이벤트로 역산하려다 v3 실측과 2.1배 어긋나 실패했고, 표본으로 직접 쟀습니다: classic 은 호출당 14.1토큰, v3 는 392.4토큰. docs/mem0-v3/results.md §5-2">되살림</span>` : ""}`;
       return `<tr data-sysi="${i}">
         <td class="sysname">${esc(systemLabel(k))}${tags}</td>
         <td class="num">${kTok(c.calls)}</td>
