@@ -2835,9 +2835,18 @@ async function renderBeam() {
 async function renderBeamOverview() {
   const el = $("#content");
   softLoading(true, "집계 중…");
+  // 고른 시스템 전부를 받는다. 종합 화면도 시스템 축을 따라야 한다.
+  const oKeys = selectedSystems("beam");
+  const oMain = mainSystem("beam");
+  let oAll = [];
+  try {
+    oAll = (await Promise.all(oKeys.map((k) =>
+      api(`/api/beam/overview?${sysQ(k)}`).then((r) => ({ k, r })).catch(() => null)))).filter(Boolean);
+  } catch (e) { oAll = []; }
+  const oMulti = oAll.length > 1;
   let d;
   try {
-    d = await api(`/api/beam/overview?${sysQ(mainSystem('beam'))}`);
+    d = oAll.find((x) => x.k === oMain)?.r || await api(`/api/beam/overview?${sysQ(oMain)}`);
   } catch (e) {
     el.innerHTML = `${beamModeSwitch()}<p><b>불러오기 실패</b></p><p class="small">${esc(e.message)}</p>`;
     bindBeamMode();
@@ -2865,14 +2874,30 @@ async function renderBeamOverview() {
   };
 
   // ---- 카드 1: 전체 점수 (규모 × 프롬프트 × cutoff)
+  // 시스템별 조회기. 없는 조합은 그리지 않는다 (0으로 그리면 '못한 것'으로 읽힘).
+  const atSys = (k, scale, prm) => {
+    const rr = oAll.find((x) => x.k === k)?.r;
+    return (rr?.buckets || []).find((b) => b.scale === scale && b.prompt === prm && b.ready) || null;
+  };
   const rows1 = [];
   for (const s of SC) {
     for (const p of PR) {
-      const b = at(s, p);
-      if (!b) { rows1.push(`<tr><td class="brow"><b>${esc(s)}</b><br><span class="small muted">${esc(p)}</span></td>
-        <td class="muted" colspan="${CUT.length + 3}">채점본 없음</td></tr>`); continue; }
+      const lanes = oMulti ? oKeys.map((k) => ({ k, b: atSys(k, s, p) })) : [{ k: oMain, b: at(s, p) }];
+      if (!lanes.some((x) => x.b)) {
+        rows1.push(`<tr><td class="brow"><b>${esc(s)}</b><br><span class="small muted">${esc(p)}</span></td>
+          <td class="muted" colspan="${CUT.length + 3 + (oMulti ? 1 : 0)}">채점본 없음</td></tr>`);
+        continue;
+      }
+      lanes.forEach(({ k, b }, i) => {
+      if (!b) {
+        rows1.push(`<tr data-sysi="${i}">${i === 0 ? `<td class="brow" rowspan="${lanes.length}"><b>${esc(s)}</b><br><span class="small muted">${esc(p)}</span></td>` : ""}
+          <td class="syscell">${esc(systemLabel(k))}</td>
+          <td class="muted" colspan="${CUT.length + 3}">이 시스템은 안 돌렸습니다</td></tr>`);
+        return;
+      }
       const lo = sc(b, CUT[0]), hi = sc(b, CUT[CUT.length - 1]);
-      rows1.push(`<tr><td class="brow"><b>${esc(s)}</b><br><span class="small muted">${esc(p)}</span></td>
+      rows1.push(`<tr data-sysi="${i}">${(!oMulti || i === 0) ? `<td class="brow" ${oMulti ? `rowspan="${lanes.length}"` : ""}><b>${esc(s)}</b><br><span class="small muted">${esc(p)}</span></td>` : ""}
+        ${oMulti ? `<td class="syscell">${esc(systemLabel(k))}</td>` : ""}
         <td class="small">${b.n_convs}대화<br>${b.n_questions}문항</td>
         ${CUT.map((c) => {
           const cell = b.overall[String(c)], v = cell ? cell.score : null;
@@ -2881,34 +2906,51 @@ async function renderBeamOverview() {
         }).join("")}
         <td class="bdelta ${hi >= lo ? "up" : "down"}">${sgn(hi != null && lo != null ? hi - lo : null)}</td>
         <td>${curve(b)}</td></tr>`);
+      });
     }
   }
 
   // ---- 카드 2: 프롬프트 효과 (능력 × 규모, top-200)
   const LAST = CUT[CUT.length - 1];
   const abKeys = Object.keys(d.abilities);
-  const pdelta = (a, s) => {
-    const A = at(s, PR[0]), B = at(s, PR[1]);
+  // ⚠ 아래 표들은 전부 **시스템별로** 계산한다. 예전에는 한 시스템만 그려서, 칩으로 무엇을
+  //   고르든 같은 표가 나왔다. 시스템 축이 화면에 없는 것과 같았다.
+  const laneKeys = oMulti ? oKeys : [oMain];
+
+  const pdelta = (k, a, s) => {
+    const A = atSys(k, s, PR[0]), B = atSys(k, s, PR[1]);
     if (!A || !B) return null;
     const x = A.abilities[a]?.[String(LAST)], y = B.abilities[a]?.[String(LAST)];
     return x == null || y == null ? null : y - x;
   };
-  const ab2 = abKeys.map((a) => ({ a, vals: SC.map((s) => pdelta(a, s)) }))
-    .sort((p, q) => (p.vals.find((v) => v != null) ?? 0) - (q.vals.find((v) => v != null) ?? 0));
+  const ab2 = abKeys.map((a) => ({
+    a, lanes: laneKeys.map((k) => ({ k, vals: SC.map((sc_) => pdelta(k, a, sc_)) })),
+  })).sort((p, q) => {
+    const f = (r) => r.lanes[0].vals.find((v) => v != null) ?? 0;
+    return f(p) - f(q);
+  });
 
-  // ---- 카드 3: 능력 × 규모 (대표 프롬프트, top-200) — 단조인지 보려는 표
-  const ab3 = abKeys.map((a) => {
-    const vals = SC.map((s) => at(s, PR[0])?.abilities[a]?.[String(LAST)] ?? null);
-    const ok = vals.every((v) => v != null);
-    const mono = ok && (vals.every((v, i) => i === 0 || v >= vals[i - 1]) || vals.every((v, i) => i === 0 || v <= vals[i - 1]));
-    return { a, vals, mono, diff: ok ? vals[vals.length - 1] - vals[0] : null };
-  }).sort((p, q) => (p.diff ?? 0) - (q.diff ?? 0));
-  const nMono = ab3.filter((r) => r.mono).length;
+  // ---- 카드 3: 능력 × 규모 (대표 프롬프트, top-200) - 단조인지 보려는 표
+  const ab3 = abKeys.map((a) => ({
+    a, lanes: laneKeys.map((k) => {
+      const vals = SC.map((sc_) => atSys(k, sc_, PR[0])?.abilities[a]?.[String(LAST)] ?? null);
+      const ok = vals.every((v) => v != null);
+      const mono = ok && (vals.every((v, i) => i === 0 || v >= vals[i - 1]) || vals.every((v, i) => i === 0 || v <= vals[i - 1]));
+      return { k, vals, mono, diff: ok ? vals[vals.length - 1] - vals[0] : null };
+    }),
+  })).sort((p, q) => (p.lanes[0].diff ?? 0) - (q.lanes[0].diff ?? 0));
+  const nMono = ab3.filter((r) => r.lanes[0].mono).length;
+
+  /* 능력 행 하나를 시스템 수만큼 줄로 편다. 세 표가 같은 모양을 쓰므로 한 곳에 둔다. */
+  const abRows = (r, cellFn, tailFn) => r.lanes.map((ln, i) => `<tr data-sysi="${i}">
+    ${i === 0 ? `<td class="brow" ${oMulti ? `rowspan="${r.lanes.length}"` : ""}><b>${esc(d.abilities[r.a] || r.a)}</b>
+      <br><span class="small muted">${esc(r.a)}</span></td>` : ""}
+    ${oMulti ? `<td class="syscell">${esc(systemLabel(ln.k))}</td>` : ""}
+    ${ln.vals.map(cellFn).join("")}${tailFn ? tailFn(ln) : ""}</tr>`).join("");
 
   el.innerHTML = `
     ${beamModeSwitch()}
     ${systemChips("beam")}
-    ${S.sysSel.length > 1 ? `<p class="small muted">종합 화면은 규모·프롬프트 축 비교라 <b>${esc(systemLabel(mainSystem("beam")))}</b> 한 시스템만 그립니다. 시스템끼리 견주려면 <b>버킷별 상세</b>로 가세요.</p>` : ""}
 
     <div class="noisebar warn" data-desc="세 버킷의 대화 제목 겹침이 0입니다 (500K∩1M 0/35, 100K∩500K 0/20). 주제 구성도 8종/14종/13종으로 다릅니다.">
       <b>⚠ 규모 간 절대 비교를 하지 마세요.</b> BEAM은 버킷마다 <b>완전히 다른 대화</b>를 씁니다(제목 겹침 0).
@@ -2918,7 +2960,7 @@ async function renderBeamOverview() {
 
     <div class="card"><h4 data-desc="행은 규모 × 답변 프롬프트, 열은 cutoff. 곡선은 세로 0~1 고정이라 행끼리 기울기를 눈으로 비교할 수 있습니다">전체 점수 (규모 × 답변 프롬프트 × 검색 예산)</h4>
     <div class="body" style="padding:0">
-    <table class="cmp beam"><tr><th>규모 · 프롬프트</th><th>규모</th>
+    <table class="cmp beam"><tr><th>규모 · 프롬프트</th>${oMulti ? `<th data-desc="고른 메모리 시스템마다 한 줄씩입니다">시스템</th>` : ""}<th>규모</th>
       ${CUT.map((c) => `<th data-desc="답변자에게 메모리 ${c}개까지 제공">top-${c}</th>`).join("")}
       <th data-desc="top-${LAST} 빼기 top-${CUT[0]}. 양수면 컨텍스트를 늘릴수록 좋아집니다">차이</th><th>곡선</th></tr>
       ${rows1.join("")}
@@ -2928,29 +2970,30 @@ async function renderBeamOverview() {
 
     <div class="card"><h4 data-desc="BEAM 공식 프롬프트에서 mem0 하네스 프롬프트를 뺀 값입니다. 음수면 공식 프롬프트가 낮습니다. top-${LAST} 기준">답변 프롬프트 효과 (능력 × 규모, top-${LAST})</h4>
     <div class="body" style="padding:0">
-    <table class="cmp beam"><tr><th>능력</th>${SC.map((s) => `<th>${esc(s)}</th>`).join("")}</tr>
-      ${ab2.map((r) => `<tr><td class="brow"><b>${esc(d.abilities[r.a] || r.a)}</b><br><span class="small muted">${esc(r.a)}</span></td>
-        ${r.vals.map((v) => `<td class="bcell" style="${deltaHeat(v)}"><b>${sgn(v)}</b></td>`).join("")}</tr>`).join("")}
+    <table class="cmp beam"><tr><th>능력</th>${oMulti ? `<th>시스템</th>` : ""}${SC.map((s) => `<th>${esc(s)}</th>`).join("")}</tr>
+      ${ab2.map((r) => abRows(r, (v) => `<td class="bcell" style="${deltaHeat(v)}"><b>${sgn(v)}</b></td>`)).join("")}
     </table></div>
     <div class="body"><span class="small muted">세 규모 모두 <b>모순 감지</b>가 최대 하락, <b>지시 준수</b>가 그다음입니다. <b>갱신 반영</b>만 0 근처이거나 양수입니다. rubric 1항목이 곧 답이라 짧아져도 안 깎이기 때문입니다 (§7-5).</span></div>
     </div>
 
     <div class="card"><h4 data-desc="대표 프롬프트(${esc(PR[0])}) 기준 능력별 점수를 규모끼리 늘어놓은 것입니다. 규모 효과가 있다면 단조여야 합니다">능력 × 규모 (${esc(PR[0])}, top-${LAST})</h4>
     <div class="body" style="padding:0">
-    <table class="cmp beam"><tr><th>능력</th>${SC.map((s) => `<th>${esc(s)}</th>`).join("")}<th>${esc(SC[SC.length-1])}−${esc(SC[0])}</th><th>모양</th></tr>
-      ${ab3.map((r) => `<tr><td class="brow"><b>${esc(d.abilities[r.a] || r.a)}</b><br><span class="small muted">${esc(r.a)}</span></td>
-        ${r.vals.map((v) => `<td class="bcell" style="${beamHeat(v)}">${n3(v)}</td>`).join("")}
-        <td class="bdelta ${(r.diff ?? 0) >= 0 ? "up" : "down"}">${sgn(r.diff)}</td>
-        <td class="small">${r.mono ? "<b>단조</b>" : `<span class="muted">비단조</span>`}</td></tr>`).join("")}
+    <table class="cmp beam"><tr><th>능력</th>${oMulti ? `<th>시스템</th>` : ""}${SC.map((s) => `<th>${esc(s)}</th>`).join("")}<th>${esc(SC[SC.length-1])}−${esc(SC[0])}</th><th>모양</th></tr>
+      ${ab3.map((r) => abRows(r,
+        (v) => `<td class="bcell" style="${beamHeat(v)}">${n3(v)}</td>`,
+        (ln) => `<td class="bdelta ${(ln.diff ?? 0) >= 0 ? "up" : "down"}">${sgn(ln.diff)}</td>
+                 <td class="small">${ln.mono ? "<b>단조</b>" : `<span class="muted">비단조</span>`}</td>`)).join("")}
     </table></div>
     <div class="body"><span class="small muted"><b>${abKeys.length}개 중 단조는 ${nMono}개뿐입니다.</b> 규모 효과라면 단조여야 합니다. 이 모양은 어느 대화가 그 버킷에 들어갔느냐가 만든 것입니다. 능력들이 같은 대화 집합을 공유하므로 여러 개가 같이 오르내리는 것도 근거가 되지 못합니다.</span></div>
     </div>
 
     <div class="card"><h4 data-desc="답변 길이 중앙값입니다. mem0 하네스 프롬프트는 길이 지시가 없고 세부를 다 담으라고 하며, BEAM 공식은 '설명 없이 답만 출력'이라고 지시합니다">답변 길이 (문자 수 중앙값)</h4>
     <div class="body" style="padding:0">
-    <table class="cmp beam"><tr><th>프롬프트</th>${SC.map((s) => `<th>${esc(s)}</th>`).join("")}</tr>
-      ${PR.map((p) => `<tr><td class="brow"><b>${esc(p)}</b></td>
-        ${SC.map((s) => { const b = at(s, p); return `<td>${b ? `<b>${b.len_median}</b>자` : "–"}</td>`; }).join("")}</tr>`).join("")}
+    <table class="cmp beam"><tr><th>프롬프트</th>${oMulti ? `<th>시스템</th>` : ""}${SC.map((s) => `<th>${esc(s)}</th>`).join("")}</tr>
+      ${PR.map((p) => laneKeys.map((k, i) => `<tr data-sysi="${i}">
+        ${i === 0 ? `<td class="brow" ${oMulti ? `rowspan="${laneKeys.length}"` : ""}><b>${esc(p)}</b></td>` : ""}
+        ${oMulti ? `<td class="syscell">${esc(systemLabel(k))}</td>` : ""}
+        ${SC.map((sc_) => { const b = atSys(k, sc_, p); return `<td>${b ? `<b>${b.len_median}</b>자` : "–"}</td>`; }).join("")}</tr>`).join("")).join("")}
     </table></div>
     <div class="body"><span class="small muted">저장소가 커질수록 <b>${esc(PR[0])}</b> 쪽 답변이 길어집니다. <b>${esc(PR[1])}</b> 쪽은 규모와 무관하게 눌려 있습니다. 규모 간 무엇을 비교하든 이 몫을 먼저 빼야 합니다 (§4-3).</span></div>
     </div>`;
@@ -3011,6 +3054,9 @@ async function renderBeamBucket() {
      ⚠ 칸(cutoff 열) 구조는 그대로 둔다. 별도 비교표를 옆에 만들면 같은 것을 두 군데서 읽게 되고,
        "상세 기준" 하나를 골라 화면을 갈아끼우면 나머지 시스템이 안 보인다. */
   const multi = cmpRows.length > 1;
+  // event_ordering 은 시스템별 값을 열로 놓는다 (정의가 셋이라 행을 늘리면 표가 겹쳐 읽힌다).
+  const eoLanes = (multi ? cmpRows.map(({ k, r }) => ({ k, e: r.event_ordering }))
+                         : [{ k: sysk, e: d.event_ordering }]);
   const abilOf = (k, key) => (cmpRows.find((x) => x.k === k)?.r.abilities || []).find((y) => y.key === key);
   const ovOf = (k) => cmpRows.find((x) => x.k === k)?.r.overall || {};
 
@@ -3102,17 +3148,24 @@ async function renderBeamBucket() {
     ${!eo ? "" : `
     <div class="card"><h4 data-desc="공식 채점 코드가 이 능력만 다른 계열의 지표로 잽니다. 세 정의가 서로 다른 값을 냅니다">event_ordering 지표 정의 (${eo.n}건)</h4>
     <div class="body">
-      <table class="cmp"><tr><th>정의</th><th>쓰는 곳</th><th>값</th><th>0인 건</th><th>무엇을 재나</th></tr>
-        <tr><td><b>nugget 평균</b></td><td>mem0 하네스</td><td><b>${eo.nugget}</b></td><td>–</td>
+      <table class="cmp"><tr><th>정의</th><th>쓰는 곳</th>
+        ${eoLanes.map(({ k }) => `<th class="num">${esc(systemLabel(k))}</th>`).join("")}
+        <th>0인 건</th><th>무엇을 재나</th></tr>
+        <tr><td><b>nugget 평균</b></td><td>mem0 하네스</td>
+          ${eoLanes.map(({ e }) => `<td class="num"><b>${e ? e.nugget : "–"}</b></td>`).join("")}
+          <td>–</td>
           <td class="small">rubric 항목을 언급했는가. <b>순서를 전혀 보지 않음</b></td></tr>
-        <tr><td>tau_norm</td><td>BEAM 공식 리포트</td><td>${eo.tau_norm}</td>
+        <tr><td>tau_norm</td><td>BEAM 공식 리포트</td>
+          ${eoLanes.map(({ e }) => `<td class="num">${e ? e.tau_norm : "–"}</td>`).join("")}
           <td>${eo.tau_zero}/${eo.n}</td>
           <td class="small">순서. 언급 안 된 사건이 뒤로 몰려 '순서 맞음'이 되어 <b>적게 말할수록 유리</b></td></tr>
-        <tr><td>final (tau×f1)</td><td>계산만 하고 버려짐</td><td>${eo.final_score}</td>
+        <tr><td>final (tau×f1)</td><td>계산만 하고 버려짐</td>
+          ${eoLanes.map(({ e }) => `<td class="num">${e ? e.final_score : "–"}</td>`).join("")}
           <td class="bad-n">${eo.f1_zero}/${eo.n}</td>
           <td class="small">순서 + 회수율. 동등성 판정기가 짧은 rubric 라벨과 장황한 응답 줄을 못 맞춰 무너짐</td></tr>
       </table>
-      <p class="small muted" style="margin-top:6px">보조 지표: precision ${eo.precision} · recall ${eo.recall} · f1 ${eo.f1}</p>
+      <p class="small muted" style="margin-top:6px">보조 지표(${esc(systemLabel(eoLanes[0].k))}): precision ${eo.precision} · recall ${eo.recall} · f1 ${eo.f1}
+        ${eoLanes.length > 1 ? `<br>0인 건수는 ${esc(systemLabel(eoLanes[0].k))} 기준입니다. 정의별 결함을 보려는 표라 시스템마다 되풀이하지 않았습니다.` : ""}</p>
       <div class="noisebar" data-desc="같은 응답에 nugget 0.5, final 0.0 이 매겨진 사례가 실재합니다. 자세한 근거는 docs/mem0-classic-oss/beam-experiment.md §6">
         <b>대표값은 nugget 평균을 씁니다.</b> 셋 다 결함이 있으나 나머지 9개 능력과 척도가 같아 한 표에 놓을 수 있는 것이 이것뿐입니다.
         공식 수치를 인용할 때는 그쪽이 tau_norm 을 쓴다는 점을 반드시 밝혀야 합니다.
@@ -3121,18 +3174,25 @@ async function renderBeamBucket() {
 
     <div class="card"><h4 data-desc="대화마다 주제와 저장 메모리 규모가 다릅니다. 저장이 적은 대화는 큰 cutoff 에서 검색이 작동하지 않습니다">대화별 (${d.n_convs})</h4>
     <div class="body" style="padding:0">
-    <table class="cmp beam"><tr><th>대화</th><th>주제</th><th>청크</th><th data-desc="투입이 끝난 뒤 저장소에 남은 메모리 수">저장</th>
+    <table class="cmp beam"><tr><th>대화</th><th>주제</th>${multi ? `<th>시스템</th>` : ""}<th>청크</th>
+      <th data-desc="투입이 끝난 뒤 저장소에 남은 메모리 수. 시스템마다 다릅니다">저장</th>
       ${CUT.map((k) => `<th>top-${k}</th>`).join("")}</tr>
-      ${d.convs.map((c) => `<tr><td><b>${esc(c.conv)}</b></td><td class="small">${esc(c.category || "")}</td>
-        <td>${c.chunks ?? "–"}</td><td><b>${c.stored ?? "–"}</b></td>
-        ${CUT.map((k) => {
-          const v = c.cells[String(k)];
-          const over = c.stored != null && c.stored < k;
-          return v == null ? `<td class="muted">–</td>`
-            : `<td class="bcell" style="${beamHeat(v)}" data-desc="${esc(
-                over ? `저장 ${c.stored}개로 cutoff ${k}보다 적습니다. <b>저장소를 전부 준 조건</b>입니다` : `평균 ${v}`)}"
-                >${v.toFixed(3)}${over ? '<i class="bfull">▚</i>' : ""}</td>`;
-        }).join("")}</tr>`).join("")}
+      ${d.convs.map((c) => (multi ? cmpRows : [null]).map((row, i) => {
+        const cc = row ? (row.r.convs || []).find((x) => x.conv === c.conv) : c;
+        return `<tr data-sysi="${i}">
+          ${i === 0 ? `<td ${multi ? `rowspan="${cmpRows.length}"` : ""}><b>${esc(c.conv)}</b></td>
+                       <td class="small" ${multi ? `rowspan="${cmpRows.length}"` : ""}>${esc(c.category || "")}</td>` : ""}
+          ${multi ? `<td class="syscell">${esc(systemLabel(row.k))}</td>` : ""}
+          <td>${cc?.chunks ?? "–"}</td><td><b>${cc?.stored ?? "–"}</b></td>
+          ${CUT.map((k) => {
+            const v = cc?.cells?.[String(k)];
+            const over = cc?.stored != null && cc.stored < k;
+            return v == null ? `<td class="muted">–</td>`
+              : `<td class="bcell" style="${beamHeat(v)}" data-desc="${esc(
+                  over ? `저장 ${cc.stored}개로 cutoff ${k}보다 적습니다. <b>저장소를 전부 준 조건</b>입니다` : `평균 ${v}`)}"
+                  >${v.toFixed(3)}${over ? '<i class="bfull">▚</i>' : ""}</td>`;
+          }).join("")}</tr>`;
+      }).join("")).join("")}
     </table></div></div>`;
 
   // 사이드바가 HaluMem 세션 목록인 채로 남으면 다른 화면처럼 보임. 이 화면 전용 안내로 교체함
