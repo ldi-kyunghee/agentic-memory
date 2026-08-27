@@ -1011,6 +1011,36 @@ function noiseNote(n) {
   </div>`;
 }
 
+/* 지표를 파이프라인 단계 순으로 묶는다: 저장 -> 정확도 -> 갱신 -> 답변.
+   good=false 인 지표(환각·누락)는 내려가는 것이 좋으므로 차이 칸 색을 뒤집는다. */
+const HM_GROUPS = [
+  ["저장", [
+    ["integrity", "메모리 온전성", "골든 메모리를 저장물이 얼마나 담고 있는가 (중요도 가중 recall)", true],
+    ["extraction_f1", "추출 F1", "세션에서 뽑아낸 메모리와 골든의 F1", true],
+  ]],
+  ["정확도", [
+    ["target_acc", "Target 정확도", "저장한 메모리가 대화에 근거하는가", true],
+    ["interference_acc", "Interference 미포함률", "미끼 메모리를 <b>안</b> 저장했는가. 높을수록 좋음", true],
+    ["weighted_acc", "가중 정확도", "중요도로 가중한 정확도", true],
+  ]],
+  ["갱신 (C/H/O)", [
+    ["update_c", "Correct", "갱신 내용을 올바르게 반영했는가", true],
+    ["update_h", "Hallucination", "갱신했는데 내용이 틀림. 낮을수록 좋음", false],
+    ["update_o", "Omission", "갱신을 아예 안 썼거나 핵심을 빠뜨림. 낮을수록 좋음", false],
+  ]],
+  ["답변 (C/H/O)", [
+    ["qa_c", "Correct", "최종 답변 정확도. <b>이 벤치마크의 결론 지표</b>", true],
+    ["qa_h", "Hallucination", "근거 없는 답변. 낮을수록 좋음", false],
+    ["qa_o", "Omission", "답을 못 낸 것. 낮을수록 좋음", false],
+  ]],
+];
+
+const HM_TYPE_ROWS = [
+  ["acc", "정확도"],
+  ["integrity", "온전성"],
+  ["update", "갱신"],
+];
+
 /* C/H/O 처럼 100%로 합쳐지는 세 값은 쌓은 막대가 표보다 빨리 읽힌다.
    어디로 새는지(환각인지 누락인지)가 한눈에 보여야 한다. */
 function choBar(c, h, o, labels) {
