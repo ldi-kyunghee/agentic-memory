@@ -976,10 +976,14 @@ def _cost_load(d) -> dict:
         for r in doc.get("rows", []):
             for fld in ("calls", "prompt_tokens", "completion_tokens", "reasoning_tokens", "wall_ms", "errors"):
                 st[fld] += r.get(fld, 0)
-            st["prompt_max"] = max(st["prompt_max"], r.get("prompt_max", 0))
             k = st["by_kind"].setdefault(r.get("kind", "?"), {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0})
             for fld in ("calls", "prompt_tokens", "completion_tokens"):
                 k[fld] += r.get(fld, 0)
+            # ⚠ 컨텍스트 분포는 **LLM 호출만** 센다. 임베딩은 프롬프트가 짧아 같이 담으면
+            #   중앙값이 통째로 끌려 내려간다 (실측: v3 투입 p50 이 9,875 대신 375 로 나왔음).
+            if r.get("kind") != "chat":
+                continue
+            st["prompt_max"] = max(st["prompt_max"], r.get("prompt_max", 0))
             h = r.get("hist") or []
             if len(h) > len(st["hist"]):
                 st["hist"] = st["hist"] + [0] * (len(h) - len(st["hist"]))
