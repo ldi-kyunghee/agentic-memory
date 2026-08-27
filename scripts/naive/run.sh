@@ -45,7 +45,7 @@ if [[ $3 == "vllm" ]]; then
     fi
 
     kill -15 $VLLM_PID
-    
+
 else
     CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
     CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
