@@ -3722,6 +3722,12 @@ async function renderMemora() {
   const bind = () => {
     $$("#content .hrefsw button[data-mp]").forEach((b) =>
       (b.onclick = () => { S.memoraPeriod = b.dataset.mp; renderMemora(); }));
+    // 페르소나별 표의 기준 선택. 그 표 바로 위에 있어 무엇을 바꾸는지 눈으로 이어진다.
+    $$("#content button[data-mainsys]").forEach((b) => (b.onclick = () => {
+      S.sysMain = b.dataset.mainsys;
+      localStorage.setItem("mem_sys_main", S.sysMain);
+      renderMemora();
+    }));
     wireSystemChips();
   };
 
@@ -3737,13 +3743,20 @@ async function renderMemora() {
   const rho = d.delete_faa_rho;
 
   // 연산 수행률. 추가는 100%를 크게 넘는 것이 정상이라 따로 설명을 붙임
-  const opRow = (label, intent, actual, key, neutral, desc) => {
+  /* 연산 발생비는 시스템마다 근본적으로 다르다. mem0 v3 는 ADD-only 라 DELETE·UPDATE 가 0 이다.
+     그 0 이야말로 이 벤치마크에서 제일 중요한 사실이라 한 시스템만 그리면 안 된다. */
+  const opLanes = mMulti ? cmpRows.map(({ k, r }) => ({ k, intent: r.intent || {}, actual: r.actual || {} }))
+                         : [{ k: sysk, intent: d.intent || {}, actual: d.actual || {} }];
+  const opRow = (label, iKey, aKey, neutral, desc) => opLanes.map((ln, i) => {
+    const intent = ln.intent[iKey] || 0, actual = ln.actual[aKey] || 0;
     const rate = intent ? (100 * actual / intent) : null;
-    return `<tr><td class="brow"><b>${label}</b></td>
+    return `<tr data-sysi="${i}">
+      ${i === 0 ? `<td class="brow" ${mMulti ? `rowspan="${opLanes.length}"` : ""}><b>${label}</b></td>` : ""}
+      ${mMulti ? `<td class="syscell">${esc(systemLabel(ln.k))}</td>` : ""}
       <td>${intent.toLocaleString()}</td><td>${actual.toLocaleString()}</td>
       <td class="bcell" style="${rateHeat(rate, neutral)}" data-desc="${esc(desc)}">
-        <b>${rate == null ? "–" : rate.toFixed(1) + "%"}</b></td></tr>`;
-  };
+        <b>${rate == null ? "–" : rate.toFixed(1) + "%"}</b>${actual === 0 && intent > 0 ? `<br><span class="small">한 번도 안 함</span>` : ""}</td></tr>`;
+  }).join("");
 
   el.innerHTML = `
     ${systemChips("memora", S.memoraPeriod)}
@@ -3766,7 +3779,7 @@ ${await memoraCutoffCard(d.period)}
     ${!d.compare || d.compare.length < 2 ? "" : `
     <div class="card"><h4 data-desc="기간이 길수록 저장소가 커집니다. 이 벤치마크가 실제로 묻는 축입니다">기간 비교: 저장소가 커질 때</h4>
     <div class="body mscroll" style="padding:0">
-    <table class="cmp beam"><tr><th>기간</th>
+    <table class="cmp beam"><tr><th>기간</th>${mMulti ? `<th>시스템</th>` : ""}
       <th data-desc="페르소나 한 명당 저장된 메모리 수. 기간이 길수록 커지는 실제 원인 변수입니다">저장/인</th>
       <th data-desc="최종 점수">FAMA</th>
       <th data-desc="넣어야 할 것을 넣은 비율">MPA</th>
@@ -3774,19 +3787,25 @@ ${await memoraCutoffCard(d.period)}
       <th>페널티</th>
       ${Object.keys(TASKS).map((t) => `<th data-desc="${esc(t)} FAMA">${esc(TASKS[t])}</th>`).join("")}
       <th data-desc="mem0 DELETE 이벤트 수 ÷ 데이터셋 의도 수. 대상 일치는 확인하지 않은 개수 비율입니다">삭제</th></tr>
-      ${d.compare.map((c) => `<tr${c.key === d.period ? ' class="jm-tot"' : ""}>
-        <td class="brow bclick" data-mperiod="${esc(c.key)}"><b>${esc(c.label)}</b>
-          <br><span class="small muted">세션 ${c.sessions.toLocaleString()}</span></td>
-        <td class="small">${c.stored_each.toLocaleString()}</td>
-        <td class="bcell" style="${beamHeat(c.overall.fama / 100)}"><b>${c.overall.fama.toFixed(2)}</b></td>
-        <td class="bcell" style="${beamHeat(c.overall.mpa / 100)}">${c.overall.mpa.toFixed(2)}</td>
-        <td class="small">${c.overall.faa == null ? "–" : c.overall.faa.toFixed(2)}</td>
-        <td class="bdelta down">−${c.overall.penalty.toFixed(2)}</td>
+      ${d.compare.flatMap((c) => (mMulti ? cmpRows : [null]).map((row, i) => {
+        const cc = row ? ((row.r.compare || []).find((x) => x.key === c.key) || null) : c;
+        if (!cc) return `<tr data-sysi="${i}"><td class="syscell">${esc(systemLabel(row.k))}</td>
+          <td class="muted" colspan="${6 + Object.keys(TASKS).length}">이 기간은 안 돌렸습니다</td></tr>`;
+        return `<tr data-sysi="${i}"${c.key === d.period ? ' class="jm-tot"' : ""}>
+        ${i === 0 ? `<td class="brow bclick" ${mMulti ? `rowspan="${cmpRows.length}"` : ""} data-mperiod="${esc(c.key)}"><b>${esc(c.label)}</b>
+          <br><span class="small muted">세션 ${c.sessions.toLocaleString()}</span></td>` : ""}
+        ${mMulti ? `<td class="syscell">${esc(systemLabel(row.k))}</td>` : ""}
+        <td class="small">${cc.stored_each.toLocaleString()}</td>
+        <td class="bcell" style="${beamHeat(cc.overall.fama / 100)}"><b>${cc.overall.fama.toFixed(2)}</b></td>
+        <td class="bcell" style="${beamHeat(cc.overall.mpa / 100)}">${cc.overall.mpa.toFixed(2)}</td>
+        <td class="small">${cc.overall.faa == null ? "–" : cc.overall.faa.toFixed(2)}</td>
+        <td class="bdelta down">−${cc.overall.penalty.toFixed(2)}</td>
         ${Object.keys(TASKS).map((t) => {
-          const v = c.by_task[t] || {};
+          const v = cc.by_task[t] || {};
           return `<td class="bcell" style="${beamHeat(v.fama == null ? null : v.fama / 100)}">${v.fama == null ? "–" : v.fama.toFixed(1)}</td>`;
         }).join("")}
-        <td class="bcell" style="${rateHeat(c.delete_rate, true)}">${c.delete_rate == null ? "–" : c.delete_rate.toFixed(0) + "%"}</td></tr>`).join("")}
+        <td class="bcell" style="${rateHeat(cc.delete_rate, true)}">${cc.delete_rate == null ? "–" : cc.delete_rate.toFixed(0) + "%"}</td></tr>`;
+      })).join("")}
     </table></div>
     <div class="body"><span class="small">
       <b>⚠ FAA가 올라가는 것을 성과로 읽지 마세요.</b> 저장소가 커질수록 FAA는 오르고 MPA는 무너집니다.
@@ -3838,23 +3857,23 @@ ${await memoraCutoffCard(d.period)}
       }).join("")}
     </table></div></div>
 
-    ${mMulti ? `<div class="noisebar" data-desc="이 아래 표들은 시스템별로 나누지 않았습니다. 페르소나·연산·검색 예산은 한 시스템 안에서 읽는 것이 목적이라 여러 벌을 겹치면 오히려 안 읽힙니다.">
-      여기부터는 <b>${esc(systemLabel(sysk))}</b> 한 시스템의 상세입니다.
-      <span class="small">위의 전체 지표·과제별 표는 고른 시스템을 모두 보여줍니다.</span></div>` : ""}
-
     <div class="card"><h4 data-desc="데이터셋이 각 세션에서 의도한 메모리 연산 횟수와, mem0가 실제로 발생시킨 연산 횟수를 나란히 놓은 것입니다. 대상까지 맞는지는 확인하지 않은 개수 비교입니다">연산 발생비 (데이터셋 의도 대비 개수)</h4>
     <div class="body" style="padding:0">
-    <table class="cmp beam"><tr><th>연산</th><th>데이터셋 의도</th><th>mem0 실제</th>
+    <table class="cmp beam"><tr><th>연산</th>${mMulti ? `<th>시스템</th>` : ""}<th>데이터셋 의도</th><th>실제 발생</th>
       <th data-desc="실제 ÷ 의도. 100%라도 '지워야 할 그것'을 지웠다는 뜻은 아닙니다. 개수만 맞춘 값입니다">발생비</th></tr>
-      ${opRow("삭제 DELETE", d.intent.delete || 0, d.actual.DELETE || 0, "d", true,
+      ${opRow("삭제 DELETE", "delete", "DELETE", true,
               "이 벤치마크의 핵심입니다. HaluMem에는 삭제가 없어 못 보던 갈래입니다. 100%를 넘는 것도 문제일 수 있습니다 - 지우라고 하지 않은 것까지 지운 것이기 때문입니다.")}
-      ${opRow("갱신 UPDATE", d.intent.update || 0, d.actual.UPDATE || 0, "u", true,
+      ${opRow("갱신 UPDATE", "update", "UPDATE", true,
               "HaluMem에서 무효 UPDATE가 99.5%였습니다(§14). 개수만으로는 유효성을 알 수 없으니 수행률은 참고값입니다.")}
-      ${opRow("추가 ADD", d.intent.add || 0, d.actual.ADD || 0, "a", true,
+      ${opRow("추가 ADD", "add", "ADD", true,
               "100%를 크게 넘는 것이 정상입니다. 세션에 지정된 연산은 하나지만 mem0는 15턴 대화에 섞인 부수적 사실도 전부 뽑습니다. 회색은 중립 표시입니다.")}
     </table></div>
     <div class="body"><span class="small muted"><b>⚠ 이것은 수행률이 아니라 개수 비율입니다.</b> mem0의 DELETE 이벤트를 데이터셋이 지목한 삭제 대상과 짝지어 확인하지 않았습니다. 100%라도 엉뚱한 것을 지웠을 수 있고, 100%를 넘으면 지우라고 하지 않은 것까지 지운 것입니다. <b>대상 일치는 아직 재지 않았습니다.</b><br>추가가 100%를 크게 넘는 것은 설계상 당연합니다. 세션마다 지정된 연산은 하나지만 mem0는 15턴 대화에 섞인 부수적 사실도 전부 뽑습니다.</span></div>
     </div>
+
+    ${mMulti ? `<div class="noisebar" data-desc="페르소나 열 개를 시스템 수만큼 겹치면 30줄이 넘어 폭을 보려는 목적이 사라집니다. 시스템별 페르소나 분포가 필요하면 위의 '이 패널 기준' 을 바꿔 가며 보세요.">
+      아래 <b>페르소나별</b> 표는 <b>${esc(systemLabel(sysk))}</b> 것입니다.
+      ${panelSystemPicker("memora", S.memoraPeriod)}</div>` : ""}
 
     <div class="card"><h4 data-desc="페르소나마다 대화 내용과 메모리 연산 수가 다릅니다. 순위를 말하기 전에 이 폭을 먼저 보세요">페르소나별 (${d.n_personas})</h4>
     <div class="body" style="padding:0">
