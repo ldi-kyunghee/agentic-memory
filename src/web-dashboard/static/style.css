@@ -870,3 +870,36 @@ table.cmp td.num.running sup { font-size: var(--fs-nano); opacity: .8; }
 table.beam td.syscell { font-size: var(--fs-xs); font-weight: 700; color: var(--dim);
                         background: var(--band); white-space: nowrap; }
 table.beam tr.subrow > td { border-top-color: var(--rule-soft); }
+
+/* ── 정성분석 하위 탭 ───────────────────────────────────────────────────────
+   개편 전 상단 탭이던 것들이다. 흐리게 두면 "옛 화면이 사라졌다" 로 읽힌다.
+   상단 탭과 같은 무게로 그리되 색만 낮춰 층위를 구분한다. */
+.subnav { background: var(--band); padding: 7px 12px 0; gap: 3px; align-items: flex-end; }
+.subtab { font-size: var(--fs-base); font-weight: 700; padding: 6px 15px; color: var(--dim);
+          border: 1px solid transparent; border-bottom: none; }
+.subtab.active { background: var(--bg); border-color: var(--rule); color: var(--ink);
+                 font-weight: 800; box-shadow: 0 -1px 0 var(--accent) inset; }
+.subnav-note { margin-left: auto; align-self: center; font-size: var(--fs-micro);
+               color: var(--dim); padding-bottom: 6px; }
+
+/* ── 클릭 고정 강조 ─────────────────────────────────────────────────────────
+   호버 강조와 구분되게 테두리를 준다. 색만으로 두면 마우스가 지나간 것인지
+   내가 고정한 것인지 안 갈린다. */
+table.cmp tr.pinrow > td, table.cmp td.pincol, table.cmp th.pincol {
+  background: var(--accent-bg2, var(--accent-bg)); }
+table.cmp tr.pinrow > td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+table.cmp th.pincol { box-shadow: inset 0 3px 0 var(--accent); }
+table.cmp td.pincell { background: var(--accent-bg4) !important;
+  outline: 2px solid var(--accent); outline-offset: -2px; font-weight: 800; }
+table.cmp.haspin { cursor: crosshair; }
+
+/* ── 시스템 행 구분 ─────────────────────────────────────────────────────────
+   같은 능력의 여러 시스템 줄이 같은 색이면 어느 줄이 어느 시스템인지 눈으로 못 쫓는다.
+   시스템 칸에 색 띠를 주고, 두 번째 시스템부터 행 바탕을 아주 옅게 낮춘다. */
+table.beam td.syscell { border-left: 3px solid var(--rule-firm); }
+table.cmp tr[data-sysi="0"] td.syscell { border-left-color: var(--accent); }
+table.cmp tr[data-sysi="1"] td.syscell { border-left-color: #d98324; }
+table.cmp tr[data-sysi="2"] td.syscell { border-left-color: #2f9e6f; }
+table.cmp tr[data-sysi="3"] td.syscell { border-left-color: #9a5fd0; }
+table.cmp tr[data-sysi="1"] > td:not(.brow) { background: rgba(0,0,0,.022); }
+table.cmp tr[data-sysi="3"] > td:not(.brow) { background: rgba(0,0,0,.022); }

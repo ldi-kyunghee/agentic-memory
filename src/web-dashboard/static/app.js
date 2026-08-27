@@ -621,6 +621,51 @@ function rowLabel(tr) {
 function enhanceTable(t) {
   const heads = headerTexts(t);
 
+  /* ---- 클릭으로 고정 강조 ----
+     마우스를 떼면 사라지는 강조만으로는 두 값을 눈으로 오래 견주지 못한다.
+     셀을 누르면 그 행·열이 고정되고, 머리글을 누르면 열만, 첫 칸을 누르면 행만 고정된다.
+     같은 자리를 다시 누르면 풀린다. */
+  const pin = { row: null, col: null };
+  const applyPin = () => {
+    t.querySelectorAll(".pinrow, .pincol, .pincell").forEach((x) =>
+      x.classList.remove("pinrow", "pincol", "pincell"));
+    if (pin.row != null && t.rows[pin.row]) t.rows[pin.row].classList.add("pinrow");
+    if (pin.col != null) {
+      [...t.rows].forEach((r) => {
+        if (r.classList.contains("grp-head")) return;
+        const c = r.cells[pin.col];
+        if (c) c.classList.add("pincol");
+      });
+    }
+    if (pin.row != null && pin.col != null) {
+      const c = t.rows[pin.row]?.cells[pin.col];
+      if (c) c.classList.add("pincell");
+    }
+    t.classList.toggle("haspin", pin.row != null || pin.col != null);
+  };
+
+  t.addEventListener("click", (e) => {
+    if (e.target.closest("button, a, input, select")) return;   // 기존 클릭 동작 보존
+    const cell = e.target.closest("td, th");
+    if (!cell || !t.contains(cell)) return;
+    const tr = cell.parentElement;
+    if (tr.classList.contains("grp-head")) return;
+    const isHead = cell.tagName === "TH";
+    const rowIdx = tr.rowIndex;
+    const colIdx = cell.cellIndex;
+
+    if (isHead) {
+      pin.col = pin.col === colIdx ? null : colIdx;      // 머리글 = 열만
+    } else if (colIdx === 0) {
+      pin.row = pin.row === rowIdx ? null : rowIdx;      // 첫 칸 = 행만
+    } else {
+      const same = pin.row === rowIdx && pin.col === colIdx;
+      pin.row = same ? null : rowIdx;
+      pin.col = same ? null : colIdx;
+    }
+    applyPin();
+  });
+
   // ---- 십자 강조 + 툴팁 자동 합성 ----
   t.addEventListener("mouseover", (e) => {
     const cell = e.target.closest("td, th");
@@ -1119,8 +1164,11 @@ const QUAL_TABS = [
 ];
 
 function renderQual() {
+  // ⚠ 예전에는 이 다섯이 상단 탭이었다. 개편으로 여기 하위 탭이 됐는데 너무 흐려서
+  //   "옛 화면이 사라졌다" 고 읽혔다. 상단 탭과 같은 무게로 그린다.
   const nav = QUAL_TABS.map(([k, lab, desc]) =>
-    `<button class="subtab${S.qtab === k ? " active" : ""}" data-qtab="${k}" data-desc="${esc(desc)}">${esc(lab)}</button>`).join("");
+    `<button class="subtab${S.qtab === k ? " active" : ""}" data-qtab="${k}" data-desc="${esc(desc)}">${esc(lab)}</button>`).join("")
+    + `<span class="subnav-note" data-desc="개편 전에는 이 다섯이 상단 탭이었습니다. 벤치마크×메모리 시스템 축으로 바꾸면서 여기로 모았고, 기능은 하나도 빼지 않았습니다.">개편 전 상단 탭이 여기 다 있습니다</span>`;
   const host = $("#qualnav");
   host.classList.remove("hidden");
   host.innerHTML = nav;
@@ -2978,7 +3026,7 @@ async function renderBeamBucket() {
     return cmpRows.map(({ k }, i) => {
       const aa = abilOf(k, a.key);
       const cells = aa?.cells || {};
-      return `<tr data-ab="${esc(a.key)}"${i === 0 ? "" : ' class="subrow"'}>
+      return `<tr data-ab="${esc(a.key)}" data-sysi="${i}"${i === 0 ? "" : ' class="subrow"'}>
         ${i === 0 ? `<td class="brow bclick" rowspan="${cmpRows.length}" data-open="${esc(a.key)}|${esc(a.label)}"
           data-desc="클릭하면 이 능력의 문항을 문항 단위로 볼 수 있습니다 (문항 상세는 한 시스템만 그립니다)"><b>${esc(a.label)}</b>
           <br><span class="small muted">${esc(a.key)}</span></td>` : ""}
@@ -2998,7 +3046,7 @@ async function renderBeamBucket() {
     return cmpRows.map(({ k }, i) => {
       const ov = ovOf(k);
       const hi = ov[String(CUT[CUT.length-1])], lo = ov[String(CUT[0])];
-      return `<tr class="jm-tot">
+      return `<tr class="jm-tot" data-sysi="${i}">
         ${i === 0 ? `<td class="brow" rowspan="${cmpRows.length}"><b>전체</b></td>` : ""}
         <td class="syscell">${esc(systemLabel(k))}</td>
         ${CUT.map((c) => cellHTML(ov[String(c)])).join("")}
@@ -3657,7 +3705,7 @@ ${await memoraCutoffCard(d.period)}
       <th data-desc="이 과제의 평가 기준 수. 넣기(memory_presence) / 빼기(forgetting_absence)">기준 넣기/빼기</th></tr>
       ${Object.keys(TASKS).flatMap((t) => (mMulti ? cmpRows : [null]).map((row, i) => {
         const v = (row ? (row.r.by_task || {}) : d.by_task)[t] || {};
-        return `<tr${i > 0 ? ' class="subrow"' : ""}>
+        return `<tr data-sysi="${i}"${i > 0 ? ' class="subrow"' : ""}>
           ${i === 0 ? `<td class="brow bclick" ${mMulti ? `rowspan="${cmpRows.length}"` : ""} data-mtask="${esc(t)}"
           data-desc="클릭하면 문항 목록을 봅니다"><b>${esc(TASKS[t])}</b>
           <br><span class="small muted">${esc(t)}</span></td>` : ""}
@@ -3675,7 +3723,7 @@ ${await memoraCutoffCard(d.period)}
         // ⚠ 시스템 열이 생기면 전체 행도 그 칸을 채워야 한다. 안 그러면 한 칸씩 밀려
         //   FAMA 자리에 문항 수가 오는 식으로 읽힌다.
         const ov = (row ? row.r.overall : d.overall) || {};
-        return `<tr class="jm-tot">
+        return `<tr class="jm-tot" data-sysi="${i}">
           ${i === 0 ? `<td class="brow" ${mMulti ? `rowspan="${cmpRows.length}"` : ""}><b>전체</b></td>` : ""}
           ${mMulti ? `<td class="syscell">${esc(systemLabel(row.k))}</td>` : ""}
           <td>${ov.n ?? "–"}</td>
