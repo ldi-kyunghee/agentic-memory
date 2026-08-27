@@ -15,6 +15,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(os.path.dirname(_HERE))
 sys.path.insert(0, _HERE)
 sys.path.insert(0, os.path.join(_ROOT, "src", "mem0-classic-oss"))
+sys.path.insert(0, os.path.join(_ROOT, "BEAM", "src"))   # prompts.py (fold 치환 검사가 직접 씀)
 
 import json  # noqa: E402
 import tempfile  # noqa: E402
