@@ -826,7 +826,9 @@ def api_unregistered():
     뒤집혔다. 이름으로 유추해 자동 등록하면 같은 실수를 더 빨리, 조용히 저지른다.
     그래서 **실행이 남긴 `run.json`(실제 env)을 함께 보여주고 등록은 사람이 확정**한다.
     """
+    import re as _re
     reg_paths = set()
+    reg_pats = []      # {run} 같은 치환자가 든 등록 경로는 정규식으로 맞춘다
     doc = load_registry_doc()
 
     def walk(o):
@@ -840,8 +842,15 @@ def api_unregistered():
             # results/mem0-classic-oss/<디렉토리>/... 이므로 세 번째 조각이 디렉토리 이름이다.
             # ⚠ 두 번째를 보면 전부 "mem0-classic-oss" 로 잡혀 아무것도 등록 안 된 것처럼 나온다.
             parts = o.split("/")
-            if len(parts) >= 3:
-                reg_paths.add(parts[2])
+            if len(parts) < 3:
+                return
+            name = parts[2]
+            # ⚠ runs.yaml 은 `judge-rep1-{run}` 처럼 치환자가 든 경로를 쓴다. 글자 그대로 비교하면
+            #   실제 디렉토리(judge-rep1-oss120b4)와 안 맞아 등록된 것이 미등록으로 잡힌다.
+            if "{" in name:
+                reg_pats.append(_re.compile("^" + _re.sub(r"\\\{[^}]*\\\}", ".+", _re.escape(name)) + "$"))
+            else:
+                reg_paths.add(name)
 
     walk(doc)
 
@@ -850,6 +859,8 @@ def api_unregistered():
     if res.is_dir():
         for d in sorted(res.iterdir()):
             if not d.is_dir() or d.name in reg_paths:
+                continue
+            if any(p.match(d.name) for p in reg_pats):
                 continue
             # ⚠ **채점본만** 잡는다. 투입·답변 같은 중간 산출물까지 세면 200개가 넘게 나와
             #   경고가 소음이 되고, 정작 중요한 것이 묻힌다. 화면이 그리는 단위는 채점본이다.
