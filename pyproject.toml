@@ -56,3 +56,13 @@ exclude-dependencies = ['pynvml']
 [tool.uv.extra-build-dependencies]
 flash-attn = ["torch"]
 xielu = ["torch"]
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.39.10",
+    "pyright>=1.1.411",
+    "python-lsp-ruff>=2.3.3",
+    "python-lsp-server>=1.15.0",
+    "ruff>=0.16.4",
+    "ty>=0.0.75",
+]

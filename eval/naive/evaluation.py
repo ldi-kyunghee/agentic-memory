@@ -1,5 +1,5 @@
-import argparse
 import gc
+import argparse
 import json
 import logging
 import os
@@ -111,7 +111,7 @@ def format_inputs_for_gps_oss(prompt: str):
     developer_prompt = DeveloperContent.new().with_instructions(
                         EVALUATION_DEVELOPER_PROMPT_FOR_QA
                     )
-    
+
     convo = Conversation.from_messages(
         [
             Message.from_role_and_content(
@@ -134,13 +134,13 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
     stop_token_ids = encoding.stop_tokens_for_assistant_actions()
     structured_outputs_params = StructuredOutputsParams(json=QAEval.model_json_schema())
-    
+
     sampling_params = SamplingParams(
         stop_token_ids=stop_token_ids,
         structured_outputs=structured_outputs_params,
         **sampling_params
     )
-    
+
     prompts = []
     for result in qa_results:
         prompt = EVALUATION_USER_PROMPT_FOR_QA.format(
@@ -157,7 +157,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
             "prompt": input_prompt,
             "prompt_token_ids": prefill_ids
         })
-    
+
     outputs = llm.generate(prompts, sampling_params=sampling_params)
     output_tokens = [output.outputs[0].token_ids for output in outputs]
     results = [encoding.parse_messages_from_completion_tokens(tokens, Role.ASSISTANT) for tokens in output_tokens]
@@ -169,7 +169,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
             result = json.loads(response)
             result_type = result.get("evaluation_result")
             eval_result = {
-                k: v 
+                k: v
                 for k, v in qa_results[i].items()
             }
             eval_result['result_type'] = result_type
@@ -181,7 +181,7 @@ def llm_judge_vllm_gpt_oss(qa_results, llm: LLM, sampling_params: dict, generati
 def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwargs: dict | None = None):
     structured_outputs_params = StructuredOutputsParams(json=QAEval.model_json_schema())
     sampling_params = SamplingParams(structured_outputs=structured_outputs_params, **sampling_params)
-    
+
     prompts = []
     for result in qa_results:
         prompt = evaluation_for_question_vllm(
@@ -205,7 +205,7 @@ def llm_judge_vllm(qa_results, llm: LLM, sampling_params: dict, generation_kwarg
     for i, result in enumerate(results):
         result_type = result.get("evaluation_result")
         eval_result = {
-            k: v 
+            k: v
             for k, v in qa_results[i].items()
         }
         eval_result['result_type'] = result_type
@@ -235,9 +235,9 @@ def llm_judge_eval(qa_results, model: str, max_workers: int = 10, **common_param
         for qa in qa_results:
             future = executor.submit(
                 evaluation_for_question,
-                qa["question"], 
-                qa["reference"], 
-                "\n".join(evidence['memory_content'] for evidence in qa['evidence']), 
+                qa["question"],
+                qa["reference"],
+                "\n".join(evidence['memory_content'] for evidence in qa['evidence']),
                 qa["generated_answer"],
                 model,
                 **common_params
@@ -310,7 +310,7 @@ def vllm_offline_inference(llm, model_kwargs, sampling_params, generation_kwargs
             sampling_params=sampling_params,
             generation_kwargs=generation_kwargs
         )
-    
+
 def main(args, max_workers: int = 10):
     data_dir = args.results_dir
     data_file = data_dir + args.results_file
@@ -318,7 +318,7 @@ def main(args, max_workers: int = 10):
 
     if not output_dir.endswith('/'):
         output_dir += '/'
-        
+
     output_file = output_dir + args.results_file.replace("results", "scores")
 
     os.makedirs(output_dir, exist_ok=True)
@@ -328,15 +328,16 @@ def main(args, max_workers: int = 10):
     kwargs = load_config(args.config_file, args.use_online_inference)
     if args.backend == 'vllm':
         if args.use_online_inference:
-            model_kwargs, online_kwargs = kwargs
-            common_params = online_kwargs.pop('common_params')
+            model_kwargs, client_params, common_params = kwargs
             if os.environ.get('OPENAI_BASE_URL'):
                 print(os.environ['OPENAI_BASE_URL'])
             else:
-                os.environ['OPENAI_BASE_URL'] = '{base_url}:{port}/v1'.format(**online_kwargs)
+                os.environ['OPENAI_BASE_URL'] = '{base_url}:{port}/v1'.format(**client_params)
+            if common_params.get('model'):
+                _ = common_params.pop('model')
             eval_fn = vllm_online_inference(model_kwargs['model'], common_params)
         else:
-            model_kwargs, sampling_params, generation_kwargs = kwargs    
+            model_kwargs, sampling_params, generation_kwargs = kwargs
             llm = load_vllm(model_kwargs)
             eval_fn = vllm_offline_inference(
                 llm,
@@ -344,7 +345,7 @@ def main(args, max_workers: int = 10):
                 sampling_params=sampling_params,
                 generation_kwargs=generation_kwargs,
             )
-            
+
     elif args.backend == 'openai':
         model_kwargs, online_kwargs = load_config(args.config_file, use_online_inference=True)
         os.environ['OPENAI_MODEL'] = model_kwargs['model']

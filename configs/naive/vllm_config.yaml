@@ -14,9 +14,11 @@ generation_args:
   # chat_template_kwargs:
   #   reasoning_effort: high
 online_args:
-  base_url: http://localhost
-  port: 8000
+  client_params:
+    base_url: http://localhost
+    port: 8000
   common_params:
+    model: openai/gpt-oss-120b
     max_output_tokens: 16384
     temperature: 0.7
     timeout: 180

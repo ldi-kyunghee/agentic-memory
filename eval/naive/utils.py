@@ -275,8 +275,10 @@ def load_config(config_file, use_online_inference: bool = False):
 
     model_kwargs = kwargs.pop("model_kwargs")
     if use_online_inference:
-        online_kwargs = kwargs.pop("online_args")
-        return model_kwargs, online_kwargs
+        online_args = kwargs.pop("online_args")
+        client_params = online_args.get("client_params")
+        online_kwargs = online_args.get("common_params")
+        return model_kwargs, client_params, online_kwargs
     if kwargs.get('sampling_params'):
         sampling_params = kwargs.pop("sampling_params")
         return model_kwargs, sampling_params

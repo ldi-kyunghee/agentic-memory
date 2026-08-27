@@ -203,14 +203,10 @@ def run_qa(args, retrieval_results):
     llm_results = []
     for per_persona_results in retrieval_results:
         if args.backend == "vllm":
-            if "openai" in model_kwargs['model']:
-                if args.online:
-                    generation_kwargs['model'] = model_kwargs.pop('model')
-                    per_persona_llm_results = generate_answer_online(per_persona_results, **generation_kwargs)
-                else:
-                    per_persona_llm_results = generate_answers_gpt_oss(
-                        per_persona_results, generation_kwargs, sampling_params
-                    )
+            if args.online:
+                if online_kwargs.get('model') is None:
+                    online_kwargs['model'] = model_kwargs.pop('model')
+                per_persona_llm_results = generate_answer_online(per_persona_results, **online_kwargs)
             else:
                 per_persona_llm_results = generate_answers_vllm(
                     per_persona_results, generation_kwargs, sampling_params
@@ -237,8 +233,10 @@ if __name__ == "__main__":
             retrieval_results[result_file] = json.load(file)
 
     if args.backend == "vllm":
-        kwargs = load_config(args.llm_config)
-        if isinstance(kwargs, tuple):
+        kwargs = load_config(args.llm_config, use_online_inference=args.online)
+        if args.online:
+            model_kwargs, client_params, online_kwargs = kwargs
+        elif isinstance(kwargs, tuple):
             if len(kwargs) == 2:
                 model_kwargs, sampling_params = kwargs
             else:
@@ -249,7 +247,11 @@ if __name__ == "__main__":
             generation_kwargs = {}
 
         if args.online:
-            llm = OpenAI(api_key="EMPTY", base_url="http://localhost:8001/v1")
+            if client_params:
+                base_url = "{base_url}:{port}/v1".format(**client_params)
+            else:
+                base_url = "http://localhost:8000/v1"
+            llm = OpenAI(api_key="EMPTY", base_url=base_url)
         else:
             llm: LLM = load_vllm(**model_kwargs)
     else:
