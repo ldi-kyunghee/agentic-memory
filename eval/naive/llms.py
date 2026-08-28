@@ -82,9 +82,10 @@ def llm_request(prompt):
     reraise=True,
     before_sleep=before_sleep_log(logger, logging.WARNING)
 )
-def llm_request_for_json(prompt, model, **common_params):
+def llm_request_for_json(prompt, model = None, **common_params):
+    if model is not None:
+        common_params['model'] = model
     response_obj = client.responses.parse(
-        model=model,
         input=[{'role': 'user', 'content': prompt}],
         text_format=QAEval,
         **common_params

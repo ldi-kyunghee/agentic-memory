@@ -287,30 +287,6 @@ def aggregate_results(eval_results):
 
     return eval_results
 
-def vllm_online_inference(model, common_params, max_workers=10):
-    return partial(
-        llm_judge_eval,
-        model=model,
-        max_workers=max_workers,
-        **common_params
-    )
-
-def vllm_offline_inference(llm, model_kwargs, sampling_params, generation_kwargs, max_workers=10):
-    if "gpt" in model_kwargs['model']:
-        return partial(
-            llm_judge_vllm_gpt_oss,
-            llm=llm,
-            sampling_params=sampling_params,
-            generation_kwargs=generation_kwargs
-        )
-    else:
-        return partial(
-            llm_judge_vllm,
-            llm=llm,
-            sampling_params=sampling_params,
-            generation_kwargs=generation_kwargs
-        )
-
 def main(args, max_workers: int = 10):
     data_dir = args.results_dir
     data_file = data_dir + args.results_file
@@ -325,31 +301,14 @@ def main(args, max_workers: int = 10):
     with open(data_file, "r") as file:
         data = json.load(file)
 
-    kwargs = load_config(args.config_file, args.use_online_inference)
-    if args.backend == 'vllm':
-        if args.use_online_inference:
-            model_kwargs, client_params, common_params = kwargs
-            if os.environ.get('OPENAI_BASE_URL'):
-                print(os.environ['OPENAI_BASE_URL'])
-            else:
-                os.environ['OPENAI_BASE_URL'] = '{base_url}:{port}/v1'.format(**client_params)
-            if common_params.get('model'):
-                _ = common_params.pop('model')
-            eval_fn = vllm_online_inference(model_kwargs['model'], common_params)
-        else:
-            model_kwargs, sampling_params, generation_kwargs = kwargs
-            llm = load_vllm(model_kwargs)
-            eval_fn = vllm_offline_inference(
-                llm,
-                model_kwargs=model_kwargs,
-                sampling_params=sampling_params,
-                generation_kwargs=generation_kwargs,
-            )
-
-    elif args.backend == 'openai':
-        model_kwargs, client_params, online_kwargs = load_config(args.config_file, use_online_inference=True)
-        os.environ['OPENAI_MODEL'] = model_kwargs['model']
-        eval_fn = partial(llm_judge_eval, model=model_kwargs['model'], max_workers=max_workers, **online_kwargs)
+    kwargs = load_config(args.config_file, args.use_online_inference, is_evaluation=True)
+    client_params, common_params = kwargs
+    os.environ['OPENAI_BASE_URL'] = '{base_url}:{port}/v1'.format(**client_params)
+    eval_fn = partial(
+        llm_judge_eval,
+        max_workers=max_workers,
+        **common_params
+    )
 
     eval_results = {
         "per_persona_results": [],

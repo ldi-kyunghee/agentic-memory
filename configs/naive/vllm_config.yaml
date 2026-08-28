@@ -1,5 +1,5 @@
 model_kwargs:
-  model: openai/gpt-oss-120b # Qwen/Qwen3-4B-Instruct-2507
+  model: Qwen/Qwen3-4B-Instruct-2507
   dtype: bfloat16
   quantization: mxfp4 # bitsandbytes
   seed: 42
@@ -8,12 +8,19 @@ generation_args:
     n: 1
     max_tokens: 16384
     seed: 42
-    temperature: 0.5
-  #   thinking_token_budget: 4096
-  # chat_template_content_format: openai
-  # chat_template_kwargs:
-  #   reasoning_effort: high
+    temperature: 0.7
 online_args:
+  client_params:
+    base_url: http://localhost
+    port: 8000
+  common_params:
+    model: openai/gpt-oss-120b
+    max_output_tokens: 16384
+    temperature: 0.7
+    timeout: 180
+    reasoning:
+      effort: default
+evaluation_args:
   client_params:
     base_url: http://localhost
     port: 8000

@@ -4,6 +4,7 @@ import json
 import os
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from json import JSONDecodeError
 
 import numpy as np
 import torch
@@ -123,12 +124,15 @@ def format_inputs_gpt_oss(query, documents):
 
     return prompt
 
-def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
+def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict | None = None, sampling_params: dict | None = None):
     encoding = load_harmony_encoding(HarmonyEncodingName.HARMONY_GPT_OSS)
     stop_token_ids = encoding.stop_tokens_for_assistant_actions()
-    sampling_params['stop_token_ids'] = stop_token_ids
-    sampling_params = SamplingParams(**sampling_params)
-
+    if sampling_params is not None:
+        sampling_params['stop_token_ids'] = stop_token_ids
+        sampling_params = SamplingParams(**sampling_params)
+    else:
+        sampling_params = SamplingParams(n=1)
+        
     prompts = []
     for item in queries:
         query = item["question"]
@@ -155,8 +159,16 @@ def generate_answers_gpt_oss(queries: list[dict], generation_kwargs: dict = {}, 
         answers.append(answer)
     return compile_outputs(queries, answers)
 
-def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sampling_params: dict = {}):
-    sampling_params = SamplingParams(**sampling_params)
+def generate_answers_vllm(queries: list[dict], generation_kwargs: dict | None = None, sampling_params_config: dict | None = None):
+    if args.structured_outputs:
+        structured_output_params = StructuredOutputsParams(json=QA.model_json_schema())
+    else:
+        structured_output_params = None
+
+    if sampling_params_config is not None:
+        sampling_params = SamplingParams(structured_outputs=structured_output_params, **sampling_params_config)
+    else:
+        sampling_params = SamplingParams(n=1, structured_outputs=structured_output_params)
 
     prompts = []
     for item in queries:
@@ -168,13 +180,26 @@ def generate_answers_vllm(queries: list[dict], generation_kwargs: dict = {}, sam
         prompt = format_inputs_vllm(query, documents)
         prompts.append(prompt)
 
-    _ = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
+    if generation_kwargs is not None:
+        _ = llm.enqueue_chat(prompts, sampling_params, **generation_kwargs)
+    else:
+        _ = llm.enqueue_chat(prompts, sampling_params)
     outputs = llm.wait_for_completion()
-    answers = [output.outputs[0].text for output in outputs]
+    answers = []
 
+    for output in outputs:
+        answer = output.outputs[0].text
+        if args.structured_outputs:
+            try:
+                parsed_answer = json.loads(answer)
+                answers.append(parsed_answer)
+            except JsonDecodeError:
+                answers.append(answer)
+        else:
+            answers.append(answer)
     return compile_outputs(queries, answers)
 
-def compile_outputs(queries: list[dict], answers: list[str]):
+def compile_outputs(queries: list[dict], answers: list[str] | list[dict]):
     results = []
     for item, answer in zip(queries, answers):
         if isinstance(answer, dict):
@@ -193,7 +218,7 @@ def compile_outputs(queries: list[dict], answers: list[str]):
             "difficulty": item["difficulty"],
         }
 
-        if reasoning_content:
+        if reasoning_content is not None:
             result.update({"answer_reasoning": reasoning_content})
 
         results.append(result)
@@ -204,14 +229,12 @@ def run_qa(args, retrieval_results):
     for per_persona_results in retrieval_results:
         if args.backend == "vllm":
             if args.online:
-                if online_kwargs.get('model') is None:
-                    online_kwargs['model'] = model_kwargs.pop('model')
-                per_persona_llm_results = generate_answer_online(per_persona_results, **online_kwargs)
+                per_persona_llm_results = generate_answer_online(per_persona_results, **model_kwargs)
             else:
                 per_persona_llm_results = generate_answers_vllm(
                     per_persona_results, generation_kwargs, sampling_params
                 )
-        else:
+        elif args.backend == 'openai':
             per_persona_llm_results = generate_answer_online(
                 per_persona_results, **model_kwargs
             )
@@ -235,7 +258,7 @@ if __name__ == "__main__":
     if args.backend == "vllm":
         kwargs = load_config(args.llm_config, use_online_inference=args.online)
         if args.online:
-            model_kwargs, client_params, online_kwargs = kwargs
+            client_params, model_kwargs = kwargs
         elif isinstance(kwargs, tuple):
             if len(kwargs) == 2:
                 model_kwargs, sampling_params = kwargs
@@ -254,9 +277,11 @@ if __name__ == "__main__":
             llm = OpenAI(api_key="EMPTY", base_url=base_url)
         else:
             llm: LLM = load_vllm(**model_kwargs)
-    else:
+    elif args.backend == 'openai':
         model_kwargs = load_config(args.llm_config)
         llm: Client = OpenAI()
+    else:
+        raise ValueError(f"Invalid backend: {args.backend}")
 
     dataset_name = args.retrieval_dir.split('/')[-1]
     results_dir = f"results/naive/question_answering/{exp_name}/{dataset_name}/"

@@ -269,16 +269,22 @@ mem_template_with_prev = """[{}]
         User: {}
         Assistant: {}"""
 
-def load_config(config_file, use_online_inference: bool = False):
+def load_config(config_file, use_online_inference: bool = False, is_evaluation: bool = False):
     with open(f"configs/naive/{config_file}", "r") as file:
-        kwargs = yaml.safe_load(file)
+        kwargs: dict = yaml.safe_load(file)
 
+    if is_evaluation:
+      evaluation_kwargs = kwargs.pop("evaluation_args")
+      client_params = evaluation_kwargs.pop("client_params")
+      common_params = evaluation_kwargs.pop("common_params")
+      return client_params, common_params
+    
     model_kwargs = kwargs.pop("model_kwargs")
     if use_online_inference:
         online_args = kwargs.pop("online_args")
         client_params = online_args.get("client_params")
         online_kwargs = online_args.get("common_params")
-        return model_kwargs, client_params, online_kwargs
+        return client_params, online_kwargs
     if kwargs.get('sampling_params'):
         sampling_params = kwargs.pop("sampling_params")
         return model_kwargs, sampling_params

@@ -1,9 +1,11 @@
 EXP_NUM=$2
 BACKEND=$3
 DATASET=$5
-WITH_PRIOR_QUESTION=$4
+ONLINE=$4
+WITH_PRIOR_QUESTION=$5
 
 # CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_naive.sh ${BACKEND} ${DATASET} ${WITH_PRIOR_QUESTION}
+CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND} ${ONLINE}
 
 HEALTH_TIMEOUT=300
 HEALTH_INTERVAL=5
@@ -40,7 +42,6 @@ if [[ $3 == "vllm" ]]; then
     VLLM_PID=$!
 
     if wait_for_server 8000 "gpt-oss-120b"; then
-	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND};
 	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND};
     fi
 

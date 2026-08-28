@@ -26,15 +26,15 @@
   import os
 
   scores_dir = "../../scores/naive/"
-  def load_score(exp_dir):
-      dired = scores_dir + f"{exp_dir}/"
+  scores_path = scores_dir + "{exp_dir}/medium/"
+  def load_score(score_path):
       memory_type = {"bm25", "embeddings", "hybrid"}
-      score_files = os.listdir(dired)
+      score_files = os.listdir(score_path)
       scores = {}
       for score_file in score_files:
-          model, dataset, mem_type = score_file.split('_')[:3]
+          mem_type = score_file.split('_')[0]
           if mem_type in memory_type:
-              with open(dired + score_file, "r") as file:
+              with open(score_path + score_file, "r") as file:
                   scores[mem_type] = json.load(file)
       return scores
       
@@ -42,9 +42,9 @@
       exp_scores = {}
       per_persona_results = {}
       for exp_dir in os.listdir(scores_dir):
-          score_path = scores_dir + exp_dir
+          score_path = scores_path.format(exp_dir=exp_dir)
           if os.path.isdir(score_path) and (not exp_dir.startswith('_')):
-              scores = load_score(exp_dir)
+              scores = load_score(score_path)
               if scores:
                   exp_scores[exp_dir] = {
                       key: {
@@ -57,7 +57,7 @@
 
   def make_table(scores: dict):
       score_tables = {}
-      exps = ["exp%d" % i for i in range(5, 13)]
+      exps = ['exp1']
       for exp in exps:
           exp_num = exp[-2:] if exp[-2:].isdigit() else exp[-1]
           exp_num = int(exp_num)
@@ -84,6 +84,25 @@
 #+end_src
 
 #+RESULTS: make-table
+*** 결과
+**** BM25
+
+|              |   Correct |   Hallucination |   Omission |
+|--------------+-----------+-----------------+------------|
+| Experiment 1 |     57.87 |           24.68 |      17.45 |
+
+**** Embeddings
+
+|              |   Correct |   Hallucination |   Omission |
+|--------------+-----------+-----------------+------------|
+| Experiment 1 |     51.06 |           28.94 |      20.00 |
+
+**** Hybrid
+
+|              |   Correct |   Hallucination |   Omission |
+|--------------+-----------+-----------------+------------|
+| Experiment 1 |     57.16 |           28.79 |      14.04 |
+
 *** 결과
 **** BM25
 
@@ -134,15 +153,15 @@
   import os
 
   scores_dir = "../../scores/naive/"
-  def load_score(exp_dir):
-      dired = scores_dir + f"{exp_dir}/"
+  scores_path = scores_dir + "{exp_dir}/medium/"
+  def load_score(score_path):
       memory_type = {"bm25", "embeddings", "hybrid"}
-      score_files = os.listdir(dired)
+      score_files = os.listdir(score_path)
       scores = {}
       for score_file in score_files:
-          model, dataset, mem_type = score_file.split('_')[:3]
+          mem_type = score_file.split('_')[0]
           if mem_type in memory_type:
-              with open(dired + score_file, "r") as file:
+              with open(score_path + score_file, "r") as file:
                   scores[mem_type] = json.load(file)
       return scores
 
@@ -150,9 +169,9 @@
       exp_scores = {}
       per_persona_results = {}
       for exp_dir in os.listdir(scores_dir):
-          score_path = scores_dir + exp_dir
+          score_path = scores_path.format(exp_dir=exp_dir)
           if os.path.isdir(score_path) and (not exp_dir.startswith('_')):
-              scores = load_score(exp_dir)
+              scores = load_score(score_path)
               if scores:
                   exp_scores[exp_dir] = {
                       key: {
@@ -167,9 +186,9 @@
       exp_scores = {}
       per_persona_results = {}
       for exp_dir in os.listdir(scores_dir):
-          score_path = scores_dir + exp_dir
+          score_path = scores_path.format(exp_dir=exp_dir)
           if os.path.isdir(score_path) and (not exp_dir.startswith('_')):
-              scores = load_score(exp_dir)
+              scores = load_score(score_path)
               if scores:
                   exp_scores[exp_dir] = {
                       key: value.pop('per_persona_results')
@@ -215,7 +234,7 @@
 
   scores = load_scores(scores_dir)
   tables = ["*** 결과"]
-  exps = ["exp%d" % i for i in range(5, 13)]
+  exps = ["exp1"]
   for exp in exps:
       exp_num = exp[-2:] if exp[-2:].isdigit() else exp[-1]
       name = "Experiment %s" % exp_num    
@@ -226,6 +245,7 @@
           mem_type = memory_type.capitalize() if memory_type in {"hybrid", "embeddings"} else memory_type.upper()
           df = per_type_results_df(result)
           df = df.sort_values(by="Total", ascending=False)
+          df = df.fillna(0)        
           sum_df = df.sum(axis=0)
           df.loc["Total"] = sum_df.to_dict()
           table = tabulate(df, headers='keys', tablefmt='orgtbl')
@@ -236,362 +256,48 @@
 
 #+RESULTS: label-dist-table
 *** 결과
-**** Experiment 5
-***** Overall scores
-
-| Retrieval Type | Correct | Hallucination | Omission |
-|----------------+---------+---------------+----------|
-| BM25           |   42.84 |         17.45 |    39.72 |
-| Embeddings     |   37.45 |         21.84 |    40.71 |
-| Hybrid         |   39.29 |         20.00 |    40.71 |
-
-***** BM25
-
-|                              | Correct | Hallucination | Omission | Total |
-|------------------------------+---------+---------------+----------+-------|
-| Memory Boundary              |     113 |            21 |       28 |   162 |
-| Memory Conflict              |      77 |             9 |       67 |   153 |
-| Basic Fact Recall            |      71 |            29 |       52 |   152 |
-| Generalization & Application |      31 |            37 |       81 |   149 |
-| Multi-hop Inference          |       6 |            11 |       33 |    50 |
-| Dynamic Update               |       4 |            16 |       19 |    39 |
-| Total                        |     302 |           123 |      280 |   705 |
-
-***** Embeddings
-
-|                              | Correct | Hallucination | Omission | Total |
-|------------------------------+---------+---------------+----------+-------|
-| Memory Boundary              |     118 |            16 |       28 |   162 |
-| Memory Conflict              |      70 |            11 |       72 |   153 |
-| Basic Fact Recall            |      37 |            54 |       61 |   152 |
-| Generalization & Application |      31 |            40 |       78 |   149 |
-| Multi-hop Inference          |       3 |            14 |       33 |    50 |
-| Dynamic Update               |       5 |            19 |       15 |    39 |
-| Total                        |     264 |           154 |      287 |   705 |
-
-***** Hybrid
-
-|                              | Correct | Hallucination | Omission | Total |
-|------------------------------+---------+---------------+----------+-------|
-| Memory Boundary              |      92 |            36 |       34 |   162 |
-| Memory Conflict              |      69 |            14 |       70 |   153 |
-| Basic Fact Recall            |      64 |            37 |       51 |   152 |
-| Generalization & Application |      42 |            24 |       83 |   149 |
-| Multi-hop Inference          |       6 |            11 |       33 |    50 |
-| Dynamic Update               |       4 |            19 |       16 |    39 |
-| Total                        |     277 |           141 |      287 |   705 |
-
-**** Experiment 6
+**** Experiment 1
 ***** Overall scores
 
 | Retrieval Type   |   Correct |   Hallucination |   Omission |
 |------------------+-----------+-----------------+------------|
-| BM25             |     45.82 |           15.89 |      38.30 |
-| Embeddings       |     37.87 |           21.28 |      40.85 |
-| Hybrid           |     40.43 |           21.56 |      38.01 |
+| BM25             |     57.87 |           24.68 |      17.45 |
+| Embeddings       |     51.06 |           28.94 |      20.00 |
+| Hybrid           |     57.16 |           28.79 |      14.04 |
 
 ***** BM25
 
 |                              |   Correct |   Hallucination |   Omission |   Total |
 |------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       108 |              21 |         33 |     162 |
-| Memory Conflict              |        86 |               9 |         58 |     153 |
-| Basic Fact Recall            |        78 |              26 |         48 |     152 |
-| Generalization & Application |        43 |              27 |         79 |     149 |
-| Multi-hop Inference          |         4 |              13 |         33 |      50 |
-| Dynamic Update               |         4 |              16 |         19 |      39 |
-| Total                        |       323 |             112 |        270 |     705 |
+| Memory Boundary              |       131 |              31 |          0 |     162 |
+| Memory Conflict              |       116 |              20 |         17 |     153 |
+| Basic Fact Recall            |        86 |              35 |         31 |     152 |
+| Generalization & Application |        56 |              46 |         47 |     149 |
+| Multi-hop Inference          |        14 |              20 |         16 |      50 |
+| Dynamic Update               |         5 |              22 |         12 |      39 |
+| Total                        |       408 |             174 |        123 |     705 |
 
 ***** Embeddings
 
 |                              |   Correct |   Hallucination |   Omission |   Total |
 |------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       109 |              18 |         35 |     162 |
-| Memory Conflict              |        85 |               7 |         61 |     153 |
-| Basic Fact Recall            |        43 |              56 |         53 |     152 |
-| Generalization & Application |        23 |              36 |         90 |     149 |
-| Multi-hop Inference          |         4 |              16 |         30 |      50 |
-| Dynamic Update               |         3 |              17 |         19 |      39 |
-| Total                        |       267 |             150 |        288 |     705 |
+| Memory Boundary              |       143 |              19 |          0 |     162 |
+| Memory Conflict              |       108 |              20 |         25 |     153 |
+| Basic Fact Recall            |        55 |              65 |         32 |     152 |
+| Generalization & Application |        39 |              55 |         55 |     149 |
+| Multi-hop Inference          |        11 |              22 |         17 |      50 |
+| Dynamic Update               |         4 |              23 |         12 |      39 |
+| Total                        |       360 |             204 |        141 |     705 |
 
 ***** Hybrid
 
 |                              |   Correct |   Hallucination |   Omission |   Total |
 |------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |        96 |              34 |         32 |     162 |
-| Memory Conflict              |        76 |              17 |         60 |     153 |
-| Basic Fact Recall            |        64 |              30 |         58 |     152 |
-| Generalization & Application |        39 |              37 |         73 |     149 |
-| Multi-hop Inference          |         7 |              11 |         32 |      50 |
-| Dynamic Update               |         3 |              23 |         13 |      39 |
-| Total                        |       285 |             152 |        268 |     705 |
+| Memory Boundary              |       127 |              35 |          0 |     162 |
+| Memory Conflict              |       118 |              19 |         16 |     153 |
+| Basic Fact Recall            |        85 |              49 |         18 |     152 |
+| Generalization & Application |        55 |              45 |         49 |     149 |
+| Multi-hop Inference          |        14 |              25 |         11 |      50 |
+| Dynamic Update               |         4 |              30 |          5 |      39 |
+| Total                        |       403 |             203 |         99 |     705 |
 
-**** Experiment 7
-***** Overall scores
-
-| Retrieval Type   |   Correct |   Hallucination |   Omission |
-|------------------+-----------+-----------------+------------|
-| BM25             |     60.99 |           21.56 |      17.45 |
-| Embeddings       |     52.77 |           23.83 |      23.40 |
-| Hybrid           |     61.99 |           26.10 |      11.91 |
-
-***** BM25
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       129 |              21 |         12 |     162 |
-| Memory Conflict              |       117 |              20 |         16 |     153 |
-| Basic Fact Recall            |        89 |              34 |         29 |     152 |
-| Generalization & Application |        77 |              36 |         36 |     149 |
-| Multi-hop Inference          |        13 |              20 |         17 |      50 |
-| Dynamic Update               |         5 |              21 |         13 |      39 |
-| Total                        |       430 |             152 |        123 |     705 |
-
-***** Embeddings
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       135 |              20 |          7 |     162 |
-| Memory Conflict              |        96 |              28 |         29 |     153 |
-| Basic Fact Recall            |        55 |              48 |         49 |     152 |
-| Generalization & Application |        62 |              44 |         43 |     149 |
-| Multi-hop Inference          |        18 |              13 |         19 |      50 |
-| Dynamic Update               |         6 |              15 |         18 |      39 |
-| Total                        |       372 |             168 |        165 |     705 |
-
-***** Hybrid
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       127 |              28 |          7 |     162 |
-| Memory Conflict              |       111 |              27 |         15 |     153 |
-| Basic Fact Recall            |        91 |              48 |         13 |     152 |
-| Generalization & Application |        85 |              38 |         26 |     149 |
-| Multi-hop Inference          |        17 |              21 |         12 |      50 |
-| Dynamic Update               |         6 |              22 |         11 |      39 |
-| Total                        |       437 |             184 |         84 |     705 |
-
-**** Experiment 8
-***** Overall scores
-
-| Retrieval Type   |   Correct |   Hallucination |   Omission |
-|------------------+-----------+-----------------+------------|
-| BM25             |     62.70 |           21.42 |      15.89 |
-| Embeddings       |     54.75 |           21.28 |      23.97 |
-| Hybrid           |     60.85 |           23.40 |      15.74 |
-
-***** BM25
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       137 |              19 |          6 |     162 |
-| Memory Conflict              |       114 |              22 |         17 |     153 |
-| Basic Fact Recall            |        89 |              36 |         27 |     152 |
-| Generalization & Application |        81 |              36 |         32 |     149 |
-| Multi-hop Inference          |        15 |              20 |         15 |      50 |
-| Dynamic Update               |         6 |              18 |         15 |      39 |
-| Total                        |       442 |             151 |        112 |     705 |
-
-***** Embeddings
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       141 |              12 |          9 |     162 |
-| Memory Conflict              |       101 |              24 |         28 |     153 |
-| Basic Fact Recall            |        58 |              46 |         48 |     152 |
-| Generalization & Application |        66 |              41 |         42 |     149 |
-| Multi-hop Inference          |        14 |              11 |         25 |      50 |
-| Dynamic Update               |         6 |              16 |         17 |      39 |
-| Total                        |       386 |             150 |        169 |     705 |
-
-***** Hybrid
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       125 |              25 |         12 |     162 |
-| Memory Conflict              |       114 |              24 |         15 |     153 |
-| Basic Fact Recall            |        86 |              41 |         25 |     152 |
-| Generalization & Application |        71 |              37 |         41 |     149 |
-| Multi-hop Inference          |        24 |              15 |         11 |      50 |
-| Dynamic Update               |         9 |              23 |          7 |      39 |
-| Total                        |       429 |             165 |        111 |     705 |
-
-**** Experiment 9
-***** Overall scores
-
-| Retrieval Type   |   Correct |   Hallucination |   Omission |
-|------------------+-----------+-----------------+------------|
-| BM25             |     41.99 |           16.74 |      41.28 |
-| Embeddings       |     34.18 |           22.27 |      43.55 |
-| Hybrid           |     40.85 |           19.86 |      39.29 |
-
-***** BM25
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       104 |              22 |         36 |     162 |
-| Memory Conflict              |        75 |               7 |         71 |     153 |
-| Basic Fact Recall            |        71 |              27 |         54 |     152 |
-| Generalization & Application |        36 |              35 |         78 |     149 |
-| Multi-hop Inference          |         6 |              13 |         31 |      50 |
-| Dynamic Update               |         4 |              14 |         21 |      39 |
-| Total                        |       296 |             118 |        291 |     705 |
-
-***** Embeddings
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |        99 |              18 |         45 |     162 |
-| Memory Conflict              |        70 |              14 |         69 |     153 |
-| Basic Fact Recall            |        44 |              55 |         53 |     152 |
-| Generalization & Application |        20 |              44 |         85 |     149 |
-| Multi-hop Inference          |         4 |               9 |         37 |      50 |
-| Dynamic Update               |         4 |              17 |         18 |      39 |
-| Total                        |       241 |             157 |        307 |     705 |
-
-***** Hybrid
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |        89 |              36 |         37 |     162 |
-| Memory Conflict              |        81 |               9 |         63 |     153 |
-| Basic Fact Recall            |        62 |              35 |         55 |     152 |
-| Generalization & Application |        44 |              36 |         69 |     149 |
-| Multi-hop Inference          |         7 |               9 |         34 |      50 |
-| Dynamic Update               |         5 |              15 |         19 |      39 |
-| Total                        |       288 |             140 |        277 |     705 |
-
-**** Experiment 10
-***** Overall scores
-
-| Retrieval Type   |   Correct |   Hallucination |   Omission |
-|------------------+-----------+-----------------+------------|
-| BM25             |     40.71 |           20.14 |      39.15 |
-| Embeddings       |     36.88 |           20.85 |      42.27 |
-| Hybrid           |     40.43 |           18.87 |      40.71 |
-
-***** BM25
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       108 |              17 |         37 |     162 |
-| Memory Conflict              |        73 |              13 |         67 |     153 |
-| Basic Fact Recall            |        68 |              41 |         43 |     152 |
-| Generalization & Application |        29 |              43 |         77 |     149 |
-| Multi-hop Inference          |         5 |              13 |         32 |      50 |
-| Dynamic Update               |         4 |              15 |         20 |      39 |
-| Total                        |       287 |             142 |        276 |     705 |
-
-***** Embeddings
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       107 |              21 |         34 |     162 |
-| Memory Conflict              |        77 |               9 |         67 |     153 |
-| Basic Fact Recall            |        42 |              52 |         58 |     152 |
-| Generalization & Application |        26 |              40 |         83 |     149 |
-| Multi-hop Inference          |         4 |              11 |         35 |      50 |
-| Dynamic Update               |         4 |              14 |         21 |      39 |
-| Total                        |       260 |             147 |        298 |     705 |
-
-***** Hybrid
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |        85 |              32 |         45 |     162 |
-| Memory Conflict              |        85 |               9 |         59 |     153 |
-| Basic Fact Recall            |        69 |              33 |         50 |     152 |
-| Generalization & Application |        36 |              30 |         83 |     149 |
-| Multi-hop Inference          |         5 |              12 |         33 |      50 |
-| Dynamic Update               |         5 |              17 |         17 |      39 |
-| Total                        |       285 |             133 |        287 |     705 |
-
-**** Experiment 11
-***** Overall scores
-
-| Retrieval Type   |   Correct |   Hallucination |   Omission |
-|------------------+-----------+-----------------+------------|
-| BM25             |     65.39 |           19.86 |      14.75 |
-| Embeddings       |     53.62 |           24.40 |      21.99 |
-| Hybrid           |     62.70 |           24.82 |      12.48 |
-
-***** BM25
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       146 |              12 |          4 |     162 |
-| Memory Conflict              |       119 |              19 |         15 |     153 |
-| Basic Fact Recall            |        91 |              33 |         28 |     152 |
-| Generalization & Application |        85 |              34 |         30 |     149 |
-| Multi-hop Inference          |        14 |              22 |         14 |      50 |
-| Dynamic Update               |         6 |              20 |         13 |      39 |
-| Total                        |       461 |             140 |        104 |     705 |
-
-***** Embeddings
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       137 |              20 |          5 |     162 |
-| Memory Conflict              |        97 |              30 |         26 |     153 |
-| Basic Fact Recall            |        59 |              48 |         45 |     152 |
-| Generalization & Application |        63 |              40 |         46 |     149 |
-| Multi-hop Inference          |        16 |              14 |         20 |      50 |
-| Dynamic Update               |         6 |              20 |         13 |      39 |
-| Total                        |       378 |             172 |        155 |     705 |
-
-***** Hybrid
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       136 |              23 |          3 |     162 |
-| Memory Conflict              |       110 |              27 |         16 |     153 |
-| Basic Fact Recall            |        88 |              45 |         19 |     152 |
-| Generalization & Application |        79 |              41 |         29 |     149 |
-| Multi-hop Inference          |        21 |              14 |         15 |      50 |
-| Dynamic Update               |         8 |              25 |          6 |      39 |
-| Total                        |       442 |             175 |         88 |     705 |
-
-**** Experiment 12
-***** Overall scores
-
-| Retrieval Type   |   Correct |   Hallucination |   Omission |
-|------------------+-----------+-----------------+------------|
-| BM25             |     63.55 |           20.71 |      15.74 |
-| Embeddings       |     53.90 |           24.96 |      21.13 |
-| Hybrid           |     62.98 |           24.82 |      12.20 |
-
-***** BM25
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       139 |              15 |          8 |     162 |
-| Memory Conflict              |       115 |              21 |         17 |     153 |
-| Basic Fact Recall            |        91 |              33 |         28 |     152 |
-| Generalization & Application |        81 |              41 |         27 |     149 |
-| Multi-hop Inference          |        17 |              16 |         17 |      50 |
-| Dynamic Update               |         5 |              20 |         14 |      39 |
-| Total                        |       448 |             146 |        111 |     705 |
-
-***** Embeddings
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       138 |              20 |          4 |     162 |
-| Memory Conflict              |       100 |              26 |         27 |     153 |
-| Basic Fact Recall            |        51 |              54 |         47 |     152 |
-| Generalization & Application |        70 |              44 |         35 |     149 |
-| Multi-hop Inference          |        16 |              15 |         19 |      50 |
-| Dynamic Update               |         5 |              17 |         17 |      39 |
-| Total                        |       380 |             176 |        149 |     705 |
-
-***** Hybrid
-
-|                              |   Correct |   Hallucination |   Omission |   Total |
-|------------------------------+-----------+-----------------+------------+---------|
-| Memory Boundary              |       133 |              24 |          5 |     162 |
-| Memory Conflict              |       110 |              31 |         12 |     153 |
-| Basic Fact Recall            |        90 |              40 |         22 |     152 |
-| Generalization & Application |        81 |              39 |         29 |     149 |
-| Multi-hop Inference          |        23 |              16 |         11 |      50 |
-| Dynamic Update               |         7 |              25 |          7 |      39 |
-| Total                        |       444 |             175 |         86 |     705 |
