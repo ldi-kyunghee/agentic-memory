@@ -1,12 +1,11 @@
+GPU=$1
 EXP_NUM=$2
 BACKEND=$3
 DATASET=$4
 ONLINE=$5
 WITH_PRIOR_QUESTION=$6
 
-# CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_naive.sh ${BACKEND} ${DATASET} ${WITH_PRIOR_QUESTION}
-CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND} ${ONLINE}
-
+# CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_naive.sh ${BACKEND} ${DATASET} ${WITH_PRIOR_QUESTION}
 HEALTH_TIMEOUT=300
 HEALTH_INTERVAL=5
 
@@ -33,8 +32,12 @@ wait_for_server() {
     return 1
 }
 
-if [[ $3 == "vllm" ]]; then
-    CUDA_VISIBLE_DEVICES=$1 uv run vllm serve \
+if [[ ${ONLINE} != true ]]; then
+    CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND} ${ONLINE};
+fi
+
+if [[ ${BACKEND} == "vllm" ]]; then
+    CUDA_VISIBLE_DEVICES=${GPU} uv run vllm serve \
 			    openai/gpt-oss-120b \
 			    --port 8000 \
 			    --quantization mxfp4 \
@@ -42,12 +45,16 @@ if [[ $3 == "vllm" ]]; then
     VLLM_PID=$!
 
     if wait_for_server 8000 "gpt-oss-120b"; then
-	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND};
+	if [[ ${ONLINE} == true ]]; then
+	    CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND} ${ONLINE};
+	fi
+	
+	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND};
     fi
 
     kill -15 $VLLM_PID
 
 else
-    CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
-    CUDA_VISIBLE_DEVICES=$1 bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
+    CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
+    CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
 fi
