@@ -1,182 +1,210 @@
 #+title: Retrieval 방법 비교 및 분석
 #+startup: shrink inlineimages
-* 배경
-5번, 7번 실험 위주로 분석하고자 합니다. 실험 세팅은 아래와 같습니다.
+* Naive 메모리 vs Mem0 비교
+먼저 BM25가 멤제로보다 더 잘 하는 케이스부터 분석해 보고 그 반대인 케이스를 살펴 봅니다. 마지막에, 답이 비슷했어도 llm-as-a-Judge가 다르게 평가하는 샘플도 확인해 봅니다.
 
-#+NAME: experiment-settings
-| Experiment | Model        | Dataset | QA Context |
-|------------+--------------+---------+------------|
-|          5 | gpt-oss-120b | medium  | X          |
-|          7 | gpt-5-mini   | medium  | X          |
+모델 분포 등 변수를 없애버리도록, 같은 모델의 결과를 비교해 보고, BM25 경우, Mem0의 세팅을 최대하게 맞추어 봐서 실험해 보았습니다. 같은 모델 유지하면 직관적으로는 =retrieved_memory= 만 달라 부일치한 결과 나타난 원인은 (원칙적으로) 아래와 같다고 생각합니다.
+1. Naive memory 혹은 agentic memory (혹은 둘다)로써 뽑게 된 문서는 질문과 관련성이 적거나 질문의 핵심은 아예 포함되지 않기 때문
+2. 문서 순서에 따라 'lost-in-the-middle' 발생하는 것
+3. 관련 문서를 잘 골랐어도, 노이즈처럼 포함된 별로 관련없는 문서로써 답변을 생각하며, 할루시네이션 발생하기 때문
 
-** 결과 정리
-*** Experiment 5
-- Overall scores
-   #+NAME: exp5-scores
-   | Retrieval Type | Correct | Hallucination | Omission |
-   |----------------+---------+---------------+----------|
-   | BM25           |   42.84 |         17.45 |    39.72 |
-   | Embeddings     |   37.45 |         21.84 |    40.71 |
-   | Hybrid         |   39.29 |         20.00 |    40.71 |
-
-- BM25
-   #+NAME: exp5-bm25
-   |                              | Correct | Hallucination | Omission | Total |
-   |------------------------------+---------+---------------+----------+-------|
-   | Memory Boundary              |     113 |            21 |       28 |   162 |
-   | Memory Conflict              |      77 |             9 |       67 |   153 |
-   | Basic Fact Recall            |      71 |            29 |       52 |   152 |
-   | Generalization & Application |      31 |            37 |       81 |   149 |
-   | Multi-hop Inference          |       6 |            11 |       33 |    50 |
-   | Dynamic Update               |       4 |            16 |       19 |    39 |
-   | Total                        |     302 |           123 |      280 |   705 |
-
-- Embedding
-   #+NAME: exp5-embedding
-   |                              | Correct | Hallucination | Omission | Total |
-   |------------------------------+---------+---------------+----------+-------|
-   | Memory Boundary              |     118 |            16 |       28 |   162 |
-   | Memory Conflict              |      70 |            11 |       72 |   153 |
-   | Basic Fact Recall            |      37 |            54 |       61 |   152 |
-   | Generalization & Application |      31 |            40 |       78 |   149 |
-   | Multi-hop Inference          |       3 |            14 |       33 |    50 |
-   | Dynamic Update               |       5 |            19 |       15 |    39 |
-   | Total                        |     264 |           154 |      287 |   705 |
-
-- Hybrid
-   #+NAME: exp5-hybrid
-   |                              | Correct | Hallucination | Omission | Total |
-   |------------------------------+---------+---------------+----------+-------|
-   | Memory Boundary              |      92 |            36 |       34 |   162 |
-   | Memory Conflict              |      69 |            14 |       70 |   153 |
-   | Basic Fact Recall            |      64 |            37 |       51 |   152 |
-   | Generalization & Application |      42 |            24 |       83 |   149 |
-   | Multi-hop Inference          |       6 |            11 |       33 |    50 |
-   | Dynamic Update               |       4 |            19 |       16 |    39 |
-   | Total                        |     277 |           141 |      287 |   705 |
-
-*** Experiment 7
-- Overall scores
-   #+NAME: exp7-scores
-   | Retrieval Type | Correct | Hallucination | Omission |
-   |----------------+---------+---------------+----------|
-   | BM25           |   60.99 |         21.56 |    17.45 |
-   | Embeddings     |   52.77 |         23.83 |    23.40 |
-   | Hybrid         |   61.99 |         26.10 |    11.91 |
-
-- BM25
-   #+NAME: exp7-bm25
-   |                              | Correct | Hallucination | Omission | Total |
-   |------------------------------+---------+---------------+----------+-------|
-   | Memory Boundary              |     129 |            21 |       12 |   162 |
-   | Memory Conflict              |     117 |            20 |       16 |   153 |
-   | Basic Fact Recall            |      89 |            34 |       29 |   152 |
-   | Generalization & Application |      77 |            36 |       36 |   149 |
-   | Multi-hop Inference          |      13 |            20 |       17 |    50 |
-   | Dynamic Update               |       5 |            21 |       13 |    39 |
-   | Total                        |     430 |           152 |      123 |   705 |
-
-- Embeddings
-   #+NAME: exp7-embedding
-   |                              | Correct | Hallucination | Omission | Total |
-   |------------------------------+---------+---------------+----------+-------|
-   | Memory Boundary              |     135 |            20 |        7 |   162 |
-   | Memory Conflict              |      96 |            28 |       29 |   153 |
-   | Basic Fact Recall            |      55 |            48 |       49 |   152 |
-   | Generalization & Application |      62 |            44 |       43 |   149 |
-   | Multi-hop Inference          |      18 |            13 |       19 |    50 |
-   | Dynamic Update               |       6 |            15 |       18 |    39 |
-   | Total                        |     372 |           168 |      165 |   705 |
-
-- Hybrid
-   #+NAME: exp7-hybrid
-   |                              | Correct | Hallucination | Omission | Total |
-   |------------------------------+---------+---------------+----------+-------|
-   | Memory Boundary              |     127 |            28 |        7 |   162 |
-   | Memory Conflict              |     111 |            27 |       15 |   153 |
-   | Basic Fact Recall            |      91 |            48 |       13 |   152 |
-   | Generalization & Application |      85 |            38 |       26 |   149 |
-   | Multi-hop Inference          |      17 |            21 |       12 |    50 |
-   | Dynamic Update               |       6 |            22 |       11 |    39 |
-   | Total                        |     437 |           184 |       84 |   705 |
-
-** 패턴
-#+name: mean-distribution
-#+begin_src python :results output file link :file "figs/per-memory-type-mean-distribution-plot.png" :exports results :tangle "case_study/plot_per_memory_type_distribution.py" :mkdirp yes
-  import matplotlib.pyplot as plt
-  import numpy as np
-  import json
-  import os
-
-  RETRIEVAL_TYPES = {"bm25": "BM25", "embeddings": "Embedding", "hybrid": "Hybrid"}
-  results_dir = "result_files/"
-
-  def load_results_stats(result_type: str = 'Correct'):
-      memory_type_len = {
-          "Memory Boundary": 162,
-          "Memory Conflict": 153,
-          "Basic Fact Recall": 152,
-          "Generalization & Application": 149,
-          "Multi-hop Inference": 50,
-          "Dynamic Update": 39
-      }
-
-      exp_paths = ['exp1']
-      per_memory_type_results = {}
-      for retrieval_type, retrieval_type_name in RETRIEVAL_TYPES.items():
-          exps_dir = results_dir + retrieval_type
-          exps_paths = os.listdir(exps_dir)
-          for exp in exps_paths:
-              if int(exp.removeprefix('exp')) in exps:
-                  result_dir = f"{exps_dir}/{exp}/"
-                  for memory_type in memory_type_len.keys():
-                      if per_memory_type_results.get(memory_type) is None:
-                          per_memory_type_results[memory_type] = {}
-                      if per_memory_type_results[memory_type].get(retrieval_type_name) is None:
-                          per_memory_type_results[memory_type][retrieval_type_name] = 0
-
-                      result_path = result_dir + f"{memory_type}.json"
-                      with open(result_path, 'r') as file:
-                          data = json.load(file)
-
-                      if isinstance(data[result_type], list):
-                          result_count = len(data[result_type])
-                      else:
-                          if data[result_type] == np.nan:
-                              result_count = 0
-                      per_memory_type_results[memory_type][retrieval_type_name] += result_count
-                      
-      per_memory_type_results = {
-          key: {
-              k: (v / len(list(exps))) / memory_type_len[key]
-              for k, v in value.items()
-          }
-          for key, value in per_memory_type_results.items()
-      }
-      return per_memory_type_results
-
-  fig, axes = plt.subplots(2, 3, figsize=(36, 18))
-  for i, model in enumerate(["gpt-oss-120b", "gpt-5-mini"]):
-      for j, result_label in enumerate(["Correct", "Hallucination", "Omission"]):
-          per_memory_type_results_dict = load_results_stats(model, result_label)
-          memory_types = list(per_memory_type_results_dict.keys())
-
-          results = {
-              retrieval_type: [per_memory_type_results_dict[memory_type][retrieval_type] for memory_type in memory_types]
-              for retrieval_type in ["BM25", "Embedding", "Hybrid"]
-          } 
-         
-          axes[i][j].grouped_bar(results, tick_labels=memory_types)
-          axes[i][j].set_title(f"{model} ({result_label})", fontsize=18)
-          axes[i][j].legend()
-
-  plt.suptitle(t="Result Distribution Per Memory Type", verticalalignment='baseline', fontsize=20)
-  plt.tight_layout()
-  os.makedirs("figs", exist_ok=True)
-
-  plt.savefig("figs/per-memory-type-mean-distribution-plot.png")
-  print("figs/per-memory-type-mean-distribution-plot.png")
+** BM25 Mem0보다 더 잘 하는 케이스
+예시 1
+#+begin_src json
+  {
+      "Question": "What is Martin's friend's name whose Golden Retriever he interacted with on Jan 06, 2026?",
+      "Reference": "The name of Martin's friend is not provided.",
+      "BM25": "Not provided.",
+      "Mem0": "ThomasSusan"
+  }
 #+end_src
 
-#+RESULTS: mean-distribution
-[[file:figs/per-memory-type-mean-distribution-plot.png]]
+예시 1에서, Mem0가 틀렸으나 BM25 맞는 것으로 답변하는 케이스입니다. Dialogue에서 마틴의 친구 이름이 언급되지 않아 BM25로 retrieval해봐도 못 찾는 거라 맞습니다. Mem0도 retrieved documents에서도 관련 메모리에서 마틴의 친구가 언급되지 않습니다만, 뽑은 context에서:
+#+begin_src json
+  {
+      "context": "Sep 05, 2025, 22:32:20: ThomasSusan is a friend",
+  }
+#+end_src
+관련성 5위로 나타나, 상황과 적절하지 않아도 "connecting the dots"으로 친구 이름은 ThomasSusan이라고 답변하는 모양입니다.
+- 즉, 2025년 기준, 마틴은 ThomasSusan이라는 친구가 있다는 걸 알고 있어, 2026년에도 당연히 아직도 친구일거고 dialogue 혹은 관련 context (아래 참고)에서 친구 이름이 없길래 모델은 알고있는 유일한 친구인 ThomasSusan이라고 대충 답변하는 모양입니다.
+   #+begin_src json
+     {
+         "context": "Jan 06, 2026, 17:48:59: Interacted with a friend's Golden Retriever and found its adaptability impressive",
+     }
+   #+end_src
+
+   심지어, Mem0 경우 reasoning trace 같은 것 없어 본인의 리즈닝인데, 저렇다고 판단하는 이유는 노이지한 답변 생성으로 인해 망하던 실험에서 LLM은 "문서에서 딱히 언급되지 않았다"라고 맞게 검토했어도 답변이 없을리가 없다는 마인드로 드디어 LLM은 "그냥 ㅇㅇ라고 대충 답하자" 하는 버릇이 있는 것으로 확인하였습니다.
+
+** Mem0 Naive보다 더 잘 하는 케이스
+BM25, 엠베딩과 하이브리드는 다 inference 관련 질문에 어려워 합니다.
+즉, 명확히 언급되지 않고 대신에 속은 의미 혹은 결론을 내려야 하는 질문에 retrieval하기는 어려워 합니다.
+
+예시: BM25
+#+begin_src json
+  {
+    "question": "What is Martin Mark's current mental health status as of Mar 10, 2029?",
+    "generated_answer": "Mentally stable and positive.",
+    "reference": "Abnormal",
+    "retrieved": [
+      {
+        "memory_content": "[Feb 13, 2029, 11:39:45]\n        User: Thank you for all the insights and support.\n        Assistant: You're very welcome, Martin. It's always a pleasure to support you on your journey. Remember, your willingness to explore and adapt is a powerful tool in achieving your goals and enhancing your well-being. I'm here to assist you every step of the way, whether it's finding new movie recommendations or exploring other areas of interest.",
+        "score": 0.5079001137533496
+      },
+      {
+        "memory_content": "[Apr 10, 2026, 11:21:58]\n        User: Thanks! It's nice to have this kind of support and encouragement.\n        Assistant: You're welcome, Martin. Support and encouragement are crucial as you navigate these changes. Remember, your social connections, like those fostered through extreme sports, can also provide valuable insights and camaraderie.",
+        "score": 0.49889129476883864
+      },
+      {
+        "memory_content": "[Mar 01, 2026, 08:08:10]\n        User: I'm ready to take on new challenges and opportunities.\n        Assistant: Taking on new challenges and opportunities is an exciting prospect, Martin. Your readiness to embrace them, supported by your strong network and newfound balance, will undoubtedly lead to personal and professional growth. As you continue to leverage your creativity and humanitarian care goals, you'll inspire and innovate in ways that make a lasting impact.",
+        "score": 0.47666642255796865
+      },
+      {
+        "memory_content": "[Mar 01, 2026, 09:34:00]\n        User: The support I've received has been instrumental in my success.\n        Assistant: Support from your network has indeed been instrumental in your success, Martin. Their insights and encouragement have empowered you to transition to a role that aligns with your values and goals. As you continue to pursue your humanitarian care and artistic endeavors, their support will be a valuable asset in helping you achieve your aspirations.",
+        "score": 0.47264094005157453
+      },
+      {
+        "memory_content": "[Mar 01, 2026, 08:21:28]\n        User: I'm excited to see where this new path will lead me.\n        Assistant: Your excitement for the journey ahead is inspiring, Martin. This new path, supported by your humanitarian care and artistic goals, will lead you to new opportunities for growth and impact. Embrace the possibilities and continue to leverage your creativity and insights to inspire change in the healthcare sector.",
+        "score": 0.4725741657603568
+      }
+    ],
+    "evidence": [
+      {
+        "memory_content": "Martin Mark's mental health status changed from 'Mildly Abnormal' to 'Abnormal' due to increased stress from his promotion to Senior Director.",
+        "memory_type": "Event Memory"
+      }
+    ],
+    "question_type": "Dynamic Update",
+    "difficulty": "easy",
+    "answer_reasoning": "The most recent memory (Feb 13 2029) shows Martin expressing gratitude for support and the assistant noting his willingness to explore, adapt, and enhance his well-being. Earlier memories (2026) also describe excitement, readiness, and instrumental support, all indicating a positive, stable mental state. Therefore, as of March 10 2029, Martin\u2019s mental health is stable and positive.",
+    "result_type": "Hallucination",
+    "is_valid": true,
+    "id": 78
+  },
+#+end_src
+
+데이터셋에서 관련 utterance는 아래와 같습니다.
+#+begin_src json
+  [
+      {
+  	'role': 'user',
+  	'content': "I've been feeling quite overwhelmed lately since my promotion to Senior Director. The demands of my new role have intensified, leading to increased stress and impacting my mental well-being.",
+  	'timestamp': 'Mar 10, 2029, 06:05:32',
+  	'dialogue_turn': 0
+      },
+      {
+  	'role': 'assistant',
+  	'content': "It's understandable that transitioning into a Senior Director role can bring about significant changes in both workload and expectations. Your concern about the increased stress levels is valid, and it's crucial to address this to maintain your overall health. I recall you mentioned that while your physical health remains stable due to your active lifestyle, your mental health has been impacted. Exploring stress management strategies that align with your humanitarian care goals could be beneficial. Have you considered activities like yoga and meditation, which can offer both relaxation and mental clarity? Additionally, I remember you expressed a desire to explore stress-reducing activities like hiking and painting as well.",
+  	'timestamp': 'Mar 10, 2029, 06:05:32',
+  	'dialogue_turn': 0
+      }
+  ]
+#+end_src
+
+이 부분:
+#+begin_quote
+"The demands of my new role have intensified, leading to increased stress and impacting my mental well-being."
+#+end_quote
+으로써 마틴의 정신건강은 별로 안 좋다고 판단할 수 있으나, 키워드 기준인 BM25는 관련 메모리를 뽑지 못 한 것 같고, 엠베딩 경우는 이론적으로 잘 잡았어야 하지만, 문서를 보니까, 모든 메모리는 'support'가 들어가 있더니 나름 'support', 'supportive' 등 의미에 편견이 있을 수도 있다고 생각합니다.
+
+** Judge LLM 일관성 문제
+비교하다보니, LLM은 =Correct= 과 =Omission= 분리하여 평가하기에 어려워 합니다.
+
+평가 모델: gpt-oss-120b (naive과 agentic 모델 비교 같음)
+#+begin_src json
+  {
+      "Question": "Did Martin Mark work as a nurse at Huaxin Consulting on Sep 06, 2025?",
+      "Reference": "No, Martin Mark is a director at Huaxin Consulting.",
+      "BM25": "No, he was a director.", # 평가 결과: Correct
+      "Mem0": "No, he is a director.", # 평가 결과: Omission
+  }
+#+end_src
+
+윗 샘플을 보시다시피, 시제를 제외 두 답변은 *똑같았어도* 평가 레이블은 다르게 나타났습니다.
+
+** 데이터셋 문제
+이 샘플은 naive memory와 agentic memory는 둘다 맞지만 reference가 틀렸더니 hallucination으로 분리되는 샘플입니다.
+#+begin_src json
+  {
+      "Question": "What was Martin Mark's salary as a director at Huaxin Consulting?",
+      "Reference": "Unknown",
+      "BM25": "USD15,700 per month",
+      "Mem0": "USD15,700 per month",
+  }
+#+end_src
+
+심지어 세션별 dialogue에서 director로서의 월급은 언급되어 있습니다 (=****= 표시).
+#+begin_src json
+    {
+        "memory_content": "[Sep 05, 2025, 22:35:55]\n        User: I am currently Employed, working in the healthcare industry. **I work at Huaxin Consulting as a director. My monthly income is 15700 USD**, and I currently have 43700 USD in savings. As the director at Huaxin Consulting, I lead initiatives to enhance healthcare services and promote well-being across all aspects of life. My passion for improving health outcomes drives me to innovate and collaborate with various stakeholders. The financial compensation is rewarding, allowing me to save comfortably while investing in my personal and professional growth.\n        Assistant: How is your health condition?",
+    }
+#+end_src
+
+마찬가지로, 다음 샘플에서도 reference에서 언급되지 않은 활동은 generated_answer에 있더니 evidence 있어도 hallucination으로 레이블링되었습니다.
+#+begin_src json
+  {
+    "question": "What stress management activities has Martin Mark incorporated into his routine by Jun 15, 2029?",
+    "generated_answer": "Yoga, meditation, painting.",
+    "reference": "Yoga and meditation",
+    "retrieved": [
+      {
+        "memory_content": "[Apr 10, 2026, 11:21:58]\n        User: Thanks! It's nice to have this kind of support and encouragement.\n        Assistant: You're welcome, Martin. Support and encouragement are crucial as you navigate these changes. Remember, your social connections, like those fostered through extreme sports, can also provide valuable insights and camaraderie.",
+        "score": 0.5764038844251635
+      },
+      {
+        "memory_content": "[Jun 15, 2029, 17:47:34]\n        Assistant:  How do you integrate these creative activities into your busy schedule?\n        User: I make sure to allocate specific times for these activities, ensuring they fit into my schedule without overwhelming it.\n        Assistant: That's a very strategic approach, Martin. Allocating specific times for creative activities like painting ensures that they are a consistent part of your routine without becoming overwhelming. This method of setting clear boundaries is an excellent way to manage stress and maintain balance. It's impressive how you've been able to maintain this discipline, even amidst the demands of your role. How do you feel this approach has contributed to your overall well-being and performance as Senior Director?",
+        "score": 0.5709897704589088
+      },
+      {
+        "memory_content": "[Jun 15, 2029, 17:12:50]\n        User: Since becoming the Senior Director, I've been working on managing stress and responsibilities more effectively. It's been quite a journey.\n        Assistant: It's great to hear you're focusing on managing stress and responsibilities in your role as Senior Director, Martin. Balancing such significant responsibilities can be challenging, but it's impressive how you've started to stabilize and find your footing. I've noticed that incorporating stress-reducing activities like yoga and meditation has been beneficial for you. It's interesting how these practices help maintain a balance between work and personal well-being. However, I also remember you mentioning how sometimes the lines between work and personal time can blur, leading to increased stress. How do you manage to set those boundaries effectively?",
+        "score": 0.5670935566144893
+      },
+      {
+        "memory_content": "[Jun 15, 2029, 17:36:11]\n        Assistant:  Have you explored any new creative outlets recently that have helped you manage stress effectively?\n        User: **I've been exploring painting as a creative outlet. It's been a refreshing way to unwind and manage stress**.\n        Assistant: Painting sounds like a wonderful creative outlet, Martin. Engaging in such activities can be incredibly therapeutic and a great way to unwind. It's fascinating how these creative pursuits not only help manage stress but also stimulate your imagination and creativity, which are essential in your role. Additionally, I've heard that running and cycling can also be effective stress relievers, although painting seems to be your current focus. How do you integrate these creative activities into your busy schedule?",
+        "score": 0.5621799862233974
+      },
+      {
+        "memory_content": "[Feb 13, 2029, 11:39:45]\n        User: Thank you for all the insights and support.\n        Assistant: You're very welcome, Martin. It's always a pleasure to support you on your journey. Remember, your willingness to explore and adapt is a powerful tool in achieving your goals and enhancing your well-being. I'm here to assist you every step of the way, whether it's finding new movie recommendations or exploring other areas of interest.",
+        "score": 0.554860169803931
+      }
+    ],
+    "result_type": "Hallucination"
+  }
+#+end_src
+
+** 기타
+
+*** 답변 생성에서 발생한 할루시네이션
+세팅: gpt-oss-120b, =k=5=
+#+begin_src json
+  {
+    "question": "Did Martin express a dislike for horror films on February 13, 2029?",
+    "generated_answer": "Yes, he expressed dislike.",
+    "reference": "No, Martin expressed excitement about exploring horror films.",
+    "question_type": "Memory Conflict",
+    "answer_reasoning": "On Feb 13, 2029 at 11:01:56, Martin said he dislikes horror films.",
+    "result_type": "Hallucination",
+    "retrieved": [
+      {
+        "memory_content": "[Feb 13, 2029, 10:51:39]\n        User: I recently attended a film festival and watched a horror film that was just incredible. It had such a gripping plot and the suspense was masterful.\n        Assistant: That sounds fascinating, Martin! It's intriguing to hear that your movie preferences are evolving to include horror films, especially since they can provide such a unique adrenaline rush and storytelling experience. It's interesting how you are balancing the thrill of horror films with maintaining a positive mindset. This reminds me of how you've also discussed balancing your evolving preferences for comedy films in a similar way, ensuring they contribute positively to your overall well-being.",
+        "score": 20.23890495300293
+      },
+      {
+        "memory_content": "[Sep 06, 2025, 23:54:28]\n        User: I like documentaries because they are informative and provide real-world insights, which complement my thirst for knowledge. I dislike horror films, I avoid horror films because they can be disturbing and detract from the positive mindset I strive to maintain. I dislike slasher films, because slasher films are too violent for my taste, and I prefer movies that offer meaningful narratives.\n        Assistant: Thank you for sharing. I remember your Movie Preference preferences. This information is very helpful for me to understand you.",
+        "score": 20.20780372619629
+      },
+      {
+        "memory_content": "[Feb 13, 2029, 11:01:56]\n        User: I'm definitely looking for horror films with compelling narratives that balance thrill with maintaining a positive mindset. Any recommendations?\n        Assistant: Absolutely, I can suggest some horror films that are known for their compelling narratives and balance of thrill. Films like 'A Quiet Place' and 'The Others' are critically acclaimed for their suspenseful storytelling without overwhelming negativity. It's similar to how you've sought out comedy films that provide laughter and joy without detracting from your positive mindset. This balance is key in ensuring that your leisure activities complement your lifestyle goals.",
+        "score": 18.1518497467041
+      },
+      {
+        "memory_content": "[Feb 13, 2029, 10:52:58]\n        User: Yes, the film really captivated me. I'm actually excited to explore more horror films. I think they could offer a unique form of relaxation and mental stimulation.\n        Assistant: Exploring horror films as a form of relaxation is a great way to address personal limitations in finding stimulating leisure activities. It aligns well with your compensatory motivation. You seem to be seeking new ways to unwind, much like how your interest in comedy films has evolved to provide a similar balance of thrill and positivity. It's wonderful to see how you're integrating these new experiences into your life.",
+        "score": 18.013301849365234
+      },
+      {
+        "memory_content": "[Feb 13, 2029, 11:20:12]\n        User: I'm excited to see where this journey of exploration takes me.\n        Assistant: That's a wonderful attitude, Martin. Your journey of exploration is sure to lead to exciting new discoveries and personal growth. As you continue to explore horror films and other new interests, you'll find that each step brings you closer to achieving your life goals and enhancing your overall quality of life.",
+        "score": 17.969337463378906
+      }
+    ]
+  }
+#+end_src
+- 윗샘플에서 retrieval에서 관련 메모리를 잘 뽑았어도 (5개 중 4개 맞음), 굳이 오래된 메모리의 날짜를 할루시네이션해서 최종 답변은 틀렸음
