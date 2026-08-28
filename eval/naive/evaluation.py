@@ -347,7 +347,7 @@ def main(args, max_workers: int = 10):
             )
 
     elif args.backend == 'openai':
-        model_kwargs, online_kwargs = load_config(args.config_file, use_online_inference=True)
+        model_kwargs, client_params, online_kwargs = load_config(args.config_file, use_online_inference=True)
         os.environ['OPENAI_MODEL'] = model_kwargs['model']
         eval_fn = partial(llm_judge_eval, model=model_kwargs['model'], max_workers=max_workers, **online_kwargs)
 
