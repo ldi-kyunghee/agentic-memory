@@ -100,12 +100,12 @@ def qdrant_store(
         collection_name: str
 ):
     queries = [qa["question"] for qa in qas]
-    
+
     if embed_model is not None:
         corpus_embeddings, query_embeddings = embed_offline(queries, memories)
     else:
         corpus_embeddings, query_embeddings = None, None
-        
+
     ids = [i for i in range(len(memories))]
 
     payloads = [
@@ -165,7 +165,7 @@ def qdrant_retrieve(
 ):
 
     using = args.memory_type
-    
+
     if args.memory_type == 'hybrid':
         prefetch_queries = [
             [
@@ -186,7 +186,7 @@ def qdrant_retrieve(
 
         model_queries = [models.FusionQuery(fusion=models.Fusion.RRF)] * len(prefetch_queries)
         using = None
-        
+
     elif args.memory_type == 'embeddings':
         model_queries = [
             query_embedding
@@ -194,7 +194,7 @@ def qdrant_retrieve(
         ]
 
         prefetch_queries = [None] * len(model_queries)
-        
+
     else:
         model_queries = [
             models.Document(
@@ -218,7 +218,7 @@ def qdrant_retrieve(
 
         retrieved_memories = [query_result.payload['document'] for query_result in query_results]
         scores = [query_result.score for query_result in query_results]
-        
+
         results.append([
             {
                 "memory_content": retrieved_memory,
@@ -226,7 +226,7 @@ def qdrant_retrieve(
             }
             for retrieved_memory, score in zip(retrieved_memories, scores)
         ])
-        
+
     return results
 
 def qdrant_retrieval(
@@ -254,10 +254,10 @@ def qdrant_retrieval(
         result['retrieved'] = docs
         results.append(result)
     return results
-    
+
 def run_retrieval(args, dataset):
     retrieval_results = []
-    k = args.top_k if args.memory_type != 'hybrid' else None
+    k = args.top_k
 
     qdrant_config = {}
     if args.memory_type == 'hybrid':
@@ -275,19 +275,18 @@ def run_retrieval(args, dataset):
         qdrant_config["sparse_vectors_config"] = {
             args.memory_type: models.SparseVectorParams(modifier=models.Modifier.IDF)
         }
-            
+
     for i, persona in enumerate(dataset):
         qas, per_persona_memories = per_persona_dataset(
             persona, args.memory_with_prior_question
         )
-        k = len(per_persona_memories) if k is None else k
         collection_name = f"{proj_name}_{i}"
-             
+
         client.create_collection(
             collection_name=collection_name,
             **qdrant_config
         )
-        
+
         per_persona_results = qdrant_retrieval(
             qas, per_persona_memories, collection_name=collection_name, k=k
         )
@@ -314,7 +313,7 @@ if __name__ == "__main__":
 
     proj_name = "naive-mem"
     client = QdrantClient(":memory:")
-    
+
     retrieval_results = run_retrieval(args, dataset)
 
     if embed_model is not None:
