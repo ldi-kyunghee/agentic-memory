@@ -1,15 +1,58 @@
-BACKEND=$1
-DATASET=$2
+GPU=$1
+EXP_NUM=$2
+BACKEND=$3
+DATASET=$4
+ONLINE=$5
 
-uv run eval/naive/naive_memory.py --top_k 5 --memory_with_prior_question $3 --n_persona 4 --dataset ${DATASET} --memory_type bm25
+HEALTH_TIMEOUT=300
+HEALTH_INTERVAL=5
 
-uv run eval/naive/naive_memory.py --top_k 5 --memory_with_prior_question $3 --embed_config embed_config.yaml --n_persona 4 --dataset ${DATASET} --memory_type embeddings
+DATASET_TYPE=$(python -c "import sys; dataset = sys.argv[1]; print(dataset.split('.')[0].split('-')[-1].lower())" "${DATASET}")
 
-uv run eval/naive/naive_memory.py --top_k 5 --memory_with_prior_question $3 --memory_type hybrid --embed_config embed_config.yaml --n_persona 4 --dataset ${DATASET}
+wait_for_server() {
+    local port=$1
+    local name=$2
+    local elapsed=0
+    echo "Waiting for $name on port $port ..."
+    while [ $elapsed -lt $HEALTH_TIMEOUT ]; do
+        if curl -s "http://localhost:$port/health" >/dev/null 2>&1; then
+            echo "$name is ready on port $port (took ${elapsed}s)"
+            return 0
+        fi
+        if curl -s "http://localhost:$port/v1/models" >/dev/null 2>&1; then
+            echo "$name is ready on port $port via /v1/models (took ${elapsed}s)"
+            return 0
+        fi
+        sleep $HEALTH_INTERVAL
+        elapsed=$((elapsed + HEALTH_INTERVAL))
+    done
+    echo "ERROR: $name failed to start on port $port after ${HEALTH_TIMEOUT}s"
+    return 1
+}
 
-uv run eval/naive/naive_memory.py --top_k 10 --memory_with_prior_question $3 --n_persona 4 --dataset ${DATASET} --memory_type bm25
+if [[ ${ONLINE} != true ]]; then
+    CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND} ${ONLINE};
+fi
 
-uv run eval/naive/naive_memory.py --top_k 10 --memory_with_prior_question $3 --embed_config embed_config.yaml --n_persona 4 --dataset ${DATASET} --memory_type embeddings
+if [[ ${BACKEND} == "vllm" ]]; then
+    CUDA_VISIBLE_DEVICES=${GPU} uv run vllm serve \
+			    openai/gpt-oss-120b \
+			    --port 8000 \
+			    --quantization mxfp4 \
+			    > "gpt-oss-120b.log" 2>&1 &
+    VLLM_PID=$!
 
-uv run eval/naive/naive_memory.py --top_k 10 --memory_with_prior_question $3 --memory_type hybrid --embed_config embed_config.yaml --n_persona 4 --dataset ${DATASET}
+    if wait_for_server 8000 "gpt-oss-120b"; then
+	if [[ ${ONLINE} == true ]]; then
+	    CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND} ${ONLINE};
+	fi
+	
+	OPENAI_BASE_URL="http://localhost:8000/v1" CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND};
+    fi
 
+    kill -15 $VLLM_PID
+
+else
+    CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_qa.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
+    CUDA_VISIBLE_DEVICES=${GPU} bash scripts/naive/run_eval.sh ${EXP_NUM} ${DATASET_TYPE} ${BACKEND}
+fi
