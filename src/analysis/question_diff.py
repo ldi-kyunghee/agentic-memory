@@ -1,13 +1,13 @@
-"""시스템 간 문항 단위 불일치 드릴 도구. 종합 분석(docs/synthesis/analysis-plan.md)의
+"""시스템 간 문항 단위 대조 도구. 종합 분석(docs/synthesis/analysis-plan.md)의
 1·2단계용임. runs.yaml 의 by_system 경로를 그대로 읽으므로 등록된 산출물만 보임.
 
   matrix: 문항 단위 시스템 점수표 + 격차 상위 목록 (+ --dump 로 전량 jsonl)
   show:   문항 하나를 시스템별로 나란히 펼침 (질문·기준·답변·판정)
 
 실행 (서버, 읽기 전용):
-  uv run --project src/web-dashboard python src/analysis/drill.py \
+  uv run --project src/web-dashboard python src/analysis/question_diff.py \
       matrix --bench beam --setting 100k-beamprompt --cutoff 50 --top 20
-  uv run --project src/web-dashboard python src/analysis/drill.py \
+  uv run --project src/web-dashboard python src/analysis/question_diff.py \
       show --bench memora --setting weekly --key "weekly_content_writer|q12"
 """
 import argparse
