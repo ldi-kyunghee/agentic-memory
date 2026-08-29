@@ -953,6 +953,27 @@ def _halumem_aggregate(paths: list) -> dict:
     return aggregate_eval_results(ev)
 
 
+# HaluMem 논문의 QA 문항 분류 (judge 산출물의 question_type 필드). 공식 집계 함수는
+# 이 분해를 안 주므로 QA 레코드에서 직접 센다. 판정은 C/H/O 셋뿐이라 비율 = 건수/전체.
+def _halumem_qa_by_type(paths: list) -> dict:
+    out: dict = {}
+    for path in paths:
+        with open(path, encoding="utf-8") as fh:
+            u = json.load(fh)
+        for r in u.get("question_answering_records") or []:
+            t = r.get("question_type") or "(미분류)"
+            s = out.setdefault(t, {"c_n": 0, "h_n": 0, "o_n": 0, "n": 0})
+            s["n"] += 1
+            k = {"Correct": "c_n", "Hallucination": "h_n", "Omission": "o_n"}.get(r.get("result_type"))
+            if k:
+                s[k] += 1
+    for s in out.values():
+        valid = s["c_n"] + s["h_n"] + s["o_n"]
+        for a, b in (("c", "c_n"), ("h", "h_n"), ("o", "o_n")):
+            s[a] = s[b] / valid if valid else None
+    return out
+
+
 _hm_cache: dict = {}
 
 
@@ -999,10 +1020,11 @@ def api_halumem(scale: str = "20u"):
     key = (scale, tuple(sorted(files)), tuple(sorted(common)),
            tuple(sorted((str(f), f.stat().st_mtime_ns) for v in files.values() for f in v.values())))
     if _hm_cache.get("k") == key:
-        stats = _hm_cache["v"]
+        stats, qat = _hm_cache["v"]
     else:
         stats = {sk: _halumem_aggregate([files[sk][u] for u in sorted(common)]) for sk in files}
-        _hm_cache.update(k=key, v=stats)
+        qat = {sk: _halumem_qa_by_type([files[sk][u] for u in sorted(common)]) for sk in files}
+        _hm_cache.update(k=key, v=(stats, qat))
 
     rows = []
     for sk, st in stats.items():
@@ -1031,6 +1053,8 @@ def api_halumem(scale: str = "20u"):
                             "acc": v.get("memory_acc"),
                             "n": v.get("total_num")}
                         for k, v in (o.get("memory_type_accuracy") or {}).items()},
+            # QA 문항 분류별 C/H/O. 전체 QA 가 동률이어도 유형별로는 갈릴 수 있다.
+            "qa_by_type": qat.get(sk) or {},
             "stored": o["memory_accuracy"].get("memory_num"),
             "users_total": len(files[sk]),
         })

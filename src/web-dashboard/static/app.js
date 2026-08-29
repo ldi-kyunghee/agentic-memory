@@ -1062,6 +1062,50 @@ function ratioBar(v, good = true) {
   return `<span class="rbar"><i class="${good ? "g" : "b"}" style="width:${w}%"></i></span>`;
 }
 
+/* HaluMem 논문의 QA 문항 분류. 표시 순서와 한 줄 설명 (공식 명칭은 그대로 노출). */
+const HM_QA_TYPES = [
+  ["Basic Fact Recall", "저장된 사실 하나를 그대로 회수하는 문항"],
+  ["Multi-hop Inference", "여러 기억을 이어야 답이 나오는 문항"],
+  ["Dynamic Update", "갱신된 최신 값을 답해야 하는 문항"],
+  ["Memory Boundary", "기억에 없는 것을 모른다고 해야 하는 문항"],
+  ["Memory Conflict", "상충하는 정보 중 맞는 쪽을 골라야 하는 문항"],
+  ["Generalization & Application", "기억을 새 상황에 적용해야 하는 문항"],
+];
+
+/* QA 문항 분류별 C/H/O. 전체 QA 가 동률이어도 유형별로는 갈릴 수 있어서 따로 편다. */
+function hmQaTypeCard(sys) {
+  const have = new Set(sys.flatMap((r) => Object.keys(r.qa_by_type || {})));
+  if (!have.size) return "";
+  const order = [...HM_QA_TYPES.filter(([t]) => have.has(t)),
+                 ...[...have].filter((t) => !HM_QA_TYPES.some(([k]) => k === t)).map((t) => [t, ""])];
+  const fmt = (v) => v == null ? "–" : (v * 100).toFixed(2);
+  return `<div class="card"><div class="hd">질문 유형별 QA <span class="muted">HaluMem 문항 분류</span></div>
+    <div class="body mscroll">
+      <p class="small muted" style="margin:0 0 10px">
+        전체 QA 점수가 비슷해도 <b>어떤 종류의 질문에서 갈리는지</b>는 유형별로만 보입니다.
+        막대는 C/H/O 구성 (초록 = 맞음, 빨강 = 환각, 회색 = 누락).</p>
+      <table class="cmp"><thead><tr><th>질문 유형</th><th>메모리 시스템</th><th style="width:34%">구성</th>
+        <th class="num">맞음</th><th class="num">환각</th><th class="num">누락</th>
+        <th class="num" data-desc="공통 유저 기준 이 유형의 문항 수 (데이터셋 고정이라 시스템 간 동일)">문항</th>
+      </tr></thead><tbody>
+        ${order.map(([t, desc]) => sys.map((r, i) => {
+          const s = r.qa_by_type?.[t];
+          return `<tr data-sysi="${i}">
+            ${i === 0 ? `<td rowspan="${sys.length}" data-desc="${esc(desc)}"><b>${esc(t)}</b></td>` : ""}
+            <td class="syscell">${esc(r.label)}</td>
+            <td>${s ? choBar(s.c, s.h, s.o, `${t} · ${r.label}`) : `<span class="muted">–</span>`}</td>
+            <td class="num"><b>${fmt(s?.c)}</b></td>
+            <td class="num">${fmt(s?.h)}</td>
+            <td class="num">${fmt(s?.o)}</td>
+            ${i === 0 ? `<td rowspan="${sys.length}" class="num muted">${(sys[0].qa_by_type?.[t]?.n ?? 0).toLocaleString()}</td>` : ""}
+          </tr>`;
+        }).join("")).join("")}
+      </tbody></table>
+      <p class="small muted" style="margin-top:8px">유형별 문항 수가 달라(180~828) 작은 유형일수록
+      재실행 편차가 큽니다. 근소한 차이는 순위로 읽지 마세요.</p>
+    </div></div>`;
+}
+
 /* 메모리 유형별. 전체 평균에는 어느 종류에서 무너지는지가 안 보인다. */
 function hmTypeCard(sys) {
   const types = [...new Set(sys.flatMap((r) => Object.keys(r.by_type || {})))];
@@ -1183,6 +1227,7 @@ async function renderHalumem() {
             </tr>`)).join("")}
         </tbody></table>
       </div></div>
+    ${hmQaTypeCard(sys)}
     ${hmTypeCard(sys)}
     <div class="card"><div class="hd">더 파보기</div><div class="body">
       <p class="small muted">이 표는 집계입니다. 개별 세션·문항·검색 결과를 보려면 <b>정성분석</b> 탭으로 가세요.
