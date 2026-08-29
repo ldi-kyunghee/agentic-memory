@@ -78,13 +78,14 @@ def _load_memora(judge_dir):
 
 
 def _load_halumem(judge_dir):
-    """QA 레코드만 문항 단위 조인. (uuid, 질문 원문) 이 조인 키임 (세션 인덱스는
-    시스템 간 어긋날 수 있음)."""
+    """QA 레코드만 문항 단위 조인. 키는 (uuid, session_id, 질문 원문) 임.
+    세션을 빼면 같은 질문 원문이 겹치는 278문항이 조용히 사라짐 (2026-08-29 실측:
+    3,467 중 3,189 만 남고 평균이 63.05 에서 60.08 로 밀림)."""
     rows = {}
     for f in glob.glob(os.path.join(judge_dir, "*.json")):
         d = json.load(open(f, encoding="utf-8"))
         for r in d.get("question_answering_records") or []:
-            key = f'{r["uuid"][:8]}|{r["question"]}'
+            key = f'{r["uuid"][:8]}|s{r.get("session_id")}|{r["question"]}'
             ok = 1.0 if r.get("result_type") == "Correct" else 0.0
             rows[key] = {"score": ok, "label": r.get("result_type"),
                          "question": r.get("question"),
