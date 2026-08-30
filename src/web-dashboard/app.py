@@ -1003,14 +1003,21 @@ def api_halumem(scale: str = "20u"):
             missing.append(sk)
             continue
         files[sk] = {f.stem: f for f in jd.glob("*.json") if f.name != "eval_stat_result.json"}
-        # ⚠ 채점이 도는 중이면 유저가 계속 늘어난다. 그 시점 값을 완료본으로 읽으면 안 된다.
-        #   (2026-08-27 실측: 20유저 런이 채점 중인데 개요가 부분 집계를 확정값처럼 보여줬음)
+
+    # ⚠ 채점이 도는 중이면 유저가 계속 늘어난다. 그 시점 값을 완료본으로 읽으면 안 된다.
+    #   (2026-08-27 실측: 20유저 런이 채점 중인데 개요가 부분 집계를 확정값처럼 보여줬음)
+    #   감지 규칙 둘: ① 최근 15분 내 파일 갱신. ② 같은 규모의 다른 시스템보다 유저가
+    #   적은데 최근 6시간 내 갱신 — LIGHT 처럼 유저당 채점이 80분씩 걸리면 완료 파일
+    #   간격이 15분 창을 넘겨 ①만으로는 부분값이 완료값처럼 보인다 (2026-08-29 실측).
+    maxn = max((len(v) for v in files.values()), default=0)
+    for sk, fv in files.items():
         try:
-            newest = max(f.stat().st_mtime for f in files[sk].values())
-            if _time.time() - newest < 900:
-                running.add(sk)
+            newest = max(f.stat().st_mtime for f in fv.values())
         except ValueError:
-            pass
+            continue
+        age = _time.time() - newest
+        if age < 900 or (len(fv) < maxn and age < 6 * 3600):
+            running.add(sk)
 
     if not files:
         return {"scale": scale, "scales": scales, "ready": False,
