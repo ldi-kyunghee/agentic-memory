@@ -1240,11 +1240,289 @@ async function renderHalumem() {
   wireSystemChips();
 }
 
+/* ---------- 판독 탭: 심층 분석 ----------
+   수치는 /api/synthesis (= src/analysis/{deep_probe,ability_validity}.py 산출물)에서 옴.
+   표본 판독 문장·문제 카드는 docs/synthesis/deep-analysis.md 의 결론을 그대로 옮긴 것임. */
+
+const SYN_SYS = ["mem0-classic", "mem0-v3", "light"];
+const SYN_AB_SHORT = {
+  abstention: "abst", contradiction_resolution: "contra", event_ordering: "event",
+  information_extraction: "extract", instruction_following: "instr",
+  knowledge_update: "k_upd", multi_session_reasoning: "multi",
+  preference_following: "pref", summarization: "summ", temporal_reasoning: "temp",
+};
+const SYN_TRANSFER_VERDICT = {
+  "갱신 반영": ["방향 뒤집힘", true], "모른다고 하기": ["동률 ↔ classic 큰 우위", true],
+  "다중 결합": ["동률 ↔ v3 우위", false], "사실 회수": ["유일하게 이식됨", false],
+  "상충 처리": ["수준 자체가 10배 차이", true],
+};
+
+function synPct(a, b) { return b ? (a / b * 100).toFixed(1) : "–"; }
+
+async function renderSynthesis() {
+  const el = $("#content");
+  softLoading(true, "판독 자료 읽는 중…");
+  let d;
+  try { d = await api("/api/synthesis"); }
+  catch (e) { el.innerHTML = `<p class="muted">판독 자료를 못 읽었습니다: ${esc(e.message || e)}</p>`; return; }
+  if (!d.ready) {
+    el.innerHTML = `<div class="card"><div class="hd">판독</div><div class="body">
+      <p class="muted">분석 산출물이 아직 없습니다. 서버에서 아래를 돌리면 이 화면이 채워집니다.</p>
+      <pre class="small">uv run --project src/web-dashboard python src/analysis/deep_probe.py --scale 20u
+uv run --project eval/light python src/analysis/ability_validity.py</pre></div></div>`;
+    return;
+  }
+  const P = d.probe, V = d.validity;
+  const lab = (k) => systemLabel(k);
+  const sysTh = SYN_SYS.map((s) => `<th class="num">${esc(lab(s))}</th>`).join("");
+
+  /* A1 근거 도달률 */
+  const a1rows = SYN_SYS.map((s, i) => {
+    const r = P.a1[s]; if (!r) return "";
+    return `<tr data-sysi="${i}"><td class="syscell">${esc(lab(s))}</td>
+      <td>${ratioBar(r.n_in / r.n)}</td>
+      <td class="num">${synPct(r.n_in, r.n)}%</td>
+      <td class="num">${synPct(r.in_strict, r.n)}%</td>
+      <td class="num"><b>${synPct(r.c_in, r.n_in)}%</b></td>
+      <td class="num">${synPct(r.c_out, r.n_out)}%</td></tr>`;
+  }).join("");
+
+  /* A2 미끼 */
+  const a2rows = SYN_SYS.map((s, i) => {
+    const r = P.a2[s]; if (!r) return "";
+    const dcy = r.decoy;
+    return `<tr data-sysi="${i}"><td class="syscell">${esc(lab(s))}</td>
+      <td class="num">${synPct(r.decoy_in_ctx, r.decoy_ctx_n)}%</td>
+      <td class="num">${synPct(dcy.Hallucination, dcy.n)}</td>
+      <td class="num">${synPct(dcy.Correct, dcy.n)}</td></tr>`;
+  }).join("");
+
+  /* B1 태깅 */
+  const b1rows = Object.entries(V.b1).map(([t, s]) => `<tr>
+    <td>${esc(t)}</td><td class="num">${synPct(s.multi, s.n)}%</td>
+    <td class="num">${synPct(s.upd, s.n)}%</td>
+    <td class="num muted">${s.n.toLocaleString()}</td></tr>`).join("");
+
+  /* B2 상관 히트맵 + PCA */
+  const abs = V.b2.abilities;
+  const corr = V.b2.corr;
+  const off = [];
+  for (let i = 0; i < abs.length; i++) for (let j = i + 1; j < abs.length; j++) off.push(corr[i][j]);
+  off.sort((a, b) => a - b);
+  const med = off[Math.floor(off.length / 2)];
+  const heat = `<table class="cmp heat"><thead><tr><th></th>
+      ${abs.map((a) => `<th class="num" data-desc="${esc(a)}">${esc(SYN_AB_SHORT[a] || a)}</th>`).join("")}
+    </tr></thead><tbody>
+    ${abs.map((a, i) => `<tr><td data-desc="${esc(a)}"><b>${esc(SYN_AB_SHORT[a] || a)}</b></td>
+      ${abs.map((b, j) => {
+        const v = corr[i][j];
+        const bg = i === j ? "transparent"
+          : v >= 0 ? `rgba(47,158,111,${(v * 0.55).toFixed(2)})` : `rgba(179,64,58,${(-v * 0.55).toFixed(2)})`;
+        return `<td class="num" style="background:${bg}" data-desc="${esc(a)} ↔ ${esc(b)}<br>Spearman ${v.toFixed(3)}">${i === j ? "·" : v.toFixed(2)}</td>`;
+      }).join("")}</tr>`).join("")}
+    </tbody></table>`;
+
+  /* B3 응집 */
+  const b3rows = Object.entries(V.b3.per_type).map(([t, s]) => {
+    const diff = s.within - s.cross;
+    return `<tr><td>${esc(t)}</td><td class="num">${s.within.toFixed(3)}</td>
+      <td class="num">${s.cross.toFixed(3)}</td>
+      <td class="num ${diff < 0 ? "down" : diff > 0.1 ? "up" : ""}">${diff > 0 ? "+" : ""}${diff.toFixed(3)}</td></tr>`;
+  }).join("");
+
+  /* B4 상호작용 */
+  const pairs = Object.keys(V.b4);
+  const b4types = Object.keys(V.b4[pairs[0]].types);
+  const b4rows = b4types.map((t) => `<tr><td>${esc(t)}</td>
+    ${pairs.map((p) => {
+      const r = V.b4[p].types[t];
+      const sig = r.mcnemar_chi2 >= 3.84;
+      return `<td class="num ${sig ? "up" : "muted"}" data-desc="b=${r.b} (앞이 이긴 문항) · c=${r.c} (뒤가 이긴 문항) · McNemar χ²=${r.mcnemar_chi2}">${r.b}:${r.c}${sig ? " ✱" : ""}</td>`;
+    }).join("")}</tr>`).join("");
+  const b4foot = `<tr class="tot-row"><td>Woolf 이질성 Q (임계 11.07)</td>
+    ${pairs.map((p) => {
+      const q = V.b4[p].woolf_Q;
+      return `<td class="num ${q > 11.07 ? "up" : "muted"}"><b>${q.toFixed(1)}</b> ${q > 11.07 ? "이질" : "동질"}</td>`;
+    }).join("")}</tr>`;
+
+  /* B5 이식성 */
+  const f1 = (v) => v == null ? "–" : v.toFixed(1);
+  const b5rows = V.b5.rows.map((r) => {
+    const cell = (arr) => {
+      if (!arr || arr.every((x) => x == null)) return `<td class="num muted">–</td>`;
+      const mx = Math.max(...arr.filter((x) => x != null));
+      return `<td class="num">${arr.map((x) => x != null && x === mx ? `<b>${f1(x)}</b>` : f1(x)).join(" / ")}</td>`;
+    };
+    const [verdict, flip] = SYN_TRANSFER_VERDICT[r.name] || ["", false];
+    return `<tr><td>${esc(r.name)}</td>${cell(r.cols.HaluMem)}${cell(r.cols.BEAM)}${cell(r.cols.Memora)}
+      <td class="${flip ? "down" : "muted"}">${esc(verdict)}</td></tr>`;
+  }).join("");
+
+  /* B6 프롬프트 상호작용 */
+  const b6 = V.b6 || {};
+  const b6row = (p, plab) => b6[p] ? `<tr><td>${esc(plab)}</td>
+    ${SYN_SYS.map((s) => `<td class="num">${b6[p][s] ? b6[p][s].overall.toFixed(2) : "–"}</td>`).join("")}
+    ${SYN_SYS.map((s) => `<td class="num muted">${b6[p][s] ? b6[p][s].abstention.toFixed(1) : "–"}</td>`).join("")}</tr>` : "";
+
+  const stamp = new Date((Math.min(d.probe_mtime || 0, d.validity_mtime || 0)) * 1000);
+
+  el.innerHTML = `
+  <div class="card"><div class="hd">심층 판독 <span class="muted">3 벤치마크 × 3 시스템</span></div>
+    <div class="body">
+      <p class="small muted" style="margin:0 0 10px">수치는 전부 채점 산출물 재분석
+      (추가 인퍼런스 없음, ${esc(stamp.toLocaleDateString())} 계산). 성적표 원본은 각 벤치마크 탭에,
+      전문은 <code>docs/synthesis/deep-analysis.md</code> 에 있습니다.
+      표본 판독(실제 문항을 열어 확인한 것)은 각 절의 문장에 녹였습니다.</p>
+      <ol class="thesisol">
+        <li><b>순위는 "질문이 슬롯에게 무엇을 요구하는가"가 정함.</b> 슬롯에 원문을 담으면(LIGHT)
+          단일 회수가, 원자화한 사실을 담으면(mem0) 전수 열거가 유리함. 세 벤치마크의 역전이
+          이 하나로 대부분 설명됨.</li>
+        <li><b>저장 지표는 태스크를 예측하지 못함.</b> 추출 F1 2.6배 차이가 QA 동률로, 미끼 차단
+          꼴찌가 QA 1등으로 이어짐.</li>
+        <li><b>갱신 채점의 상당 부분은 축자성 검사임.</b> 불일치 표본의 다수가 맞는 내용을 골든
+          표현과 다르게 말해 실패 처리된 것.</li>
+        <li><b>답변 프롬프트가 격차와 순위를 바꿈</b> (같은 투입·같은 검색에서 격차 2.7배).</li>
+        <li><b>질문 유형 분류는 절반만 실재함.</b> 실효 차원 2~3개, 무의미한 라벨 3종.</li>
+        <li><b>비용은 정확도 표의 뒷면임.</b> HaluMem +4.8p = 호출 74배 · 입력 토큰 23배.</li>
+      </ol>
+    </div></div>
+
+  <div class="card"><div class="hd">근거 도달률 <span class="muted">골든 답변 재료가 컨텍스트에 실렸는가 (HaluMem 2,639문항)</span></div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>시스템</th><th style="width:130px"></th>
+        <th class="num" data-desc="골든 답변 토큰의 70% 이상이 컨텍스트에 있음 (관대 매칭)">도달률</th>
+        <th class="num" data-desc="정규화한 골든 답변 문자열이 통째로 있음">축자 포함</th>
+        <th class="num">도달 시 정답</th><th class="num">미도달 시 정답</th></tr></thead>
+      <tbody>${a1rows}</tbody></table>
+      <p class="small muted" style="margin-top:8px"><b>도달했을 때의 정답률은 세 시스템이 64~69%로
+      비슷합니다.</b> 격차는 독해 단계가 만드는 것이 아니고 전달 단계가 만듭니다. 추출은 사실을 바꿔
+      쓰거나 버려 재료의 1/3~절반을 잃고, 원문 반환은 거의 다 실어 나릅니다. 반대 극단이 Memora
+      전수 집계입니다: "커피 총액" 문항 실측에서 같은 50슬롯에 v3(원자화)는 금액 42종,
+      LIGHT(원문)는 26종을 실었고, LIGHT 의 monthly reasoning 은 3.00 까지 내려갔습니다.
+      매칭은 토큰 70% 휴리스틱이라 절대값보다 시스템 간 차이로 읽어야 합니다.</p>
+    </div></div>
+
+  <div class="card"><div class="hd">미끼(interference) 지표와 실제 간섭 <span class="muted">미끼 세션 QA 3,288문항</span></div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>시스템</th>
+        <th class="num" data-desc="같은 유저의 미끼 골든 재료(토큰 70%)가 답변 컨텍스트에 들어간 비율">미끼 재료 유입</th>
+        <th class="num">환각률</th><th class="num">정답률</th></tr></thead>
+      <tbody>${a2rows}</tbody></table>
+      <p class="small muted" style="margin-top:8px">미끼가 컨텍스트에 가장 많이 들어가는 LIGHT 의
+      환각률이 가장 낮습니다. 저장소에 미끼가 남는 것(미끼 차단 지표: classic 58.8 / v3 47.0 /
+      LIGHT 12.2)과 답변이 미끼에 홀리는 것은 다른 사건이고, 답변 LLM 이 질문 관련성으로 스스로
+      거릅니다. 미끼 차단은 미끼를 겨냥한 검색으로 저장소를 찌르는 측정이라 배포 상황의 간섭
+      위험을 과대 표현합니다.</p>
+    </div></div>
+
+  <div class="card"><div class="hd">답변 프롬프트 × 시스템 <span class="muted">BEAM 100K · 같은 투입·같은 검색, 답변 규약만 다름</span></div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>프롬프트</th>${sysTh}
+        ${SYN_SYS.map((s) => `<th class="num muted">${esc(lab(s))}<br>abst</th>`).join("")}</tr></thead>
+      <tbody>${b6row("beam", "BEAM 공식 (답만 간결히)")}${b6row("mem0", "mem0 하네스 (서술형)")}</tbody></table>
+      <p class="small muted" style="margin-top:8px">프롬프트 하나로 classic 대 v3 격차가 +1.9p 에서
+      +5.2p 로 벌어지고 1등이 바뀝니다. 반면 abstention 의 classic 우위는 두 프롬프트 모두
+      유지라 프롬프트 탓이 아닙니다. 절차 변인이 시스템 격차와 같은 자릿수로 움직인다는 실증입니다.</p>
+    </div></div>
+
+  <div class="card"><div class="hd">갱신 채점의 실체 <span class="muted">Dynamic Update 불일치 116/180건 표본 판독</span></div>
+    <div class="body">
+      <p class="small" style="max-width:72ch">낡은 값을 답한 진짜 갱신 실패는 소수였고, 다수는
+      <b>맞는 내용을 골든의 상태 라벨과 다르게 표현해 실패 처리된 것</b>입니다. 골든 "Retired and
+      working as a Mentor and Advisor" 에 "Mentor, retired from active filmmaking" 이 누락 판정,
+      "Executive Director"(회사명 없음)가 누락, "Empowered and optimistic" 이 환각 판정.
+      갱신 골든이 "Abnormal" 같은 상태 라벨이라 채점이 사실상 라벨 재현을 묻고, 그래서 이 유형도
+      원문 보존(LIGHT 49.4)이 이깁니다. 같은 이름의 능력이 벤치마크를 건너면 뒤집히는 것(아래
+      이식성 표)과 정합합니다. 원문 덤프: 서버 <code>/tmp/du_disagreements.txt</code>.</p>
+    </div></div>
+
+  <div class="card"><div class="hd">질문 유형 타당성 ① 요구 태깅 <span class="muted">문항 자체의 요구 (evidence 골든 → 갱신·미끼 조인)</span></div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>유형</th><th class="num">다중 근거율</th>
+        <th class="num">갱신 연루율</th><th class="num">문항</th></tr></thead>
+      <tbody>${b1rows}</tbody></table>
+      <p class="small muted" style="margin-top:8px">Multi-hop 문항의 78.8%가 갱신 연루라 Dynamic
+      Update 와 요구가 겹치고, "기본 회수"조차 65%가 갱신된 값을 묻습니다. 갱신 연루가 전 유형에
+      64~81%로 깔려 있어 어떤 유형도 갱신 능력을 분리해서 재지 못합니다.</p>
+    </div></div>
+
+  <div class="card"><div class="hd">질문 유형 타당성 ② 능력 상관과 차원 <span class="muted">BEAM 조건 ${V.b2.conds.length}벌 × 능력 10종</span></div>
+    <div class="body mscroll">
+      <p class="small muted" style="margin:0 0 8px">PCA 설명분산 PC1
+      <b>${(V.b2.pca_var[0] * 100).toFixed(1)}%</b> · PC2 ${(V.b2.pca_var[1] * 100).toFixed(1)}%
+      (cutoff 접은 판 ${(V.b2.pca_var_folded[0] * 100).toFixed(1)} / ${(V.b2.pca_var_folded[1] * 100).toFixed(1)}) —
+      10개 능력은 사실상 2~3차원입니다. 능력 간 Spearman 상관 중앙 ${med.toFixed(2)},
+      범위 ${off[0].toFixed(2)} ~ ${off[off.length - 1].toFixed(2)}. 초록 = 정상관, 빨강 = 역상관.</p>
+      ${heat}
+    </div></div>
+
+  <div class="card"><div class="hd">질문 유형 타당성 ③ 문항 행동 응집 <span class="muted">100K ${V.b3.n_items}문항 × ${V.b3.n_dims}차원 결과 벡터 · 순열 p=${V.b3.p}</span></div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>능력 라벨</th><th class="num">유형 내 유사도</th>
+        <th class="num">유형 간 유사도</th><th class="num" data-desc="양수 = 같은 라벨 문항끼리 더 비슷하게 행동. 음수 = 라벨이 행동을 설명하지 못함">차이</th></tr></thead>
+      <tbody>${b3rows}</tbody></table>
+      <p class="small muted" style="margin-top:8px">전체로는 유의(+${V.b3.gap.toFixed(3)},
+      p=${V.b3.p})하지만 라벨별로 갈립니다. contradiction · summarization 은 강하게 응집하고,
+      <b>knowledge_update · event_ordering · preference_following 은 음수</b>라 같은 라벨
+      문항끼리가 남남보다 다르게 행동합니다.</p>
+    </div></div>
+
+  <div class="card"><div class="hd">질문 유형 타당성 ④ 시스템 × 유형 상호작용 <span class="muted">HaluMem 3,467문항 · 셀 = b:c (대응 문항 승패)</span></div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>유형</th>
+        ${pairs.map((p) => `<th class="num">${esc(p.replace(/mem0-/g, ""))}</th>`).join("")}</tr></thead>
+      <tbody>${b4rows}${b4foot}</tbody></table>
+      <p class="small muted" style="margin-top:8px">✱ = McNemar χ² ≥ 3.84 (5%). classic 대 v3 는
+      전 유형 동질이라 유형 분해가 아무 정보도 더하지 않고, mem0 대 LIGHT 의 이질성은 대부분
+      Basic Fact Recall 하나에서 옵니다.</p>
+    </div></div>
+
+  <div class="card"><div class="hd">질문 유형 타당성 ⑤ 벤치마크 간 이식성 <span class="muted">같은 이름 능력의 시스템 점수 (classic / v3 / LIGHT)</span></div>
+    <div class="body mscroll">
+      <table class="cmp"><thead><tr><th>능력</th><th class="num">HaluMem</th>
+        <th class="num">BEAM</th><th class="num">Memora</th><th>판정</th></tr></thead>
+      <tbody>${b5rows}</tbody></table>
+      <p class="small muted" style="margin-top:8px">HaluMem 은 유형별 QA C, BEAM 은 100K 공식
+      프롬프트 cutoff 50, Memora 는 task FAMA(weekly+monthly 통합). 이식되는 것은 사실 회수의
+      LIGHT 우위 정도이고, 갱신 반영과 모른다고 하기는 방향이 뒤집힙니다.</p>
+    </div></div>
+
+  <div class="card"><div class="hd">문제 카드 <span class="muted">problem statement + 연구 질문 · 전문은 deep-analysis.md §5</span></div>
+    <div class="body syncards">
+      <div class="pcard"><b>1 · 점수는 "기억력"보다 슬롯 규약을 잰다</b>
+        기억의 보관 형태(원문·원자 사실·요약)와 질문의 요구(단일 회수·전수 열거·시점 판정) 사이의
+        적합성을 1급 변인으로 삼는 평가·설계 이론이 가능한가.</div>
+      <div class="pcard"><b>2 · 저장 지표와 태스크 지표는 분리돼 있다</b>
+        태스크 성능을 실제로 예측하는 저장물의 측정 가능한 속성이 존재하는가. 근거 도달률 같은
+        전달 단계 지표가 그 후보인가.</div>
+      <div class="pcard"><b>3 · 갱신 평가가 갱신을 재지 못한다</b>
+        철회·개정이 실제로 필요한 순간을 만들고, 성패를 표현이 아니라 값의 시점 정합성으로
+        채점하는 평가는 어떻게 설계하는가.</div>
+      <div class="pcard"><b>4 · 점수는 실험 절차의 함수다</b>
+        절차 민감도가 시스템 격차와 같은 자릿수인 분야에서, 무엇을 고정하고 무엇을 함께 보고해야
+        재현 가능한 주장이 되는가.</div>
+      <div class="pcard"><b>5 · 질문 유형 분류는 절반만 실재한다</b>
+        능력 라벨 대신 측정 가능한 요구 속성(근거 수·갱신 연루·시점 제약·열거 범위)으로 벤치마크를
+        명세하면 시스템 비교가 이식 가능해지는가.</div>
+      <div class="pcard"><b>6 · 비용 없는 리더보드는 절반의 표다</b>
+        같은 토큰 예산 아래의 비교가 표준이 되어야 하는가. 시스템마다 다른 투입 단위는 존중할
+        설계 철학인가 통제할 교란인가.</div>
+    </div></div>
+
+  <div class="card"><div class="hd">한계</div><div class="body">
+    <p class="small muted" style="max-width:76ch">전 결론은 gpt-oss-120b(high) 단일 judge 판정 안의
+    상대 비교입니다. 도달률·유입률은 토큰 70% 휴리스틱입니다. LIGHT 의 Memora reasoning 결손에서
+    시간 좌표 몫을 분리하려면 시각 접두 대조군 재실행이 필요합니다. 미채움 칸: v3 BEAM 500K/1M ·
+    LIGHT quarterly · v3 의 Memora/HaluMem 투입 비용(계측 전 런). 재계산:
+    <code>src/analysis/deep_probe.py</code> · <code>src/analysis/ability_validity.py</code>.</p>
+  </div></div>`;
+}
+
 /* ---------- 메인 렌더 ---------- */
 
 /* 벤치마크 탭은 HaluMem 유저 번들과 무관하다. 번들 로딩을 기다리지 않게 먼저 가른다.
    (예전에는 render() 첫 줄의 `if (!S.bundle) return` 이 BEAM·Memora 까지 막고 있었음) */
-const BENCH_TABS = ["overview", "halumem", "beam", "memora", "cost"];
+const BENCH_TABS = ["overview", "halumem", "beam", "memora", "cost", "synthesis"];
 
 /* 렌더러가 #content 를 갈아끼운 뒤 표 상호작용을 다시 건다.
    비동기 렌더러가 많아 렌더 함수마다 부르는 대신 DOM 변화를 보고 건다. */
@@ -1258,7 +1536,8 @@ function render() {
     const fn = S.tab === "overview" ? renderOverview
       : S.tab === "halumem" ? renderHalumem
       : S.tab === "beam" ? renderBeam
-      : S.tab === "cost" ? renderCost : renderMemora;
+      : S.tab === "cost" ? renderCost
+      : S.tab === "synthesis" ? renderSynthesis : renderMemora;
     // ⚠ 렌더러가 죽으면 갱신 알약이 영영 안 걷히고 옛 화면이 그대로 남아, 새 값이 안 뜬 것을
     //   느린 것으로 오해하게 된다. 실패를 화면에 드러낸다.
     Promise.resolve()

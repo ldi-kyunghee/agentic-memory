@@ -887,6 +887,29 @@ def api_unregistered():
     return {"unregistered": out[:40], "total": len(out)}
 
 
+# ── 판독 탭: 심층 분석 산출물 ─────────────────────────────────────────────
+# 계산은 src/analysis/{deep_probe,ability_validity}.py 가 오프라인으로 하고 (GPU·인퍼런스
+# 없음, 산출물 재분석), 화면은 그 json 을 읽기만 함. 요청마다 통계를 돌리지 않음.
+_SYN_FILES = {
+    "probe": ROOT / "results" / "exports" / "deep-probe-halumem.json",
+    "validity": ROOT / "results" / "exports" / "ability-validity.json",
+}
+
+
+@app.get("/api/synthesis")
+def api_synthesis():
+    out = {}
+    for k, p in _SYN_FILES.items():
+        if p.exists():
+            with open(p, encoding="utf-8") as f:
+                out[k] = json.load(f)
+            out[k + "_mtime"] = int(p.stat().st_mtime)
+        else:
+            out[k] = None
+    out["ready"] = all(out.get(k) for k in _SYN_FILES)
+    return out
+
+
 @app.get("/api/systems")
 def api_systems():
     """메모리 시스템 목록 + 벤치마크 세팅별 가용성.

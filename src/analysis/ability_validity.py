@@ -287,6 +287,29 @@ def b5_transfer(cond_ab):
             "memora": memora}
 
 
+# ── B6 답변 프롬프트 × 시스템 상호작용 (100K, 같은 투입·같은 검색) ────────
+def b6_prompt(cond_ab):
+    acc = {}
+    for (sysk, scale, prompt, cut), ab in cond_ab.items():
+        if scale != "100k":
+            continue
+        slot = acc.setdefault(prompt, {}).setdefault(sysk, {"all": [], "abst": []})
+        for a, v in ab.items():
+            slot["all"].extend(v)
+            if a == "abstention":
+                slot["abst"].extend(v)
+    out = {}
+    for p, bysys in acc.items():
+        out[p] = {s: {"overall": round(float(np.mean(d["all"])) * 100, 2),
+                      "abstention": round(float(np.mean(d["abst"])) * 100, 2)}
+                  for s, d in bysys.items()}
+    print("\nB6 프롬프트 × 시스템 (100K 전체 평균):")
+    for p, bysys in out.items():
+        line = " · ".join(f"{s} {v['overall']:.2f}" for s, v in bysys.items())
+        print(f"  {p:5s} {line}")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="results/exports/ability-validity.json")
@@ -298,6 +321,7 @@ def main():
     res["b3"] = b3_coherence(item_vecs)
     res["b4"] = b4_interaction()
     res["b5"] = b5_transfer(cond_ab)
+    res["b6"] = b6_prompt(cond_ab)
     out = R(a.out)
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:

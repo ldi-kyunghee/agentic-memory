@@ -950,3 +950,19 @@ table.hmtbl td.bar { padding: 4px 10px 4px 2px; width: 92px; }
 .chobar i.c { background: var(--ok); }
 .chobar i.h { background: var(--bad); }
 .chobar i.o { background: var(--rule-firm); }
+
+/* ── 판독 탭 ─────────────────────────────────────────────────────────── */
+.thesisol { margin: 6px 0 0; padding-left: 0; list-style: none; counter-reset: syn;
+  display: flex; flex-direction: column; gap: 9px; }
+.thesisol li { counter-increment: syn; display: grid; grid-template-columns: 30px 1fr;
+  gap: 10px; align-items: baseline; max-width: 82ch; }
+.thesisol li::before { content: counter(syn, decimal-leading-zero);
+  font-family: var(--mono, ui-monospace, monospace); font-size: 11px; color: var(--accent);
+  border-top: 2px solid var(--accent); padding-top: 3px; }
+.syncards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.syncards .pcard { border: 1px solid var(--line, #ddd); border-radius: 6px;
+  padding: 12px 14px; font-size: 12.5px; color: var(--muted, #666); line-height: 1.55; }
+.syncards .pcard b { display: block; color: inherit; color: var(--fg, inherit);
+  font-size: 13px; margin-bottom: 5px; }
+table.heat td.num { padding: 3px 7px; font-size: 11.5px; }
+table.heat th.num { font-size: 11px; }
