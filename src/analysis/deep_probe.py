@@ -123,8 +123,15 @@ def main():
                     slot[r["result_type"]] += 1
                 if (u, r.get("session_id")) in decoy_sessions:
                     a2[sk]["decoy_ctx_n"] += 1
-                    ctx = norm(r.get("context") or "")
-                    if any(norm(t) and norm(t) in ctx for t in decoy_texts.get(u, [])):
+                    # 완전일치는 저장 형태(추출문/원문 pair)에 가려 과소평가됨 → 토큰 70% 관대 매칭
+                    ctx_t = toks(r.get("context") or "")
+                    hit = False
+                    for t in decoy_texts.get(u, []):
+                        tt = toks(t)
+                        if tt and len(tt & ctx_t) / len(tt) >= 0.7:
+                            hit = True
+                            break
+                    if hit:
                         a2[sk]["decoy_in_ctx"] += 1
     print(f"\nA2 미끼 영향 (미끼 세션 {len(decoy_sessions)}개):")
     for sk, s in a2.items():
