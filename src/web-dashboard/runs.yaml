@@ -174,10 +174,13 @@ beam:
       ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-500k-mem0prompt
       by_system:
+        mem0-v3:
+          ingest: results/mem0-classic-oss/beam-500k-v3/beam_eval_results.jsonl
+          judge: results/mem0-classic-oss/beam-judge-oss120-500k-v3-mem0prompt
         light:
           ingest: results/light/beam-500k-light/beam_eval_results.jsonl
           judge: results/light/beam-judge-500k-light-mem0prompt
-      note: "35대화 700문항 · 답변 프롬프트 mem0 하네스 (LIGHT 는 같은 투입 위에서 답변만 이 프롬프트로 재생성) · v3 는 500K 투입 자체가 없어 이 자리에 없습니다 · top-200이 항상 꽉 참 (저장소가 예산보다 커서 검색 예산 비교가 성립하는 첫 버킷) · 나머지 세팅은 100K와 동일"
+      note: "35대화 700문항 · 답변 프롬프트 mem0 하네스 (v3·LIGHT 는 같은 투입 위에서 답변만 이 프롬프트로 생성) · top-200이 항상 꽉 참 (저장소가 예산보다 커서 검색 예산 비교가 성립하는 첫 버킷) · 나머지 세팅은 100K와 동일"
     1m:
       label: "1M"
       scale: "1M"
@@ -208,6 +211,9 @@ beam:
       ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-500k
       by_system:
+        mem0-v3:
+          ingest: results/mem0-classic-oss/beam-500k-v3/beam_eval_results.jsonl
+          judge: results/mem0-classic-oss/beam-judge-oss120-500k-v3
         light:
           ingest: results/light/beam-500k-light/beam_eval_results.jsonl
           judge: results/light/beam-judge-500k-light

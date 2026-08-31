@@ -37,6 +37,8 @@ BEAM_DIRS = [
     ("mem0-classic", "1m",   "beam", "results/mem0-classic-oss/beam-judge-oss120-1m"),
     ("mem0-v3",      "100k", "beam", "results/mem0-classic-oss/beam-judge-oss120-100k-v3"),
     ("mem0-v3",      "100k", "mem0", "results/mem0-classic-oss/beam-judge-oss120-100k-v3-mem0prompt"),
+    ("mem0-v3",      "500k", "beam", "results/mem0-classic-oss/beam-judge-oss120-500k-v3"),
+    ("mem0-v3",      "500k", "mem0", "results/mem0-classic-oss/beam-judge-oss120-500k-v3-mem0prompt"),
     ("light",        "100k", "beam", "results/light/beam-judge-100k-light"),
     ("light",        "500k", "beam", "results/light/beam-judge-500k-light"),
     ("light",        "100k", "mem0", "results/light/beam-judge-100k-light-mem0prompt"),
