@@ -966,3 +966,5 @@ table.hmtbl td.bar { padding: 4px 10px 4px 2px; width: 92px; }
   font-size: 13px; margin-bottom: 5px; }
 table.heat td.num { padding: 3px 7px; font-size: 11.5px; }
 table.heat th.num { font-size: 11px; }
+td.partial { color: var(--muted, #777); }
+sup.misssup { color: #b3403a; font-weight: 700; }

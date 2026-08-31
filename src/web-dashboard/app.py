@@ -1235,10 +1235,20 @@ def _cost_index() -> dict:
     """(benchmark, setting, system) -> 배포 비용. 개요 표에 정확도와 나란히 붙이려고 만든다.
 
     ⚠ 계측 안 된 조합은 키를 안 만든다. 화면에서 "없음"과 "0"을 구분해야 하기 때문이다.
+    ⚠ 같은 (벤치, 세팅, 시스템) 키가 여러 디렉토리에서 나오면 **합산한다.** 2026-08-31 전까지는
+      나중 디렉토리가 앞의 것을 조용히 덮어써서, v3 100K 가 투입 포함 12k 에서 답변 재채점분
+      2k 로 뒤바뀌어 보였다.
+    ⚠ BEAM 은 프롬프트 자리 두 개(예: `100k` 와 `100k-beamprompt`)가 **같은 투입을 공유한다.**
+      투입·질의 비용은 실행 시점의 COST_SETTING 하나에만 기록되므로, 여기서 두 자리에 같은
+      공유분을 접합해 준다. 안 하면 투입이 기록된 자리만 비싸 보이고 반대 자리는 답변값만 남아
+      "공짜"처럼 읽힌다 (2026-08-31 실제로 그렇게 읽혔음).
     """
     idx = {}
     if not _COST_ROOT.is_dir():
         return idx
+    import time as _t
+
+    acc: dict = {}   # (bench, setting, system) -> {stage: {...}, backfill: set, updated}
     for d in sorted(_COST_ROOT.iterdir()):
         if not d.is_dir():
             continue
@@ -1246,18 +1256,79 @@ def _cost_index() -> dict:
         if not c or not c["stages"]:
             continue
         m = c["meta"]
-        calls = pt = ct = 0
+        key = (m.get("benchmark", ""), m.get("setting", ""), m.get("system", ""))
+        slot = acc.setdefault(key, {"stages": {}, "backfill": set(), "updated": 0})
+        slot["updated"] = max(slot["updated"], c.get("updated_at") or 0)
         for name, st in c["stages"].items():
+            t = slot["stages"].setdefault(name, {
+                "calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "hist": []})
+            for f in ("calls", "prompt_tokens", "completion_tokens"):
+                t[f] += st[f]
+            h = st.get("hist") or []
+            if len(h) > len(t["hist"]):
+                t["hist"] = t["hist"] + [0] * (len(h) - len(t["hist"]))
+            for i, v in enumerate(h):
+                t["hist"][i] += v
+            if m.get("source"):   # trace/저장답변 되살림 (backfill_*.py 가 source 를 남김)
+                slot["backfill"].add(name)
+
+    def emit(stages: dict, backfill: set, updated: float) -> dict:
+        calls = pt = ct = 0
+        for name, st in stages.items():
             if name == "judge":
                 continue
             calls += st["calls"]; pt += st["prompt_tokens"]; ct += st["completion_tokens"]
-        ans = c["stages"].get("answer") or {}
-        import time as _t
-        idx[(m.get("benchmark", ""), m.get("setting", ""), m.get("system", ""))] = {
+        ans = stages.get("answer") or {}
+        deploy = {k: v for k, v in stages.items() if k != "judge"}
+        return {
             "calls": calls, "tokens": pt + ct, "prompt_tokens": pt, "completion_tokens": ct,
             "ctx_p50": _cost_pct(ans.get("hist") or [], 0.5),
-            "running": (_t.time() - (c.get("updated_at") or 0)) < 600,
+            "running": (_t.time() - updated) < 600,
+            # 단계 커버리지: 화면이 "3k(답변만)" 와 "6k(투입+답변)" 를 구분해 그리는 근거
+            "stages": {k: v["calls"] for k, v in deploy.items()},
+            "missing": [k for k in ("ingest", "answer") if k not in deploy],
+            "backfill": sorted(backfill - {"judge"}),
         }
+
+    # BEAM: (스케일, 시스템) 단위로 투입·질의를 모아 두 프롬프트 자리에 접합
+    beam_groups: dict = {}
+    for (bench, setting, sysk), slot in acc.items():
+        if bench != "beam":
+            idx[(bench, setting, sysk)] = emit(slot["stages"], slot["backfill"], slot["updated"])
+            continue
+        base = setting[:-len("-beamprompt")] if setting.endswith("-beamprompt") else setting
+        beam_groups.setdefault((base, sysk), {}).setdefault(setting, slot)
+
+    for (base, sysk), lanes in beam_groups.items():
+        shared_stages: dict = {}
+        shared_backfill: set = set()
+        shared_updated = 0.0
+        for slot in lanes.values():
+            shared_updated = max(shared_updated, slot["updated"])
+            shared_backfill |= {s for s in slot["backfill"] if s in ("ingest", "query")}
+            for name in ("ingest", "query"):
+                st = slot["stages"].get(name)
+                if not st:
+                    continue
+                t = shared_stages.setdefault(name, {
+                    "calls": 0, "prompt_tokens": 0, "completion_tokens": 0, "hist": []})
+                for f in ("calls", "prompt_tokens", "completion_tokens"):
+                    t[f] += st[f]
+        for lane_setting in (base, f"{base}-beamprompt"):
+            slot = lanes.get(lane_setting)
+            lane_stages = dict(shared_stages)
+            lane_backfill = set(shared_backfill)
+            updated = shared_updated
+            if slot:
+                updated = max(updated, slot["updated"])
+                for name, st in slot["stages"].items():
+                    if name in ("ingest", "query"):
+                        continue
+                    lane_stages[name] = st
+                lane_backfill |= {s for s in slot["backfill"] if s not in ("ingest", "query")}
+            if not lane_stages:
+                continue
+            idx[("beam", lane_setting, sysk)] = emit(lane_stages, lane_backfill, updated)
     return idx
 
 

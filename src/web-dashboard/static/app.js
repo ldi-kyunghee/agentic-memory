@@ -786,12 +786,22 @@ async function renderOverview() {
     ["prompt_tokens", "입력", "프롬프트 토큰. 이 파이프라인들에서 비용의 대부분"],
     ["completion_tokens", "출력", "생성 토큰. 단가가 입력보다 비싼 것이 보통이다"],
   ];
+  const STAGE_KO = { ingest: "투입", query: "질의", answer: "답변" };
   const costCell = (r, k, f) => {
     const c = r.cost?.[k];
     if (!c) return `<td class="num muted na" data-desc="이 조합은 아직 계측 전입니다. <b>0이 아니라 '모름'</b>입니다">·</td>`;
     const v = c[f];
     const run = c.running ? `<br><b>⏳ 아직 수집 중입니다. 완료값이 아닙니다.</b>` : "";
-    return `<td class="num${c.running ? " running" : ""}" data-desc="${esc(systemLabel(k))} · ${esc(r.label)}<br>배포 비용(채점 제외)<br>호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}${run}">${kTok(v)}${c.running ? "<sup>⏳</sup>" : ""}</td>`;
+    // 단계 커버리지. "답변만 3k" 와 "투입+답변 6k" 를 같은 얼굴로 그리면 비교가 깨진다
+    // (2026-08-31: v3 의 투입 미계측 답변값이 classic 의 절반 비용처럼 읽혔음).
+    const stg = c.stages
+      ? `<br>단계: ${Object.entries(c.stages).map(([s, n]) => `${STAGE_KO[s] || s} ${n.toLocaleString()}`).join(" · ")}` : "";
+    const missing = c.missing || [];
+    const miss = missing.length
+      ? `<br><b>⚠ ${missing.map((s) => STAGE_KO[s] || s).join("·")} 미계측</b> — 이 칸은 나머지 단계만 합한 값입니다. 미계측은 0이 아니라 '모름'입니다 (계측 전 런이고 trace 도 없으면 복원 불가)` : "";
+    const bf = (c.backfill || []).length
+      ? `<br>되살림: ${c.backfill.map((s) => STAGE_KO[s] || s).join("·")} (trace·저장 답변에서 복원${c.backfill.includes("answer") && r.bench === "beam" ? " · BEAM 답변 되살림은 대표 cutoff 1벌만 세어 실측(4벌)보다 적음" : ""})` : "";
+    return `<td class="num${c.running ? " running" : ""}${missing.length ? " partial" : ""}" data-desc="${esc(systemLabel(k))} · ${esc(r.label)}<br>배포 비용(채점 제외)<br>호출 ${c.calls.toLocaleString()} · 입력 ${c.prompt_tokens.toLocaleString()} · 출력 ${c.completion_tokens.toLocaleString()}${stg}${esc("")}${miss}${bf}${run}">${kTok(v)}${missing.length ? `<sup class="misssup">†</sup>` : ""}${c.running ? "<sup>⏳</sup>" : ""}</td>`;
   };
 
   const head = `<tr><th>세팅</th><th>지표</th>` +
