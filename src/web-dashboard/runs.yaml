@@ -70,6 +70,12 @@ halumem:
           ingest: results/mem0-classic-oss/memzero-oss-v3/memzero-oss_eval_results.jsonl
           answers: results/mem0-classic-oss/memzero-oss-v3/gen-v3/memzero-oss_eval_results.jsonl
           judge: results/mem0-classic-oss/memzero-oss-v3/judge-v3/judge
+        # 20u 산출물을 그대로 가리킴 — 이 화면은 공통 유저 교집합(4명)으로 잘라 집계하므로
+        # v3 를 20u 산출물로 등록해 둔 것과 같은 방식임
+        light:
+          ingest: results/light/memzero-20u-light/memzero-oss_eval_results.jsonl
+          answers: results/light/memzero-20u-light/gen/memzero-oss_eval_results.jsonl
+          judge: results/light/memzero-20u-light/judge-light/judge
 
 generators:
   qwen4b:
@@ -150,17 +156,28 @@ beam:
       prompt: "mem0 하네스"
       ingest: results/mem0-classic-oss/beam-100k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-100k
-      # ⚠ 이 버킷은 **mem0 하네스** 답변 프롬프트 레인이다. v3 는 BEAM 공식 프롬프트로 돌았으므로
-      #   여기 두면 안 된다 (2026-08-26에 그렇게 뒀다가 프롬프트 차이를 시스템 차이로 읽었음).
-      #   v3 는 아래 `100k-beamprompt` 에 있다.
-      note: "⚠ 이 레인은 답변 프롬프트가 <b>mem0 하네스</b>라 mem0 classic 만 있습니다. mem0 v3 는 BEAM 공식 프롬프트로 돌아서 <b>100K · BEAM 공식 프롬프트</b> 레인에 있고, 시스템 비교는 거기서 합니다.<br>20대화 400문항 · 청크 2,866 · 저장 메모리 100~407 (중앙값 278) · 답변 프롬프트 mem0 하네스 · agent gpt-oss-120b medium, 답변=채점 gpt-oss-120b high · top-200이 저장소를 넘는 문항 100/400"
+      # v3·LIGHT 는 투입을 재사용하고 답변부터 mem0 하네스 프롬프트로 다시 생성해 채움
+      # (2026-08-30, scripts/fill/run_cheap_fill.sh). 프롬프트가 같은 답변끼리만 이 자리에 둠 —
+      # 2026-08-26에 공식 프롬프트 답변을 여기 뒀다가 프롬프트 차이를 시스템 차이로 읽었음.
+      by_system:
+        mem0-v3:
+          ingest: results/mem0-classic-oss/beam-100k-v3/beam_eval_results.jsonl
+          judge: results/mem0-classic-oss/beam-judge-oss120-100k-v3-mem0prompt
+        light:
+          ingest: results/light/beam-100k-light/beam_eval_results.jsonl
+          judge: results/light/beam-judge-100k-light-mem0prompt
+      note: "답변 프롬프트가 <b>mem0 하네스</b>인 자리입니다 (mem0 팀 발표 수치와 견주는 용도). v3·LIGHT 는 같은 투입·검색 위에서 답변만 이 프롬프트로 다시 생성해 채웠습니다. 시스템 비교의 대표 자리는 여전히 <b>100K · BEAM 공식 프롬프트</b>입니다.<br>20대화 400문항 · 청크 2,866 · 답변 프롬프트 mem0 하네스 · agent gpt-oss-120b medium, 답변=채점 gpt-oss-120b high · top-200이 저장소를 넘는 문항 100/400"
     500k:
       label: "500K"
       scale: "500K"
       prompt: "mem0 하네스"
       ingest: results/mem0-classic-oss/beam-500k-oss120b/beam_eval_results.jsonl
       judge: results/mem0-classic-oss/beam-judge-oss120-500k-mem0prompt
-      note: "35대화 700문항 · 답변 프롬프트 mem0 하네스 · top-200이 항상 꽉 참 (저장소가 예산보다 커서 검색 예산 비교가 성립하는 첫 버킷) · 나머지 세팅은 100K와 동일"
+      by_system:
+        light:
+          ingest: results/light/beam-500k-light/beam_eval_results.jsonl
+          judge: results/light/beam-judge-500k-light-mem0prompt
+      note: "35대화 700문항 · 답변 프롬프트 mem0 하네스 (LIGHT 는 같은 투입 위에서 답변만 이 프롬프트로 재생성) · v3 는 500K 투입 자체가 없어 이 자리에 없습니다 · top-200이 항상 꽉 참 (저장소가 예산보다 커서 검색 예산 비교가 성립하는 첫 버킷) · 나머지 세팅은 100K와 동일"
     1m:
       label: "1M"
       scale: "1M"
