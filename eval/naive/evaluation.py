@@ -60,7 +60,6 @@ def evaluation_for_question(
     reference_answer: str,
     key_memory_points: str,
     response: str,
-    model: str,
     **common_params
 ):
     """
@@ -77,7 +76,7 @@ def evaluation_for_question(
         response=response
     )
 
-    result = llm_request_for_json(prompt, model=model, **common_params)
+    result = llm_request_for_json(prompt, **common_params)
 
     return result
 
@@ -227,7 +226,7 @@ def compute_f1(precision: float, recall: float) -> float:
         return 0.0
     return 2 * (precision * recall) / (precision + recall)
 
-def llm_judge_eval(qa_results, model: str, max_workers: int = 10, **common_params):
+def llm_judge_eval(qa_results, max_workers: int = 10, **common_params):
     # Question-Answering Evaluation
     eval_results = []
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
@@ -239,7 +238,6 @@ def llm_judge_eval(qa_results, model: str, max_workers: int = 10, **common_param
                 qa["reference"],
                 "\n".join(evidence['memory_content'] for evidence in qa['evidence']),
                 qa["generated_answer"],
-                model,
                 **common_params
             )
             futures[future] = qa
