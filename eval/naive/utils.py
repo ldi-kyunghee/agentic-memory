@@ -347,7 +347,7 @@ def per_persona_dataset(persona, memory_with_prior_question: bool):
     dialogue = [session['dialogue'] for session in sessions]
     qa_data = []
     for session in sessions:
-      qa_data += session['questions']
+      qa_data.append(session['questions'])
 
     add_memory = add_memory_from_dialogue_with_prev if memory_with_prior_question else add_memory_from_dialogue
 
